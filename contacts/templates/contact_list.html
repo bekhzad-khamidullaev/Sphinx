@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Contact List{% endblock %}
+{% block content %}
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl font-semibold text-gray-900 mb-6">Contacts</h1>
+
+        <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
+            <table class="w-full text-sm text-left text-gray-900">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th scope="col" class="py-3 px-6">Avatar</th>
+                        <th scope="col" class="py-3 px-6">First Name</th>
+                        <th scope="col" class="py-3 px-6">Last Name</th>
+                        <th scope="col" class="py-3 px-6">Email</th>
+                        <th scope="col" class="py-3 px-6">Phone</th>
+                        <th scope="col" class="py-3 px-6">Mobile</th>
+                        <!-- <th scope="col" class="py-3 px-6">Actions</th> -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact in contacts %}
+                        <tr class="bg-white border-b">
+                            <td class="py-4 px-6">
+                                <img class="w-10 h-10 rounded-full" src="{% if contact.avatar %}{{ contact.avatar.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ contact.get_contact_name }}">
+                            </td>
+                            <td class="py-4 px-6">{{ contact.first_name }}</td>
+                            <td class="py-4 px-6">{{ contact.last_name }}</td>
+                            <td class="py-4 px-6">{{ contact.email }}</td>
+                            <td class="py-4 px-6">{{ contact.phone }}</td>
+                            <td class="py-4 px-6">{{ contact.mobile }}</td>
+
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+{% endblock %}
