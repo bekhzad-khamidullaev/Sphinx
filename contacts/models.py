@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 from datetime import datetime
+from phonenumber_field.modelfields import PhoneNumberField
+
 
 class Account(models.Model):
     name = models.CharField(max_length=100)
@@ -11,8 +13,8 @@ class Contact(models.Model):
     last_name = models.CharField(max_length=20)
     email = models.EmailField(unique=True)
     avatar = models.ImageField(default='', upload_to='static/images/profile_pics/')
-    phone = models.CharField(max_length=20)
-    mobile = models.CharField(max_length=20, blank=True, null=True)
+    phone = PhoneNumberField(null=False, blank=False, unique=True)
+    mobile = PhoneNumberField(null=True, blank=True, unique=True)
     address_line = models.CharField(max_length=40, blank=True, null=True)
     addr_state = models.CharField(max_length=40, blank=True, null=True)
     addr_city = models.CharField(max_length=40, blank=True, null=True)
@@ -20,14 +22,11 @@ class Contact(models.Model):
     country = models.CharField(max_length=40, blank=True, null=True)
     notes = models.CharField(max_length=200, blank=True, null=True)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.utcnow)
 
     def get_contact_name(self):
         return f"{self.first_name} {self.last_name}"
-
-    def __str__(self):
-        return f"Contact('{self.last_name}', '{self.email}', '{self.phone}')"
 
     @staticmethod
     def contact_list_query(account_id=None, user=None):
@@ -50,4 +49,4 @@ class Contact(models.Model):
         return Contact.objects.filter(id=contact_id).first()
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.last_name} {self.first_name} {self.phone}'

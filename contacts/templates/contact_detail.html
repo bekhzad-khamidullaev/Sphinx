@@ -1,11 +1,44 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<body>
-    <h1>Contact Detail</h1>
-    <p>Name: {{ contact.get_contact_name }}</p>
-    <p>Email: {{ contact.email }}</p>
-    <p>Phone: {{ contact.phone }}</p>
-</body>
-{% endblock %}
+<div class="bg-gray-50 min-h-full flex items-center justify-center">
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center mb-6">
+            <img class="w-16 h-16 rounded-full" src="{% if contact.avatar %}{{ contact.avatar.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ contact.get_contact_name }}">
+            <div class="ml-4">
+                <h1 class="text-2xl font-semibold text-gray-900">{{ contact.get_contact_name }}</h1>
+                <p class="text-gray-500 dark:text-gray-400">{{ contact.email }}</p>
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Contact Details</h2>
+                <p class="text-gray-700"><strong>Phone:</strong> {{ contact.phone }}</p>
+                <p class="text-gray-700"><strong>Mobile:</strong> {{ contact.mobile }}</p>
+                <p class="text-gray-700"><strong>Address:</strong> {{ contact.address_line }}, {{ contact.addr_city }}, {{ contact.addr_state }}, {{ contact.post_code }}, {{ contact.country }}</p>
+                <p class="text-gray-700"><strong>Notes:</strong> {{ contact.notes }}</p>
+            </div>
+        </div>
 
+    </div>
+    <div class="max-w-2xl w-full bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center mb-6">
+            <img class="w-16 h-16 rounded-full" src="{% if contact.avatar %}{{ contact.avatar.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ contact.get_contact_name }}">
+            <div class="ml-4">
+                <h1 class="text-2xl font-semibold text-gray-900">{{ contact.get_contact_name }}</h1>
+                <p class="text-gray-500 dark:text-gray-400">{{ contact.email }}</p>
+            </div>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Contact Details</h2>
+                <p class="text-gray-700"><strong>Phone:</strong> {{ contact.phone }}</p>
+                <p class="text-gray-700"><strong>Mobile:</strong> {{ contact.mobile }}</p>
+                <p class="text-gray-700"><strong>Address:</strong> {{ contact.address_line }}, {{ contact.addr_city }}, {{ contact.addr_state }}, {{ contact.post_code }}, {{ contact.country }}</p>
+                <p class="text-gray-700"><strong>Notes:</strong> {{ contact.notes }}</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

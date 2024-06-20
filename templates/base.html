@@ -19,9 +19,10 @@
     
     <!-- logo -->
     <div class="flex-none w-56 flex flex-row items-center">
+      <a href="/" class="flex-none w-56 flex flex-row items-start">
       <img src="{% static 'img/logo.png' %}" class="w-10 flex-none">
       <strong class="capitalize ml-1 flex-1">CRM</strong>
-
+      </a>
       <button id="sliderBtn" class="flex-none text-right text-gray-900 hidden md:block">
         <i class="fad fa-list-ul"></i>
       </button>
@@ -310,16 +311,16 @@
       <p class="uppercase text-xs text-gray-600 mb-4 mt-4 tracking-wider">apps</p>
 
       <!-- link -->
-      <a href="./email.html" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-envelope-open-text text-xs mr-2"></i>
-        email
+      <a href="{% url 'contacts' %}" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
+        <i class="fad fa-address-book text-xs mr-2"></i>
+        Contacts
       </a>
       <!-- end link -->
 
       <!-- link -->
       <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-comments text-xs mr-2"></i>
-        chat
+        <i class="fad fa-building text-xs mr-2"></i>
+        Counterparty
       </a>
       <!-- end link -->
 

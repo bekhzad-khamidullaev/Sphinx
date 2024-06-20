@@ -5,4 +5,5 @@ urlpatterns = [
     path('', include('user_profiles.urls')),
     path('admin/', admin.site.urls),
     path('contacts/', include('contacts.urls')),
+    path('counterpartys/', include('counterparty.urls')),
 ]
