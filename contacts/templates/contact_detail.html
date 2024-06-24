@@ -13,8 +13,8 @@
         <div class="space-y-4">
             <div>
                 <h2 class="text-xl font-bold text-gray-900">Contact Details</h2>
-                <p class="text-gray-700"><strong>Phone:</strong> {{ contact.phone }}</p>
-                <p class="text-gray-700"><strong>Mobile:</strong> {{ contact.mobile }}</p>
+                <p class="text-gray-700"><strong>Phone:</strong><a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></p>
+                <p class="text-gray-700"><strong>Mobile:</strong><a href="tel:{{ contact.mobile }}">{{ contact.mobile }}</a></p>
                 <p class="text-gray-700"><strong>Address:</strong> {{ contact.address_line }}, {{ contact.addr_city }}, {{ contact.addr_state }}, {{ contact.post_code }}, {{ contact.country }}</p>
                 <p class="text-gray-700"><strong>Notes:</strong> {{ contact.notes }}</p>
             </div>
@@ -32,8 +32,8 @@
         <div class="space-y-4">
             <div>
                 <h2 class="text-xl font-bold text-gray-900">Contact Details</h2>
-                <p class="text-gray-700"><strong>Phone:</strong> {{ contact.phone }}</p>
-                <p class="text-gray-700"><strong>Mobile:</strong> {{ contact.mobile }}</p>
+                <p class="text-gray-700"><strong>Phone:</strong><a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></p>
+                <p class="text-gray-700"><strong>Mobile:</strong><a href="tel:{{ contact.mobile }}">{{ contact.mobile }}</a></p>
                 <p class="text-gray-700"><strong>Address:</strong> {{ contact.address_line }}, {{ contact.addr_city }}, {{ contact.addr_state }}, {{ contact.post_code }}, {{ contact.country }}</p>
                 <p class="text-gray-700"><strong>Notes:</strong> {{ contact.notes }}</p>
             </div>

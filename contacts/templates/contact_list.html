@@ -29,8 +29,8 @@
                             <td class="py-4 px-6"><a href="{% url 'contact_details' contact.pk %}">{{ contact.first_name }}</a></td>
                             <td class="py-4 px-6"><a href="{% url 'contact_details' contact.pk %}">{{ contact.last_name }}</a></td>
                             <td class="py-4 px-6">{{ contact.email }}</td>
-                            <td class="py-4 px-6">{{ contact.phone }}</td>
-                            <td class="py-4 px-6">{{ contact.mobile }}</td>
+                            <td class="py-4 px-6"><a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></td>
+                            <td class="py-4 px-6"><a href="tel:{{ contact.mobile }}">{{ contact.mobile }}</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>
