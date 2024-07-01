@@ -6,8 +6,8 @@ from django.conf import settings
 
 
 urlpatterns = [
-    path('sensors', include('sensors.urls')),
     path('', include('user_profiles.urls')),
+    path('sensors/', include('sensors.urls')),
     path('admin/', admin.site.urls),
 
 ]
