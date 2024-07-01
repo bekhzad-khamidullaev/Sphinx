@@ -6,10 +6,10 @@ from django.conf import settings
 
 
 urlpatterns = [
+    path('sensors', include('sensors.urls')),
     path('', include('user_profiles.urls')),
     path('admin/', admin.site.urls),
-    path('contacts/', include('contacts.urls')),
-    path('counterpartys/', include('counterparty.urls')),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
