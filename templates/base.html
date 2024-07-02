@@ -25,6 +25,7 @@
 <div class="fixed w-full top-0 z-20 flex flex-wrap items-center bg-white p-4 md:p-6 border-b border-gray-300">
 
     <!-- logo -->
+<<<<<<< HEAD
     <div class="flex-none w-56 flex items-center">
         <a href="/" class="flex items-start">
             <img src="{% static 'img/logo.png' %}" class="w-10 flex-none">
@@ -33,12 +34,25 @@
         <button id="sliderBtn" class="ml-auto text-gray-900 md:hidden">
             <i class="fad fa-list-ul"></i>
         </button>
+=======
+    <div class="flex-none w-56 flex flex-row items-center">
+      <a href="/" class="flex-none w-48 flex flex-row items-start">
+      <img src="{% static 'img/logo.png' %}" class="w-10 flex-none">
+      <strong class="capitalize ml-1 flex-1">Sphinx</strong>
+      </a>
+      <button id="sliderBtn" class="flex-none text-right text-gray-900 hidden md:block">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+        </svg>
+      </button>
+>>>>>>> 8c69623db8704673615f9eee808f5dab3383f205
     </div>
     <!-- end logo -->
 
     <!-- right -->
     <div class="flex flex-grow justify-end items-center">
         <!-- navbar content toggle -->
+<<<<<<< HEAD
         <button id="navbarToggle" class="md:hidden">
             <!-- <i class="fad fa-chevron-double-down"></i> -->
         </button>
@@ -53,6 +67,25 @@
                 <div class="ml-2 flex items-center">
                     <h1 class="text-sm text-gray-800 ml-2 text-xs font-semibold">{{ user.get_full_name }}</h1>
                     <!-- <i class="fad fa-chevron-down ml-2 text-xs"></i> -->
+=======
+
+          <!-- end navbar content toggle -->
+      
+          <!-- right -->
+          <div class="flex flex-row-reverse  hidden md:block md:fixed right-0 mr-4">
+
+            <!-- user -->
+            <div class="dropdown relative md:static">
+
+              <button class="menu-btn focus:outline-none focus:shadow-outline flex flex-wrap items-center">
+                <div id="navbarToggle" class="w-8 h-8 overflow-hidden rounded-full">
+                  <img class="w-full h-full object-cover" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" >
+                </div>
+
+                <div class="ml-2 capitalize flex ">
+                  <h1 class="text-sm ml-2 text-gray-800 text-xs font-semibold m-4 p-0 leading-none">{{ user.get_full_name }}</h1>
+                  <!-- <i class="fad fa-chevron-down ml-2 text-xs leading-none"></i> -->
+>>>>>>> 8c69623db8704673615f9eee808f5dab3383f205
                 </div>
             </button>
 
@@ -121,7 +154,18 @@
             </a>
             <!-- end link -->
 
+<<<<<<< HEAD
             <p class="uppercase text-xs text-gray-600 mb-4 mt-4 tracking-wider">apps</p>
+=======
+      <!-- sidebar toggle -->
+      <div class="text-right hidden md:block mb-4">
+        <button id="sideBarHideBtn">
+          <i class="fad fa-times-circle"></i>
+          
+        </button>
+      </div>
+      <!-- end sidebar toggle -->
+>>>>>>> 8c69623db8704673615f9eee808f5dab3383f205
 
             <!-- link -->
             <a href="{% url 'sensors' %}" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition duration-500">
