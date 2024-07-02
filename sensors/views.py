@@ -4,9 +4,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import SensorData
 from .serializers import SensorDataSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.shortcuts import get_object_or_404
-
-
 
 class SensorDataView(generics.ListCreateAPIView):
     queryset = SensorData.objects.all()
@@ -23,23 +20,17 @@ class SensorDataView(generics.ListCreateAPIView):
 
         if not created:
             # Update the existing instance with the new data
-            instance.temperature = round(serializer.validated_data.get('temperature', instance.temperature),2)
-            instance.humidity = round(serializer.validated_data.get('humidity', instance.humidity),2)
-            instance.heat_index = round(serializer.validated_data.get('heat_index', instance.heat_index),2)
-            instance.uptime = serializer.validated_data.get('uptime', instance.uptime)
+            instance.temperature = round(serializer.validated_data.get('temperature', instance.temperature), 2)
+            instance.humidity = round(serializer.validated_data.get('humidity', instance.humidity), 2)
+            instance.heat_index = round(serializer.validated_data.get('heat_index', instance.heat_index), 2)
+            instance.uptime = serializer.validated_data.get('uptime', instance.uptime)  # uptime is now in hours
             instance.datetime = serializer.validated_data.get('datetime', instance.datetime)
             instance.save()
 
-        # Alternatively, you can just update the instance with the serializer data
-        # instance = serializer.save(user=user)
-
         return instance
-
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     pass
-
-
 
 def sensors(request):
     sensors = SensorData.objects.all()  # Execute the queryset

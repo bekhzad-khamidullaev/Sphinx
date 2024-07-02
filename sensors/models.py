@@ -10,7 +10,7 @@ class SensorData(models.Model):
     temperature = models.FloatField(null=True)
     humidity = models.FloatField(null=True)
     heat_index = models.FloatField(null=True)
-    uptime = models.CharField(max_length=50)
+    uptime = models.FloatField()
     datetime = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     status = models.BooleanField(default=False)
