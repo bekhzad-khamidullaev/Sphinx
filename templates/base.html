@@ -40,7 +40,7 @@
     <div class="flex flex-grow justify-end items-center">
         <!-- navbar content toggle -->
         <button id="navbarToggle" class="md:hidden">
-            <i class="fad fa-chevron-double-down"></i>
+            <!-- <i class="fad fa-chevron-double-down"></i> -->
         </button>
         <!-- end navbar content toggle -->
 
@@ -51,8 +51,8 @@
                     <img class="w-full h-full object-cover" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}">
                 </div>
                 <div class="ml-2 flex items-center">
-                    <h1 class="text-sm text-gray-800 font-semibold">{{ user.get_full_name }}</h1>
-                    <i class="fad fa-chevron-down ml-2 text-xs"></i>
+                    <h1 class="text-sm text-gray-800 ml-2 text-xs font-semibold">{{ user.get_full_name }}</h1>
+                    <!-- <i class="fad fa-chevron-down ml-2 text-xs"></i> -->
                 </div>
             </button>
 
