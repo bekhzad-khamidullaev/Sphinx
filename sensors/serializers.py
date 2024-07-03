@@ -10,7 +10,7 @@ class SensorDataSerializer(serializers.ModelSerializer):
         fields = ['sensor_id', 'temperature', 'humidity', 'heat_index', 'uptime', 'uptime_hours', 'datetime']
 
     def get_uptime_hours(self, obj):
-        return round(obj.uptime, 2)
+        return round(obj.uptime / 3600, 2)
 
     def validate_uptime(self, value):
         return round(value / 3600, 2)

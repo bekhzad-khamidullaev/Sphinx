@@ -1,9 +1,13 @@
 from django.shortcuts import render
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import SensorData
+from rest_framework.response import Response
+from rest_framework import status
 from .serializers import SensorDataSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+
 
 class SensorDataView(generics.ListCreateAPIView):
     queryset = SensorData.objects.all()
@@ -23,11 +27,21 @@ class SensorDataView(generics.ListCreateAPIView):
             instance.temperature = round(serializer.validated_data.get('temperature', instance.temperature), 2)
             instance.humidity = round(serializer.validated_data.get('humidity', instance.humidity), 2)
             instance.heat_index = round(serializer.validated_data.get('heat_index', instance.heat_index), 2)
-            instance.uptime = serializer.validated_data.get('uptime', instance.uptime)  # uptime is now in hours
+            instance.uptime = serializer.validated_data.get('uptime', instance.uptime)  # uptime in hours
             instance.datetime = serializer.validated_data.get('datetime', instance.datetime)
             instance.save()
+        else:
+            # Save new instance with provided data
+            serializer.save(user=user)
 
-        return instance
+    def create(self, request, *args, **kwargs):
+        # Handle POST request to create or update a SensorData object
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     pass
