@@ -10,7 +10,7 @@ SNMP_MIB_DIRECTORY = 'C:/Users/atxmutb02/temp/mibs'  # Use the absolute path
 SNMP_MIB_FILE = '72.1.RMB'  # Base name of the MIB file, without the .mib extension
 
 # Add MIB Compiler
-# compiler.addMibCompiler(mib_builder, sources=[f'file://{settings.SNMP_MIB_DIRECTORY}'])
+compiler.addMibCompiler(mib_builder, sources=[f'file://{settings.SNMP_MIB_DIRECTORY}'])
 
 # # Compile MIB files
 # mib_builder.loadModules(settings.SNMP_MIB_FILE)
