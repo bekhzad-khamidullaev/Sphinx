@@ -7,6 +7,7 @@ from django.conf import settings
 
 urlpatterns = [
     path('', include('user_profiles.urls')),
+    path('netping/', include('netping.urls')),
     path('sensors/', include('sensors.urls')),
     path('admin/', admin.site.urls),
 

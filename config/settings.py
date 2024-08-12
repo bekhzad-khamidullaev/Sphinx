@@ -16,7 +16,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['windevs.uz', '109.94.172.194','127.0.0.1']
 
-
+SNMP_MIB_DIRECTORY = BASE_DIR / 'mibs'  # Replace with the actual path
+SNMP_MIB_FILE = '72.1.RMB.mib'
 # Application definition
 
 INSTALLED_APPS = [
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
     'corsheaders',
+    'netping'
 ]
 
 MIDDLEWARE = [
