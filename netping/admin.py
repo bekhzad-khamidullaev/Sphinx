@@ -3,7 +3,7 @@ from .models import NetPingDevice, Sensor
 
 @admin.register(NetPingDevice)
 class NetPingDeviceAdmin(admin.ModelAdmin):
-    list_display = ('ip_address', 'location', 'last_updated')
+    list_display = ('hostname', 'location', 'last_updated')
 
 @admin.register(Sensor)
 class SensorAdmin(admin.ModelAdmin):
