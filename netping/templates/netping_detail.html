@@ -1,24 +1,89 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ device.ip_address }} Details</title>
-</head>
-<body>
-    <h1>{{ device.ip_address }} - {{ device.location }}</h1>
-    <h2>Sensors</h2>
-    <ul>
-        {% for sensor in sensors %}
-            <li>
-                {{ sensor.sensor_name }} ({{ sensor.sensor_type }}) - Last Reading: {{ sensor.last_reading }}
-            </li>
-        {% endfor %}
-    </ul>
-    <h2>SNMP Actions</h2>
-    <form action="{% url 'snmp_get' device.id 'SNMPv2-MIB::sysName.0' %}" method="get">
-        <button type="submit">Get SNMP Data</button>
-    </form>
-    <form action="{% url 'snmp_walk' device.id '1.3.6.1.2.1.1' %}" method="get">
-        <button type="submit">Walk SNMP Data</button>
-    </form>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block content %}
+<div class="h-screen flex">
+    <div class="w-full">
+        <table class="w-full text-left">
+            <thead>
+                <tr>
+                    <th class="capitalize px-4 py-2 border-r">Field</th>
+                    <th class="capitalize px-4 py-2 border-r">Value</th>
+                </tr>
+            </thead>
+            <tbody class="text-natural-600">
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Hostname</td>
+                    <td class="border border-l-0 px-4 py-2">{{ device.hostname }}</td>
+                </tr>
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Location</td>
+                    <td class="border border-l-0 px-4 py-2">{{ device.location }}</td>
+                </tr>
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Device IP</td>
+                    <td class="border border-l-0 px-4 py-2">{{ device.ip_address }}</td>
+                </tr>
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Uptime</td>
+                    <td class="border border-l-0 px-4 py-2">{{ device.uptime }}</td>
+                </tr>
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Status</td>
+                    <td class="border border-l-0 px-4 py-2 {% if device.status %} text-green-500{% else %}text-red-500{% endif %}">
+                        {% if device.status %}Online <i class="fad fa-circle"></i>{% else %}Offline <i class="fa-solid fa-circle-exclamation"></i>{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Last Updated</td>
+                    <td class="border border-l-0 px-4 py-2">{{ device.last_updated }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 class="mt-8 text-xl font-semibold">Sensors</h2>
+        <table class="w-full text-left mt-4">
+            <thead>
+                <tr>
+                    <th class="capitalize px-4 py-2 border-r">Sensor Name</th>
+                    <th class="capitalize px-4 py-2 border-r">Type</th>
+                    <th class="capitalize px-4 py-2 border-r">Last Reading</th>
+                    <th class="capitalize px-4 py-2 border-r">Last Updated</th>
+                </tr>
+            </thead>
+            <tbody class="text-natural-600">
+                {% for sensor in device.sensor.all %}
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">{{ sensor.sensor_name }}</td>
+                    <td class="border border-l-0 px-4 py-2">{{ sensor.sensor_type }}</td>
+                    <td class="border border-l-0 px-4 py-2">{{ sensor.last_reading }}</td>
+                    <td class="border border-l-0 px-4 py-2">{{ sensor.last_updated }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2 class="mt-8 text-xl font-semibold">Problems</h2>
+        <table class="w-full text-left mt-4">
+            <thead>
+                <tr>
+                    <th class="capitalize px-4 py-2 border-r">Problem</th>
+                    <th class="capitalize px-4 py-2 border-r">Severity</th>
+                    <th class="capitalize px-4 py-2 border-r">Status</th>
+                    <th class="capitalize px-4 py-2 border-r">Last Updated</th>
+                </tr>
+            </thead>
+            <tbody class="text-natural-600">
+                {% for problem in device.problems_set.all %}
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">{{ problem.problem_name }}</td>
+                    <td class="border border-l-0 px-4 py-2">{{ problem.get_problem_severity_display }}</td>
+                    <td class="border border-l-0 px-4 py-2 {% if problem.status %} text-green-500{% else %}text-red-500{% endif %}">
+                        {% if problem.status %}Active{% else %}Resolved{% endif %}
+                    </td>
+                    <td class="border border-l-0 px-4 py-2">{{ problem.last_updated }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

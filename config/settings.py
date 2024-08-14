@@ -10,11 +10,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-t)onh@=0&bs0eghf!lv8w8==&(4^atr-44z!=xsac_4a6$^^+8'
+FIELD_ENCRYPTION_KEY = os.environ.get('wtGE7DbTkw5FBFIGu2N1T7eig1ucM28RolD77daKjQs=', 'JPyDugs4_e-QnFG_EWSm54lISkpZt5TMDKmutyyJzJA=')
 
+CACHE_TIMEOUT = 3600
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": "127.0.0.1:11211",
+    }
+}
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['windevs.uz', '109.94.172.194','127.0.0.1','localhost']
+ALLOWED_HOSTS = ['windevs.uz', '109.94.172.194','127.0.0.1','localhost', '10.10.137.120']
 
 SNMP_MIB_DIRECTORY = BASE_DIR / 'mibs'
 SNMP_MIB_FILE = 'netping'
@@ -36,6 +45,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'netping',
     'snmp_utils',
+    'encrypted_model_fields',
+    'drf_yasg',
+    'celery',
 ]
 
 MIDDLEWARE = [
@@ -142,4 +154,23 @@ MESSAGE_TAGS = {
     messages.SUCCESS: 'success',
     messages.WARNING: 'warning',
     messages.ERROR: 'error',
+}
+
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
+from celery.schedules import crontab
+from netping.celery import app as celery_app
+
+
+celery_app.conf.beat_schedule = {
+    'update-device-status-every-hour': {
+        'task': 'netping.tasks.update_device_status',
+        'schedule': crontab(minute=0, hour='*'),
+    },
 }
