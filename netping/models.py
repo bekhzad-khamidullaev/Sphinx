@@ -84,10 +84,16 @@ class Sensor(models.Model):
     sensor_type = models.CharField(max_length=255)
     sensor_name = models.CharField(max_length=255)
     status = models.IntegerField(default=0)
-    last_reading = models.FloatField()
+    value_high_trshld = models.IntegerField(default=0)
+    value_current = models.FloatField()
+    value_low_trshld = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
     problem = models.ForeignKey('Problems', on_delete=models.SET_NULL, null=True, blank=True, related_name='sensor')
     history = HistoricalRecords()
+
+    def save(self, *args, **kwargs):
+        self.last_update = timezone.now()
+        super().save(*args, **kwargs)
 
 
 class Problems(models.Model):

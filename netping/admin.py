@@ -7,7 +7,7 @@ class NetPingDeviceAdmin(admin.ModelAdmin):
 
 @admin.register(Sensor)
 class SensorAdmin(admin.ModelAdmin):
-    list_display = ('device', 'sensor_id', 'sensor_type', 'sensor_name', 'last_reading', 'last_updated')
+    list_display = ('device', 'sensor_id', 'sensor_type', 'sensor_name')
 
 
 @admin.register(Problems)

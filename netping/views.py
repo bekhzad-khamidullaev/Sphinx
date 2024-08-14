@@ -14,10 +14,12 @@ def device_list(request):
     devices = NetPingDevice.objects.all()
     return render(request, 'netping_list.html', {'devices': devices})
 
+
 def device_detail(request, device_id):
     device = get_object_or_404(NetPingDevice, id=device_id)
     sensors = Sensor.objects.filter(device=device)
     return render(request, 'netping_detail.html', {'device': device, 'sensors': sensors})
+
 
 def snmp_get(request, device_id, obj, oid_name):
     device = get_object_or_404(NetPingDevice, id=device_id)
@@ -25,15 +27,30 @@ def snmp_get(request, device_id, obj, oid_name):
     response = perform_snmpget_with_mib(device.ip_address, oid_name, obj, community)
     return JsonResponse({'response': response})
 
+
 def snmp_walk(request, device_id, oid):
     device = get_object_or_404(NetPingDevice, id=device_id)
     community = device.snmp_community_ro
     response = perform_snmpwalk(device.ip_address, oid, community)
     return JsonResponse({'response': response})
 
+
+def problems_list(request):
+    problems = Problems.objects.all()
+    return render(request, 'porblems.html', {'problems': problems})
+
+
+def problems_detail(request, pk):
+    problem = get_object_or_404(Problems, pk=pk)
+    sensors = Sensor.objects.filter(problem=problem)
+    return render(request, 'problems_detail.html', {'problem': problem, 'sensors': sensors})
+
+
+#API part
 class DeviceViewSet(viewsets.ModelViewSet):
     queryset = NetPingDevice.objects.all()
     serializer_class = DeviceSerializer
+
 
 class NetPingDeviceCreateView(APIView):
     def post(self, request, format=None):
@@ -42,6 +59,7 @@ class NetPingDeviceCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def update_sensor(request):
