@@ -1,28 +1,29 @@
 <!-- <div class="h-screen flex">
     <div class="w-full">
         <h1 class="text-2xl font-semibold mb-4">Problems</h1> -->
-        <table class="w-full text-left">
+        <table class="w-full text-left font-sans">
             <thead>
                 <tr>
-                    <th class="capitalize px-4 py-2 border-r">Problem</th>
-                    <th class="capitalize px-4 py-2 border-r">Severity</th>
-                    <th class="capitalize px-4 py-2 border-r">Status</th>
-                    <th class="capitalize px-4 py-2 border-r">Last Updated</th>
-                    <th class="capitalize px-4 py-2 border-r">Comments</th>
+                    <th class="capitalize px-2 py-1 border-r">Type</th>
+                    <th class="capitalize px-2 py-1 border-r">Severity</th>
+                    <th class="capitalize px-2 py-1 border-r">Status</th>
+                    <th class="capitalize px-2 py-1 border-r">Last Updated</th>
+                    <th class="capitalize px-2 py-1 border-r">Comments</th>
                 </tr>
             </thead>
             <tbody class="text-natural-600 text-sm">
                 {% for problem in device.problem_set.all %}
-                    <tr onclick="window.location.href='{% url 'problem_detail' problem.pk %}';" class="{% if problem.problem_severity == 'disaster' %}bg-red-100{% elif problem.problem_severity == 'high' %}bg-yellow-100{% elif problem.problem_severity == 'average' %}bg-orange-100{% elif problem.problem_severity == 'warning' %}bg-blue-100{% elif problem.problem_severity == 'information' %}bg-green-100{% else %}bg-gray-100{% endif %}">
-                        <td class="border border-l-0 px-4 py-2">{{ problem.problem_name }}</td>
-                        <td class="border border-l-0 px-4 py-2">{{ problem.get_problem_severity_display }}</td>
-                        <td class="border border-l-0 px-4 py-2 {% if problem.status %} text-red-500{% else %}text-green-500{% endif %}">
+                    <tr onclick="window.location.href='{% url 'problem_detail' problem.pk %}';" class="transition-all duration-300 ease-in-out shadow-md hover:shadow-lg
+                    {% if problem.problem_severity == 'disaster' %}bg-red-300{% elif problem.problem_severity == 'high' %}bg-red-200{% elif problem.problem_severity == 'average' %}bg-orange-100{% elif problem.problem_severity == 'warning' %}bg-orange-300{% elif problem.problem_severity == 'information' %}bg-yellow-100{% else %}bg-gray-100{% endif %}">
+                        <td class="border border-l-0 px-2 py-1">{{ problem.problem_name|truncatechars:20 }}</td>
+                        <td class="border border-l-0 px-2 py-1">{{ problem.get_problem_severity_display }}</td>
+                        <td class="border border-l-0 px-2 py-1 {% if problem.status %} text-red-500{% else %}text-green-500{% endif %}">
                             {% if problem.status %}Relevant{% else %}Resolved{% endif %}
                         </td>
-                        <td class="border border-l-0 px-4 py-2">{{ problem.last_updated }}</td>
-                        <td class="border border-l-0 px-4 py-2">
-                            {% for comment in problem.comments.all %}
-                                <div class="mb-2">{{ comment.comment }} - <i>{{ comment.user.username }}</i></div>
+                        <td class="border border-l-0 px-2 py-1">{{ problem.last_updated }}</td>
+                        <td class="border border-l-0 px-2 py-1">
+                            {% for comment in problem.comment.all %}
+                                <div class="mb-2">{{ comment.comment|truncatechars:20 }} - <i>{{ comment.user.username }}</i></div>
                             {% empty %}
                                 No comments
                             {% endfor %}

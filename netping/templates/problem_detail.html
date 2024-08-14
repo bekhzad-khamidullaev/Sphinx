@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="h-screen flex">
-    <div class="w-full">
+    <div class="w-full bg-white">
         <h1 class="text-2xl mt-4 font-semibold mb-4">Problems</h1>
         <table class="w-full text-left">
             <thead>
@@ -13,7 +13,8 @@
                 </tr>
             </thead>
             <tbody class="text-natural-600">
-                <tr onclick="window.location.href='{% url 'problem_detail' problem.pk %}';" class="{% if problem.problem_severity == 'disaster' %}bg-red-100{% elif problem.problem_severity == 'high' %}bg-yellow-100{% elif problem.problem_severity == 'average' %}bg-orange-100{% elif problem.problem_severity == 'warning' %}bg-blue-100{% elif problem.problem_severity == 'information' %}bg-green-100{% else %}bg-gray-100{% endif %}">
+                <tr onclick="window.location.href='{% url 'problem_detail' problem.pk %}';" class="transition-all duration-300 ease-in-out shadow-md hover:shadow-lg
+                {% if problem.problem_severity == 'disaster' %}bg-red-100{% elif problem.problem_severity == 'high' %}bg-yellow-100{% elif problem.problem_severity == 'average' %}bg-orange-100{% elif problem.problem_severity == 'warning' %}bg-blue-100{% elif problem.problem_severity == 'information' %}bg-green-100{% else %}bg-gray-100{% endif %}">
                     <td class="border border-l-0 px-4 py-2">{{ problem.problem_name }}</td>
                     <td class="border border-l-0 px-4 py-2">{{ problem.get_problem_severity_display }}</td>
                     <td class="border border-l-0 px-4 py-2 {% if problem.status %} text-red-500{% else %}text-green-500{% endif %}">

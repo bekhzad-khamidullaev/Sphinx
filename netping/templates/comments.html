@@ -1,16 +1,26 @@
+{% load static %}
 <div class="h-screen flex border-gray-200">
     <div class="w-full">
-        <h2 class="text-xl font-semibold">Comments</h2>
+        <h2 class="text-2xl mt-4 font-semibold mb-4">Comments</h2>
             <div class="flex-1 flex flex-col text-natural-600">
                 {% for comment in problem.comment.all %}
-                <div class="flex items-center shadow-xs transition-all duration-300 ease-in-out p-5 hover:shadow-md">
-                    <div class="w-10 h-10 overflow-hidden rounded-md">
-                        <img class="img-responsive" src="img/user1.jpg" alt="">
-                    </div>    
-                    <h1 class="border border-l-0 px-1 py-1">{{ comment.user.get_full_name }}</h1>    
-                    <p class="border border-l-0 px-1 py-1">{{ comment.comment|truncatechars:120 }}</p>    
-                    <p class="border border-l-0 px-1 py-1">{{ comment.last_update }}</p>
+                <a class="flex flex-row items-center justify-start px-4 py-4 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 transition-all duration-300 ease-in-out" href="#">
+
+                <div class="flex items-center shadow-md transition-all duration-300 ease-in-out hover:shadow-lg">
+                    <div class="ml-2 w-10 h-10 rounded-full overflow-hidden mr-3 bg-gray-100 border border-gray-300">
+                        <img class="w-full h-full object-cover" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}">
+                    </div> 
+                    <div class="flex-1 flex flex-rowbg-green-100">
+                        <div class="flex-1">   
+                            <p class="px-1 py-1 text-sm font-semibold">{{ comment.user.get_full_name }}</p>    
+                            <p class="px-1 py-1 text-sm text-gray-500"">{{ comment.comment|truncatechars:120 }}</p>
+                        </div>
+                        <div class="text-right text-xs text-gray-500"> 
+                            <p class="px-1 py-1 text-right text-xs text-gray-500">{{ comment.last_update }}</p>
+                        </div>
+                    </div>
                 </div>
+                </a>
                 {% endfor %}
             </div>
     </div>
