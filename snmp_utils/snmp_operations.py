@@ -4,7 +4,7 @@ from pysnmp.smi import builder, view, compiler
 from django.conf import settings
 from pysnmp.smi.rfc1902 import ObjectIdentity, ObjectType
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 # Initialize MIB builder and compiler
 mib_builder = builder.MibBuilder()

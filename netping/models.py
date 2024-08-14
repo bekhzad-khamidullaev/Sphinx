@@ -71,7 +71,7 @@ class NetPingDevice(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        self.last_update = timezone.now()
+        self.last_updated = timezone.now()
         super().save(*args, **kwargs)
         
     def __str__(self):
@@ -79,7 +79,7 @@ class NetPingDevice(models.Model):
     
 
 class Sensor(models.Model):
-    device = models.ForeignKey(NetPingDevice, on_delete=models.CASCADE, related_name='sensor')
+    device = models.ForeignKey(NetPingDevice, on_delete=models.CASCADE, related_name='sensor_set')
     sensor_id = models.CharField(max_length=255)
     sensor_type = models.CharField(max_length=255)
     sensor_name = models.CharField(max_length=255)
@@ -88,11 +88,11 @@ class Sensor(models.Model):
     value_current = models.FloatField()
     value_low_trshld = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
-    problem = models.ForeignKey('Problems', on_delete=models.SET_NULL, null=True, blank=True, related_name='sensor')
+    # problem = models.ForeignKey('Problems', on_delete=models.SET_NULL, null=True, blank=True, related_name='sensor')
     history = HistoricalRecords()
 
     def save(self, *args, **kwargs):
-        self.last_update = timezone.now()
+        self.last_updated = timezone.now()
         super().save(*args, **kwargs)
 
 
@@ -105,11 +105,12 @@ class Problems(models.Model):
         "high" : "High",
         "disaster" : "Disaster"
     }
-    host = models.ForeignKey(NetPingDevice, on_delete=models.CASCADE)
+    host = models.ForeignKey(NetPingDevice, on_delete=models.CASCADE, related_name='problem_set')
+    sensor = models.ForeignKey(Sensor, related_name='problem_set', on_delete=models.CASCADE, default='')
     problem_name = models.CharField(max_length=100)
     problem_severity = models.CharField(max_length=20, choices=SEVERITY, default='notclassified')
     status = models.BooleanField(default=True, null=True, blank=True)
-    comments = models.ForeignKey('Comments', on_delete=models.CASCADE, related_name='problem')
+    # comments = models.ForeignKey('Comments', on_delete=models.CASCADE, related_name='problem')
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
     history = HistoricalRecords()
@@ -122,7 +123,7 @@ class Problems(models.Model):
         ]
         
     def save(self, *args, **kwargs):
-        self.last_update = timezone.now()
+        self.last_updated = timezone.now()
         super().save(*args, **kwargs)
         
     def __str__(self):
@@ -133,7 +134,8 @@ class Comments(models.Model):
     comment = models.CharField(max_length=300, blank=True, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     last_update = models.DateTimeField(auto_now=True, blank=True, null=True)
-    # problem = models.ForeignKey(Problems, on_delete=models.CASCADE)
+    problem = models.ForeignKey(Problems, related_name='comment', null=True, blank=True, default='', on_delete=models.CASCADE)
+
     class Meta:
         managed = True
         db_table = 'comments'
@@ -144,3 +146,6 @@ class Comments(models.Model):
             self.user = user
         self.last_update = timezone.now()
         super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"Comment by {self.user} on {self.last_update}"

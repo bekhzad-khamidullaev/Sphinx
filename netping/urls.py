@@ -1,4 +1,7 @@
-from .views import device_list, device_detail, snmp_get, update_sensor , snmp_walk, DeviceViewSet, NetPingDeviceCreateView
+from .views import device_list, device_detail, snmp_get, update_sensor , snmp_walk, \
+                    problems_list, problem_detail, comments_list, \
+                    DeviceViewSet, NetPingDeviceCreateView
+
 from rest_framework import routers, permissions
 from rest_framework.routers import DefaultRouter 
 from django.urls import path, include
@@ -22,9 +25,13 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', device_list, name='device_list'),
-    path('device/<int:device_id>/', device_detail, name='device_detail'),
-    path('device/<int:device_id>/snmpget/<str:oid_name>/<int:obj>/', snmp_get, name='snmp_get'),
-    path('device/<int:device_id>/snmpwalk/<str:oid>/', snmp_walk, name='snmp_walk'),
+    path('device/<int:pk>/', device_detail, name='device_detail'),
+    path('device/<int:pk>/snmpget/<str:oid_name>/<int:obj>/', snmp_get, name='snmp_get'),
+    path('device/<int:pk>/snmpwalk/<str:oid>/', snmp_walk, name='snmp_walk'),
+    path('problems/', problems_list, name='problems_list'),
+    path('problems/<int:pk>/', problem_detail, name='problem_detail'),
+    path('comments/<int:pk>/', comments_list, name='comments_list'),
+    # path('comments/<int:pk>/', comments_detail, name='comments_detail'),
     path('api/', include(router.urls)),
     path('api/create/', NetPingDeviceCreateView.as_view(), name='netping-create'),
     path('api/update/', update_sensor, name='sensor-create-update'),

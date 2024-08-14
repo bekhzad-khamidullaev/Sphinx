@@ -7,6 +7,7 @@
     <link rel="shortcut icon" href="{% static 'img/fav.png' %}" type="image/x-icon">
     <link rel="stylesheet" href="https://kit-pro.fontawesome.com/releases/v5.12.1/css/pro.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.css" rel="stylesheet">
     <!-- <link rel="stylesheet" href="{% static 'css/tailwind.css' %}"> -->
 
     <title>{% block title %}{% endblock %}</title>
@@ -150,22 +151,22 @@
       </a> -->
       <!-- end link -->
 
-      <p class="uppercase text-xs text-gray-600 mb-4 mt-4 tracking-wider">apps</p>
+      <p class="uppercase text-xs text-gray-600 mb-4 mt-4 tracking-wider">Menu</p>
 
       <!-- link -->
-      <a href="{% url 'sensors' %}" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
+      <!-- <a href="{% url 'sensors' %}" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
         <i class="fad fa-snowflake text-xs mr-2"></i>
         Temperature
-      </a>
+      </a> -->
       <!-- end link -->
 
       <!-- link -->
-      <a href="/" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
+      <!-- <a href="/" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
         <i class="fad fa-sun text-xs mr-2"></i>
         Weather
-      </a>
+      </a> -->
       <!-- end link -->
-
+    
       <!-- link -->
       <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
         <i class="fad fa-shield-check text-xs mr-2"></i>
@@ -261,6 +262,30 @@
       </a> -->
       <!-- end link -->
       
+     <!-- Dropdown Button -->
+     <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown" 
+          class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out inline-flex" 
+          type="button">
+          Hosts list 
+          <!-- <svg class="w-3 h-3 ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+          </svg> -->
+      </button>
+
+      <!-- Dropdown menu -->
+      <div id="dropdown" class="hidden backdrop-blur-md bg-neutral-200 rounded-lg shadow-lg w-60 mt-2">
+          <ul class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white transition-all duration-300 ease-in-out" aria-labelledby="dropdownDefaultButton">
+              {% for device in devices %}
+              <li onclick="window.location.href='{% url 'device_detail' device.pk %}';">
+                  <a href="#" class="block px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out inline-flex">
+                    {{ device.hostname }}
+                  </a>
+              </li>
+              {% endfor %}
+          </ul>
+      </div>
+  
+      
       
 
     </div>
@@ -289,10 +314,10 @@
   
 
 <!-- script -->
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> -->
 <script src="{% static 'js/scripts.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
 <!-- end script -->
-
 </body>
 
 {% else %}

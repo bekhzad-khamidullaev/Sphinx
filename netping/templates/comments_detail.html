@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="h-screen flex">
+    <div class="w-full">
+        <h2 class="text-xl font-semibold">Comment Details</h2>
+        <table class="w-full text-left mt-4">
+            <thead>
+                <tr>
+                    <!-- <th class="capitalize px-4 py-2 border-r">Field</th>
+                    <th class="capitalize px-4 py-2 border-r">Value</th> -->
+                </tr>
+            </thead>
+            <tbody class="text-natural-600">
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">User</td>
+                    <td class="border border-l-0 px-4 py-2">{{ comment.user.username }}</td>
+                </tr>
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Comment</td>
+                    <td class="border border-l-0 px-4 py-2">{{ comment.comment }}</td>
+                </tr>
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Problem</td>
+                    <td class="border border-l-0 px-4 py-2">{{ problem.problem_name }}</td>
+                </tr>
+                <tr>
+                    <td class="border border-l-0 px-4 py-2">Last Updated</td>
+                    <td class="border border-l-0 px-4 py-2">{{ comment.last_update }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
