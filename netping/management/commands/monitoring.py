@@ -31,6 +31,5 @@ class Command(BaseCommand):
 
                 for device in selected_devices:
                     SNMP_COMMUNITY = device.snmp_community_ro
-                    snmp_response_sens_discovery= perform_snmpget_with_mib(device.ip_address, 'npRelHumN', SNMP_COMMUNITY)
-                    snmp_response_uptime = perform_snmpget_with_mib(device.ip_address, 'sysUpTime', 0, SNMP_COMMUNITY)
+                    sensor_list = perform_snmpget_with_mib(device.ip_address, 'npRelHumN', 0, SNMP_COMMUNITY)
 
