@@ -12,9 +12,33 @@ from django.contrib.auth.models import Group
 from django.conf import settings
 
 
+SENSOR_TYPE = [
+    (1, "Temperature"),
+    (2, "Humidity"),
+    (3, "Voltage sensor"),
+    (4, "Door contact"),
+    (5, "Movement detector"),
+]
+
+SENSOR_STATUS = [
+    (0, "Sensor failure or disconnection"),
+    (1, "Below normal"),
+    (2, "Normal"),
+    (3, "Above normal"),
+]
+
+SEVERITY = [
+    (0, "Not classified"),
+    (1, "Information"),
+    (2, "Warning"),
+    (3, "Average"),
+    (4, "High"),
+    (5, "Disaster"),
+]
+
+
 @receiver(post_migrate)
 def create_branch_permissions(sender, **kwargs):
-
     content_type = ContentType.objects.get_for_model(Branch)
     branches = Branch.objects.all()
 
@@ -25,11 +49,13 @@ def create_branch_permissions(sender, **kwargs):
         else:
             codename = f'view_branch_{branch.pk}'
             name = f'Can view devices in Branch {branch.pk}'
+
         permission, created = Permission.objects.get_or_create(
             codename=codename,
-            name=name,
-            content_type=content_type,
+            defaults={'name': name, 'content_type': content_type},
         )
+        if created:
+            print(f'Created permission {name} for {branch.name}')
 
 
 class Branch(models.Model):
@@ -59,8 +85,11 @@ class NetPingDevice(models.Model):
         status = cache.get(cache_key)
 
         if status is None:
-            status = self.status  # получаем статус из базы данных
+            status = self.status
             cache.set(cache_key, status, timeout=settings.CACHE_TIMEOUT)
+
+        return status
+
 
     class Meta:
         managed = True
@@ -76,39 +105,34 @@ class NetPingDevice(models.Model):
         
     def __str__(self):
         return self.hostname or self.ip_address
-    
 
 class Sensor(models.Model):
     device = models.ForeignKey(NetPingDevice, on_delete=models.CASCADE, related_name='sensor_set')
-    sensor_id = models.CharField(max_length=255)
-    sensor_type = models.CharField(max_length=255)
-    sensor_name = models.CharField(max_length=255)
-    status = models.IntegerField(default=0)
-    value_high_trshld = models.IntegerField(default=0)
-    value_current = models.FloatField()
-    value_low_trshld = models.IntegerField(default=0)
-    last_updated = models.DateTimeField(auto_now=True)
+    sensor_id = models.CharField(max_length=255, blank=True, null=True)
+    sensor_type = models.IntegerField(choices=SENSOR_TYPE)
+    sensor_name = models.CharField(max_length=255, blank=True, null=True)
+    status = models.IntegerField(default=0, choices=SENSOR_STATUS, blank=True, null=True)
+    value_high_trshld = models.IntegerField(default=0, blank=True, null=True)
+    value_current = models.FloatField(blank=True, null=True)
+    value_low_trshld = models.IntegerField(default=0, blank=True, null=True)
+    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
     # problem = models.ForeignKey('Problems', on_delete=models.SET_NULL, null=True, blank=True, related_name='sensor')
     history = HistoricalRecords()
+
 
     def save(self, *args, **kwargs):
         self.last_updated = timezone.now()
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"{self.sensor_name} - {self.sensor_type}"
+
 
 class Problems(models.Model):
-    SEVERITY = {
-        "notclassified" : "Not classified",
-        "information" : "Information",
-        "warning" : "Warning",
-        "average" : "Average",
-        "high" : "High",
-        "disaster" : "Disaster"
-    }
     host = models.ForeignKey(NetPingDevice, on_delete=models.CASCADE, related_name='problem_set')
-    sensor = models.ForeignKey(Sensor, related_name='problem_set', on_delete=models.CASCADE, default='')
+    sensor = models.ForeignKey(Sensor, related_name='problem_set', on_delete=models.CASCADE, null=True, blank=True)
     problem_name = models.CharField(max_length=100)
-    problem_severity = models.CharField(max_length=20, choices=SEVERITY, default='notclassified')
+    problem_severity = models.IntegerField(choices=SEVERITY)
     status = models.BooleanField(default=True, null=True, blank=True)
     # comments = models.ForeignKey('Comments', on_delete=models.CASCADE, related_name='problem')
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -127,14 +151,14 @@ class Problems(models.Model):
         super().save(*args, **kwargs)
         
     def __str__(self):
-        return self.host.hostname and self.problem_name
+        return f"{self.host.hostname} - {self.problem_name}"
 
 
 class Comments(models.Model):
     comment = models.CharField(max_length=300, blank=True, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     last_update = models.DateTimeField(auto_now=True, blank=True, null=True)
-    problem = models.ForeignKey(Problems, related_name='comment', null=True, blank=True, default='', on_delete=models.CASCADE)
+    problem = models.ForeignKey(Problems, related_name='comment', null=True, blank=True, on_delete=models.CASCADE)
 
     class Meta:
         managed = True
