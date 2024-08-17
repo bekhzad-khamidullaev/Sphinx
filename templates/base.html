@@ -9,8 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.css" rel="stylesheet">
-    <!-- <link rel="stylesheet" href="{% static 'css/tailwind.css' %}"> -->
-
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body class="bg-gray-100 font-sans" style="font-family: 'Roboto', sans-serif;">
@@ -23,7 +21,7 @@
     <div class="flex-none w-56 flex flex-row items-center">
       <a href="/" class="flex-none w-32 flex flex-row items-start">
       <img src="{% static 'img/logo.png' %}" class="w-10 flex-none">
-      <strong class="capitalize ml-1 flex-1">Sphinx</strong>
+      <strong class="capitalize ml-1 flex-1 text-teal-600">Sphinx</strong>
       </a>
       <button id="sliderBtn" class="flex-none text-right text-gray-900 hidden md:block">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -33,289 +31,124 @@
     </div>
     <!-- end logo -->
 
-        <!-- navbar content toggle -->
+    <!-- right -->
+    <div class="flex flex-row-reverse hidden md:block md:fixed right-0 mr-4">
 
-          <!-- end navbar content toggle -->
-      
-          <!-- right -->
-          <div class="flex flex-row-reverse  hidden md:block md:fixed right-0 mr-4">
+      <!-- user -->
+      <div class="dropdown w-40 relative md:static">
 
-            <!-- user -->
-            <div class="dropdown relative md:static">
+        <button class="menu-btn focus:outline-none focus:shadow-outline flex flex-wrap items-center">
+          <div id="navbarToggle" class="w-8 h-8 overflow-hidden rounded-full">
+            <img class="w-full h-full object-cover" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" >
+          </div>
 
-              <button class="menu-btn focus:outline-none focus:shadow-outline flex flex-wrap items-center">
-                <div id="navbarToggle" class="w-8 h-8 overflow-hidden rounded-full">
-                  <img class="w-full h-full object-cover" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" >
-                </div>
+          <div class="ml-2 capitalize flex ">
+            <h1 class="text-sm ml-2 text-gray-800 text-xs font-semibold m-4 p-0 leading-none">{{ user.get_full_name }}</h1>
+          </div>
+        </button>
 
-                <div class="ml-2 capitalize flex ">
-                  <h1 class="text-sm ml-2 text-gray-800 text-xs font-semibold m-4 p-0 leading-none">{{ user.get_full_name }}</h1>
-                  <!-- <i class="fad fa-chevron-down ml-2 text-xs leading-none"></i> -->
-                </div>
-              </button>
+        <button class="hidden fixed top-0 left-0 z-10 w-full h-full menu-overflow"></button>
 
-              <button class="hidden fixed top-0 left-0 z-10 w-full h-full menu-overflow"></button>
-
-              <div class="text-gray-500 menu hidden md:mt-10 md:w-full rounded bg-white shadow-md absolute z-20 right-0 w-40 mt-5 py-2 animated faster">
-
-                <!-- item -->
-                <a class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out" href="#">
-                  <i class="fad fa-user-edit text-xs mr-1"></i>
-                  edit my profile
-                </a>
-                <!-- end item -->
-
-                <!-- item -->
-                <a class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out" href="#">
-                  <i class="fad fa-inbox-in text-xs mr-1"></i>
-                  my inbox
-                </a>
-                <!-- end item -->
-
-                <!-- item -->
-                <a class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out" href="#">
-                  <i class="fad fa-badge-check text-xs mr-1"></i>
-                  tasks
-                </a>
-                <!-- end item -->
-
-                <!-- item -->
-                <a class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out" href="#">
-                  <i class="fad fa-comment-alt-dots text-xs mr-1"></i>
-                  chats
-                </a>
-                <!-- end item -->
-
-                <hr>
-
-                <!-- item -->
-                <a href='{% url 'logout' %}' class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out" href="#">
-                  <i class="fad fa-user-times text-xs mr-1"></i> 
-                  log out
-                </a>
-                <!-- end item -->
-
-              </div>
-            </div>
-    <!-- end navbar content toggle -->
-
-    <!-- navbar content -->
-    <!-- <div id="navbar" class="animated md:hidden md:fixed md:top-0 md:w-full md:left-0 md:mt-16 md:border-t md:border-b md:border-gray-200 md:p-10 md:bg-white flex-1 pl-3 flex flex-row flex-wrap justify-between items-center md:flex-col md:items-center"> -->
-
-
-
-        <!-- end user -->
-
-
-
+        <div class="text-gray-500 menu hidden md:mt-10 md:w-full rounded bg-white shadow-md absolute z-20 right-0 w-40 mt-5 py-2 animated faster">
+          <a class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-teal-100 hover:text-teal-700 transition-all duration-300 ease-in-out" href="#">
+            <i class="fad fa-user-edit text-xs mr-1"></i>
+            edit my profile
+          </a>
+          <a class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-teal-100 hover:text-teal-700 transition-all duration-300 ease-in-out" href="#">
+            <i class="fad fa-inbox-in text-xs mr-1"></i>
+            my inbox
+          </a>
+          <a class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-teal-100 hover:text-teal-700 transition-all duration-300 ease-in-out" href="#">
+            <i class="fad fa-badge-check text-xs mr-1"></i>
+            tasks
+          </a>
+          <a class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-teal-100 hover:text-teal-700 transition-all duration-300 ease-in-out" href="#">
+            <i class="fad fa-comment-alt-dots text-xs mr-1"></i>
+            chats
+          </a>
+          <hr>
+          <a href='{% url 'logout' %}' class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-teal-100 hover:text-teal-700 transition-all duration-300 ease-in-out" href="#">
+            <i class="fad fa-user-times text-xs mr-1"></i> 
+            log out
+          </a>
+        </div>
       </div>
-      <!-- end right -->
-    </div>
-    <!-- end navbar content -->
+      <!-- end user -->
 
+    </div>
+    <!-- end right -->
   </div>
 <!-- end navbar -->
 
-
-<!-- strat wrapper -->
+<!-- start wrapper -->
 <div class="h-screen flex flex-row flex-wrap">
 
     <!-- start sidebar -->
-  <div id="sideBar" class="relative flex flex-col flex-wrap bg-white border-r border-gray-300 p-6 flex-none w-64 md:-ml-64 md:fixed md:top-0 md:z-30 md:h-screen md:shadow-xl animated faster">
+    <div id="sideBar" class="relative flex flex-col flex-wrap bg-white border-r border-gray-300 p-6 flex-none w-64 md:-ml-64 md:fixed md:top-0 md:z-30 md:h-screen md:shadow-xl animated faster">
 
+      <!-- sidebar content -->
+      <div class="flex flex-col">
 
-    <!-- sidebar content -->
-    <div class="flex flex-col">
+        <!-- sidebar toggle -->
+        <div class="text-right hidden md:block mb-4">
+          <button id="sideBarHideBtn">
+            <i class="fad fa-times-circle  text-teal-600"></i>
+          </button>
+        </div>
+        <!-- end sidebar toggle -->
 
-      <!-- sidebar toggle -->
-      <div class="text-right hidden md:block mb-4">
-        <button id="sideBarHideBtn">
-          <i class="fad fa-times-circle"></i>
-          
+        <p class="uppercase text-xs text-gray-600 mb-4 tracking-wider">homes</p>
+
+        <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
+          <i class="fad fa-chart-pie text-xs mr-2"></i>
+          dashboard
+        </a>
+
+        <p class="uppercase text-xs text-gray-600 mb-4 mt-4 tracking-wider">Menu</p>
+
+        <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown" 
+              class="px-4 py-2 rounded-md block capitalize shadow-md font-medium text-sm tracking-wide bg-teal-600 text-white hover:bg-teal-700 transition-all duration-300 ease-in-out inline-flex" 
+              type="button">
+              Hosts list 
         </button>
+
+        <!-- Dropdown menu -->
+        <div id="dropdown" class="hidden backdrop-blur-lg bg-neutral-400 rounded-lg shadow-lg w-60 mt-2">
+            <ul class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white transition-all duration-300 ease-in-out" aria-labelledby="dropdownDefaultButton">
+                {% for device in devices %}
+                <li onclick="window.location.href='{% url 'device_detail' device.pk %}';">
+                    <a href="#" class="block rounded-md px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-teal-600 transition-all duration-300 ease-in-out inline-flex">
+                      {{ device.hostname }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
       </div>
-      <!-- end sidebar toggle -->
-
-      <p class="uppercase text-xs text-gray-600 mb-4 tracking-wider">homes</p>
-
-      <!-- link -->
-      <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-chart-pie text-xs mr-2"></i>
-        dashboard
-      </a>
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="./index-1.html" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-shopping-cart text-xs mr-2"></i>
-        ecommerce dashboard
-      </a> -->
-      <!-- end link -->
-
-      <p class="uppercase text-xs text-gray-600 mb-4 mt-4 tracking-wider">Menu</p>
-
-      <!-- link -->
-      <!-- <a href="{% url 'sensors' %}" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-snowflake text-xs mr-2"></i>
-        Temperature
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="/" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-sun text-xs mr-2"></i>
-        Weather
-      </a> -->
-      <!-- end link -->
-    
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-shield-check text-xs mr-2"></i>
-        todo
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-calendar-edit text-xs mr-2"></i>
-        calendar
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-file-invoice-dollar text-xs mr-2"></i>
-        invoice
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-folder-open text-xs mr-2"></i>
-        file manager
-      </a> -->
-      <!-- end link -->   
-      
-      
-      <!-- <p class="uppercase text-xs text-gray-600 mb-4 mt-4 tracking-wider">UI Elements</p> -->
-
-      <!-- link -->
-      <!-- <a href="./typography.html" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-text text-xs mr-2"></i>
-        typography
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="./alert.html" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-whistle text-xs mr-2"></i>
-        alerts
-      </a> -->
-      <!-- end link -->
-      
-
-      <!-- link -->
-      <!-- <a href="./buttons.html" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-cricket text-xs mr-2"></i>
-        buttons
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-box-open text-xs mr-2"></i>
-        Content
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-swatchbook text-xs mr-2"></i>
-        colors
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-atom-alt text-xs mr-2"></i>
-        icons
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-club text-xs mr-2"></i>
-        card
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-cheese-swiss text-xs mr-2"></i>
-        Widgets
-      </a> -->
-      <!-- end link -->
-
-      <!-- link -->
-      <!-- <a href="#" class="mb-3 capitalize font-medium text-sm hover:text-teal-600 transition ease-in-out duration-500">
-        <i class="fad fa-computer-classic text-xs mr-2"></i>
-        Components
-      </a> -->
-      <!-- end link -->
-      
-     <!-- Dropdown Button -->
-     <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown" 
-          class="px-4 py-2 block capitalize shadow-md font-medium text-sm tracking-wide bg-white hover:shadow-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out inline-flex" 
-          type="button">
-          Hosts list 
-          <!-- <svg class="w-3 h-3 ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
-          </svg> -->
-      </button>
-
-      <!-- Dropdown menu -->
-      <div id="dropdown" class="hidden backdrop-blur-lg bg-neutral-400 rounded-lg shadow-lg w-60 mt-2">
-          <ul class="px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white transition-all duration-300 ease-in-out" aria-labelledby="dropdownDefaultButton">
-              {% for device in devices %}
-              <li onclick="window.location.href='{% url 'device_detail' device.pk %}';">
-                  <a href="#" class="block px-4 py-2 block capitalize font-medium text-sm tracking-wide bg-white hover:bg-gray-200 hover:text-gray-900 transition-all duration-300 ease-in-out inline-flex">
-                    {{ device.hostname }}
-                  </a>
-              </li>
-              {% endfor %}
-          </ul>
-      </div>
-  
-      
-      
+      <!-- end sidebar content -->
 
     </div>
-    <!-- end sidebar content -->
+    <!-- end sidebar -->
 
-  </div>
-  <!-- end sidbar -->
-
-  <!-- strat content -->
-  <div class="bg-gray-100 flex-1 p-6 md:mt-16">
-    {% if messages %}
-    {% for message in messages %}
-    <div class="p-4 mb-4 text-sm text-netural-400 rounded-lg bg-green-50" role="alert">
-      <span class="font-medium"></span> {{ message }}
+    <!-- start content -->
+    <div class="bg-gray-100 flex-1 p-6 md:mt-16">
+      {% if messages %}
+      {% for message in messages %}
+      <div class="p-4 mb-4 text-sm text-gray-700 rounded-lg bg-teal-100" role="alert">
+        <span class="font-medium">Alert:</span> {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% block content %}
+      {% endblock %}
     </div>
-    {% endfor %}
-    {% endif %}
-    {% block content %}
-    {% endblock %}
-  </div>
-  <!-- end content -->
+    <!-- end content -->
 
 </div>
 <!-- end wrapper --> 
 
-  
-
 <!-- script -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> -->
 <script src="{% static 'js/scripts.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
 <!-- end script -->

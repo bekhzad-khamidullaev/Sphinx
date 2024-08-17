@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         devices_per_page = 10
-        delay_seconds = 1
+        delay_seconds = 3600
 
         while True:
             paginator = Paginator(Devices.objects.filter(status=True).order_by('-pk'), devices_per_page)
@@ -33,8 +33,9 @@ class Command(BaseCommand):
 
                 for device in selected_devices:
                     SNMP_COMMUNITY = device.snmp_community_ro
-                    snmp_response_hostname = perform_snmpget_with_mib(device.ip_address, 'sysName', 0, SNMP_COMMUNITY)
-                    snmp_response_uptime = perform_snmpget_with_mib(device.ip_address, 'sysUpTime', 0, SNMP_COMMUNITY)
+                    snmp_response_hostname = perform_snmpget_with_mib(device.ip_address, 'sysName', 0, SNMP_COMMUNITY, mib='SNMPv2-MIB')
+                    snmp_response_uptime = perform_snmpget_with_mib(device.ip_address, 'sysUpTime', 0, SNMP_COMMUNITY, mib='SNMPv2-MIB')
+
 
                     if not snmp_response_hostname or not snmp_response_uptime:
                         logger.warning(f"No SNMP response received for IP address: {device.ip_address}")

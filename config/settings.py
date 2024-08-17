@@ -25,7 +25,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['windevs.uz', 'ddm.tshtt.uz','109.94.172.194','127.0.0.1','localhost', '10.10.137.120']
 
-SNMP_MIB_DIRECTORY = BASE_DIR / 'mibs'
+SNMP_MIB_DIRECTORY = BASE_DIR / 'mibs/compiled'
 SNMP_MIB_FILE = 'netping'
 
 # Application definition

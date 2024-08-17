@@ -6,17 +6,9 @@ from pysnmp.smi.rfc1902 import ObjectIdentity, ObjectType
 
 logging.basicConfig(level=logging.INFO)
 
-# Initialize MIB builder and compiler
 mib_builder = builder.MibBuilder()
-compiler.addMibCompiler(mib_builder, sources=[f'file://{settings.SNMP_MIB_DIRECTORY}'])
-logging.debug("MIB compiler added.")
-
-# Load the MIB module
-try:
-    mib_builder.loadModules(settings.SNMP_MIB_FILE)
-    logging.debug(f"MIB module {settings.SNMP_MIB_FILE} loaded successfully.")
-except Exception as e:
-    logging.error(f"Failed to load MIB module {settings.SNMP_MIB_FILE}: {e}")
+mib_builder.addMibSources(builder.DirMibSource(settings.SNMP_MIB_DIRECTORY))
+mib_builder.loadModules('NETPING-MIB')
 
 # Initialize MIB view controller
 mib_view_controller = view.MibViewController(mib_builder)
@@ -26,10 +18,10 @@ logging.debug("Loaded MIB modules:")
 for name in mib_builder.mibSymbols:
     logging.debug(name)
 
-def perform_snmpget_with_mib(ip, oid_name,obj, community):
+def perform_snmpget_with_mib(ip, oid_name,obj, community, mib='NETPING-MIB'):
     try:
         # Resolve the object identity using the MIB
-        object_identity = ObjectIdentity('SNMPv2-MIB', oid_name, obj).resolveWithMib(mib_view_controller)
+        object_identity = ObjectIdentity(mib, oid_name, obj).resolveWithMib(mib_view_controller)
         logging.debug(f"Resolved object identity: {object_identity}")
 
         iterator = getCmd(

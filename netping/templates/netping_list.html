@@ -1,39 +1,37 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="h-screen flex">
-      <div class="w-full">
-
-        <table class="w-full text-left">
+<div class="h-screen flex p-4 bg-gray-100">
+    <div class="w-full bg-white shadow-lg rounded-lg overflow-hidden">
+        <table class="w-full text-left border-collapse">
             <thead>
-                <tr>
-                    <th class="capitalize px-4 py-2 border-r">hostname</th>
-                    <th class="capitalize px-4 py-2 border-r">Location</th>
-                    <th class="capitalize px-4 py-2 border-r">Device IP</th>
-                    <th class="capitalize px-4 py-2 border-r">Uptime</th>
-                    <th class="capitalize px-4 py-2 border-r">last check</th>
+                <tr class="bg-gray-200 text-gray-700">
+                    <th class="capitalize px-4 py-3 border-b">Status</th>
+                    <th class="capitalize px-4 py-3 border-b">Hostname</th>
+                    <th class="capitalize px-4 py-3 border-b">Location</th>
+                    <th class="capitalize px-4 py-3 border-b">Device IP</th>
+                    <th class="capitalize px-4 py-3 border-b">Uptime</th>
+                    <th class="capitalize px-4 py-3 border-b">Last Check</th>
                 </tr>
             </thead>
-            <tbody class="text-natural-600">
-
+            <tbody class="text-gray-600">
                 {% for device in devices %}
-                <tr onclick="window.location.href='{% url 'device_detail' device.pk %}';" style="cursor:pointer;">
-                    <td class="border border-l-0 px-4 py-2 text-center {% if device.status %} text-green-500{% else %}text-red-500{% endif %}">
+                <tr onclick="window.location.href='{% url 'device_detail' device.pk %}';" style="cursor:pointer;" class="hover:bg-gray-100 transition-colors duration-300 ease-in-out">
+                    <td class="border-b px-4 py-3 text-center {% if device.status %}text-green-500{% else %}text-red-500{% endif %}">
                         {% if device.status %}
                             Online <i class="fad fa-circle"></i>
                         {% else %}
                             Offline <i class="fad fa-fire-alt fa-swap-opacity"></i>
                         {% endif %}
                     </td>
-                    <td class="border border-l-0 px-4 py-2">{{device.hostname}}</td>
-                    <td class="border border-l-0 px-4 py-2">{{device.ip_address}}</td>
-                    <td class="border border-l-0 px-4 py-2">{{device.uptime}}</td>
-                    <td class="border border-l-0 px-4 py-2">{{device.last_update}}</td>
+                    <td class="border-b px-4 py-3">{{ device.hostname }}</td>
+                    <td class="border-b px-4 py-3">{{ device.location }}</td>
+                    <td class="border-b px-4 py-3">{{ device.ip_address }}</td>
+                    <td class="border-b px-4 py-3">{{ device.uptime }}</td>
+                    <td class="border-b px-4 py-3">{{ device.last_update }}</td>
                 </tr>
                 {% endfor %}
-                
-                
             </tbody>
         </table>
-      </div>
+    </div>
 </div>
-  {% endblock %}
+{% endblock %}
