@@ -41,6 +41,7 @@ SEVERITY = [
 def create_branch_permissions(sender, **kwargs):
     content_type = ContentType.objects.get_for_model(Branch)
     branches = Branch.objects.all()
+    history = HistoricalRecords()
 
     for branch in branches:
         if branch.name:
@@ -79,6 +80,7 @@ class NetPingDevice(models.Model):
     status = models.BooleanField(default=False, null=True, blank=True)
     uptime = models.CharField(max_length=200, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    history = HistoricalRecords()
 
     def get_device_status(self):
         cache_key = f'device_status_{self.pk}'
@@ -108,15 +110,17 @@ class NetPingDevice(models.Model):
 
 class Sensor(models.Model):
     device = models.ForeignKey(NetPingDevice, on_delete=models.CASCADE, related_name='sensor_set')
-    sensor_id = models.CharField(max_length=255, blank=True, null=True)
+    sensor_id = models.IntegerField(blank=True, null=True)
     sensor_type = models.IntegerField(choices=SENSOR_TYPE)
     sensor_name = models.CharField(max_length=255, blank=True, null=True)
     status = models.IntegerField(default=0, choices=SENSOR_STATUS, blank=True, null=True)
     value_high_trshld = models.IntegerField(default=0, blank=True, null=True)
     value_current = models.FloatField(blank=True, null=True)
+    value_current_long = models.FloatField(blank=True, null=True)
     value_low_trshld = models.IntegerField(default=0, blank=True, null=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
     # problem = models.ForeignKey('Problems', on_delete=models.SET_NULL, null=True, blank=True, related_name='sensor')
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     history = HistoricalRecords()
 
 
@@ -159,6 +163,9 @@ class Comments(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     last_update = models.DateTimeField(auto_now=True, blank=True, null=True)
     problem = models.ForeignKey(Problems, related_name='comment', null=True, blank=True, on_delete=models.CASCADE)
+    history = HistoricalRecords()
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
 
     class Meta:
         managed = True

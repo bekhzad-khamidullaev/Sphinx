@@ -9,7 +9,12 @@
                     <th class="capitalize px-4 py-3 border-b">Type</th>
                     <th class="capitalize px-4 py-3 border-b">Severity</th>
                     <th class="capitalize px-4 py-3 border-b">Status</th>
-                    <th class="capitalize px-4 py-3 border-b">Last Updated</th>
+                    <th class="capitalize px-4 py-3 border-b">Time</th>
+                    {% if problem.status %}
+                    {% else %}
+                    <th class="capitalize px-4 py-3 border-b">Closed at</td>
+                    {% endif %}
+                    
                 </tr>
             </thead>
             <tbody class="text-gray-600">
@@ -19,7 +24,11 @@
                     <td class="border border-gray-300 px-4 py-3 {% if problem.status %} text-red-500{% else %}text-green-500{% endif %}">
                         {% if problem.status %}Relevant{% else %}Resolved{% endif %}
                     </td>
+                    <td class="border border-gray-300 px-4 py-3">{{ problem.created }}</td>
+                    {% if problem.status %}
+                    {% else %}
                     <td class="border border-gray-300 px-4 py-3">{{ problem.last_updated }}</td>
+                    {% endif %}
                 </tr>
             </tbody>
         </table>

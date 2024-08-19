@@ -15,13 +15,13 @@
 
 {% if user.is_authenticated %}
 <!-- start navbar -->
-<div class="md:fixed md:w-full md:top-0 md:z-20 flex flex-row flex-wrap items-center bg-white p-6 border-b border-gray-300 font-sans" style="font-family: 'Roboto', sans-serif;">
+<div class="md:fixed md:w-full md:top-0 md:z-20 flex flex-row flex-wrap items-center bg-white p-6 border-b border-gray-300 font-sans transition-all duration-300 ease-in-out" style="font-family: 'Roboto', sans-serif;">
 
     <!-- logo -->
-    <div class="flex-none w-56 flex flex-row items-center">
+    <div class="flex-none w-56 flex flex-row items-center hover:scale-105 transition-transform duration-300 ease-in-out">
       <a href="/" class="flex-none w-32 flex flex-row items-start">
       <img src="{% static 'img/logo.png' %}" class="w-10 flex-none">
-      <strong class="capitalize ml-1 flex-1 text-teal-600">Sphinx</strong>
+      <strong class="capitalize ml-1 flex-1 text-teal-600" style="font-family: 'Roboto', sans-serif;">Sphinx</strong>
       </a>
       <button id="sliderBtn" class="flex-none text-right text-gray-900 hidden md:block">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -37,7 +37,7 @@
       <!-- user -->
       <div class="dropdown w-40 relative md:static">
 
-        <button class="menu-btn focus:outline-none focus:shadow-outline flex flex-wrap items-center">
+        <button class="menu-btn focus:outline-none focus:shadow-outline flex flex-wrap items-center transition-transform duration-300 ease-in-out hover:scale-105">
           <div id="navbarToggle" class="w-8 h-8 overflow-hidden rounded-full">
             <img class="w-full h-full object-cover" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" >
           </div>

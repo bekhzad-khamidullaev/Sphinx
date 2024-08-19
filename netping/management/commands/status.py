@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
             start_time = time.time()
 
-            host_alive = ping(ip_address, unit='ms', size=32, timeout=2)
+            host_alive = ping(ip_address, unit='ms', size=32, timeout=2, interface='enp3s0')
 
             elapsed_time = time.time() - start_time
 
