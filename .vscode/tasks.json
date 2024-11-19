@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Migrations",
+            "type": "shell",
+            "command": "${workspaceFolder}/manage.py",
+            "args": [
+                "migrate"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Create Superuser",
+            "type": "shell",
+            "command": "${workspaceFolder}/manage.py",
+            "args": [
+                "createsuperuser"
+            ]
+        },
+        {
+            "label": "Collect Static",
+            "type": "shell",
+            "command": "${workspaceFolder}/manage.py",
+            "args": [
+                "collectstatic",
+                "--noinput"
+            ]
+        }
+    ]
+}
