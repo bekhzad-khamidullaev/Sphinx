@@ -1,5 +1,7 @@
 from pathlib import Path
 import os
+from django.utils.translation import gettext_lazy as _
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,8 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['windevs.uz', 'ddm.tshtt.uz','109.94.172.194','127.0.0.1','localhost', '10.10.137.120']
 
-SNMP_MIB_DIRECTORY = BASE_DIR / 'mibs/compiled'
-SNMP_MIB_FILE = 'netping'
 
 # Application definition
 INSTALLED_APPS = [
@@ -37,17 +37,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'user_profiles',
-    'sensors',
     'simple_history',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
     'corsheaders',
-    'netping',
-    'snmp_utils',
     'encrypted_model_fields',
-    'drf_yasg',
     'celery',
+    'django_filters',
+    "channels",
+    'drf_yasg',
+    'crispy_forms',
+    'crispy_tailwind',
+    'crm_core',
 ]
 
 MIDDLEWARE = [
@@ -74,7 +76,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'netping.context_processors.devices'
             ],
         },
     },
@@ -93,7 +94,11 @@ DATABASES = {
     }
 }
 
-
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Для тестов (используйте Redis в продакшене)
+    },
+}
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
@@ -116,7 +121,20 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'uz-Uz'
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
+LANGUAGE_CODE = 'uz'
+
+LANGUAGES = [
+    ('uz', _('Uzbek')),
+    ('ru', _('Русский')),
+    ('en', _('English')),
+    ('es', _('Español')),
+    ('fr', _('Français')),
+]
+
+LANGUAGE_COOKIE_NAME = 'django_language'
 
 TIME_ZONE = 'Asia/Tashkent'
 
@@ -164,14 +182,69 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
+LOGIN_URL = 'user_profiles:login' # Custom login URL
+LOGOUT_REDIRECT_URL = 'crm_core:tasks_list' # Redirect after logout
 
-from celery.schedules import crontab
-from netping.celery import app as celery_app
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly'
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+}
 
+DRF_YASG = {
+    'USE_SESSION_AUTH': False,
+}
 
-celery_app.conf.beat_schedule = {
-    'update-device-status-every-hour': {
-        'task': 'netping.tasks.update_device_status',
-        'schedule': crontab(minute=0, hour='*'),
+TELEGRAM_BOT_SETTINGS = {
+    'BOT_TOKEN': config('TELEGRAM_BOT_TOKEN', default='YOUR_TELEGRAM_BOT_TOKEN_HERE'), # Replace with your bot token or use env var
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/crm.log'),
+        },
     },
+    'loggers': {
+        'crm_core': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
+CRISPY_TEMPLATE_PACK = 'tailwind'
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_NAME = 'sessionid'
+# Static files (Whitenoise)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Security headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
 }

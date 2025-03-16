@@ -1,0 +1,67 @@
+{% extends 'list_base.html' %}
+{% load i18n %}
+
+{% block list_title %}
+    {% trans 'Задачи' %}
+{% endblock %}
+
+{% block list_actions %}
+    <button
+        hx-get="{% url 'crm_core:task_create' %}"
+        hx-target="#modal-content"
+        hx-swap="innerHTML"
+        class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+    >
+        ➕ {% trans 'Создать задачу' %}
+    </button>
+   
+    <a href="{% url 'crm_core:export_tasks_to_excel' %}" 
+       class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus-visible:ring"
+       title="{% trans 'Экспорт задач в Excel' %}">
+        ⬇️ {% trans 'Экспорт в Excel' %}
+    </a>
+{% endblock %}
+
+{% block list_content %}
+    <ul id="task-list" role="list" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for task in tasks %}
+        <li id="task-{{ task.pk }}" class="bg-white shadow overflow-hidden rounded-md">
+            <div class="px-4 py-5 sm:px-6">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">
+                    {{ task.task_number }} - {{ task.campaign.name }}
+                </h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    {{ task.description|truncatechars:100 }}<br>
+                    {% trans 'Статус' %}: {{ task.get_status_display }} | {% trans 'Приоритет' %}: {{ task.get_priority_display }}
+                </p>
+            </div>
+            <div class="border-t border-gray-200">
+                <div class="bg-gray-50 px-4 py-2 sm:px-6 flex justify-end space-x-2">
+                    <button
+                        hx-get="{% url 'crm_core:task_update' task.pk %}"
+                        hx-target="#modal-content"
+                        hx-swap="innerHTML"
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus-visible:ring"
+                        aria-label="{% trans 'Редактировать задачу' %}"
+                    >
+                        ✏️ {% trans 'Редактировать' %}
+                    </button>
+                    <button
+                        hx-get="{% url 'crm_core:task_delete' task.pk %}"
+                        hx-target="#modal-content"
+                        hx-swap="innerHTML"
+                        class="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 focus-visible:ring"
+                        aria-label="{% trans 'Удалить задачу' %}"
+                    >
+                        ❌ {% trans 'Удалить' %}
+                    </button>
+                </div>
+            </div>
+        </li>
+        {% empty %}
+        <li class="text-center text-gray-500 py-4">
+            <span class="text-lg">{% trans 'Нет задач.' %}</span>
+        </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

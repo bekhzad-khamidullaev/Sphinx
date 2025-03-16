@@ -1,0 +1,22 @@
+{% extends 'modals/modal_delete_confirm_base.html' %}
+{% load i18n app_filters %}
+
+{% block delete_modal_title %}
+    ❌ {% trans 'Удаление задачи' %}
+{% endblock %}
+
+{% block delete_modal_message %}
+    {% trans 'Вы уверены, что хотите удалить задачу' %} <strong>{{ task.task_number }}</strong>?
+{% endblock %}
+
+{% block delete_url %}
+    {% url 'crm_core:task_delete' task.pk %}
+{% endblock %}
+
+{% block delete_target %}
+    #task-{{ task.pk }}  {# Замените на ID элемента задачи в списке #}
+{% endblock %}
+
+{% block delete_swap %}
+    outerHTML
+{% endblock %}

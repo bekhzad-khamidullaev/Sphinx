@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-4 md:flex md:items-center md:justify-between">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    {% block detail_title %}
+                        {% trans 'Детали' %}
+                    {% endblock %}
+                </h2>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                {% block detail_actions %}
+                    <a href="{% url 'crm_core:list_view' %}" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" 
+                        aria-label="{% trans 'Назад к списку' %}">
+                        ↩️ {% trans 'Назад к списку' %}
+                    </a>
+                {% endblock %}
+            </div>
+        </div>
+        <div class="mt-8 bg-white shadow overflow-hidden rounded-md">
+            {% block detail_content %}
+                {# Placeholder content for the detail view. Will be extended in child templates. #}
+            {% endblock %}
+        </div>
+    </div>
+{% endblock %}

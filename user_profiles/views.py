@@ -15,7 +15,7 @@ def base(request):
         if user is not None:
             auth_login(request, user)
             messages.success(request, _('Successfully logged in!'))
-            return redirect('base')
+            return redirect('user_profiles:base')
         else:
             messages.error(request, _('Invalid credentials. Please try again!'))
 
@@ -23,10 +23,10 @@ def base(request):
 
 
 def user_login(request):
-    return redirect('base')
+    return redirect('user_profiles:base')
 
 
 def user_logout(request):
     auth_logout(request)
     messages.success(request, _('Successfully logged out!'))
-    return redirect('base')
+    return redirect('user_profiles:base')
