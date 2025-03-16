@@ -2,28 +2,17 @@
 from rest_framework import serializers
 from .models import (
     Campaign,
-    Team,
     TaskCategory,
     TaskSubcategory,
     Task,
     TaskPhoto,
-    Role,
-    TaskUserRole
 )
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from user_profiles.models import User
 
 
 class CampaignSerializer(serializers.ModelSerializer):
     class Meta:
         model = Campaign
-        fields = "__all__"
-
-
-class TeamSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Team
         fields = "__all__"
 
 
@@ -94,28 +83,4 @@ class TaskSerializer(serializers.ModelSerializer):
 class TaskPhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskPhoto
-        fields = "__all__"
-
-
-class UserSerializer(serializers.ModelSerializer):
-    role_name = serializers.CharField(
-        source="role.name", read_only=True
-    )  # Assuming a 'role' ForeignKey
-
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "username",
-            "first_name",
-            "last_name",
-            "email",
-            "role_name",
-            "telegram_user_id",
-        ]  # Adjust fields
-
-
-class RoleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Role
         fields = "__all__"

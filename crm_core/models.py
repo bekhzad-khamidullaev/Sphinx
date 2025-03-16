@@ -1,4 +1,3 @@
-from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -6,7 +5,13 @@ from django.dispatch import receiver
 from django.db.models.signals import pre_save, post_save
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.utils.crypto import get_random_string
+from django.db import models, IntegrityError, transaction
+from django.db.models import F
+from unidecode import unidecode
+import time
 import logging
+from user_profiles.models import TaskUserRole
 
 logger = logging.getLogger(__name__)
 
@@ -36,30 +41,12 @@ class Campaign(BaseModel):
     def __str__(self):
         return self.name
 
-# ------------------------ Команды ------------------------
-
-class Team(BaseModel):
-    name = models.CharField(max_length=100, verbose_name=_("Название команды"), db_index=True)
-    team_leader = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="teams_managed")
-    members = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="teams_member")
-    description = models.TextField(blank=True, verbose_name=_("Описание команды"))
-    task_categories = models.ManyToManyField("crm_core.TaskCategory", blank=True, related_name="teams")
-
-    class Meta:
-        verbose_name = _("Команда")
-        verbose_name_plural = _("Команды")
-        ordering = ["name"]
-        indexes = [models.Index(fields=["name"], name="team_name_idx")]
-
-    def __str__(self):
-        return self.name
-
 # ------------------------ Категории и Подкатегории ------------------------
 
 class TaskCategory(BaseModel):
     name = models.CharField(max_length=100, unique=True, verbose_name=_("Название категории"), db_index=True)
     description = models.TextField(blank=True, verbose_name=_("Описание категории"))
-    last_assigned_team = models.ForeignKey("crm_core.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="last_category_tasks")
+    last_assigned_team = models.ForeignKey("user_profiles.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="last_category_tasks")
 
     class Meta:
         verbose_name = _("Категория задач")
@@ -71,7 +58,7 @@ class TaskCategory(BaseModel):
         return self.name
 
 class TaskSubcategory(BaseModel):
-    category = models.ForeignKey(TaskCategory, on_delete=models.CASCADE, related_name="subcategories", verbose_name=_("Категория"), db_index=True)
+    category = models.ForeignKey("crm_core.TaskCategory", on_delete=models.CASCADE, related_name="subcategories", verbose_name=_("Категория"), db_index=True)
     name = models.CharField(max_length=100, verbose_name=_("Название подкатегории"), db_index=True)
     description = models.TextField(blank=True, verbose_name=_("Описание подкатегории"))
 
@@ -112,7 +99,8 @@ class Task(BaseModel):
     task_number = models.CharField(max_length=20, unique=True, blank=True, verbose_name=_("Номер задачи"), db_index=True)
     description = models.TextField(verbose_name=_("Описание задачи"))
     assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_tasks", db_index=True)
-    team = models.ForeignKey("crm_core.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks", db_index=True)
+    team = models.ForeignKey("user_profiles.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks")
+    photos = models.ManyToManyField("crm_core.TaskPhoto", blank=True, related_name="tasks")
     status = models.CharField(max_length=20, choices=TASK_STATUS_CHOICES, default="new", db_index=True)
     priority = models.IntegerField(default=TaskPriority.MEDIUM, choices=TaskPriority.choices, db_index=True)
     deadline = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -120,6 +108,66 @@ class Task(BaseModel):
     completion_date = models.DateTimeField(null=True, blank=True)
     estimated_time = models.DurationField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks_created", db_index=True)
+
+    def save(self, *args, **kwargs):
+        """Генерирует уникальный task_number перед сохранением"""
+        if not self.task_number:
+            attempt = 0
+            while attempt < 10:
+                self.task_number = self.generate_unique_task_number()
+                if not Task.objects.filter(task_number=self.task_number).exists():
+                    break
+                attempt += 1
+
+            if attempt >= 10:
+                raise IntegrityError("Не удалось сгенерировать уникальный номер задачи после 10 попыток!")
+            
+        super().save(*args, **kwargs)
+
+        # If task is assigned to a team, assign the team leader as the executor
+        if self.team:
+            leader = self.team.team_leader
+            if leader:
+                TaskUserRole.objects.get_or_create(task=self, user=leader, role=TaskUserRole.RoleChoices.EXECUTOR)
+
+            # Assign all team members as watchers
+            for member in self.team.members.exclude(id=leader.id):
+                TaskUserRole.objects.get_or_create(task=self, user=member, role=TaskUserRole.RoleChoices.WATCHER)
+
+        # If task is assigned, automatically assign the team based on the assignee's profile
+        if self.assignee and not self.team:
+            self.team = self.assignee.user_profile.team
+
+
+
+    def generate_unique_task_number(self):
+        """Generates the next unique task number with better guarantees."""
+        if not self.campaign:
+            raise ValueError("Cannot create task without a campaign!")
+
+        campaign_code = unidecode(self.campaign.name).upper().replace(" ", "")[:4]
+        if not campaign_code:
+            campaign_code = "TASK"
+
+        with transaction.atomic():
+            last_task = Task.objects.filter(campaign=self.campaign).order_by("-id").first()
+            next_number = 1
+
+            if last_task and last_task.task_number:
+                try:
+                    last_number = int(last_task.task_number.split("-")[-1])
+                    next_number = last_number + 1
+                except ValueError:
+                    pass
+
+            task_number = f"{campaign_code}-{next_number:04d}"
+
+            # Ensure the generated task number is unique before assigning it
+            if Task.objects.filter(task_number=task_number).exists():
+                raise IntegrityError("Failed to generate a unique task number after 10 attempts!")
+
+            return task_number
+
 
     class Meta:
         verbose_name = _("Задача")
@@ -137,15 +185,11 @@ class Task(BaseModel):
 # ------------------------ Фотографии ------------------------
 
 class TaskPhoto(BaseModel):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="task_photos", db_index=True)
+    task = models.ForeignKey("crm_core.Task", on_delete=models.CASCADE, related_name="task_photos", db_index=True)
     photo = models.ImageField(upload_to="task_photos/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    description = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name=_("Описание фотографии"),
-        help_text=_("Добавьте описание к фотографии (необязательно)."),
-    )
+    description = models.CharField(max_length=255, blank=True, verbose_name=_("Описание фотографии"))
+
     class Meta:
         verbose_name = _("Фотография к задаче")
         verbose_name_plural = _("Фотографии к задачам")
@@ -154,38 +198,3 @@ class TaskPhoto(BaseModel):
 
     def __str__(self):
         return f"Фото {self.task.task_number}"
-
-# ------------------------ Роли ------------------------
-
-class Role(models.Model):
-    name = models.CharField(max_length=50, unique=True, verbose_name=_("Название роли"), db_index=True)
-
-    class Meta:
-        verbose_name = _("Роль")
-        verbose_name_plural = _("Роли")
-        ordering = ["name"]
-        indexes = [models.Index(fields=["name"], name="role_name_idx")]
-
-    def __str__(self):
-        return self.name
-
-# ------------------------ Роли пользователей в задачах ------------------------
-
-class TaskUserRole(models.Model):
-    class RoleChoices(models.TextChoices):
-        EXECUTOR = "executor", _("Исполнитель")
-        WATCHER = "watcher", _("Наблюдатель")
-        RESPONSIBLE = "responsible", _("Ответственный")
-
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="user_roles", db_index=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="task_roles", db_index=True)
-    role = models.CharField(max_length=20, choices=RoleChoices.choices, default=RoleChoices.EXECUTOR, db_index=True)
-
-    class Meta:
-        verbose_name = _("Роль пользователя в задаче")
-        verbose_name_plural = _("Роли пользователей в задачах")
-        unique_together = ("task", "user", "role")
-        indexes = [models.Index(fields=["task", "user", "role"], name="taskuserrole_unique_role_idx")]
-
-    def __str__(self):
-        return f"{self.user.username} - {self.get_role_display()} ({self.task.task_number})"

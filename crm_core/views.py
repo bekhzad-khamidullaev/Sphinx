@@ -1,7 +1,12 @@
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 import logging
 import pandas as pd
+from django.utils.timezone import make_naive
+from django.db.models import Q
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout, authenticate
@@ -11,7 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Q
 from django.forms import inlineformset_factory
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -33,12 +38,12 @@ from .forms import (
     RoleForm, TaskCategoryForm, TaskSubcategoryForm, TeamForm
 )
 from .models import (
-    Campaign, Team, TaskCategory, TaskSubcategory, Task, TaskPhoto, Role, TaskUserRole
+    Campaign, TaskCategory, TaskSubcategory, Task, TaskPhoto
 )
 from .reports import task_summary_report
 from .serializers import (
-    CampaignSerializer, TeamSerializer, TaskCategorySerializer, TaskSubcategorySerializer,
-    TaskSerializer, TaskPhotoSerializer, UserSerializer, RoleSerializer
+    CampaignSerializer, TaskCategorySerializer, TaskSubcategorySerializer,
+    TaskSerializer, TaskPhotoSerializer
 )
 from .signals import task_completed
 from .filters import TaskFilter
@@ -78,11 +83,6 @@ class CampaignViewSet(viewsets.ModelViewSet):
     queryset = Campaign.objects.all()
     serializer_class = CampaignSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    
-class TeamViewSet(viewsets.ModelViewSet):
-    queryset = Team.objects.all()
-    serializer_class = TeamSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 class TaskCategoryViewSet(viewsets.ModelViewSet):
     queryset = TaskCategory.objects.all()
@@ -106,17 +106,6 @@ class TaskPhotoViewSet(viewsets.ModelViewSet):
     queryset = TaskPhoto.objects.all()
     serializer_class = TaskPhotoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-class RoleViewSet(viewsets.ModelViewSet):
-    queryset = Role.objects.all()
-    serializer_class = RoleSerializer
-    permission_classes = [permissions.IsAdminUser]
-
-class UserViewSet(viewsets.ModelViewSet):
-    """Manage users."""
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
     
 # ------------------------ CRUD ФУНКЦИИ ------------------------
 
@@ -158,58 +147,10 @@ def create_campaign(request):
 def delete_campaign(request, pk):
     campaign = get_object_or_404(Campaign, pk=pk)
     campaign.delete()
-    async_to_sync(channel_layer.group_send)(
+    async_to_sync(channel_layer.group_send)( 
         "campaigns", {"type": "updateCampaigns", "message": {"action": "delete", "id": pk}}
     )
     messages.success(request, "Кампания удалена!")
-    return HttpResponse('<script>location.reload()</script>')
-
-# ------------------------ Команды ------------------------
-
-@login_required
-def team_list(request):
-    teams = Team.objects.all()
-    return render(request, "team_list.html", {"teams": teams})
-
-@login_required
-def modal_create_team(request):
-    form = TeamForm()
-    return render(request, "modals/team_form.html", {"form": form})
-
-@login_required
-def modal_update_team(request, pk):
-    team = get_object_or_404(Team, pk=pk)
-    form = TeamForm(instance=team)
-    return render(request, "modals/team_form.html", {"form": form})
-
-@login_required
-def modal_delete_team(request, pk):
-    team = get_object_or_404(Team, pk=pk)
-    return render(request, "modals/team_delete.html", {"team": team})
-
-@login_required
-def create_team(request):
-    if request.method == "POST":
-        form = TeamForm(request.POST)
-        if form.is_valid():
-            team = form.save()
-            async_to_sync(channel_layer.group_send)(
-                "teams",
-                {"type": "updateTeams", "message": {"action": "create", "id": team.id, "name": team.name}}
-            )
-            messages.success(request, "Команда успешно создана!")
-            return HttpResponse('<script>location.reload()</script>')
-    return HttpResponse(status=400)
-
-@login_required
-def delete_team(request, pk):
-    team = get_object_or_404(Team, pk=pk)
-    team.delete()
-    async_to_sync(channel_layer.group_send)(
-        "teams",
-        {"type": "updateTeams", "message": {"action": "delete", "id": pk}}
-    )
-    messages.success(request, "Команда удалена!")
     return HttpResponse('<script>location.reload()</script>')
 
 # ------------------------ Категории ------------------------
@@ -334,82 +275,29 @@ def delete_subcategory(request, pk):
     messages.success(request, "Подкатегория удалена!")
     return HttpResponse('<script>location.reload()</script>')
 
-# ------------------------ Роли ------------------------
-
-@login_required
-def role_list(request):
-    roles = Role.objects.all()
-    return render(request, "role_list.html", {"roles": roles})
-
-@login_required
-def role_create(request):
-    if request.method == "POST":
-        form = RoleForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Роль успешно создана!")
-            return redirect("role_list")
-    else:
-        form = RoleForm()
-    return render(request, "modals/role_form.html", {"form": form})
-
-@login_required
-def role_delete(request, pk):
-    role = get_object_or_404(Role, pk=pk)
-    role.delete()
-    messages.success(request, "Роль удалена!")
-    return redirect("role_list")
-
-# ------------------------ Пользователи ------------------------
-
-def modal_create_user(request):
-    form = UserCreateForm()
-    return render(request, "modals/user_form.html", {"form": form})
-
-def modal_update_user(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    form = UserCreateForm(instance=user)
-    return render(request, "modals/user_form.html", {"form": form})
-
-def modal_delete_user(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    return render(request, "modals/user_delete.html", {"user": user})
-
-def create_user(request):
-    if request.method == "POST":
-        form = UserCreateForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            async_to_sync(channel_layer.group_send)(
-                "users",
-                {"type": "updateUsers", "message": {"action": "create", "id": user.id, "username": user.username}}
-            )
-            messages.success(request, "Пользователь успешно создан!")
-            return HttpResponse('<script>location.reload()</script>')
-    return HttpResponse(status=400)
-
-def delete_user(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    user.delete()
-    async_to_sync(channel_layer.group_send)(
-        "users",
-        {"type": "updateUsers", "message": {"action": "delete", "id": pk}}
-    )
-    messages.success(request, "Пользователь удален!")
-    return HttpResponse('<script>location.reload()</script>')
-
 # ------------------------ Отчёты ------------------------
 
 @login_required
 def export_tasks_to_excel(request):
-    tasks = Task.objects.all().values()
+    tasks = Task.objects.all().values("task_number", "description", "deadline", "completion_date")
+
     df = pd.DataFrame(list(tasks))
+
+    # Преобразование всех дат в наивные
+    for col in ["deadline", "completion_date"]:
+        df[col] = df[col].apply(lambda x: make_naive(x) if pd.notna(x) else x)
+
+    # Экспорт в Excel
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     response["Content-Disposition"] = 'attachment; filename="tasks.xlsx"'
-    df.to_excel(response, index=False)
+
+    with pd.ExcelWriter(response, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Tasks")
+
     return response
 
 # ------------------------ Tasks ------------------------
+
 
 class TaskListView(LoginRequiredMixin, FilterView):
     model = Task
@@ -419,13 +307,48 @@ class TaskListView(LoginRequiredMixin, FilterView):
     filterset_class = TaskFilter
 
     def get_queryset(self):
-        return Task.objects.select_related("campaign", "category", "subcategory", "assignee", "team", "created_by")
+        """Оптимизированный запрос + Фильтрация по правам пользователя"""
+        user = self.request.user
+
+        # ✅ Суперюзер видит все задачи
+        if user.is_superuser:
+            return Task.objects.select_related("campaign", "category", "subcategory", "assignee", "team", "created_by")
+
+        # ✅ Лидер команды видит свои задачи + задачи своей команды
+        if hasattr(user, "team") and user.team:
+            return Task.objects.filter(Q(assignee=user) | Q(team=user.team)).select_related(
+                "campaign", "category", "subcategory", "assignee", "team", "created_by"
+            )
+
+        # ✅ Обычный пользователь видит только свои задачи
+        return Task.objects.filter(assignee=user).select_related(
+            "campaign", "category", "subcategory", "assignee", "team", "created_by"
+        )
+
+    def get_context_data(self, **kwargs):
+        """Группировка задач по статусу + доступные задачи"""
+        context = super().get_context_data(**kwargs)
+
+        all_statuses = dict(Task.TASK_STATUS_CHOICES).values()
+        tasks_by_status = {status: [] for status in all_statuses}  # Создаём пустые колонки
+
+        for task in context["tasks"]:
+            status = task.get_status_display()
+            tasks_by_status[status].append(task)
+
+        context["tasks_by_status"] = tasks_by_status
+        return context
+
+    def post(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["GET"])
+
+
 
 class TaskCreateView(LoginRequiredMixin, generic.CreateView):
     model = Task
     form_class = TaskForm
     template_name = "modals/modal_task_form.html"
-    success_url = reverse_lazy("task_list")
+    success_url = reverse_lazy("crm_core:task_list")
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
@@ -447,7 +370,7 @@ class TaskUpdateView(LoginRequiredMixin, generic.UpdateView):
     model = Task
     form_class = TaskForm
     template_name = "modals/modal_task_form.html"
-    success_url = reverse_lazy("task_list")
+    success_url = reverse_lazy("crm_core:task_list")
 
     def form_valid(self, form):
         messages.success(self.request, _("Задача обновлена!"))
@@ -455,8 +378,8 @@ class TaskUpdateView(LoginRequiredMixin, generic.UpdateView):
 
 class TaskDeleteView(LoginRequiredMixin, generic.DeleteView):
     model = Task
-    template_name = "tasks/task_confirm_delete.html"
-    success_url = reverse_lazy("task_list")
+    template_name = "task_confirm_delete.html"
+    success_url = reverse_lazy("crm_core:task_list")
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, _("Задача удалена!"))
@@ -473,7 +396,36 @@ class TaskPerformView(LoginRequiredMixin, generic.View):
             task.save()
             task_completed.send(sender=Task, task=task)
             messages.success(request, _(f"Задача '{task.task_number}' выполнена!"))
-        return redirect("task_detail", pk=pk)
+        return redirect("crm_core:task_detail", pk=pk)
 
 class TaskSummaryReportView(TemplateView):
     template_name = 'task_summary_report.html'
+
+
+from django.http import JsonResponse
+import json
+
+@csrf_exempt
+def update_task_status(request, task_id):
+    if request.method == 'POST':
+        if request.content_type != 'application/json':
+            return JsonResponse({'error': f'Invalid content type {request.content_type}'}, status=415)
+
+        try:
+            data = json.loads(request.body)
+            status = data.get('status')
+            if not status:
+                return JsonResponse({'error': 'Status not provided'}, status=400)
+
+            task = Task.objects.get(id=task_id)
+            task.status = status
+            task.save()
+
+            return JsonResponse({'new_status': task.status})
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Task.DoesNotExist:
+            return JsonResponse({'error': 'Task not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

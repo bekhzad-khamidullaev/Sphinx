@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Profile for {{ user.username }}</h2>
+    
+    <div class="space-y-4">
+        <p class="text-gray-700"><span class="font-semibold">Email:</span> {{ user.email }}</p>
+        <p class="text-gray-700"><span class="font-semibold">Phone Number:</span> {{ user.phone_number }}</p>
+        {# Add other user details here #}
+    </div>
+</div>
+{% endblock %}

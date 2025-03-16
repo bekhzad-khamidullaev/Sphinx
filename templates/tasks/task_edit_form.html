@@ -1,0 +1,10 @@
+{# templates/tasks/_task_edit_form.html #}
+{% load crispy_forms_tags %}
+<form id="edit-task-inner-form" method="post" action="{% url 'tasks:task_edit' task_id %}" enctype="multipart/form-data" data-task-id="{{ task_id }}">
+    {% csrf_token %}
+    {{ task_form|crispy }}
+     <div class="flex justify-end space-x-2">
+        <button type="button" id="cancel-edit-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md" onclick="closeEditModal()">Cancel</button>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">Save Changes</button>
+    </div>
+</form>

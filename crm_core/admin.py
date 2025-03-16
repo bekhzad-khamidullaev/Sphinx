@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from .models import (
-    Campaign, Team, TaskCategory, TaskSubcategory,
-    Task, TaskPhoto, TaskUserRole
+    Campaign, TaskCategory, TaskSubcategory,
+    Task, TaskPhoto
 )
+from user_profiles.admin import TaskUserRoleInline
 
 # --- КАМПАНИИ ---
 @admin.register(Campaign)
@@ -16,17 +17,6 @@ class CampaignAdmin(admin.ModelAdmin):
         (None, {"fields": ("name", "description")}),
         (_("Даты"), {"fields": ("start_date", "end_date"), "classes": ("collapse",)}),
     )
-
-# --- КОМАНДЫ ---
-@admin.register(Team)
-class TeamAdmin(admin.ModelAdmin):
-    list_display = ("name", "team_leader", "created_at", "updated_at")
-    search_fields = ("name", "description", "team_leader__username")
-    list_filter = ("team_leader", "task_categories")
-    fieldsets = (
-        (None, {"fields": ("name", "description", "team_leader", "members", "task_categories")}),
-    )
-    filter_horizontal = ("members", "task_categories")
 
 # --- КАТЕГОРИИ ---
 @admin.register(TaskCategory)
@@ -45,22 +35,10 @@ class TaskPhotoInline(admin.TabularInline):
     model = TaskPhoto
     extra = 1
 
-class TaskUserRoleInline(admin.TabularInline):
-    model = TaskUserRole
-    extra = 1
-    fk_name = "task"
-
-# --- РОЛИ В ЗАДАЧАХ ---
-@admin.register(TaskUserRole)
-class TaskUserRoleAdmin(admin.ModelAdmin):
-    list_display = ("task", "user", "role")
-    list_filter = ("role", "task", "user")
-    search_fields = ("task__task_number", "user__username", "role")
-
 # --- ЗАДАЧИ ---
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    inlines = [TaskPhotoInline, TaskUserRoleInline]
+    inlines = [TaskPhotoInline, TaskUserRoleInline]  # TaskPhoto managed via inline
     list_display = ("task_number", "campaign", "status", "priority", "deadline", "assignee", "created_at")
     list_filter = ("status", "priority", "category", "subcategory", "campaign", "team", "assignee", "deadline", "created_at")
     search_fields = ("task_number", "description", "campaign__name", "assignee__username", "team__name")
@@ -71,7 +49,7 @@ class TaskAdmin(admin.ModelAdmin):
         (None, {"fields": ("task_number", "campaign", "description")}),
         (_("Подробности"), {"fields": ("category", "subcategory", "status", "priority", "assignee", "team")}),
         (_("Сроки"), {"fields": ("deadline", "start_date", "completion_date"), "classes": ("collapse",)}),
-        (_("Фото/Вложения"), {"fields": ("task_photos",), "classes": ("collapse",)}),
+        (_("Фото/Вложения"), {"fields": (), "classes": ("collapse",)}),  # Remove task_photos
         (_("Системная информация"), {
             "fields": ("created_by", "created_at", "updated_at"),
             "classes": ("collapse", "wide"),

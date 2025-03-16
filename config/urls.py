@@ -23,14 +23,19 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', include('user_profiles.urls')),
+
     # Панель администратора
     path("admin/", admin.site.urls),
-     # Локализация
+
+    # Локализация
     path("i18n/", set_language, name="set_language"),
     path("api-auth/", include("rest_framework.urls")),
 
     # Подключение маршрутов приложения `crm_core`
     path("core/", include("crm_core.urls")),
+    
+    # Подключение маршрутов приложения `chats`
+    path("rooms/", include("room.urls")),
 
     # Swagger UI
     path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),

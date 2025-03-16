@@ -1,0 +1,60 @@
+{# templates/tasks/task_detail.html #}
+{% extends 'base.html' %}
+{% load tasks_extras %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-4">Task: {{ task.title }}</h2>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="space-y-4">
+            <p><strong>Description:</strong> {{ task.description }}</p>
+            <p><strong>Status:</strong> {{ task.status }}</p>
+            <p><strong>Due Date:</strong> {{ task.due_date }}</p>
+            <p><strong>Assigned To:</strong> {{ task.assigned_to.username|default:"None" }}</p>
+            <p><strong>Created By:</strong> {{ task.created_by.username|default:"None" }}</p>
+
+            {# Display the file preview #}
+            {% if task.file %}
+                <div>
+                    <p class="font-semibold">File:</p>
+                    <div class="mt-2">
+                        {{ task.file_preview|safe }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <h3 class="text-xl font-semibold mt-8 mb-4">Create Chat for this Task</h3>
+    <form method="post" class="bg-white p-6 rounded-lg shadow-md">
+        {% csrf_token %}
+        <div class="space-y-4">
+            <div>
+                <label for="chat_name" class="block text-sm font-medium text-gray-700">Chat Name (optional):</label>
+                <input type="text" id="chat_name" name="chat_name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Participants:</label>
+                <div class="mt-2 space-y-2">
+                    {% for user in users %}
+                        <div class="flex items-center">
+                            <input type="checkbox" id="user_{{ user.id }}" name="participants" value="{{ user.id }}"
+                                   class="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                   {% if user == request.user %} checked {% endif %}>
+                            <label for="user_{{ user.id }}" class="ml-2 text-sm text-gray-700">{{ user.username }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">
+                    Create Chat
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Room{% endblock %}
+
+{% block content %}
+
+<h2>Create a Room</h2>
+<form id="create-room-form" method="POST" action="{% url 'room:create_room' %}">
+    {% csrf_token %}
+    <div class="mb-4">
+        <label for="room-name" class="block text-sm font-medium text-gray-700">Room Name</label>
+        <input type="text" name="name" id="room-name" required class="w-full p-2 border rounded-lg" placeholder="Enter room name">
+    </div>
+    
+    <div class="mb-4">
+        <label for="room-private" class="block text-sm font-medium text-gray-700">Private Room</label>
+        <input type="checkbox" name="private" id="room-private" class="mr-2"> Private
+    </div>
+    
+    <div class="mb-4">
+        <label for="room-participants" class="block text-sm font-medium text-gray-700">Participants</label>
+        <select name="participants" id="room-participants" multiple class="w-full p-2 border rounded-lg">
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-lg">Create Room</button>
+</form>
+
+<script>
+    // Toggle participants container visibility based on private checkbox
+    document.getElementById('private').addEventListener('change', function () {
+        const participantsContainer = document.getElementById('participants-container');
+        if (this.checked) {
+            participantsContainer.classList.remove('hidden');
+        } else {
+            participantsContainer.classList.add('hidden');
+        }
+    });
+
+    // Handle form submission
+    document.getElementById('create-room-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const roomName = document.getElementById('room-name').value;
+        const isPrivate = document.getElementById('private').checked;
+        const participants = Array.from(document.getElementById('participants').selectedOptions).map(option => option.value);
+
+        const data = {
+            name: roomName,
+            private: isPrivate,
+            participants: participants
+        };
+
+        fetch("{% url 'chat:create_room' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = `/chat/${data.room_slug}/`;  // Redirect to the new room
+            } else {
+                alert('Error creating room');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+</script>
+{% endblock %}

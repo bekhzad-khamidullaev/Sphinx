@@ -5,45 +5,41 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 from django.forms import modelformset_factory
 from .models import (
-    Task, TaskPhoto, Campaign, Role, TaskCategory, 
-    TaskSubcategory, Team
+    Task, TaskPhoto, Campaign, TaskCategory, 
+    TaskSubcategory
 )
-from django.contrib.auth.models import User
+from user_profiles.models import User, Role, Team
 
 
-
-# --- Форма комманд ---
+# --- Form for Team --- 
 class TeamForm(forms.ModelForm):
     class Meta:
         model = Team
-        fields = ["name", "team_leader", "members", "description", "task_categories"]
+        fields = ["name", "team_leader", "members", "description"]
         widgets = {
-            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Название команды")}),
-            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Описание команды"), "rows": 3}),
+            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Team name")}),
+            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Team description"), "rows": 3}),
             "team_leader": forms.Select(attrs={"class": "input-field"}),
             "members": forms.SelectMultiple(attrs={"class": "input-field"}),
-            "task_categories": forms.SelectMultiple(attrs={"class": "input-field"}),
         }
 
 
-
-# --- Форма кампании ---
+# --- Form for Campaign --- 
 class CampaignForm(forms.ModelForm):
     class Meta:
         model = Campaign
         fields = ["name", "description"]
         widgets = {
-            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Название кампании")}),
-            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Описание кампании"), "rows": 3}),
+            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Campaign name")}),
+            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Campaign description"), "rows": 3}),
         }
 
 
-
-# --- Форма создания пользователя ---
+# --- Form for User Creation --- 
 class UserCreateForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput,
-        label=_("Пароль")
+        label=_("Password")
     )
 
     class Meta:
@@ -51,57 +47,49 @@ class UserCreateForm(forms.ModelForm):
         fields = ["username", "email", "password"]
 
 
-
-# --- Форма ролей ---
+# --- Form for Role --- 
 class RoleForm(forms.ModelForm):
     class Meta:
         model = Role
         fields = ["name"]
         widgets = {
-            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Название роли")}),
+            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Role name")}),
         }
 
 
-
-# --- Форма категории задач ---
+# --- Form for Task Category --- 
 class TaskCategoryForm(forms.ModelForm):
     class Meta:
         model = TaskCategory
         fields = ["name", "description"]
         widgets = {
-            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Название категории")}),
-            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Описание категории"), "rows": 3}),
+            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Category name")}),
+            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Category description"), "rows": 3}),
         }
 
 
-
-# --- Форма подкатегории задач ---
+# --- Form for Task Subcategory --- 
 class TaskSubcategoryForm(forms.ModelForm):
     class Meta:
         model = TaskSubcategory
         fields = ["category", "name", "description"]
         widgets = {
             "category": forms.Select(attrs={"class": "input-field"}),
-            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Название подкатегории")}),
-            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Описание подкатегории"), "rows": 3}),
+            "name": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Subcategory name")}),
+            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Subcategory description"), "rows": 3}),
         }
 
 
-
-# --- Форма задачи ---
+# --- Form for Task --- 
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
         fields = [
             "campaign", "category", "subcategory", "description",
-            "assignee", "team", "status", "priority", #"deadline",
-            # "start_date", "completion_date", "estimated_time"
+            "assignee", "team", "status", "priority", 
         ]
         widgets = {
-            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Описание задачи"), "rows": 3}),
-            # "deadline": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "input-field"}),
-            # "start_date": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "input-field"}),
-            # "completion_date": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "input-field"}),
+            "description": forms.Textarea(attrs={"class": "input-field", "placeholder": _("Task description"), "rows": 3}),
             "campaign": forms.Select(attrs={"class": "input-field"}),
             "category": forms.Select(attrs={"class": "input-field"}),
             "subcategory": forms.Select(attrs={"class": "input-field"}),
@@ -109,56 +97,51 @@ class TaskForm(forms.ModelForm):
             "team": forms.Select(attrs={"class": "input-field"}),
             "status": forms.Select(attrs={"class": "input-field"}),
             "priority": forms.Select(attrs={"class": "input-field"}),
-            # "estimated_time": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Оценочное время")}),
         }
 
     def __init__(self, *args, **kwargs):
         super(TaskForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.team:
-             self.fields["assignee"].queryset = User.objects.filter(team=self.instance.team)
+            self.fields["assignee"].queryset = User.objects.filter(user_profile__team=self.instance.team)
 
 
-
-# --- Форма загрузки фото для задачи ---
+# --- Form for Task Photo --- 
 class TaskPhotoForm(forms.ModelForm):
     class Meta:
         model = TaskPhoto
         fields = ["photo", "description"]
         widgets = {
-            "description": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Описание фото (необязательно)")}),
+            "description": forms.TextInput(attrs={"class": "input-field", "placeholder": _("Photo description (optional)")}),
             "photo": forms.FileInput(attrs={"class": "file-input"}),
         }
 
 
-
-# --- FormSet для загрузки нескольких фото к задаче ---
+# --- FormSet for Task Photos --- 
 TaskPhotoFormSet = modelformset_factory(
     TaskPhoto, form=TaskPhotoForm, extra=1, max_num=10, can_delete=True
 )
 
 
-
-# --- Форма авторизации ---
+# --- Form for Login --- 
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
-        label=_("Имя пользователя"),
+        label=_("Username"),
         widget=forms.TextInput(attrs={
             "class": "bg-gray-100 rounded-lg px-4 py-2 w-full text-gray-700",
-            "placeholder": _("Введите имя пользователя")
+            "placeholder": _("Enter username")
         })
     )
     password = forms.CharField(
-        label=_("Пароль"),
+        label=_("Password"),
         widget=forms.PasswordInput(attrs={
             "class": "bg-gray-100 rounded-lg px-4 py-2 w-full text-gray-700",
-            "placeholder": _("Введите пароль")
+            "placeholder": _("Enter password")
         })
     )
-
 
     def __init__(self, *args, **kwargs):
         super(LoginForm, self).__init__(*args, **kwargs)
         # Optional: Add crispy layout
         self.helper = FormHelper()
         self.helper.form_class = 'form-horizontal'
-        self.helper.add_input(Submit('submit', _('Войти')))
+        self.helper.add_input(Submit('submit', _('Login')))

@@ -1,0 +1,316 @@
+{# templates/tasks/task_list.html #}
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-2xl font-semibold mb-4">Tasks</h2>
+
+    <form method="get" action="" class="mb-4 flex flex-wrap gap-4">
+        <div class="flex items-center">
+            <label for="status" class="mr-2">Status:</label>
+            <select name="status" id="status" class="border px-4 py-2 rounded-md">
+                <option value="">All</option>
+                {% for choice in task_model.STATUS_CHOICES %}
+                <option value="{{ choice.0 }}" {% if request.GET.status == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="flex items-center">
+            <label for="due_date" class="mr-2">Due Date:</label>
+            <input type="date" name="due_date" id="due_date" value="{{ request.GET.due_date }}" class="border px-4 py-2 rounded-md">
+        </div>
+
+        <div class="flex items-center">
+            <label for="search" class="mr-2">Search:</label>
+            <input type="text" name="search" id="search" value="{{ search_term }}" class="border px-4 py-2 rounded-md">
+        </div>
+
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">Filter</button>
+        <a href="{% url 'tasks:task_list' %}" class="ml-2 text-blue-600 hover:underline">Clear Filters</a>
+    </form>
+
+    <ul id="task-list" class="space-y-4">
+        {% for task in tasks %}
+        <li id="task-{{ task.id }}" class="bg-white shadow-md rounded-md p-4 flex justify-between items-center"> {# Flex and justify-between for edit button #}
+            <div>
+                <strong class="text-lg">{{ task.title }}</strong> <span class="text-gray-500">({{ task.get_status_display }})</span>
+                {% if task.parent_task %} <span class="text-gray-600 text-sm">(Parent Task: {{ task.parent_task.title }})</span>{% endif %}
+            </div>
+            <div class="flex space-x-2"> {# Container for buttons #}
+                {% if task.file %}
+                    <a href="{{ task.file.url }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Download File</a>
+                {% endif %}
+                <button data-task-id="{{ task.id }}" class="edit-modal-btn bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded-md text-sm">Edit</button> {# Edit button #}
+            </div>
+        </li>
+        {% empty %}
+            <li>No tasks found.</li>
+        {% endfor %}
+    </ul>
+
+    <div class="mt-4 flex justify-between items-center">
+        <div class="text-sm">
+            {% if tasks.has_previous %}
+                <a href="?page=1" class="text-blue-600 hover:underline">« First</a>
+                <a href="?page={{ tasks.previous_page_number }}" class="text-blue-600 hover:underline">Previous</a>
+            {% endif %}
+        </div>
+        <div class="text-sm">
+            Page {{ tasks.number }} of {{ tasks.paginator.num_pages }}.
+        </div>
+        <div class="text-sm">
+            {% if tasks.has_next %}
+                <a href="?page={{ tasks.next_page_number }}" class="text-blue-600 hover:underline">Next</a>
+                <a href="?page={{ tasks.paginator.num_pages }}" class="text-blue-600 hover:underline">Last »</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {# --- Modal Trigger Button (Create) --- #}
+    <button id="open-modal-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md mt-4">
+        Create Task
+    </button>
+
+    {# --- Modal Window (Create/Edit - Reused) --- #}
+    <div id="task-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="modal-content bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto mt-10 relative">
+            <span id="close-modal-btn" class="close-button absolute top-2 right-2 text-3xl font-bold cursor-pointer">×</span>
+            <h3 id="modal-title" class="text-xl font-semibold mb-4">Create New Task</h3> {# Dynamic modal title #}
+            <form id="task-form" method="post" action="{% url 'tasks:task_create' %}" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+                {{ task_form|crispy }}
+                 <div class="flex justify-end space-x-2">
+                    <button type="button" id="cancel-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md">Cancel</button>
+                    <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# --- Edit Modal Window (Hidden Initially) --- #}
+     <div id="edit-task-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full"> {# Edit modal #}
+        <div class="modal-content bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto mt-10 relative">
+            <span id="close-edit-modal-btn" class="close-button absolute top-2 right-2 text-3xl font-bold cursor-pointer">×</span>
+            <h3 id="edit-modal-title" class="text-xl font-semibold mb-4">Edit Task</h3> {# Edit modal title #}
+            <div id="edit-task-form-container"></div> {# Form container, form will be loaded here via JS #}
+        </div>
+    </div>
+</div>
+
+<script>
+    let taskSocket;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    const reconnectDelay = 5000;
+    const modal = document.getElementById('task-modal');
+    const openModalBtn = document.getElementById('open-modal-btn');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const cancelModalBtn = document.getElementById('cancel-modal-btn');
+    const taskForm = document.getElementById('task-form');
+    const editModal = document.getElementById('edit-task-modal'); // Edit modal
+    const closeEditModalBtn = document.getElementById('close-edit-modal-btn'); // Close edit modal button
+    const editTaskFormContainer = document.getElementById('edit-task-form-container'); // Container for edit form
+    const modalTitle = document.getElementById('modal-title'); // Modal title element
+    const editModalTitle = document.getElementById('edit-modal-title'); // Edit modal title element
+
+
+    function connectWebSocket() {
+        taskSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/tasks/'
+        );
+
+        taskSocket.onopen = function(e) {
+            console.log('WebSocket connection established');
+            reconnectAttempts = 0;
+        };
+
+        taskSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'task.created') {
+                const task = data.data;
+                const taskList = document.getElementById('task-list');
+                let taskItem = document.getElementById('task-' + task.id);
+
+                if (!taskItem) {
+                    taskItem = document.createElement('li');
+                    taskItem.id = 'task-' + task.id;
+                    taskItem.classList.add('bg-white', 'shadow-md', 'rounded-md', 'p-4', 'flex', 'justify-between', 'items-center'); // Added flex classes
+                    taskItem.innerHTML = `
+                        <div>
+                            <strong class="text-lg">${task.title}</strong> <span class="text-gray-500">(${task.status})</span>
+                            ${task.parent_task_title ? `<span class="text-gray-600 text-sm">(Parent Task: ${task.parent_task_title})</span>` : ''}
+                        </div>
+                        <div class="flex space-x-2">
+                            ${task.file ? `<a href="${task.file}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Download File</a>` : ''}
+                            <button data-task-id="${task.id}" class="edit-modal-btn bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded-md text-sm">Edit</button>
+                        </div>
+                    `; // Modified innerHTML for edit button and flex layout
+                    taskList.insertBefore(taskItem, taskList.firstChild);
+                     // Re-attach event listener to the new edit button
+                    taskItem.querySelector('.edit-modal-btn').addEventListener('click', openEditModal);
+
+
+                } else { // Task exists - update content (e.g., after edit)
+                    taskItem.innerHTML = `
+                         <div>
+                            <strong class="text-lg">${task.title}</strong> <span class="text-gray-500">(${task.status})</span>
+                            ${task.parent_task_title ? `<span class="text-gray-600 text-sm">(Parent Task: ${task.parent_task_title})</span>` : ''}
+                        </div>
+                        <div class="flex space-x-2">
+                            ${task.file ? `<a href="${task.file}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Download File</a>` : ''}
+                            <button data-task-id="${task.id}" class="edit-modal-btn bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded-md text-sm">Edit</button>
+                        </div>
+                    `;
+                     taskItem.querySelector('.edit-modal-btn').addEventListener('click', openEditModal);
+                }
+            }
+        };
+
+        taskSocket.onclose = function(e) {
+            console.error('Task socket closed unexpectedly', e);
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`Attempting to reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
+                setTimeout(connectWebSocket, reconnectDelay);
+            } else {
+                console.error('Max reconnection attempts reached. Please refresh the page.');
+            }
+        };
+
+        taskSocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+        };
+    }
+    connectWebSocket();
+
+      // --- Modal Handling ---
+
+
+    function openModal() {
+        modalTitle.textContent = 'Create New Task'; // Set modal title for create
+        modal.classList.remove('hidden');
+        taskForm.action = "{% url 'tasks:task_create' %}"; // Set form action for create
+        taskForm.querySelector('button[type="submit"]').textContent = 'Create'; // Set button text
+
+    }
+    function closeModal() {
+        modal.classList.add('hidden');
+        taskForm.reset();
+    }
+
+    openModalBtn.addEventListener('click', openModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelModalBtn.addEventListener('click', closeModal);
+
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+
+    taskForm.addEventListener('submit', function(e) {
+        closeModal(); // Close modal on submit
+    });
+
+
+    // --- Edit Modal Handling ---
+    function openEditModal(event) {
+        const taskId = event.target.dataset.taskId;
+        editModalTitle.textContent = 'Edit Task'; // Set modal title for edit
+        editModal.classList.remove('hidden');
+        loadEditForm(taskId); // Load edit form via AJAX
+    }
+
+    function closeEditModal() {
+        editModal.classList.add('hidden');
+        editTaskFormContainer.innerHTML = ''; // Clear form container
+    }
+
+    closeEditModalBtn.addEventListener('click', closeEditModal);
+
+
+    async function loadEditForm(taskId) {
+        try {
+            const response = await fetch(`/tasks/edit/${taskId}/`); //Create new api endpoint, or use django view? Let's use django view first - change to api if needed. `/tasks/edit/${taskId}/` - django url
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const formHTML = await response.text();
+            editTaskFormContainer.innerHTML = formHTML;
+             // Re-attach submit listener for the edit form *after* it's loaded
+            const loadedEditForm = editTaskFormContainer.querySelector('form');
+            if (loadedEditForm) {
+              loadedEditForm.addEventListener('submit', handleEditFormSubmit);
+            }
+
+
+        } catch (error) {
+            console.error('Error loading edit form:', error);
+            editTaskFormContainer.innerHTML = '<p class="text-red-500">Failed to load edit form.</p>';
+        }
+    }
+
+
+     async function handleEditFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const taskId = form.dataset.taskId; // Get task ID from data-task-id attribute
+
+        try {
+            const response = await fetch(`/tasks/edit/${taskId}/`, { //Submit to django view
+                method: 'POST',
+                headers: {
+                  'X-CSRFToken': getCookie('csrftoken'), // Include CSRF token
+                },
+                body: formData, // Send FormData
+            });
+
+             if (!response.ok) {
+                const error = await response.json();
+                throw new Error(JSON.stringify(error));
+            }
+
+
+            const data = await response.json(); // Or response.text() if view returns redirect
+            closeEditModal(); // Close edit modal on success
+             //No need to manually update task list, websocket signal will handle it
+
+        } catch (error) {
+            console.error('Task edit failed:', error);
+            alert('Failed to edit task: ' + error.message); // Show user-friendly error
+
+        }
+    }
+
+
+    // Attach event listeners to all "Edit" buttons - use event delegation for dynamic content
+    document.getElementById('task-list').addEventListener('click', function(event) {
+        if (event.target.classList.contains('edit-modal-btn')) {
+            openEditModal(event);
+        }
+    });
+
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+
+</script>
+
+{% endblock %}

@@ -1,6 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-
+from asgiref.sync import sync_to_async
+from .models import Task
 
 class GenericConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -20,44 +21,47 @@ class GenericConsumer(AsyncWebsocketConsumer):
 
 
 class TaskConsumer(AsyncWebsocketConsumer):
-    """WebSocket consumer для обновлений задач в реальном времени."""
-
     async def connect(self):
-        """Подключение пользователя к WebSocket-группе 'tasks'."""
-        await self.channel_layer.group_add("tasks", self.channel_name)
+        self.room_group_name = 'task_updates'
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        """Отключение пользователя и выход из группы."""
-        await self.channel_layer.group_discard("tasks", self.channel_name)
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        """Получает данные от клиента и передает их в WebSocket-группу."""
-        try:
-            data = json.loads(text_data)
-            await self.channel_layer.group_send(
-                "tasks",
-                {"type": "task_update", "message": data}
-            )
-        except json.JSONDecodeError:
-            await self.send(text_data=json.dumps({"error": "Invalid JSON format"}))
+        data = json.loads(text_data)
+        task_id = data['task_id']
+        new_status = data['status']
 
-    async def task_update(self, event):
-        """Отправляет обновления задач всем подключенным пользователям."""
-        await self.send(text_data=json.dumps(event["message"]))
+        task = await sync_to_async(Task.objects.get)(id=task_id)
+        task.status = new_status
+        await sync_to_async(task.save)()
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {'type': 'task_status_update', 'task_id': task.id, 'new_status': task.status}
+        )
+
+    async def task_status_update(self, event):
+        task_id = event['task_id']
+        new_status = event['new_status']
+        await self.send(text_data=json.dumps({'type': 'status_update', 'task_id': task_id, 'new_status': new_status}))
 
 
 class CampaignConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        await self.channel_layer.group_add("campaigns", self.channel_name)
+        user = self.scope["user"]
+        self.group_name = f"campaign_{user.id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard("campaigns", self.channel_name)
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        await self.channel_layer.group_send("campaigns", {"type": "updateCampaigns", "message": data})
+        await self.channel_layer.group_send(self.group_name, {"type": "updateCampaigns", "message": data})
 
     async def updateCampaigns(self, event):
         await self.send(text_data=json.dumps(event["message"]))
@@ -65,15 +69,17 @@ class CampaignConsumer(AsyncWebsocketConsumer):
 
 class TeamConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        await self.channel_layer.group_add("teams", self.channel_name)
+        user = self.scope["user"]
+        self.group_name = f"team_{user.id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard("teams", self.channel_name)
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        await self.channel_layer.group_send("teams", {"type": "updateTeams", "message": data})
+        await self.channel_layer.group_send(self.group_name, {"type": "updateTeams", "message": data})
 
     async def updateTeams(self, event):
         await self.send(text_data=json.dumps(event["message"]))
@@ -81,15 +87,17 @@ class TeamConsumer(AsyncWebsocketConsumer):
 
 class UserConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        await self.channel_layer.group_add("users", self.channel_name)
+        user = self.scope["user"]
+        self.group_name = f"user_{user.id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard("users", self.channel_name)
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        await self.channel_layer.group_send("users", {"type": "updateUsers", "message": data})
+        await self.channel_layer.group_send(self.group_name, {"type": "updateUsers", "message": data})
 
     async def updateUsers(self, event):
         await self.send(text_data=json.dumps(event["message"]))
