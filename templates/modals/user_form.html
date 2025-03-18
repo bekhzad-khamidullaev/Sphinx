@@ -1,0 +1,54 @@
+{% extends 'modals/modal_form_base.html' %}
+{% load i18n app_filters %}
+
+{% block modal_title %}
+    {% if user %}✏️ {% trans 'Редактировать пользователя' %}{% else %}➕ {% trans 'Добавить пользователя' %}{% endif %}
+{% endblock %}
+
+{% block form_action %}
+    {% if user %}{% url 'crm_core:update_user' user.id %}{% else %}{% url 'crm_core:create_user' %}{% endif %}
+{% endblock %}
+
+{% block form_target %} #user-list {% endblock %}
+{% block form_swap %} beforeend {% endblock %}
+
+{% block form_fields %}
+    {% if form.errors %}
+        <div class="bg-red-100 text-red-700 p-2 rounded-lg shadow text-sm">
+            <strong>⚠️ {% trans "Ошибка!" %}</strong> {% trans "Пожалуйста, исправьте ошибки ниже." %}
+        </div>
+    {% endif %}
+
+    <div class="grid grid-cols-2 gap-x-4 gap-y-2 w-full">
+        {% for field in form %}
+            <div class="col-span-2 sm:col-span-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 shadow focus-within:ring-2 focus-within:ring-blue-400 transition">
+                <label for="{{ field.id_for_label }}" class="block text-xs font-semibold text-gray-600">{{ field.label }}</label>
+                <div class="mt-0.5">
+                    {{ field }}
+                    {% if field.errors %}
+                        <ul class="mt-0.5 text-xs text-red-500">
+                            {% for error in field.errors %}
+                                <li>⚠️ {{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                {% if field.help_text %}
+                    <p class="mt-0.5 text-xs text-gray-500">{{ field.help_text }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block modal_footer %}
+    <div class="flex justify-end gap-3">
+        <button type="button" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                hx-get="{% url 'crm_core:user_list' %}" hx-target="#modal-container">
+            {% trans 'Отменить' %}
+        </button>
+        <button type="submit" class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition">
+            {% if user %}✏️ {% trans 'Обновить пользователя' %}{% else %}➕ {% trans 'Добавить пользователя' %}{% endif %}
+        </button>
+    </div>
+{% endblock %}

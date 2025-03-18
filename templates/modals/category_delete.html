@@ -1,0 +1,22 @@
+{% extends 'modals/modal_delete_confirm_base.html' %}
+{% load i18n app_filters %}
+
+{% block delete_modal_title %}
+    ❌ {% trans 'Удаление категории' %}
+{% endblock %}
+
+{% block delete_modal_message %}
+    {% trans 'Вы уверены, что хотите удалить категорию' %} <strong>{{ category.name }}</strong>?
+{% endblock %}
+
+{% block delete_url %}
+    {% url 'tasks:delete_category' category.pk %}
+{% endblock %}
+
+{% block delete_target %}
+    #category-{{ category.pk }}  {# Замените на ID элемента категории в списке #}
+{% endblock %}
+
+{% block delete_swap %}
+    outerHTML
+{% endblock %}

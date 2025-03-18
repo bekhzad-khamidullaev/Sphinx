@@ -1,0 +1,32 @@
+{% extends 'modals/modal_base.html' %}
+{% load i18n app_filters %}
+
+{% block modal_content %}
+    <h2 class="text-xl font-semibold text-gray-800 text-center mb-4">
+        {% block modal_title %}{% endblock %}
+    </h2>
+
+    <form hx-post="{% block form_action %}{% endblock %}"
+          hx-target="{% block form_target %}{% endblock %}"
+          hx-on="htmx:afterRequest: closeModal()"
+          hx-swap="{% block form_swap %}innerHTML{% endblock %}"
+          class="space-y-4">
+        {% csrf_token %}
+
+        <div class="space-y-3">
+            {% block form_fields %}{% endblock %}
+        </div>
+
+        <div class="flex justify-end gap-2 mt-5">
+            <button type="button"
+                    class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                    onclick="closeModal()">
+                {% trans 'Отмена' %}
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition">
+                {% trans 'Сохранить' %}
+            </button>
+        </div>
+    </form>
+{% endblock %}
