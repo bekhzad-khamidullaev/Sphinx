@@ -328,16 +328,20 @@ class TaskListView(LoginRequiredMixin, FilterView):
     def get_context_data(self, **kwargs):
         """Группировка задач по статусу + доступные задачи"""
         context = super().get_context_data(**kwargs)
-
-        all_statuses = dict(Task.TASK_STATUS_CHOICES).values()
-        tasks_by_status = {status: [] for status in all_statuses}  # Создаём пустые колонки
-
+        
+        status_mapping = {status[0]: status[1] for status in Task.TASK_STATUS_CHOICES}
+        tasks_by_status = {key: [] for key in status_mapping}
+        print(tasks_by_status)
         for task in context["tasks"]:
-            status = task.get_status_display()
+            status = task.status
             tasks_by_status[status].append(task)
 
         context["tasks_by_status"] = tasks_by_status
+        context["status_mapping"] = status_mapping
+
+        print(context["status_mapping"])
         return context
+
 
     def post(self, request, *args, **kwargs):
         return HttpResponseNotAllowed(["GET"])

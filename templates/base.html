@@ -17,7 +17,7 @@
     <!-- HTMX -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.9/htmx.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.9/ext/ws.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="//unpkg.com/alpinejs" defer></script>
+    <script src="https://unpkg.com/alpinejs@3.14.9/dist/cdn.min.js"></script>
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body class="bg-gray-100 font-sans" style="font-family: 'SF Pro Display', sans-serif;">
@@ -57,6 +57,7 @@
                 <form method="post" action="{% url 'set_language' %}" class="px-4 py-2">
                     {% csrf_token %}
                     <select name="language" onchange="this.form.submit()" class="w-full text-gray-800 bg-gray-100 rounded-lg p-2 border">
+                        <option value="en" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>O'zbekcha</option>
                         <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>Русский</option>
                         <option value="en" {% if LANGUAGE_CODE == "en" %}selected{% endif %}>English</option>
                     </select>

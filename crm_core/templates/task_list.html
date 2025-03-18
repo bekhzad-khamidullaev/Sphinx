@@ -1,5 +1,5 @@
 {% extends 'list_base.html' %}
-{% load i18n %}
+{% load i18n app_filters %}
 
 {% block list_title %}
     <h2 class="text-3xl font-semibold text-gray-900 sm:text-4xl">
@@ -96,22 +96,26 @@
     <!-- 📌 Канбан-доска -->
     <div id="kanban-board" class="hidden mt-8 flex justify-between gap-4">
         {% for status, task_list in tasks_by_status.items %}
-        <div class="kanban-column w-full p-4 min-h-[300px] border border-gray-200 rounded-xl shadow-md 
-            {% if status == 'new' %}bg-neutral-200
-            {% elif status == 'in_progress' %}bg-yellow-400
-            {% elif status == 'on_hold' %}bg-blue-100
-            {% elif status == 'completed' %}bg-green-400
-            {% else %}bg-neutral-50 {% endif %}"
-            data-status="{{ status }}">
-            <h3 class="text-lg font-semibold text-gray-800 mb-3">
-                {{ status }}
+        <div class="kanban-column w-full p-4 min-h-[300px] max-h-[550px] border border-neutral-300 rounded-md shadow-md overflow-y-auto"
+            data-status="{{ status_mapping|getkey:status }}">
+            <!-- Фиксированный заголовок -->
+            <h3 class="text-lg font-semibold text-gray-800 p-2 shadow-md text-white sticky top-0 z-10"
+                {% if status == 'new' %} style="background-color:rgb(36, 101, 231);" {% endif %}
+                {% if status == 'in_progress' %} style="background-color: #FACC15; color: black;" {% endif %}
+                {% if status == 'on_hold' %} style="background-color:rgb(125, 175, 240);" {% endif %}
+                {% if status == 'completed' %} style="background-color:rgb(17, 184, 122);" {% endif %}
+                {% if status == 'cancelled' %} style="background-color:rgb(128, 124, 116);" {% endif %}
+                {% if status == 'overdue' %} style="background-color:rgb(184, 25, 17);" {% endif %}>
+                {{ status_mapping|getkey:status }}
+
             </h3>
+
             <div class="kanban-tasks space-y-3 min-h-[100px]">
                 {% for task in task_list %}
                 <div id="task-{{ task.pk }}" 
-                     class="kanban-task bg-white shadow-md rounded-lg p-3 cursor-grab"
-                     draggable="true"
-                     data-task-id="{{ task.pk }}">
+                    class="kanban-task bg-white shadow-md rounded-lg p-3 cursor-grab"
+                    draggable="true"
+                    data-task-id="{{ task.pk }}">
                     <h4 class="font-medium text-gray-900">{{ task.task_number }} - {{ task.campaign.name }}</h4>
                 </div>
                 {% empty %}
@@ -121,6 +125,7 @@
         </div>
         {% endfor %}
     </div>
+
     {% endblock %}
     {% block scripts %}
     <!-- 📌 JS для сохранения режима в `localStorage` -->
