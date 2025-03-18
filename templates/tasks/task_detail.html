@@ -1,60 +1,154 @@
-{# templates/tasks/task_detail.html #}
-{% extends 'base.html' %}
-{% load tasks_extras %}
+{% extends 'detail_base.html' %}
+{% load i18n %}
 
-{% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-bold mb-4">Task: {{ task.title }}</h2>
+{% block detail_title %}
+    {{ task.task_number }} - {{ task.campaign.name }}
+{% endblock %}
 
-    <div class="bg-white p-6 rounded-lg shadow-md">
-        <div class="space-y-4">
-            <p><strong>Description:</strong> {{ task.description }}</p>
-            <p><strong>Status:</strong> {{ task.status }}</p>
-            <p><strong>Due Date:</strong> {{ task.due_date }}</p>
-            <p><strong>Assigned To:</strong> {{ task.assigned_to.username|default:"None" }}</p>
-            <p><strong>Created By:</strong> {{ task.created_by.username|default:"None" }}</p>
+{% block detail_actions %}
+    <button
+        hx-get="{% url 'tasks:task_update' task.pk %}"
+        hx-target="#modal-container"
+        class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+    >
+        ✏️ {% trans 'Редактировать' %}
+    </button>
+    <a href="{% url 'tasks:task_list' %}" class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        ↩️ {% trans 'Назад к списку' %}
+    </a>
+{% endblock %}
 
-            {# Display the file preview #}
-            {% if task.file %}
-                <div>
-                    <p class="font-semibold">File:</p>
-                    <div class="mt-2">
-                        {{ task.file_preview|safe }}
-                    </div>
-                </div>
-            {% endif %}
-        </div>
+{% block detail_content %}
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">
+            {% trans 'Информация о задаче' %}
+        </h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            {% trans 'Подробная информация о задаче' %} <strong>{{ task.task_number }}</strong>
+        </p>
     </div>
-
-    <h3 class="text-xl font-semibold mt-8 mb-4">Create Chat for this Task</h3>
-    <form method="post" class="bg-white p-6 rounded-lg shadow-md">
-        {% csrf_token %}
-        <div class="space-y-4">
-            <div>
-                <label for="chat_name" class="block text-sm font-medium text-gray-700">Chat Name (optional):</label>
-                <input type="text" id="chat_name" name="chat_name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+        <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Кампания' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.campaign.name }}
+                </dd>
             </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Participants:</label>
-                <div class="mt-2 space-y-2">
-                    {% for user in users %}
-                        <div class="flex items-center">
-                            <input type="checkbox" id="user_{{ user.id }}" name="participants" value="{{ user.id }}"
-                                   class="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                   {% if user == request.user %} checked {% endif %}>
-                            <label for="user_{{ user.id }}" class="ml-2 text-sm text-gray-700">{{ user.username }}</label>
-                        </div>
-                    {% endfor %}
-                </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Статус' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.get_status_display }}
+                </dd>
             </div>
-
-            <div>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">
-                    Create Chat
-                </button>
+            <div class="sm:col-span-2">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Описание' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.description }}
+                </dd>
             </div>
-        </div>
-    </form>
-</div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Приоритет' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.get_priority_display }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Категория' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.category.name|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Подкатегория' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.subcategory.name|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Команда' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.team.name|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Исполнитель' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.assignee.username|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Крайний срок' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.deadline|date:"d.m.Y H:i"|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Дата начала' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.start_date|date:"d.m.Y H:i"|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Дата завершения' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.completion_date|date:"d.m.Y H:i"|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Оценка времени' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.estimated_time|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Создатель' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.created_by.username|default:"-" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Дата создания' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.created_at|date:"d.m.Y H:i" }}
+                </dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">
+                    {% trans 'Дата обновления' %}
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                    {{ task.updated_at|date:"d.m.Y H:i" }}
+                </dd>
+            </div>
+        </dl>
+    </div>
 {% endblock %}

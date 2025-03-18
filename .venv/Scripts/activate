@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="c:\Users\sysadmin\Git\Sphinx\.venv"
+VIRTUAL_ENV="c:\Users\sysadmin\OneDrive\Рабочий стол\Git\Sphinx\.venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

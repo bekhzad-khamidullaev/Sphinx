@@ -63,7 +63,7 @@ class TaskUserRole(models.Model):
         WATCHER = "watcher", _("Наблюдатель")
         RESPONSIBLE = "responsible", _("Ответственный")
 
-    task = models.ForeignKey("crm_core.Task", on_delete=models.CASCADE, related_name="user_roles", db_index=True)
+    task = models.ForeignKey("tasks.Task", on_delete=models.CASCADE, related_name="user_roles", db_index=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="task_roles", db_index=True)
     role = models.CharField(max_length=20, choices=RoleChoices.choices, default=RoleChoices.EXECUTOR, db_index=True)
 

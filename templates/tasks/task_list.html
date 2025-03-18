@@ -1,316 +1,279 @@
-{# templates/tasks/task_list.html #}
-{% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% extends 'list_base.html' %}
+{% load i18n %}
 
-{% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-semibold mb-4">Tasks</h2>
+{% block list_title %}
+<h2 class="text-3xl font-semibold text-gray-900 sm:text-4xl">
+    {% trans 'Задачи' %}
+</h2>
+{% endblock %}
 
-    <form method="get" action="" class="mb-4 flex flex-wrap gap-4">
-        <div class="flex items-center">
-            <label for="status" class="mr-2">Status:</label>
-            <select name="status" id="status" class="border px-4 py-2 rounded-md">
-                <option value="">All</option>
-                {% for choice in task_model.STATUS_CHOICES %}
-                <option value="{{ choice.0 }}" {% if request.GET.status == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="flex items-center">
-            <label for="due_date" class="mr-2">Due Date:</label>
-            <input type="date" name="due_date" id="due_date" value="{{ request.GET.due_date }}" class="border px-4 py-2 rounded-md">
-        </div>
-
-        <div class="flex items-center">
-            <label for="search" class="mr-2">Search:</label>
-            <input type="text" name="search" id="search" value="{{ search_term }}" class="border px-4 py-2 rounded-md">
-        </div>
-
-        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">Filter</button>
-        <a href="{% url 'tasks:task_list' %}" class="ml-2 text-blue-600 hover:underline">Clear Filters</a>
-    </form>
-
-    <ul id="task-list" class="space-y-4">
-        {% for task in tasks %}
-        <li id="task-{{ task.id }}" class="bg-white shadow-md rounded-md p-4 flex justify-between items-center"> {# Flex and justify-between for edit button #}
-            <div>
-                <strong class="text-lg">{{ task.title }}</strong> <span class="text-gray-500">({{ task.get_status_display }})</span>
-                {% if task.parent_task %} <span class="text-gray-600 text-sm">(Parent Task: {{ task.parent_task.title }})</span>{% endif %}
-            </div>
-            <div class="flex space-x-2"> {# Container for buttons #}
-                {% if task.file %}
-                    <a href="{{ task.file.url }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Download File</a>
-                {% endif %}
-                <button data-task-id="{{ task.id }}" class="edit-modal-btn bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded-md text-sm">Edit</button> {# Edit button #}
-            </div>
-        </li>
-        {% empty %}
-            <li>No tasks found.</li>
-        {% endfor %}
-    </ul>
-
-    <div class="mt-4 flex justify-between items-center">
-        <div class="text-sm">
-            {% if tasks.has_previous %}
-                <a href="?page=1" class="text-blue-600 hover:underline">« First</a>
-                <a href="?page={{ tasks.previous_page_number }}" class="text-blue-600 hover:underline">Previous</a>
-            {% endif %}
-        </div>
-        <div class="text-sm">
-            Page {{ tasks.number }} of {{ tasks.paginator.num_pages }}.
-        </div>
-        <div class="text-sm">
-            {% if tasks.has_next %}
-                <a href="?page={{ tasks.next_page_number }}" class="text-blue-600 hover:underline">Next</a>
-                <a href="?page={{ tasks.paginator.num_pages }}" class="text-blue-600 hover:underline">Last »</a>
-            {% endif %}
-        </div>
-    </div>
-
-    {# --- Modal Trigger Button (Create) --- #}
-    <button id="open-modal-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md mt-4">
-        Create Task
+{% block list_actions %}
+<div class="flex space-x-4">
+    <button hx-get="{% url 'tasks:task_create' %}"
+        hx-target="#modal-content"
+        hx-swap="innerHTML"
+        hx-on="htmx:afterSwap: openModal()"
+        class="px-5 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all">
+        ➕ {% trans 'Создать задачу' %}
     </button>
 
-    {# --- Modal Window (Create/Edit - Reused) --- #}
-    <div id="task-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-        <div class="modal-content bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto mt-10 relative">
-            <span id="close-modal-btn" class="close-button absolute top-2 right-2 text-3xl font-bold cursor-pointer">×</span>
-            <h3 id="modal-title" class="text-xl font-semibold mb-4">Create New Task</h3> {# Dynamic modal title #}
-            <form id="task-form" method="post" action="{% url 'tasks:task_create' %}" enctype="multipart/form-data" class="space-y-4">
-                {% csrf_token %}
-                {{ task_form|crispy }}
-                 <div class="flex justify-end space-x-2">
-                    <button type="button" id="cancel-modal-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md">Cancel</button>
-                    <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md">Create</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <button id="toggleViewBtn"
+        class="px-5 py-2 rounded-full shadow-md text-sm font-medium text-gray-800 bg-gray-100 hover:bg-gray-200 transition-all">
+        📌 {% trans 'Переключить вид' %}
+    </button>
+</div>
+{% endblock %}
 
-    {# --- Edit Modal Window (Hidden Initially) --- #}
-     <div id="edit-task-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full"> {# Edit modal #}
-        <div class="modal-content bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto mt-10 relative">
-            <span id="close-edit-modal-btn" class="close-button absolute top-2 right-2 text-3xl font-bold cursor-pointer">×</span>
-            <h3 id="edit-modal-title" class="text-xl font-semibold mb-4">Edit Task</h3> {# Edit modal title #}
-            <div id="edit-task-form-container"></div> {# Form container, form will be loaded here via JS #}
-        </div>
-    </div>
+{% block list_content %}
+<!-- 📌 Горизонтальный список -->
+<div id="task-list"
+    class="overflow-x-auto bg-white shadow-md rounded-xl border border-gray-200 p-4">
+    <table class="min-w-full divide-y divide-gray-300">
+        <thead>
+            <tr class="bg-gray-100">
+                <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header"
+                    data-column="task_number">
+                    📌 {% trans 'Задача' %}
+                </th>
+                <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header"
+                    data-column="campaign">
+                    🎯 {% trans 'Кампания' %}
+                </th>
+                <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header"
+                    data-column="status">
+                    🚦 {% trans 'Статус' %}
+                </th>
+                <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header"
+                    data-column="priority">
+                    ⚡ {% trans 'Приоритет' %}
+                </th>
+                <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">
+                    ✏️ {% trans 'Действия' %}
+                </th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for task in tasks %}
+            <tr id="task-{{ task.pk }}" class="hover:bg-gray-50 transition-all">
+                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                    {{ task.task_number }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-600">
+                    {{ task.campaign.name }}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    <select
+                        class="status-dropdown px-3 py-1 rounded-full text-xs font-medium text-neutral-800 focus:outline-none transition-all"
+                        name="status">
+                        {% for status, task_list in tasks_by_status.items %}
+                        <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>
+                            {{ status|capfirst }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-600">
+                    {{ task.get_priority_display }}
+                </td>
+                <td class="px-6 py-4 text-sm flex space-x-2">
+                    <button
+                        hx-get="{% url 'tasks:task_update' task.pk %}"
+                        hx-target="#modal-content"
+                        hx-headers='{"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"}'
+                        class="px-3 py-1 rounded-md text-sm font-medium text-gray-800 bg-white border border-gray-300 hover:bg-gray-100 transition-all">
+                        ✏️ {% trans 'Редактировать' %}
+                    </button>
+                    <button hx-get="{% url 'tasks:task_delete' task.pk %}"
+                        hx-target="#modal-content"
+                        class="px-3 py-1 rounded-md text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-all">
+                        ❌ {% trans 'Удалить' %}
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5"
+                    class="px-6 py-4 text-sm text-gray-500 text-center">
+                    {% trans 'Нет задач.' %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
+<!-- 📌 Канбан-доска -->
+<div id="kanban-board" class="hidden mt-8 flex justify-between gap-4">
+    {% for status, task_list in tasks_by_status.items %}
+    <div
+        class="kanban-column w-full p-4 min-h-[300px] max-h-[550px] overflow-x-auto border border-gray-200 rounded-xl shadow-md 
+            {% if status == 'new' %}bg-neutral-200
+            {% elif status == 'in_progress' %}bg-yellow-400
+            {% elif status == 'on_hold' %}bg-blue-100
+            {% elif status == 'completed' %}bg-green-400
+            {% else %}bg-neutral-50 {% endif %}"
+        data-status="{{ status }}">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">
+            {{ status }}
+        </h3>
+        <div class="kanban-tasks space-y-3 min-h-[100px]">
+            {% for task in task_list %}
+            <div id="task-{{ task.pk }}"
+                class="kanban-task bg-white shadow-md rounded-lg p-3 cursor-grab"
+                draggable="true"
+                data-task-id="{{ task.pk }}">
+                <h4 class="font-medium text-gray-900">{{ task.task_number }} -
+                    {{ task.campaign.name }}</h4>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-sm">{% trans 'Нет задач в этом статусе' %}</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<!-- 📌 JS для сохранения режима в `localStorage` -->
 <script>
-    let taskSocket;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 5;
-    const reconnectDelay = 5000;
-    const modal = document.getElementById('task-modal');
-    const openModalBtn = document.getElementById('open-modal-btn');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const cancelModalBtn = document.getElementById('cancel-modal-btn');
-    const taskForm = document.getElementById('task-form');
-    const editModal = document.getElementById('edit-task-modal'); // Edit modal
-    const closeEditModalBtn = document.getElementById('close-edit-modal-btn'); // Close edit modal button
-    const editTaskFormContainer = document.getElementById('edit-task-form-container'); // Container for edit form
-    const modalTitle = document.getElementById('modal-title'); // Modal title element
-    const editModalTitle = document.getElementById('edit-modal-title'); // Edit modal title element
-
-
-    function connectWebSocket() {
-        taskSocket = new WebSocket(
-            'ws://' + window.location.host + '/ws/tasks/'
-        );
-
-        taskSocket.onopen = function(e) {
-            console.log('WebSocket connection established');
-            reconnectAttempts = 0;
-        };
-
-        taskSocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            if (data.type === 'task.created') {
-                const task = data.data;
-                const taskList = document.getElementById('task-list');
-                let taskItem = document.getElementById('task-' + task.id);
-
-                if (!taskItem) {
-                    taskItem = document.createElement('li');
-                    taskItem.id = 'task-' + task.id;
-                    taskItem.classList.add('bg-white', 'shadow-md', 'rounded-md', 'p-4', 'flex', 'justify-between', 'items-center'); // Added flex classes
-                    taskItem.innerHTML = `
-                        <div>
-                            <strong class="text-lg">${task.title}</strong> <span class="text-gray-500">(${task.status})</span>
-                            ${task.parent_task_title ? `<span class="text-gray-600 text-sm">(Parent Task: ${task.parent_task_title})</span>` : ''}
-                        </div>
-                        <div class="flex space-x-2">
-                            ${task.file ? `<a href="${task.file}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Download File</a>` : ''}
-                            <button data-task-id="${task.id}" class="edit-modal-btn bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded-md text-sm">Edit</button>
-                        </div>
-                    `; // Modified innerHTML for edit button and flex layout
-                    taskList.insertBefore(taskItem, taskList.firstChild);
-                     // Re-attach event listener to the new edit button
-                    taskItem.querySelector('.edit-modal-btn').addEventListener('click', openEditModal);
-
-
-                } else { // Task exists - update content (e.g., after edit)
-                    taskItem.innerHTML = `
-                         <div>
-                            <strong class="text-lg">${task.title}</strong> <span class="text-gray-500">(${task.status})</span>
-                            ${task.parent_task_title ? `<span class="text-gray-600 text-sm">(Parent Task: ${task.parent_task_title})</span>` : ''}
-                        </div>
-                        <div class="flex space-x-2">
-                            ${task.file ? `<a href="${task.file}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Download File</a>` : ''}
-                            <button data-task-id="${task.id}" class="edit-modal-btn bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded-md text-sm">Edit</button>
-                        </div>
-                    `;
-                     taskItem.querySelector('.edit-modal-btn').addEventListener('click', openEditModal);
-                }
-            }
-        };
-
-        taskSocket.onclose = function(e) {
-            console.error('Task socket closed unexpectedly', e);
-            if (reconnectAttempts < maxReconnectAttempts) {
-                reconnectAttempts++;
-                console.log(`Attempting to reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
-                setTimeout(connectWebSocket, reconnectDelay);
+        document.addEventListener('DOMContentLoaded', function () {
+            let taskList = document.getElementById('task-list');
+            let kanbanBoard = document.getElementById('kanban-board');
+            let toggleBtn = document.getElementById('toggleViewBtn');
+        
+            // Проверяем сохранённый режим
+            let savedView = localStorage.getItem('taskView') || 'kanban';
+            if (savedView === 'list') {
+                taskList.classList.remove('hidden');
+                kanbanBoard.classList.add('hidden');
             } else {
-                console.error('Max reconnection attempts reached. Please refresh the page.');
+                taskList.classList.add('hidden');
+                kanbanBoard.classList.remove('hidden');
             }
-        };
-
-        taskSocket.onerror = function(e) {
-            console.error('WebSocket error:', e);
-        };
-    }
-    connectWebSocket();
-
-      // --- Modal Handling ---
-
-
-    function openModal() {
-        modalTitle.textContent = 'Create New Task'; // Set modal title for create
-        modal.classList.remove('hidden');
-        taskForm.action = "{% url 'tasks:task_create' %}"; // Set form action for create
-        taskForm.querySelector('button[type="submit"]').textContent = 'Create'; // Set button text
-
-    }
-    function closeModal() {
-        modal.classList.add('hidden');
-        taskForm.reset();
-    }
-
-    openModalBtn.addEventListener('click', openModal);
-    closeModalBtn.addEventListener('click', closeModal);
-    cancelModalBtn.addEventListener('click', closeModal);
-
-    window.addEventListener('click', function(event) {
-        if (event.target === modal) {
-            closeModal();
-        }
-    });
-
-
-    taskForm.addEventListener('submit', function(e) {
-        closeModal(); // Close modal on submit
-    });
-
-
-    // --- Edit Modal Handling ---
-    function openEditModal(event) {
-        const taskId = event.target.dataset.taskId;
-        editModalTitle.textContent = 'Edit Task'; // Set modal title for edit
-        editModal.classList.remove('hidden');
-        loadEditForm(taskId); // Load edit form via AJAX
-    }
-
-    function closeEditModal() {
-        editModal.classList.add('hidden');
-        editTaskFormContainer.innerHTML = ''; // Clear form container
-    }
-
-    closeEditModalBtn.addEventListener('click', closeEditModal);
-
-
-    async function loadEditForm(taskId) {
-        try {
-            const response = await fetch(`/tasks/edit/${taskId}/`); //Create new api endpoint, or use django view? Let's use django view first - change to api if needed. `/tasks/edit/${taskId}/` - django url
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+        
+            // Переключаем режим и сохраняем его в localStorage
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function () {
+                    if (taskList.classList.contains('hidden')) {
+                        taskList.classList.remove('hidden');
+                        kanbanBoard.classList.add('hidden');
+                        localStorage.setItem('taskView', 'list');
+                    } else {
+                        taskList.classList.add('hidden');
+                        kanbanBoard.classList.remove('hidden');
+                        localStorage.setItem('taskView', 'kanban');
+                    }
+                });
             }
-            const formHTML = await response.text();
-            editTaskFormContainer.innerHTML = formHTML;
-             // Re-attach submit listener for the edit form *after* it's loaded
-            const loadedEditForm = editTaskFormContainer.querySelector('form');
-            if (loadedEditForm) {
-              loadedEditForm.addEventListener('submit', handleEditFormSubmit);
-            }
+        
+            // Сортировка
+            document.querySelectorAll('.sort-header').forEach(header => {
+                header.addEventListener('click', function () {
+                    let table = document.querySelector('tbody');
+                    let rows = Array.from(table.querySelectorAll('tr'));
+                    let columnIndex = this.cellIndex;
+                    let order = this.dataset.order = -(this.dataset.order || -1);
+        
+                    rows.sort((rowA, rowB) => {
+                        let cellA = rowA.cells[columnIndex].textContent.trim();
+                        let cellB = rowB.cells[columnIndex].textContent.trim();
+                        return order * (cellA.localeCompare(cellB));
+                    });
+        
+                    rows.forEach(row => table.appendChild(row));
+                });
+            });
+        });
+        
+        // WebSocket для обновления статуса
+        document.addEventListener('DOMContentLoaded', function () {
+            const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
 
+            socket.onopen = function () {
+                console.log('WebSocket connection established.');
+            };
 
-        } catch (error) {
-            console.error('Error loading edit form:', error);
-            editTaskFormContainer.innerHTML = '<p class="text-red-500">Failed to load edit form.</p>';
-        }
-    }
+            document.querySelectorAll('.status-dropdown').forEach(select => {
+                select.addEventListener('change', function () {
+                    let taskId = this.closest('tr').id.replace('task-', '');
+                    let newStatus = this.value;
 
+                    if (!newStatus) {
+                        alert("Ошибка: статус не выбран!");
+                        return;
+                    }
 
-     async function handleEditFormSubmit(e) {
-        e.preventDefault();
-        const form = e.target;
-        const formData = new FormData(form);
-        const taskId = form.dataset.taskId; // Get task ID from data-task-id attribute
-
-        try {
-            const response = await fetch(`/tasks/edit/${taskId}/`, { //Submit to django view
-                method: 'POST',
-                headers: {
-                  'X-CSRFToken': getCookie('csrftoken'), // Include CSRF token
-                },
-                body: formData, // Send FormData
+                    socket.send(JSON.stringify({
+                        type: 'status_update',
+                        task_id: taskId,
+                        status: newStatus
+                    }));
+                });
             });
 
-             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(JSON.stringify(error));
-            }
-
-
-            const data = await response.json(); // Or response.text() if view returns redirect
-            closeEditModal(); // Close edit modal on success
-             //No need to manually update task list, websocket signal will handle it
-
-        } catch (error) {
-            console.error('Task edit failed:', error);
-            alert('Failed to edit task: ' + error.message); // Show user-friendly error
-
-        }
-    }
-
-
-    // Attach event listeners to all "Edit" buttons - use event delegation for dynamic content
-    document.getElementById('task-list').addEventListener('click', function(event) {
-        if (event.target.classList.contains('edit-modal-btn')) {
-            openEditModal(event);
-        }
-    });
-
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+            socket.onmessage = function (event) {
+                let data = JSON.parse(event.data);
+                if (data.type === 'status_update' && data.success) {
+                    let taskRow = document.getElementById('task-' + data.task_id);
+                    if (taskRow) {
+                        taskRow.querySelector('.status-dropdown').value = data.new_status;
+                    }
                 }
-            }
-        }
-        return cookieValue;
-    }
+            };
 
+            socket.onerror = function (error) {
+                console.error('WebSocket error: ' + error);
+            };
 
-</script>
+            socket.onclose = function () {
+                console.log('WebSocket connection closed.');
+            };
+        });
 
+        // Drag & Drop для Kanban
+        document.addEventListener('DOMContentLoaded', function () {
+            const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
+            let draggedTask = null;
+
+            document.querySelectorAll('.kanban-task').forEach(task => {
+                task.draggable = true;
+
+                task.addEventListener('dragstart', function () {
+                    draggedTask = this;
+                    setTimeout(() => this.classList.add('opacity-50'), 0);
+                });
+
+                task.addEventListener('dragend', function () {
+                    this.classList.remove('opacity-50');
+                    draggedTask = null;
+                });
+            });
+
+            document.querySelectorAll('.kanban-column').forEach(column => {
+                column.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                });
+
+                column.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    if (draggedTask) {
+                        let taskId = draggedTask.getAttribute('data-task-id');
+                        let newStatus = this.getAttribute('data-status');
+                        this.querySelector('.kanban-tasks').appendChild(draggedTask);
+
+                        socket.send(JSON.stringify({
+                            type: 'status_update',
+                            task_id: taskId,
+                            status: newStatus
+                        }));
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock %}

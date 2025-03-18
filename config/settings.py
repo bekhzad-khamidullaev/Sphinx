@@ -49,8 +49,8 @@ INSTALLED_APPS = [
     'drf_yasg',
     'crispy_forms',
     'crispy_tailwind',
-    'crm_core',
     'room',
+    'tasks',
 ]
 
 MIDDLEWARE = [
@@ -183,7 +183,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 LOGIN_URL = 'user_profiles:login' # Custom login URL
-LOGOUT_REDIRECT_URL = 'crm_core:tasks_list' # Redirect after logout
+LOGOUT_REDIRECT_URL = 'tasks:tasks_list' # Redirect after logout
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -220,7 +220,7 @@ LOGGING = {
         },
     },
     'loggers': {
-        'crm_core': {
+        'tasks': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
             'propagate': True,
