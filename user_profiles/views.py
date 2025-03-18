@@ -9,7 +9,7 @@ from .serializers import TeamSerializer, RoleSerializer, UserSerializer
 from django.contrib.auth.decorators import login_required
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from crm_core.forms import RoleForm, UserCreateForm, TeamForm
+from tasks.forms import RoleForm, UserCreateForm, TeamForm
 
 
 channel_layer = get_channel_layer()

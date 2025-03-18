@@ -10,14 +10,14 @@ django.setup()
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-import crm_core.routing
+import tasks.routing
 import room.routing
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            crm_core.routing.websocket_urlpatterns +
+            tasks.routing.websocket_urlpatterns +
             room.routing.websocket_urlpatterns
         )
     ),

@@ -90,9 +90,9 @@
         </button>
         <div id="dropdown-1" class="hidden bg-white/80 backdrop-blur-md shadow-lg rounded-xl w-full mt-2 overflow-hidden">
             <ul class="px-4 py-2 font-medium text-sm tracking-wide">
-                <li><a href="{% url 'crm_core:category_list' %}" class="block px-4 py-3 text-gray-800 hover:bg-gray-100 transition-all rounded-xl">{% trans 'Категории задач' %}</a></li>
-                <li><a href="{% url 'crm_core:task_list' %}" class="block px-4 py-3 text-gray-800 hover:bg-gray-100 transition-all rounded-xl">{% trans 'Список задач' %}</a></li>
-                <li><a href="{% url 'crm_core:campaign_list' %}" class="block px-4 py-3 text-gray-800 hover:bg-gray-100 transition-all rounded-xl">{% trans 'Кампании' %}</a></li>
+                <li><a href="{% url 'tasks:category_list' %}" class="block px-4 py-3 text-gray-800 hover:bg-gray-100 transition-all rounded-xl">{% trans 'Категории задач' %}</a></li>
+                <li><a href="{% url 'tasks:task_list' %}" class="block px-4 py-3 text-gray-800 hover:bg-gray-100 transition-all rounded-xl">{% trans 'Список задач' %}</a></li>
+                <li><a href="{% url 'tasks:campaign_list' %}" class="block px-4 py-3 text-gray-800 hover:bg-gray-100 transition-all rounded-xl">{% trans 'Кампании' %}</a></li>
             </ul>
         </div>
     </div>

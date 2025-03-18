@@ -31,8 +31,8 @@ urlpatterns = [
     path("i18n/", set_language, name="set_language"),
     path("api-auth/", include("rest_framework.urls")),
 
-    # Подключение маршрутов приложения `crm_core`
-    path("core/", include("crm_core.urls")),
+    # Подключение маршрутов приложения `tasks`
+    path("core/", include("tasks.urls")),
     
     # Подключение маршрутов приложения `chats`
     path("rooms/", include("room.urls")),
