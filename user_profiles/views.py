@@ -66,7 +66,7 @@ def user_logout(request):
 @login_required
 def role_list(request):
     roles = Role.objects.all()
-    return render(request, "role_list.html", {"roles": roles})
+    return render(request, "users/role_list.html", {"roles": roles})
 
 @login_required
 def role_create(request):
@@ -93,7 +93,7 @@ def role_delete(request, pk):
 @login_required
 def user_list(request):
     users = User.objects.all()
-    return render(request, "user_list.html", {"users": users})
+    return render(request, "users/user_list.html", {"users": users})
 
 def modal_create_user(request):
     form = UserCreateForm()
@@ -137,7 +137,7 @@ def delete_user(request, pk):
 @login_required
 def team_list(request):
     teams = Team.objects.all()
-    return render(request, "team_list.html", {"teams": teams})
+    return render(request, "users/team_list.html", {"teams": teams})
 
 @login_required
 def modal_create_team(request):

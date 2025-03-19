@@ -142,32 +142,33 @@ class Task(BaseModel):
 
 
     def generate_unique_task_number(self):
-        """Generates the next unique task number with better guarantees."""
+        """Генерирует уникальный номер задачи с блокировкой транзакции"""
         if not self.campaign:
             raise ValueError("Cannot create task without a campaign!")
 
-        campaign_code = unidecode(self.campaign.name).upper().replace(" ", "")[:4]
-        if not campaign_code:
-            campaign_code = "TASK"
+        campaign_code = unidecode(self.campaign.name).upper().replace(" ", "")[:4] or "TASK"
+        print(campaign_code)
 
-        with transaction.atomic():
-            last_task = Task.objects.filter(campaign=self.campaign).order_by("-id").first()
-            next_number = 1
+        for attempt in range(10):
+            with transaction.atomic():
+                last_task = Task.objects.select_for_update().filter(campaign=self.campaign).order_by("-id").first()
+                next_number = 1
 
-            if last_task and last_task.task_number:
-                try:
-                    last_number = int(last_task.task_number.split("-")[-1])
-                    next_number = last_number + 1
-                except ValueError:
-                    pass
+                if last_task and last_task.task_number:
+                    try:
+                        last_number = int(last_task.task_number.split("-")[-1])
+                        next_number = last_number + 1
+                    except ValueError:
+                        pass  # Игнорируем ошибки
 
-            task_number = f"{campaign_code}-{next_number:04d}"
+                task_number = f"{campaign_code}-{next_number:04d}"
 
-            # Ensure the generated task number is unique before assigning it
-            if Task.objects.filter(task_number=task_number).exists():
-                raise IntegrityError("Failed to generate a unique task number after 10 attempts!")
+                # Проверяем ещё раз, не появился ли этот номер в БД
+                if not Task.objects.filter(task_number=task_number).exists():
+                    return task_number
 
-            return task_number
+        raise IntegrityError("Не удалось сгенерировать уникальный номер задачи после 10 попыток!")
+
 
 
     class Meta:
@@ -178,6 +179,9 @@ class Task(BaseModel):
             models.Index(fields=["task_number"], name="task_task_number_idx"),
             models.Index(fields=["status"], name="task_status_idx"),
             models.Index(fields=["priority"], name="task_priority_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=["task_number"], name="unique_task_number")
         ]
 
     def __str__(self):

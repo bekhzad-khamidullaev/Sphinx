@@ -3,7 +3,7 @@ import random
 from datetime import timedelta
 from django.utils import timezone
 from faker import Faker
-from crm_core.models import Campaign, TaskCategory, TaskSubcategory, Task, TaskPhoto
+from tasks.models import Campaign, TaskCategory, TaskSubcategory, Task, TaskPhoto
 from user_profiles.models import Team, User
 
 fake = Faker()
@@ -14,7 +14,7 @@ class CampaignFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Campaign
 
-    name = factory.Sequence(lambda n: f"Campaign {n}")
+    name = factory.Sequence(lambda n: f"{n}Campaign")
     description = factory.LazyAttribute(lambda _: fake.text(max_nb_chars=200))
     start_date = factory.LazyFunction(timezone.now)
     end_date = factory.LazyFunction(lambda: timezone.now() + timedelta(days=random.randint(10, 100)))

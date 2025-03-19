@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from user_profiles.models import Team
-from crm_core.factories import (
+from tasks.factories import (
     CampaignFactory, TaskCategoryFactory, TaskSubcategoryFactory, 
     TaskFactory, TaskPhotoFactory
 )
