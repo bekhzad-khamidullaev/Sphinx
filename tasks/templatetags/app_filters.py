@@ -14,3 +14,8 @@ def getkey(dictionary, key):
     Использование в шаблоне: {{ dictionary|getkey:key }}
     """
     return dictionary.get(key, '')
+
+@register.filter
+def getattr(obj, attr):
+    """Получает атрибут объекта или возвращает None."""
+    return getattr(obj, attr, None)

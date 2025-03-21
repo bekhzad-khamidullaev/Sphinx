@@ -26,6 +26,8 @@ schema_view = get_schema_view(
 urlpatterns = i18n_patterns(
     path('', include('user_profiles.urls')),
 
+    path("__reload__/", include("django_browser_reload.urls")),
+
     # Панель администратора
     path("admin/", admin.site.urls),
 
