@@ -115,7 +115,9 @@ class TaskPhotoViewSet(viewsets.ModelViewSet):
 @login_required
 def campaign_list(request):
     campaigns = Campaign.objects.all()
-    return render(request, "campaign_list.html", {"campaigns": campaigns})
+
+    return render(request, "tasks/campaign_list.html", {"campaigns": campaigns})
+
 
 
 @login_required

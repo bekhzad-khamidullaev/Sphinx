@@ -1,4 +1,4 @@
-class="text-3xl font-semibold text-gray-900 sm:text-4xl"{% load static %}
+{% load static %}
 {% load i18n %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}" style="height: 100vh;">
@@ -23,6 +23,9 @@ class="text-3xl font-semibold text-gray-900 sm:text-4xl"{% load static %}
     <style>
         body {
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .cupertino-shadow {
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -55,7 +58,6 @@ class="text-3xl font-semibold text-gray-900 sm:text-4xl"{% load static %}
             to { transform: rotate(360deg); }
         }
     </style>
-
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body class="bg-gray-50 text-gray-900" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
@@ -100,22 +102,41 @@ class="text-3xl font-semibold text-gray-900 sm:text-4xl"{% load static %}
             <span class="ml-2 text-gray-800">{{ user.get_full_name }}</span>
         </button>
         <div x-show="open" @click.outside="open = false" id="userMenu" class="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-xl  transition-opacity duration-300" x-cloak>
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Профиль' %}</a>
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Входящие' %}</a>
+            <a href="#" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 rounded-t-lg">{% trans 'Мой профиль' %}</a>
+            <a href="#" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">{% trans 'Входящие' %}</a>
             {% if user.is_superuser %}
-            <a href="/admin/" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Админка' %}</a>
+            <a href="/admin/" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">{% trans 'Админка' %}</a>
             {% endif %}
-            <hr class="border-gray-200">
-            <a href="{% url 'user_profiles:logout' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Выход' %}</a>
+            <a href="{% url 'room:rooms' %}" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">{% trans 'Чаты' %}</a>
+            <hr class="my-1">
+            <!-- Language Switch -->
+            <form method="post" action="{% url 'set_language' %}" class="px-4 py-2">
+                {% csrf_token %}
+                <select name="language" onchange="this.form.submit()" class="w-full text-gray-800 bg-gray-100 rounded-lg p-2 border">
+                    <option value="en" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>O'zbekcha</option>
+                    <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>Русский</option>
+                    <option value="en" {% if LANGUAGE_CODE == "en" %}selected{% endif %}>English</option>
+                </select>
+            </form>
+            <hr class="my-1">
+            <a href="{% url 'user_profiles:logout' %}" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 rounded-b-lg">{% trans 'Выход' %}</a>
         </div>
     </div>
 </header>
 
 <!-- Content -->
-<main class="mt-16 px-4">
+<main class="flex-1 overflow-y-auto pt-16 pb-20">
     {% block content %}{% endblock %}
 </main>
-
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 <!-- Modal -->
 <div id="modal" class="fixed inset-0 bg-black bg-opacity-30 hidden flex items-center justify-center" x-data="{ open: false }" @modal-open.window="open = true" @modal-close.window="open = false" x-show="open" x-cloak>
     <div class="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full relative">
@@ -130,6 +151,24 @@ class="text-3xl font-semibold text-gray-900 sm:text-4xl"{% load static %}
 {% endif %}
 
 
+<footer class="fixed bottom-0 left-0 w-full bg-white/70 backdrop-blur-lg border-t border-gray-300 shadow-lg px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between rounded-t-2xl">
+    <span class="text-sm text-gray-600">
+        © <span id="year"></span> <a href="/" class="hover:underline text-teal-600 font-medium">Sphinx™</a>. All Rights Reserved.
+    </span>
+    <ul class="flex flex-wrap items-center mt-2 md:mt-0 text-sm font-medium text-gray-600">
+        {% comment %} <li><a href="#" class="hover:text-teal-600 transition-colors px-2">About</a></li> {% endcomment %}
+        <li><a href="https://policies.google.com/privacy?hl=uz" class="hover:text-teal-600 transition-colors px-2">Privacy Policy</a></li>
+        {% comment %} <li><a href="#" class="hover:text-teal-600 transition-colors px-2">Licensing</a></li>
+        <li><a href="#" class="hover:text-teal-600 transition-colors px-2">Contact</a></li> {% endcomment %}
+    </ul>
+</footer>
+
+<script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+
+
 <!-- Script -->
 {% block scripts %}{% endblock %}
 
@@ -140,31 +179,33 @@ class="text-3xl font-semibold text-gray-900 sm:text-4xl"{% load static %}
 
     taskSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        if (data.message) {
-            showNotification(data.message);
+    
+        if (data.type === 'status_update') {
+            // Обработка обновления статуса задачи
+            console.log(`Статус задачи ${data.task_id} изменен на: ${data.new_status}`);
+        } else if (data.type === 'error') {
+            // Отображение ошибки
+            showNotification(data.message, 'error');
         }
     };
-
-    // Show Notification
-    function showNotification(message) {
-      const notification = document.createElement('div');
-      notification.classList.add('fixed', 'bottom-5', 'right-5', 'bg-blue-500', 'text-white', 'py-2', 'px-4', 'rounded', 'shadow-lg', 'z-50', 'transition-opacity', 'duration-500', 'ease-in-out');
-      notification.textContent = message;
-      document.body.appendChild(notification);
-
-      // Play sound
-      const sound = new Audio("{% static 'sounds/notification.mp3' %}");  // Corrected path
-        sound.play().catch(error => {
-            console.warn("Autoplay was prevented. User interaction is likely needed.", error);
-        });
-
-      // Fade out and remove
-      setTimeout(() => {
-        notification.classList.add('opacity-0'); // Start fade out
+    
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.classList.add('fixed', 'bottom-5', 'right-5', 'py-2', 'px-4', 'rounded', 'shadow-lg', 'z-50', 'transition-opacity', 'duration-500', 'ease-in-out');
+    
+        if (type === 'error') {
+            notification.classList.add('bg-red-500', 'text-white');
+        } else {
+            notification.classList.add('bg-blue-500', 'text-white');
+        }
+    
+        notification.textContent = message;
+        document.body.appendChild(notification);
+    
+        // Удаляем уведомление через 5 секунд
         setTimeout(() => {
-          notification.remove();
-        }, 500); // Remove after fade out (0.5s)
-      }, 3000); // Show for 3 seconds
+            notification.remove();
+        }, 5000);
     }
 
     // HTMX and Modal Handling

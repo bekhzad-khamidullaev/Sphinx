@@ -20,89 +20,79 @@
         class="px-5 py-2 rounded-full shadow-md text-sm font-medium text-gray-800 bg-gray-100 hover:bg-gray-200 transition-all">
         📌 {% trans 'Переключить вид' %}
     </button>
+    
 </div>
 {% endblock %}
 
 {% block list_content %}
 <!-- 📌 Горизонтальный список -->
-<div id="task-list" class="overflow-x-auto bg-white shadow-md rounded-xl border border-gray-200 p-4 {% if view_type == 'kanban' %}hidden{% endif %}">
-    <table class="min-w-full divide-y divide-gray-300">
+<div id="task-list" class="overflow-x-auto bg-white shadow-md rounded-xl border border-gray-200 p-3 {% if view_type == 'kanban' %}hidden{% endif %}">
+    <table class="min-w-full divide-y divide-gray-300 text-sm">
         <thead>
-            <tr class="bg-gray-100">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header" data-column="task_number">
-                    📌 {% trans 'Задача' %}
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header" data-column="campaign">
-                    🎯 {% trans 'Кампания' %}
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header" data-column="status">
-                    🚦 {% trans 'Статус' %}
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header" data-column="priority">
-                    ⚡ {% trans 'Приоритет' %}
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">
-                    ✏️ {% trans 'Действия' %}
-                </th>
+            <tr class="bg-gray-100 text-xs text-gray-700 uppercase">
+                <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="task_number">📌 {% trans 'Задача' %}</th>
+                <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="campaign">🎯 {% trans 'Кампания' %}</th>
+                <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="status">🚦 {% trans 'Статус' %}</th>
+                <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="priority">⚡ {% trans 'Приоритет' %}</th>
+                <th class="px-4 py-2 text-left">✏️ {% trans 'Действия' %}</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200" >
+        <tbody class="divide-y divide-gray-200">
             {% for task in page_obj %}
-            <tr id="task-{{ task.pk }}" class="hover:bg-gray-50 transition-all" >
-                <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ task.task_number }}</td>
-                <td class="px-6 py-4 text-sm text-gray-600">{{ task.campaign.name }}</td>
-                <td class="px-6 py-4 text-sm">
-                    <select class="status-dropdown px-3 py-1 rounded-full text-xs font-medium text-neutral-800 focus:outline-none transition-all" name="status" hx-swap="none">
+            <tr id="task-{{ task.pk }}" class="hover:bg-gray-50 transition-all">
+                <td class="px-4 py-2 text-gray-900 whitespace-nowrap">{{ task.task_number }}</td>
+                <td class="px-4 py-2 text-gray-600 whitespace-nowrap">{{ task.campaign.name }}</td>
+                <td class="px-4 py-2">
+                    <select class="status-dropdown px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 focus:outline-none transition-all" name="status" hx-swap="none">
                         {% for status, task_list in tasks_by_status.items %}
-                        <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{{ status|capfirst }}</option>
+                        <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{% trans status|capfirst %}</option>
                         {% endfor %}
                     </select>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-600">{{ task.get_priority_display }}</td>
-                <td class="px-6 py-4 text-sm flex space-x-2">
+                <td class="px-4 py-2 text-gray-600 whitespace-nowrap">{{ task.get_priority_display }}</td>
+                <td class="px-4 py-2 flex space-x-1">
                     <button hx-get="{% url 'tasks:task_update' task.pk %}"
                         hx-target="#modal-content"
                         hx-swap="innerHTML"
-
-                        class="px-3 py-1 rounded-md text-sm font-medium text-gray-800 bg-white border border-gray-300 hover:bg-gray-100 transition-all">
-                        ✏️ {% trans 'Редактировать' %}
+                        class="px-2 py-1 rounded-md text-xs text-gray-800 bg-gray-200 hover:bg-gray-300 transition-all">
+                        ✏️
                     </button>
                     <button hx-get="{% url 'tasks:task_delete' task.pk %}"
                         hx-target="#modal-content"
                         hx-swap="innerHTML"
-
-                        class="px-3 py-1 rounded-md text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-all">
-                        ❌ {% trans 'Удалить' %}
+                        class="px-2 py-1 rounded-md text-xs text-white bg-red-500 hover:bg-red-600 transition-all">
+                        ❌
                     </button>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5" class="px-6 py-4 text-sm text-gray-500 text-center">
-                    {% trans 'Нет задач.' %}
-                </td>
+                <td colspan="5" class="px-4 py-2 text-center text-gray-500">{% trans 'Нет задач.' %}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
-<!-- Пагинация (Conditional Display) -->
-<div id="pagination" class="mt-4 flex justify-between items-center {% if view_type == 'kanban' %}hidden{% endif %}">
-    <span class="text-sm text-gray-600">{% trans 'Страница' %} {{ page_obj.number }} {% trans 'из' %} {{ page_obj.paginator.num_pages }}</span>
-    <div class="flex space-x-2">
-        {% if page_obj.has_previous %}
-        <a href="?page=1&view=list" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-md">« {% trans 'Первая' %}</a>
-        <a href="?page={{ page_obj.previous_page_number }}&view=list" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-md">{% trans 'Назад' %}</a>
-        {% endif %}
-        {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}&view=list" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-md">{% trans 'Вперед' %}</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}&view=list" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-md">{% trans 'Последняя' %} »</a>
-        {% endif %}
+    <!-- Пагинация -->
+    <div id="pagination" class="mt-4 flex justify-between items-center">
+        <span class="text-sm text-gray-600">
+            {% trans 'Страница' %} {{ page_obj.number }} {% trans 'из' %} {{ page_obj.paginator.num_pages }}
+        </span>
+        <div class="flex space-x-1">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm">«</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm">‹</a>
+            {% endif %}
+            <span class="px-3 py-1 bg-gray-300 text-gray-900 rounded-lg text-sm">
+                {{ page_obj.number }}
+            </span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm">›</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm">»</a>
+            {% endif %}
+        </div>
     </div>
-</div>
-
-
 
 <!-- 📌 Канбан-доска -->
 <div id="kanban-board" class="mt-8 flex justify-between gap-4 {% if view_type == 'list' %}hidden{% endif %}">
@@ -195,30 +185,54 @@ document.addEventListener('DOMContentLoaded', function() {
     // WebSocket setup
     const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
 
+    function connectWebSocket() {
+        socket.onopen = function() {
+            console.log('WebSocket connection established.');
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error: ', error);
+            document.getElementById('loading-indicator').classList.add('hidden');
+            showNotification('Ошибка соединения с сервером.', 'error');
+        };
+        
+        socket.onclose = function() {
+            console.log('WebSocket connection closed.');
+            showNotification('Соединение потеряно, попытка переподключения...', 'error');
+            setTimeout(connectWebSocket, 5000);
+        };        
+    }
+
+    connectWebSocket();
+
     socket.onopen = function() {
         console.log('WebSocket connection established.');
     };
 
     // Status dropdown change handler
-     document.querySelectorAll('.status-dropdown').forEach(select => {
+    document.querySelectorAll('.status-dropdown').forEach(select => {
+        let previousStatus = select.value; // Сохраняем предыдущее значение
+    
         select.addEventListener('change', function() {
             const taskId = this.closest('tr').id.replace('task-', '');
             const newStatus = this.value;
-
-            // Show loading indicator
-            document.getElementById('loading-indicator').classList.remove('hidden');
-
+    
             if (!newStatus) {
-                alert("Ошибка: статус не выбран!");
-                 document.getElementById('loading-indicator').classList.add('hidden');
+                showNotification("Ошибка: статус не выбран!", 'error');
+                this.value = previousStatus; // Возвращаем предыдущее значение
                 return;
             }
-
+    
+            // Show loading indicator
+            document.getElementById('loading-indicator').classList.remove('hidden');
+    
             socket.send(JSON.stringify({
                 type: 'status_update',
                 task_id: taskId,
                 status: newStatus
             }));
+    
+            previousStatus = newStatus; // Обновляем предыдущее значение
         });
     });
 
@@ -268,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
 
-        // Drag & Drop for Kanban
+    // Drag & Drop for Kanban
     let draggedTask = null;
 
     function handleDragStart() {
@@ -282,9 +296,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleDragOver(e) {
-        e.preventDefault(); // Necessary to allow dropping
+        e.preventDefault();
+        this.classList.add('bg-gray-100'); // Подсветка колонки при наведении
     }
-
+    
+    function handleDragLeave() {
+        this.classList.remove('bg-gray-100'); // Убираем подсветку
+    }
+    
+    function handleDrop() {
+        this.classList.remove('bg-gray-100'); // Убираем подсветку
+        if (draggedTask) {
+            const taskId = draggedTask.getAttribute('data-task-id');
+            const newStatus = this.closest('.kanban-column').getAttribute('data-status');
+            this.querySelector('.kanban-tasks').appendChild(draggedTask);
+    
+            socket.send(JSON.stringify({
+                type: 'status_update',
+                task_id: taskId,
+                status: newStatus
+            }));
+        }
+    }
+    function showNotification(message, type = 'info') {
+        const messageContainer = document.createElement('div');
+        messageContainer.classList.add('fixed', 'top-5', 'right-5', 'bg-white', 'shadow-lg', 'rounded-md', 'p-4', 'border-l-4', 'text-sm', 'transition-all', 'duration-300');
+    
+        if (type === 'error') {
+            messageContainer.classList.add('border-red-500', 'text-red-700', 'bg-red-50');
+        } else if (type === 'success') {
+            messageContainer.classList.add('border-green-500', 'text-green-700', 'bg-green-50');
+        } else {
+            messageContainer.classList.add('border-gray-500', 'text-gray-700', 'bg-gray-50');
+        }
+    
+        messageContainer.textContent = message;
+        document.body.appendChild(messageContainer);
+    
+        setTimeout(() => {
+            messageContainer.classList.add('opacity-0');
+            setTimeout(() => messageContainer.remove(), 500);
+        }, 3000);
+    }
+    
 
    function handleDrop() {
         if (draggedTask) {
@@ -309,8 +363,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelectorAll('.kanban-column').forEach(column => {
         column.addEventListener('dragover', handleDragOver);
+        column.addEventListener('dragleave', handleDragLeave);
         column.addEventListener('drop', handleDrop);
     });
+    // Сохранение состояния сортировки
+    function saveSortState(columnIndex, order) {
+        localStorage.setItem('sortColumn', columnIndex);
+        localStorage.setItem('sortOrder', order);
+    }
+
+    // Восстановление состояния сортировки
+    function restoreSortState() {
+        const columnIndex = localStorage.getItem('sortColumn');
+        const order = localStorage.getItem('sortOrder');
+        if (columnIndex !== null && order !== null) {
+            const header = document.querySelector(`.sort-header[data-column="${columnIndex}"]`);
+            if (header) {
+                header.dataset.order = order;
+                header.click(); // Применяем сортировку
+            }
+        }
+    }
+
+    // Вызов восстановления при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        restoreSortState();
+    });
+
 });
 </script>
 {% endblock %}
