@@ -148,7 +148,6 @@
     </div>
 </div>
 
-
 {% else %}
     {% include 'users/login.html' %}
 {% endif %}
@@ -211,13 +210,39 @@
         }, 5000);
     }
 
-    // HTMX and Modal Handling
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === "modal-content") {
+            openModal(); // ✅ Теперь точно откроется модалка!
+        }
+    });
+    
+    function closeModal() {
+        let modal = document.getElementById("modal");
+        if (modal) {
+            modal.classList.add("hidden");
+            let modalContent = document.getElementById("modal-content");
+            if (modalContent) {
+                modalContent.innerHTML = ''; // Очищаем содержимое
+            }
+        }
+    }
+    function openModal() {
+        let modal = document.getElementById("modal");
+        if (modal) {
+            modal.classList.remove("hidden");
+            console.log("✅ Modal Opened!");
+        } else {
+            console.error("❌ Modal NOT FOUND!");
+        }
+    }
+
+    {% comment %} // HTMX and Modal Handling
     document.body.addEventListener('htmx:afterSwap', function(event) {
         if (event.detail.target.id === "modal-content") {
             // Dispatch a custom event to open the modal
             window.dispatchEvent(new CustomEvent('modal-open'));
         }
-    });
+    }); {% endcomment %}
     
     // Preloader handling
     window.addEventListener('load', function() {
@@ -225,7 +250,7 @@
         preloader.style.opacity = '0'; // Fade out
         setTimeout(() => {
             preloader.style.display = 'none'; // Hide completely after fade
-        }, 500); // Match the transition duration
+        }, 300); // Match the transition duration
     });
 </script>
 </body>
