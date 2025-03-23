@@ -128,9 +128,7 @@
 
 <!-- Content -->
 <main class="flex-1 overflow-y-auto pt-16 pb-20">
-    {% block content %}{% endblock %}
-</main>
-{% if messages %}
+    {% if messages %}
     <div class="messages">
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
@@ -138,7 +136,10 @@
             </div>
         {% endfor %}
     </div>
-{% endif %}
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+
 <!-- Modal -->
 <div id="modal" class="fixed inset-0 bg-black bg-opacity-30 hidden flex items-center justify-center" x-data="{ open: false }" @modal-open.window="open = true" @modal-close.window="open = false" x-show="open" x-cloak>
     <div class="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full relative">
