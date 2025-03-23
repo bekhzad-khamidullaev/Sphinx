@@ -49,7 +49,8 @@ class TaskConsumer(AsyncWebsocketConsumer):
                 {
                     'type': 'task_status_update',
                     'task_id': task.id,
-                    'new_status': task.status
+                    'new_status': task.status,
+                    'success': True
                 }
             )
 
@@ -77,8 +78,45 @@ class TaskConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'status_update',
             'task_id': task_id,
-            'new_status': new_status
+            'new_status': new_status,
+            'success': True
         }))
+
+class CategoryConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        user = self.scope["user"]
+        self.group_name = f"category_{user.id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        await self.channel_layer.group_send(self.group_name, {"type": "updateCategories", "message": data})
+
+    async def updateCategories(self, event):
+        await self.send(text_data=json.dumps(event["message"]))
+
+
+class SubcategoryConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        user = self.scope["user"]
+        self.group_name = f"subcategory_{user.id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        await self.channel_layer.group_send(self.group_name, {"type": "updateSubcategories", "message": data})
+
+    async def updateSubcategories(self, event):
+        await self.send(text_data=json.dumps(event["message"]))
+        
 
 class CampaignConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -132,3 +170,4 @@ class UserConsumer(AsyncWebsocketConsumer):
 
     async def updateUsers(self, event):
         await self.send(text_data=json.dumps(event["message"]))
+    

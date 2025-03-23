@@ -8,388 +8,496 @@
 {% endblock %}
 
 {% block list_actions %}
-<div class="flex space-x-4">
+<div class="flex space-x-4 items-center"> <!-- Added items-center -->
     <button hx-get="{% url 'tasks:task_create' %}"
-        hx-target="#modal-content"
-        hx-swap="innerHTML"
-        class="px-5 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-all">
+            hx-target="#modal-content"
+            hx-swap="innerHTML"
+            class="px-5 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 transition-all">
         ➕ {% trans 'Создать задачу' %}
     </button>
 
     <button id="toggleViewBtn"
-        class="px-5 py-2 rounded-full shadow-md text-sm font-medium text-gray-800 bg-gray-100 hover:bg-gray-200 transition-all">
+            class="px-5 py-2 rounded-full shadow-md text-sm font-medium text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition-all">
         📌 {% trans 'Переключить вид' %}
     </button>
-    
+
+    <!-- Дропдаун (показываем только в режиме канбана) -->
+    <div id="column-toggle-dropdown" class="w-48 {% if view_type != 'kanban' %}hidden{% endif %}">
+        <button id="dropdownHoverButton" data-dropdown-toggle="dropdownHover" data-dropdown-trigger="hover"
+                class="text-gray-800 bg-gray-100 hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center transition-all"
+                type="button">
+            {% trans 'Колонки' %} <svg class="w-2.5 h-2.5 ml-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 10 6">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="m1 1 4 4 4-4"/>
+        </svg>
+        </button>
+
+        <!-- Dropdown menu -->
+        <div id="dropdownHover" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44">
+            <ul class="py-2 text-sm text-gray-700" aria-labelledby="dropdownHoverButton">
+                <li>
+                    <button id="resetHiddenColumnsBtn"
+                            class="block px-4 py-2 w-full text-left hover:bg-gray-100 focus:outline-none">
+                        {% trans 'Сбросить' %}
+                    </button>
+                </li>
+                {% for status, _ in tasks_by_status.items %}
+                    <li>
+                        <label class="inline-flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 w-full">
+                            <input type="checkbox" value="{{ status }}"
+                                   class="toggle-column-checkbox sr-only peer" data-status="{{ status }}">
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-900">{{ status_mapping|getkey:status }}</span>
+                        </label>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block list_content %}
+
+<!-- Канбан-доска -->
+<div id="kanban-board"
+     class="mt-8 flex flex-nowrap overflow-x-auto gap-4 {% if view_type == 'list' %}hidden{% endif %}">
+    {% for status, task_list in tasks_by_status.items %}
+        <div class="kanban-column-wrapper flex-shrink-0 w-60" data-status="{{ status }}">
+            <div class="kanban-column w-full min-h-[500px] max-h-[600px] rounded-xl shadow-lg overflow-y-auto"
+                 data-status="{{ status }}">
+                <h3 class="text-lg font-semibold text-neutral-800 p-3 sticky top-0 z-10 rounded-t-xl flex justify-between items-center
+                    {% if status == 'new' %}bg-neutral-50 border-2
+                    {% elif status == 'in_progress' %}bg-yellow-400
+                    {% elif status == 'on_hold' %}bg-blue-100
+                    {% elif status == 'canceled' %}bg-blue-400
+                    {% elif status == 'completed' %}bg-green-400
+                    {% elif status == 'overdue' %}bg-red-400
+                    {% else %}bg-neutral-200 {% endif %}">
+                    <span>{{ status_mapping|getkey:status }}</span>
+                    <span class="task-count bg-gray-300 text-gray-700 rounded-full px-2 py-0.5 text-xs">
+                        {{ task_list|length }}
+                    </span>
+                </h3>
+
+                <div class="kanban-tasks space-y-3 min-h-[100px] p-3">
+                    {% for task in task_list %}
+                        <div id="task-{{ task.pk }}"
+                             class="kanban-task bg-white rounded-lg shadow-md p-3 cursor-grab transition-shadow duration-200 hover:shadow-lg"
+                             draggable="true" data-task-id="{{ task.pk }}">
+                            <h4 class="font-medium text-neutral-900 text-sm">
+                                {{ task.campaign.name }} - {{ task.task_number }}</h4>
+                        </div>
+                    {% empty %}
+                        <p class="text-gray-500 text-sm">{% trans 'Нет задач в этом статусе' %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+
 <!-- 📌 Горизонтальный список -->
 <div id="task-list" class="overflow-x-auto bg-white shadow-md rounded-xl border border-gray-200 p-3 {% if view_type == 'kanban' %}hidden{% endif %}">
     <table class="min-w-full divide-y divide-gray-300 text-sm">
         <thead>
-            <tr class="bg-gray-100 text-xs text-gray-700 uppercase">
-                <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="task_number">📌 {% trans 'Задача' %}</th>
-                <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="campaign">🎯 {% trans 'Кампания' %}</th>
-                <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="status">🚦 {% trans 'Статус' %}</th>
-                <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="priority">⚡ {% trans 'Приоритет' %}</th>
-                <th class="px-4 py-2 text-left">✏️ {% trans 'Действия' %}</th>
-            </tr>
+        <tr class="bg-gray-100 text-xs text-gray-700 uppercase">
+            <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="task_number">📌 {% trans 'Задача' %}</th>
+            <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="campaign">🎯 {% trans 'Кампания' %}</th>
+            <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="status">🚦 {% trans 'Статус' %}</th>
+            <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="priority">⚡ {% trans 'Приоритет' %}</th>
+            <th class="px-4 py-2 text-left">✏️ {% trans 'Действия' %}</th>
+        </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-            {% for task in page_obj %}
+        {% for task in page_obj %}
             <tr id="task-{{ task.pk }}" class="hover:bg-gray-50 transition-all">
                 <td class="px-4 py-2 text-gray-900 whitespace-nowrap">{{ task.task_number }}</td>
                 <td class="px-4 py-2 text-gray-600 whitespace-nowrap">{{ task.campaign.name }}</td>
                 <td class="px-4 py-2">
-                    <select class="status-dropdown px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 focus:outline-none transition-all" name="status" hx-swap="none">
+                    <select class="status-dropdown appearance-none px-3 py-1.5 rounded-md text-xs font-medium bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 transition-all"
+                            name="status" hx-swap="none">
                         {% for status, task_list in tasks_by_status.items %}
-                        <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{% trans status|capfirst %}</option>
+                            <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{% trans status|capfirst %}</option>
                         {% endfor %}
                     </select>
                 </td>
                 <td class="px-4 py-2 text-gray-600 whitespace-nowrap">{{ task.get_priority_display }}</td>
                 <td class="px-4 py-2 flex space-x-1">
                     <button hx-get="{% url 'tasks:task_update' task.pk %}"
-                        hx-target="#modal-content"
-                        hx-swap="innerHTML"
-                        class="px-2 py-1 rounded-md text-xs text-gray-800 bg-gray-200 hover:bg-gray-300 transition-all">
+                            hx-target="#modal-content"
+                            hx-swap="innerHTML"
+                            class="px-2 py-1 rounded-md text-xs text-gray-800 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition-all">
                         ✏️
                     </button>
                     <button hx-get="{% url 'tasks:task_delete' task.pk %}"
-                        hx-target="#modal-content"
-                        hx-swap="innerHTML"
-                        class="px-2 py-1 rounded-md text-xs text-white bg-red-500 hover:bg-red-600 transition-all">
+                            hx-target="#modal-content"
+                            hx-swap="innerHTML"
+                            class="px-2 py-1 rounded-md text-xs text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50 transition-all">
                         ❌
                     </button>
                 </td>
             </tr>
-            {% empty %}
+        {% empty %}
             <tr>
                 <td colspan="5" class="px-4 py-2 text-center text-gray-500">{% trans 'Нет задач.' %}</td>
             </tr>
-            {% endfor %}
+        {% endfor %}
         </tbody>
     </table>
 </div>
 
-    <!-- Пагинация -->
-    <div id="pagination" class="mt-4 flex justify-between items-center">
-        <span class="text-sm text-gray-600">
-            {% trans 'Страница' %} {{ page_obj.number }} {% trans 'из' %} {{ page_obj.paginator.num_pages }}
+<!-- Пагинация -->
+<div id="pagination" class="mt-4 flex justify-between items-center">
+    <span class="text-sm text-gray-600">
+        {% trans 'Страница' %} {{ page_obj.number }} {% trans 'из' %} {{ page_obj.paginator.num_pages }}
+    </span>
+    <div class="flex space-x-1">
+        {% if page_obj.has_previous %}
+            <a href="?page=1"
+               class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">«</a>
+            <a href="?page={{ page_obj.previous_page_number }}"
+               class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">‹</a>
+        {% endif %}
+        <span class="px-3 py-1 bg-gray-300 text-gray-900 rounded-lg text-sm">
+            {{ page_obj.number }}
         </span>
-        <div class="flex space-x-1">
-            {% if page_obj.has_previous %}
-                <a href="?page=1" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm">«</a>
-                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm">‹</a>
-            {% endif %}
-            <span class="px-3 py-1 bg-gray-300 text-gray-900 rounded-lg text-sm">
-                {{ page_obj.number }}
-            </span>
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm">›</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm">»</a>
-            {% endif %}
-        </div>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}"
+               class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">›</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}"
+               class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">»</a>
+        {% endif %}
     </div>
-
-<!-- 📌 Канбан-доска -->
-<div id="kanban-board" class="mt-8 flex justify-between gap-4 {% if view_type == 'list' %}hidden{% endif %}">
-    {% for status, task_list in tasks_by_status.items %}
-        <!-- Added a wrapping div for padding -->
-    <div class="kanban-column-wrapper w-full">
-     <div class="kanban-column w-full  min-h-[300px] max-h-[550px] border-1 border-neutral-600 rounded-xl shadow-md overflow-y-auto" data-status="{{ status }}">
-        <h3 class="text-lg font-semibold text-neutral-800 p-2 shadow-md sticky top-0 z-10
-        {% if status == 'new' %}bg-neutral-200
-        {% elif status == 'in_progress' %}bg-yellow-400
-        {% elif status == 'on_hold' %}bg-blue-100
-        {% elif status == 'completed' %}bg-green-400
-        {% else %}bg-neutral-50 {% endif %}">
-        {{ status_mapping|getkey:status }}
-        </h3>
-
-        <div class="kanban-tasks space-y-3 min-h-[100px] p-2">
-            {% for task in task_list %}
-            <div id="task-{{ task.pk }}" class="kanban-task bg-neutral-300 shadow-md rounded-md p-3 cursor-grab" draggable="true" data-task-id="{{ task.pk }}">
-                <h4 class="font-medium text-neutral-900">
-                    {{ task.campaign.name }} - {{ task.task_number }}</h4>
-           </div>
-            {% empty %}
-            <p class="text-gray-500 text-sm">{% trans 'Нет задач в этом статусе' %}</p>
-            {% endfor %}
-        </div>
-    </div>
-    </div>
-    {% endfor %}
 </div>
-   <div id="loading-indicator" class="hidden fixed inset-0 bg-white bg-opacity-75 flex justify-center items-center z-50">
-        <div class="animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-blue-500"></div>
-    </div>
+
+<div id="loading-indicator" class="hidden fixed inset-0 bg-white bg-opacity-75 flex justify-center items-center z-50">
+    <div class="animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-blue-500"></div>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<!-- Flowbite (for dropdown) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const taskList = document.getElementById('task-list');
-    const kanbanBoard = document.getElementById('kanban-board');
-    const toggleBtn = document.getElementById('toggleViewBtn');
-    const pagination = document.getElementById('pagination'); // Get pagination element
+    document.addEventListener('DOMContentLoaded', function() {
+        const taskList = document.getElementById('task-list');
+        const kanbanBoard = document.getElementById('kanban-board');
+        const toggleViewBtn = document.getElementById('toggleViewBtn');
+        const resetHiddenColumnsBtn = document.getElementById('resetHiddenColumnsBtn');
+        const columnToggleDropdown = document.getElementById('column-toggle-dropdown'); // Добавляем
+        const pagination = document.getElementById('pagination');
 
-    // Load saved view or default to Kanban
-    let currentView = localStorage.getItem('taskView') || 'kanban';
-    setView(currentView);
-
-    // Toggle view
-    toggleBtn.addEventListener('click', function() {
-        currentView = (currentView === 'list') ? 'kanban' : 'list';
+        // Load saved view
+        let currentView = localStorage.getItem('taskView') || 'kanban';
         setView(currentView);
-        localStorage.setItem('taskView', currentView);
-        // Reload the page with the new view type
-        window.location.href = `?view=${currentView}`;
-    });
 
-  function setView(view) {
-    if (view === 'list') {
-        taskList.classList.remove('hidden');
-        kanbanBoard.classList.add('hidden');
-        if (pagination) pagination.classList.remove('hidden'); // Show pagination
-    } else {
-        taskList.classList.add('hidden');
-        kanbanBoard.classList.remove('hidden');
-        if (pagination) pagination.classList.add('hidden');   // Hide pagination
-    }
-}
-
-
-    // Sorting (client-side)
-     document.querySelectorAll('.sort-header').forEach(header => {
-        header.addEventListener('click', function() {
-            const table = this.closest('table'); // Get the closest table
-            const tbody = table.querySelector('tbody'); // Get its tbody
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const columnIndex = this.cellIndex;
-            const order = this.dataset.order = -(this.dataset.order || -1);
-
-            rows.sort((rowA, rowB) => {
-                const cellA = rowA.cells[columnIndex].textContent.trim();
-                const cellB = rowB.cells[columnIndex].textContent.trim();
-                return order * cellA.localeCompare(cellB, undefined, { numeric: true });
-            });
-
-            rows.forEach(row => tbody.appendChild(row));
+        // Toggle view
+        toggleViewBtn.addEventListener('click', function() {
+            currentView = (currentView === 'list') ? 'kanban' : 'list';
+            setView(currentView);
+            localStorage.setItem('taskView', currentView);
+            window.location.href = `?view=${currentView}`;
         });
-    });
+
+        function setView(view) {
+            if (view === 'list') {
+                taskList.classList.remove('hidden');
+                kanbanBoard.classList.add('hidden');
+                columnToggleDropdown.classList.add('hidden'); // Скрываем дропдаун
+                if (pagination) pagination.classList.remove('hidden');
+            } else {
+                taskList.classList.add('hidden');
+                kanbanBoard.classList.remove('hidden');
+                columnToggleDropdown.classList.remove('hidden'); // Показываем дропдаун
+                if (pagination) pagination.classList.add('hidden');
+            }
+        }
+
+        // Sorting
+        document.querySelectorAll('.sort-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const table = this.closest('table');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const columnIndex = this.cellIndex;
+                const order = this.dataset.order = -(this.dataset.order || -1);
+
+                rows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[columnIndex].textContent.trim();
+                    const cellB = rowB.cells[columnIndex].textContent.trim();
+                    return order * cellA.localeCompare(cellB, undefined, { numeric: true });
+                });
+
+                rows.forEach(row => tbody.appendChild(row));
+                saveSortState(this.dataset.column, order); // Save the state
+            });
+        });
+
+        // WebSocket setup
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
+
+        function connectWebSocket() {
+            socket.onopen = function() {
+                console.log('WebSocket connection established.');
+            };
+
+            socket.onerror = function(error) {
+                console.error('WebSocket error: ', error);
+                document.getElementById('loading-indicator').classList.add('hidden');
+                showNotification('Ошибка соединения с сервером.', 'error');
+            };
+
+            socket.onclose = function() {
+                console.log('WebSocket connection closed.');
+                showNotification('Соединение потеряно, попытка переподключения...', 'error');
+                setTimeout(connectWebSocket, 5000); // Try to reconnect after 5 seconds
+            };
+        }
+        connectWebSocket();
+
+        // Status dropdown change handler
+        document.querySelectorAll('.status-dropdown').forEach(select => {
+            let previousStatus = select.value;
+
+            select.addEventListener('change', function() {
+                const taskId = this.closest('tr').id.replace('task-', '');
+                const newStatus = this.value;
+
+                if (!newStatus) {
+                    showNotification("Ошибка: статус не выбран!", 'error');
+                    this.value = previousStatus; // Restore previous value
+                    return;
+                }
 
 
-    // WebSocket setup
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
+                document.getElementById('loading-indicator').classList.remove('hidden');
 
-    function connectWebSocket() {
-        socket.onopen = function() {
-            console.log('WebSocket connection established.');
+                socket.send(JSON.stringify({
+                    type: 'status_update',
+                    task_id: taskId,
+                    status: newStatus
+                }));
+
+                previousStatus = newStatus; // Update previous value
+            });
+        });
+
+        socket.onmessage = function(event) {
+            console.log("Raw WebSocket message:", event.data);
+            try {
+                const data = JSON.parse(event.data);
+                console.log("Parsed WebSocket message:", data);
+
+                // Добавим отладочную печать, чтобы увидеть, что приходит в data
+                console.log("Full data object:", data);
+
+                if (data.type === 'status_update') {
+                    // ПРОВЕРЬТЕ, ЧТО ПОЛЕ success ПРИСУТСТВУЕТ И ИМЕЕТ ПРАВИЛЬНЫЙ РЕГИСТР
+                    if (data.success) {  //  <--  Убедитесь, что здесь именно 'success'
+                        console.log("Status update successful!");
+                        const taskRowList = document.querySelector(`#task-list #task-${data.task_id}`);
+                        const taskDivKanban = document.querySelector(`#kanban-board #task-${data.task_id}`);
+
+                        if (taskRowList) {
+                            taskRowList.querySelector('.status-dropdown').value = data.new_status;
+                        }
+
+                        if (taskDivKanban) {
+                            const targetColumn = document.querySelector(`.kanban-column[data-status="${data.new_status}"] .kanban-tasks`);
+                            if (targetColumn) {
+                                targetColumn.appendChild(taskDivKanban);
+                                updateTaskCounts();
+                            }
+                        }
+                        document.getElementById('loading-indicator').classList.add('hidden');
+                        showNotification('Статус задачи обновлен', 'success');
+
+                    } else {
+                        // Обработка ошибок:
+                        console.error("Status update failed:", data);
+                        document.getElementById('loading-indicator').classList.add('hidden');
+
+                        // Покажем сообщение об ошибке, используя Toastify:
+                        let errorMessage = data.message || "An unknown error occurred."; // Используем сообщение от сервера, если есть
+                        showNotification(errorMessage, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error);
+                document.getElementById('loading-indicator').classList.add('hidden');
+                showNotification("Error parsing WebSocket message", 'error'); // Добавим уведомление
+            }
         };
+
 
         socket.onerror = function(error) {
             console.error('WebSocket error: ', error);
             document.getElementById('loading-indicator').classList.add('hidden');
-            showNotification('Ошибка соединения с сервером.', 'error');
         };
-        
+
         socket.onclose = function() {
             console.log('WebSocket connection closed.');
-            showNotification('Соединение потеряно, попытка переподключения...', 'error');
-            setTimeout(connectWebSocket, 5000);
-        };        
-    }
+        };
 
-    connectWebSocket();
+        function showNotification(message, type = 'info') {
+            const config = {
+                text: message,
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "right",
+                stopOnFocus: true,
+            };
 
-    socket.onopen = function() {
-        console.log('WebSocket connection established.');
-    };
-
-    // Status dropdown change handler
-    document.querySelectorAll('.status-dropdown').forEach(select => {
-        let previousStatus = select.value; // Сохраняем предыдущее значение
-    
-        select.addEventListener('change', function() {
-            const taskId = this.closest('tr').id.replace('task-', '');
-            const newStatus = this.value;
-    
-            if (!newStatus) {
-                showNotification("Ошибка: статус не выбран!", 'error');
-                this.value = previousStatus; // Возвращаем предыдущее значение
-                return;
+            if (type === 'error') {
+                config.style = { background: '#f44336' }; // Красный для ошибок
+            } else if (type === 'success') {
+                config.style = { background: '#4CAF50' }; // Зеленый для успеха
+            } else {
+                config.style = { background: '#777' };   // Серый для info
             }
-    
-            // Show loading indicator
-            document.getElementById('loading-indicator').classList.remove('hidden');
-    
-            socket.send(JSON.stringify({
-                type: 'status_update',
-                task_id: taskId,
-                status: newStatus
-            }));
-    
-            previousStatus = newStatus; // Обновляем предыдущее значение
+
+            Toastify(config).showToast();
+        }
+
+        // Kanban Drag & Drop using SortableJS
+        document.querySelectorAll('.kanban-tasks').forEach(column => {
+            new Sortable(column, {
+                group: 'shared', // set all lists to same group
+                animation: 150,
+                ghostClass: 'bg-gray-200', // Class name for the drop placeholder
+                chosenClass: 'shadow-xl',   // Class when item is selected
+                dragClass: 'cursor-grabbing',      //  Class when item is dragged
+                easing: "cubic-bezier(1, 0, 0, 1)", // Easing for smoother animation
+
+                onStart: function(evt){
+                    // Add highlight to all columns
+                    document.querySelectorAll('.kanban-column').forEach(col => {
+                        col.classList.add('bg-gray-100');
+                    });
+                },
+
+                onEnd: function (evt) {
+                    // Remove highlight from all columns
+                    document.querySelectorAll('.kanban-column').forEach(col => {
+                        col.classList.remove('bg-gray-100');
+                    });
+
+
+                    const taskId = evt.item.getAttribute('data-task-id');
+                    const newStatus = evt.to.closest('.kanban-column').getAttribute('data-status');
+
+                    socket.send(JSON.stringify({
+                        type: 'status_update',
+                        task_id: taskId,
+                        status: newStatus
+                    }));
+                },
+            });
         });
-    });
+        // Function to update task counts
+        function updateTaskCounts() {
+            document.querySelectorAll('.kanban-column').forEach(column => {
+                const taskCount = column.querySelectorAll('.kanban-task').length;
+                column.querySelector('.task-count').textContent = taskCount;
+            });
+        }
+
+        // Call updateTaskCounts initially to set counts on page load
+        document.addEventListener('DOMContentLoaded', updateTaskCounts);
 
 
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
+        // ---  Скрытие/показ колонок ---
 
-        if (data.type === 'status_update') {
-            if (data.success) {
-                // Find the task by ID in *both* the list and Kanban views
-                const taskRowList = document.querySelector(`#task-list #task-${data.task_id}`);
-                const taskDivKanban = document.querySelector(`#kanban-board #task-${data.task_id}`);
+        // Добавляем data-status к .kanban-column-wrapper
+        document.querySelectorAll('.kanban-column-wrapper').forEach(wrapper => {
+            const status = wrapper.querySelector('.kanban-column').dataset.status;
+            wrapper.dataset.status = status;
+        });
 
-                if (taskRowList) {
-                    taskRowList.querySelector('.status-dropdown').value = data.new_status;
-                }
+        // Обработчик для кнопки сброса
+        resetHiddenColumnsBtn.addEventListener('click', function() {
+            localStorage.removeItem('hiddenColumns'); // Удаляем данные из localStorage
+            document.querySelectorAll('.kanban-column-wrapper').forEach(wrapper => {
+                wrapper.classList.remove('hidden'); // Показываем все колонки
+            });
+            //Сбрасываем тоггл кнопки в начальное состояние
+            document.querySelectorAll('.toggle-column-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        });
 
-                if (taskDivKanban) {
-                    // Move the Kanban card to the correct column
-                    const targetColumn = document.querySelector(`.kanban-column[data-status="${data.new_status}"] .kanban-tasks`);
-                    if (targetColumn) {
-                         targetColumn.appendChild(taskDivKanban);
+        // Восстановление состояния скрытых колонок и чекбоксов
+        function restoreHiddenColumns() {
+            const hiddenColumns = JSON.parse(localStorage.getItem('hiddenColumns') || '[]');
+            hiddenColumns.forEach(status => {
+                const columnWrapper = document.querySelector(`.kanban-column-wrapper[data-status="${status}"]`);
+                if (columnWrapper) {
+                    columnWrapper.classList.add('hidden');
+                    // Находим соответствующий чекбокс и устанавливаем его в checked
+                    const checkbox = document.querySelector(`.toggle-column-checkbox[data-status="${status}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
                     }
                 }
-                // Hide loading indicator after successful update
-                 document.getElementById('loading-indicator').classList.add('hidden');
+            });
+        }
+        restoreHiddenColumns();
 
-            } else {
-                console.error("Status update failed:", data.message);
-                // Hide loading indicator on failure
-                document.getElementById('loading-indicator').classList.add('hidden');
-                 // Revert the dropdown to the previous value (you'd need to store the old value)
-                // select.value = previousStatus; //  Implement this
-                alert(data.message); // Show an error to the user.
+        //  Обработчик для чекбоксов
+        document.querySelectorAll('.toggle-column-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const status = this.dataset.status;
+                const columnWrapper = document.querySelector(`.kanban-column-wrapper[data-status="${status}"]`);
+
+                if (columnWrapper) {
+                    let hiddenColumns = JSON.parse(localStorage.getItem('hiddenColumns') || '[]');
+                    if (this.checked) {
+                        //  Добавляем в hiddenColumns, если чекнут
+                        hiddenColumns.push(status);
+                        columnWrapper.classList.add('hidden');
+                    } else {
+                        //  Удаляем из hiddenColumns, если не чекнут
+                        hiddenColumns = hiddenColumns.filter(s => s !== status);
+                        columnWrapper.classList.remove('hidden');
+                    }
+                    localStorage.setItem('hiddenColumns', JSON.stringify(hiddenColumns));
+                }
+            });
+        });
+
+
+        // Сохранение состояния сортировки
+        function saveSortState(column, order) {
+            localStorage.setItem('sortColumn', column);
+            localStorage.setItem('sortOrder', order);
+        }
+
+        // Восстановление состояния сортировки
+        function restoreSortState() {
+            const columnIndex = localStorage.getItem('sortColumn');
+            const order = localStorage.getItem('sortOrder');
+
+            if (columnIndex !== null && order !== null) {
+                const header = document.querySelector(`.sort-header[data-column="${columnIndex}"]`);
+                if (header) {
+                    header.dataset.order = order;
+                    header.click();  // Trigger a click to apply the sorting
+                }
             }
         }
-    };
 
-
-    socket.onerror = function(error) {
-        console.error('WebSocket error: ', error);
-         document.getElementById('loading-indicator').classList.add('hidden');
-    };
-
-    socket.onclose = function() {
-        console.log('WebSocket connection closed.');
-    };
-
-
-    // Drag & Drop for Kanban
-    let draggedTask = null;
-
-    function handleDragStart() {
-        draggedTask = this;
-        setTimeout(() => this.classList.add('opacity-50'), 0);  // Slightly transparent
-    }
-
-    function handleDragEnd() {
-        this.classList.remove('opacity-50');
-        draggedTask = null;
-    }
-
-    function handleDragOver(e) {
-        e.preventDefault();
-        this.classList.add('bg-gray-100'); // Подсветка колонки при наведении
-    }
-    
-    function handleDragLeave() {
-        this.classList.remove('bg-gray-100'); // Убираем подсветку
-    }
-    
-    function handleDrop() {
-        this.classList.remove('bg-gray-100'); // Убираем подсветку
-        if (draggedTask) {
-            const taskId = draggedTask.getAttribute('data-task-id');
-            const newStatus = this.closest('.kanban-column').getAttribute('data-status');
-            this.querySelector('.kanban-tasks').appendChild(draggedTask);
-    
-            socket.send(JSON.stringify({
-                type: 'status_update',
-                task_id: taskId,
-                status: newStatus
-            }));
-        }
-    }
-    function showNotification(message, type = 'info') {
-        const messageContainer = document.createElement('div');
-        messageContainer.classList.add('fixed', 'top-5', 'right-5', 'bg-white', 'shadow-lg', 'rounded-md', 'p-4', 'border-l-4', 'text-sm', 'transition-all', 'duration-300');
-    
-        if (type === 'error') {
-            messageContainer.classList.add('border-red-500', 'text-red-700', 'bg-red-50');
-        } else if (type === 'success') {
-            messageContainer.classList.add('border-green-500', 'text-green-700', 'bg-green-50');
-        } else {
-            messageContainer.classList.add('border-gray-500', 'text-gray-700', 'bg-gray-50');
-        }
-    
-        messageContainer.textContent = message;
-        document.body.appendChild(messageContainer);
-    
-        setTimeout(() => {
-            messageContainer.classList.add('opacity-0');
-            setTimeout(() => messageContainer.remove(), 500);
-        }, 3000);
-    }
-    
-
-   function handleDrop() {
-        if (draggedTask) {
-            const taskId = draggedTask.getAttribute('data-task-id');
-            const newStatus = this.closest('.kanban-column').getAttribute('data-status');  // Get status from the column
-            this.querySelector('.kanban-tasks').appendChild(draggedTask); // Move the element *first*
-
-            // Then send the update via WebSocket:
-            socket.send(JSON.stringify({
-                type: 'status_update',
-                task_id: taskId,
-                status: newStatus
-            }));
-        }
-    }
-
-
-    document.querySelectorAll('.kanban-task').forEach(task => {
-        task.addEventListener('dragstart', handleDragStart);
-        task.addEventListener('dragend', handleDragEnd);
-    });
-
-    document.querySelectorAll('.kanban-column').forEach(column => {
-        column.addEventListener('dragover', handleDragOver);
-        column.addEventListener('dragleave', handleDragLeave);
-        column.addEventListener('drop', handleDrop);
-    });
-    // Сохранение состояния сортировки
-    function saveSortState(columnIndex, order) {
-        localStorage.setItem('sortColumn', columnIndex);
-        localStorage.setItem('sortOrder', order);
-    }
-
-    // Восстановление состояния сортировки
-    function restoreSortState() {
-        const columnIndex = localStorage.getItem('sortColumn');
-        const order = localStorage.getItem('sortOrder');
-        if (columnIndex !== null && order !== null) {
-            const header = document.querySelector(`.sort-header[data-column="${columnIndex}"]`);
-            if (header) {
-                header.dataset.order = order;
-                header.click(); // Применяем сортировку
-            }
-        }
-    }
-
-    // Вызов восстановления при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function() {
+        // Call restoreSortState on page load
         restoreSortState();
+
     });
 
-});
 </script>
 {% endblock %}
