@@ -26,63 +26,42 @@
 
 {% block list_content %}
 <!-- 📌 Горизонтальный список -->
-<div id="task-list"
-    class="overflow-x-auto bg-white shadow-md rounded-xl border border-gray-200 p-4">
+<div id="task-list" class="overflow-x-auto bg-white shadow-md rounded-xl border border-gray-200 p-4">
     <table class="min-w-full divide-y divide-gray-300">
         <thead>
             <tr class="bg-gray-100">
-                <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header"
-                    data-column="task_number">
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header" data-column="task_number">
                     📌 {% trans 'Задача' %}
                 </th>
-                <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header"
-                    data-column="campaign">
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header" data-column="campaign">
                     🎯 {% trans 'Кампания' %}
                 </th>
-                <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header"
-                    data-column="status">
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header" data-column="status">
                     🚦 {% trans 'Статус' %}
                 </th>
-                <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header"
-                    data-column="priority">
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer sort-header" data-column="priority">
                     ⚡ {% trans 'Приоритет' %}
                 </th>
-                <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">
                     ✏️ {% trans 'Действия' %}
                 </th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-            {% for task in tasks %}
+            {% for task in page_obj %}
             <tr id="task-{{ task.pk }}" class="hover:bg-gray-50 transition-all">
-                <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                    {{ task.task_number }}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-600">
-                    {{ task.campaign.name }}
-                </td>
+                <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ task.task_number }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ task.campaign.name }}</td>
                 <td class="px-6 py-4 text-sm">
-                    <select
-                        class="status-dropdown px-3 py-1 rounded-full text-xs font-medium text-neutral-800 focus:outline-none transition-all"
-                        name="status">
+                    <select class="status-dropdown px-3 py-1 rounded-full text-xs font-medium text-neutral-800 focus:outline-none transition-all" name="status">
                         {% for status, task_list in tasks_by_status.items %}
-                        <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>
-                            {{ status|capfirst }}
-                        </option>
+                        <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{{ status|capfirst }}</option>
                         {% endfor %}
                     </select>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-600">
-                    {{ task.get_priority_display }}
-                </td>
+                <td class="px-6 py-4 text-sm text-gray-600">{{ task.get_priority_display }}</td>
                 <td class="px-6 py-4 text-sm flex space-x-2">
-                    <button
-                        hx-get="{% url 'tasks:task_update' task.pk %}"
+                    <button hx-get="{% url 'tasks:task_update' task.pk %}"
                         hx-target="#modal-content"
                         hx-headers='{"Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}"}'
                         class="px-3 py-1 rounded-md text-sm font-medium text-gray-800 bg-white border border-gray-300 hover:bg-gray-100 transition-all">
@@ -97,8 +76,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5"
-                    class="px-6 py-4 text-sm text-gray-500 text-center">
+                <td colspan="5" class="px-6 py-4 text-sm text-gray-500 text-center">
                     {% trans 'Нет задач.' %}
                 </td>
             </tr>
@@ -107,12 +85,26 @@
     </table>
 </div>
 
+<!-- Пагинация -->
+<div class="mt-4 flex justify-between items-center">
+    <span class="text-sm text-gray-600">{% trans 'Страница' %} {{ page_obj.number }} {% trans 'из' %} {{ page_obj.paginator.num_pages }}</span>
+    <div class="flex space-x-2">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-md">&laquo; {% trans 'Первая' %}</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-md">{% trans 'Назад' %}</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-md">{% trans 'Вперед' %}</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-1 bg-gray-200 text-gray-800 rounded-md">{% trans 'Последняя' %} &raquo;</a>
+        {% endif %}
+    </div>
+</div>
+
+
 <!-- 📌 Канбан-доска -->
 <div id="kanban-board" class="hidden mt-8 flex justify-between gap-4">
     {% for status, task_list in tasks_by_status.items %}
-    <div
-        class="kanban-column w-full p-4 min-h-[300px] max-h-[550px] border-1 border-neutral-600 rounded-xl shadow-md overflow-y-auto"
-        data-status="{{ status }}">
+    <div class="kanban-column w-full p-4 min-h-[300px] max-h-[550px] border-1 border-neutral-600 rounded-xl shadow-md overflow-y-auto" data-status="{{ status }}">
         <h3 class="text-lg font-semibold text-neutral-800 p-2 shadow-md sticky top-0 z-10
         {% if status == 'new' %}bg-neutral-200
         {% elif status == 'in_progress' %}bg-yellow-400
@@ -123,10 +115,7 @@
         </h3>
         <div class="kanban-tasks space-y-3 min-h-[100px]">
             {% for task in task_list %}
-            <div id="task-{{ task.pk }}"
-                class="kanban-task bg-neutral-300 shadow-md rounded-md p-3 cursor-grab"
-                draggable="true"
-                data-task-id="{{ task.pk }}">
+            <div id="task-{{ task.pk }}" class="kanban-task bg-neutral-300 shadow-md rounded-md p-3 cursor-grab" draggable="true" data-task-id="{{ task.pk }}">
                 <h4 class="font-medium text-neutral-900">
                     {{ task.campaign.name }} - {{ task.task_number }}</h4>
             </div>
@@ -138,142 +127,137 @@
     {% endfor %}
 </div>
 {% endblock %}
+
 {% block scripts %}
-<!-- 📌 JS для сохранения режима в `localStorage` -->
 <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let taskList = document.getElementById('task-list');
-            let kanbanBoard = document.getElementById('kanban-board');
-            let toggleBtn = document.getElementById('toggleViewBtn');
-        
-            // Проверяем сохранённый режим
-            let savedView = localStorage.getItem('taskView') || 'kanban';
-            if (savedView === 'list') {
-                taskList.classList.remove('hidden');
-                kanbanBoard.classList.add('hidden');
-            } else {
-                taskList.classList.add('hidden');
-                kanbanBoard.classList.remove('hidden');
-            }
-        
-            // Переключаем режим и сохраняем его в localStorage
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', function () {
-                    if (taskList.classList.contains('hidden')) {
-                        taskList.classList.remove('hidden');
-                        kanbanBoard.classList.add('hidden');
-                        localStorage.setItem('taskView', 'list');
-                    } else {
-                        taskList.classList.add('hidden');
-                        kanbanBoard.classList.remove('hidden');
-                        localStorage.setItem('taskView', 'kanban');
-                    }
+    document.addEventListener('DOMContentLoaded', function () {
+        const taskList = document.getElementById('task-list');
+        const kanbanBoard = document.getElementById('kanban-board');
+        const toggleBtn = document.getElementById('toggleViewBtn');
+
+        // Проверяем сохранённый режим
+        const savedView = localStorage.getItem('taskView') || 'kanban';
+        if (savedView === 'list') {
+            taskList.classList.remove('hidden');
+            kanbanBoard.classList.add('hidden');
+        } else {
+            taskList.classList.add('hidden');
+            kanbanBoard.classList.remove('hidden');
+        }
+
+        // Переключаем режим и сохраняем его в localStorage
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function () {
+                if (taskList.classList.contains('hidden')) {
+                    taskList.classList.remove('hidden');
+                    kanbanBoard.classList.add('hidden');
+                    localStorage.setItem('taskView', 'list');
+                } else {
+                    taskList.classList.add('hidden');
+                    kanbanBoard.classList.remove('hidden');
+                    localStorage.setItem('taskView', 'kanban');
+                }
+            });
+        }
+
+        // Сортировка
+        document.querySelectorAll('.sort-header').forEach(header => {
+            header.addEventListener('click', function () {
+                const table = document.querySelector('tbody');
+                const rows = Array.from(table.querySelectorAll('tr'));
+                const columnIndex = this.cellIndex;
+                const order = this.dataset.order = -(this.dataset.order || -1);
+
+                rows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[columnIndex].textContent.trim();
+                    const cellB = rowB.cells[columnIndex].textContent.trim();
+                    return order * (cellA.localeCompare(cellB));
                 });
-            }
-        
-            // Сортировка
-            document.querySelectorAll('.sort-header').forEach(header => {
-                header.addEventListener('click', function () {
-                    let table = document.querySelector('tbody');
-                    let rows = Array.from(table.querySelectorAll('tr'));
-                    let columnIndex = this.cellIndex;
-                    let order = this.dataset.order = -(this.dataset.order || -1);
-        
-                    rows.sort((rowA, rowB) => {
-                        let cellA = rowA.cells[columnIndex].textContent.trim();
-                        let cellB = rowB.cells[columnIndex].textContent.trim();
-                        return order * (cellA.localeCompare(cellB));
-                    });
-        
-                    rows.forEach(row => table.appendChild(row));
-                });
+
+                rows.forEach(row => table.appendChild(row));
             });
         });
-        
+
         // WebSocket для обновления статуса
-        document.addEventListener('DOMContentLoaded', function () {
-            const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
 
-            socket.onopen = function () {
-                console.log('WebSocket connection established.');
-            };
+        socket.onopen = function () {
+            console.log('WebSocket connection established.');
+        };
 
-            document.querySelectorAll('.status-dropdown').forEach(select => {
-                select.addEventListener('change', function () {
-                    let taskId = this.closest('tr').id.replace('task-', '');
-                    let newStatus = this.value;
+        document.querySelectorAll('.status-dropdown').forEach(select => {
+            select.addEventListener('change', function () {
+                const taskId = this.closest('tr').id.replace('task-', '');
+                const newStatus = this.value;
 
-                    if (!newStatus) {
-                        alert("Ошибка: статус не выбран!");
-                        return;
-                    }
+                if (!newStatus) {
+                    alert("Ошибка: статус не выбран!");
+                    return;
+                }
+
+                socket.send(JSON.stringify({
+                    type: 'status_update',
+                    task_id: taskId,
+                    status: newStatus
+                }));
+            });
+        });
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'status_update' && data.success) {
+                const taskRow = document.getElementById('task-' + data.task_id);
+                if (taskRow) {
+                    taskRow.querySelector('.status-dropdown').value = data.new_status;
+                }
+            }
+        };
+
+        socket.onerror = function (error) {
+            console.error('WebSocket error: ' + error);
+        };
+
+        socket.onclose = function () {
+            console.log('WebSocket connection closed.');
+        };
+
+        // Drag & Drop для Kanban
+        let draggedTask = null;
+
+        document.querySelectorAll('.kanban-task').forEach(task => {
+            task.draggable = true;
+
+            task.addEventListener('dragstart', function () {
+                draggedTask = this;
+                setTimeout(() => this.classList.add('opacity-50'), 0);
+            });
+
+            task.addEventListener('dragend', function () {
+                this.classList.remove('opacity-50');
+                draggedTask = null;
+            });
+        });
+
+        document.querySelectorAll('.kanban-column').forEach(column => {
+            column.addEventListener('dragover', function (e) {
+                e.preventDefault();
+            });
+
+            column.addEventListener('drop', function (e) {
+                e.preventDefault();
+                if (draggedTask) {
+                    const taskId = draggedTask.getAttribute('data-task-id');
+                    const newStatus = this.getAttribute('data-status');
+                    this.querySelector('.kanban-tasks').appendChild(draggedTask);
 
                     socket.send(JSON.stringify({
                         type: 'status_update',
                         task_id: taskId,
                         status: newStatus
                     }));
-                });
-            });
-
-            socket.onmessage = function (event) {
-                let data = JSON.parse(event.data);
-                if (data.type === 'status_update' && data.success) {
-                    let taskRow = document.getElementById('task-' + data.task_id);
-                    if (taskRow) {
-                        taskRow.querySelector('.status-dropdown').value = data.new_status;
-                    }
                 }
-            };
-
-            socket.onerror = function (error) {
-                console.error('WebSocket error: ' + error);
-            };
-
-            socket.onclose = function () {
-                console.log('WebSocket connection closed.');
-            };
-        });
-
-        // Drag & Drop для Kanban
-        document.addEventListener('DOMContentLoaded', function () {
-            const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
-            let draggedTask = null;
-
-            document.querySelectorAll('.kanban-task').forEach(task => {
-                task.draggable = true;
-
-                task.addEventListener('dragstart', function () {
-                    draggedTask = this;
-                    setTimeout(() => this.classList.add('opacity-50'), 0);
-                });
-
-                task.addEventListener('dragend', function () {
-                    this.classList.remove('opacity-50');
-                    draggedTask = null;
-                });
-            });
-
-            document.querySelectorAll('.kanban-column').forEach(column => {
-                column.addEventListener('dragover', function (e) {
-                    e.preventDefault();
-                });
-
-                column.addEventListener('drop', function (e) {
-                    e.preventDefault();
-                    if (draggedTask) {
-                        let taskId = draggedTask.getAttribute('data-task-id');
-                        let newStatus = this.getAttribute('data-status');
-                        this.querySelector('.kanban-tasks').appendChild(draggedTask);
-
-                        socket.send(JSON.stringify({
-                            type: 'status_update',
-                            task_id: taskId,
-                            status: newStatus
-                        }));
-                    }
-                });
             });
         });
-    </script>
+    });
+</script>
 {% endblock %}

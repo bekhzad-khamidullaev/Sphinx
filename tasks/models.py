@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError  # Correct import
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.dispatch import receiver
@@ -13,6 +14,7 @@ import time
 import logging
 from user_profiles.models import TaskUserRole
 
+
 logger = logging.getLogger(__name__)
 
 # ------------------------ Базовая Модель ------------------------
@@ -24,6 +26,10 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
 
+    def __str__(self):
+        return f"{self.id} - {self.created_at}"
+
+
 # ------------------------ Кампании ------------------------
 
 class Campaign(BaseModel):
@@ -31,6 +37,35 @@ class Campaign(BaseModel):
     description = models.TextField(blank=True, verbose_name=_("Описание кампании"))
     start_date = models.DateField(null=True, blank=True, verbose_name=_("Дата начала"))
     end_date = models.DateField(null=True, blank=True, verbose_name=_("Дата завершения"))
+    channel_layer = get_channel_layer()
+
+    def clean(self):
+        """Проверяет, что дата завершения не раньше даты начала."""
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValidationError(_("Дата завершения не может быть раньше даты начала."))
+
+    def save(self, *args, **kwargs):
+        """Отправка уведомления по WebSocket при создании/обновлении кампании."""
+        self.clean()
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+
+        action = "create" if is_new else "update"
+        async_to_sync(self.channel_layer.group_send)(
+            "campaigns", {"type": "updateCampaigns", "message": {"action": action, "id": self.id, "name": self.name}}
+        )
+
+    def delete(self, *args, **kwargs):
+        """Отправка уведомления по WebSocket при удалении кампании."""
+        async_to_sync(self.channel_layer.group_send)(
+            "campaigns", {"type": "updateCampaigns", "message": {"action": "delete", "id": self.id}}
+        )
+        super().delete(*args, **kwargs)
+
+    def get_absolute_url(self):
+        """Возвращает URL для просмотра кампании."""
+        from django.urls import reverse
+        return reverse("tasks:campaign_detail", kwargs={"pk": self.pk})
 
     class Meta:
         verbose_name = _("Кампания")
@@ -41,12 +76,42 @@ class Campaign(BaseModel):
     def __str__(self):
         return self.name
 
+
 # ------------------------ Категории и Подкатегории ------------------------
 
 class TaskCategory(BaseModel):
     name = models.CharField(max_length=100, unique=True, verbose_name=_("Название категории"), db_index=True)
     description = models.TextField(blank=True, verbose_name=_("Описание категории"))
     last_assigned_team = models.ForeignKey("user_profiles.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="last_category_tasks")
+    channel_layer = get_channel_layer()
+
+    def clean(self):
+        """Проверяет, что название категории уникально."""
+        if TaskCategory.objects.filter(name=self.name).exclude(id=self.id).exists():
+            raise ValidationError(_("Категория с таким названием уже существует."))
+
+    def save(self, *args, **kwargs):
+        """Отправка уведомления по WebSocket при создании/обновлении категории."""
+        self.clean()
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+
+        action = "create" if is_new else "update"
+        async_to_sync(self.channel_layer.group_send)(
+            "categories", {"type": "updateData", "message": {"action": action, "id": self.id, "name": self.name}}
+        )
+
+    def delete(self, *args, **kwargs):
+        """Отправка уведомления по WebSocket при удалении категории."""
+        async_to_sync(self.channel_layer.group_send)(
+            "categories", {"type": "updateData", "message": {"action": "delete", "id": self.id}}
+        )
+        super().delete(*args, **kwargs)
+
+    def get_absolute_url(self):
+        """Возвращает URL для просмотра категории."""
+        from django.urls import reverse
+        return reverse("tasks:category_detail", kwargs={"pk": self.pk})
 
     class Meta:
         verbose_name = _("Категория задач")
@@ -57,10 +122,41 @@ class TaskCategory(BaseModel):
     def __str__(self):
         return self.name
 
+
 class TaskSubcategory(BaseModel):
     category = models.ForeignKey("tasks.TaskCategory", on_delete=models.CASCADE, related_name="subcategories", verbose_name=_("Категория"), db_index=True)
     name = models.CharField(max_length=100, verbose_name=_("Название подкатегории"), db_index=True)
     description = models.TextField(blank=True, verbose_name=_("Описание подкатегории"))
+    last_assigned_team = models.ForeignKey("user_profiles.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="last_subcategory_tasks")
+    channel_layer = get_channel_layer()
+
+    def clean(self):
+        """Проверяет, что подкатегория уникальна в рамках категории."""
+        if TaskSubcategory.objects.filter(category=self.category, name=self.name).exclude(id=self.id).exists():
+            raise ValidationError(_("Подкатегория с таким названием уже существует в этой категории."))
+
+    def save(self, *args, **kwargs):
+        """Отправка уведомления по WebSocket при создании/обновлении подкатегории."""
+        self.clean()
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+
+        action = "create" if is_new else "update"
+        async_to_sync(self.channel_layer.group_send)(
+            "subcategories", {"type": "updateData", "message": {"action": action, "id": self.id, "name": self.name}}
+        )
+
+    def delete(self, *args, **kwargs):
+        """Отправка уведомления по WebSocket при удалении подкатегории."""
+        async_to_sync(self.channel_layer.group_send)(
+            "subcategories", {"type": "updateData", "message": {"action": "delete", "id": self.id}}
+        )
+        super().delete(*args, **kwargs)
+
+    def get_absolute_url(self):
+        """Возвращает URL для просмотра подкатегории."""
+        from django.urls import reverse
+        return reverse("tasks:subcategory_detail", kwargs={"pk": self.pk})
 
     class Meta:
         verbose_name = _("Подкатегория задач")
@@ -70,9 +166,13 @@ class TaskSubcategory(BaseModel):
             models.Index(fields=["category", "name"], name="subcat_catname_idx"),
             models.Index(fields=["name"], name="tasksubcategory_name_idx"),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=["category", "name"], name="unique_subcategory_name")
+        ]
 
     def __str__(self):
         return f"{self.category.name} - {self.name}"
+
 
 # ------------------------ Задачи ------------------------
 
@@ -98,7 +198,6 @@ class Task(BaseModel):
     subcategory = models.ForeignKey("tasks.TaskSubcategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks", db_index=True)
     task_number = models.CharField(max_length=20, unique=True, blank=True, verbose_name=_("Номер задачи"), db_index=True)
     description = models.TextField(verbose_name=_("Описание задачи"))
-    # assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_tasks", db_index=True)
     assignee = models.ForeignKey("user_profiles.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_tasks", db_index=True)
     team = models.ForeignKey("user_profiles.Team", on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks")
     photos = models.ManyToManyField("tasks.TaskPhoto", blank=True, related_name="tasks")
@@ -110,44 +209,61 @@ class Task(BaseModel):
     estimated_time = models.DurationField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks_created", db_index=True)
 
-    def save(self, *args, **kwargs):
-        """Генерирует уникальный task_number перед сохранением"""
-        if not self.task_number:
-            attempt = 0
-            while attempt < 10:
-                self.task_number = self.generate_unique_task_number()
-                if not Task.objects.filter(task_number=self.task_number).exists():
-                    break
-                attempt += 1
+    def clean(self):
+        """Проверяет корректность данных задачи."""
+        if self.deadline and self.completion_date and self.deadline < self.completion_date:
+            raise ValidationError(_("Дата завершения не может быть раньше дедлайна."))
 
-            if attempt >= 10:
-                raise IntegrityError("Не удалось сгенерировать уникальный номер задачи после 10 попыток!")
-            
+        if self.assignee and self.team:
+            raise ValidationError(_("Задача не может быть назначена одновременно на пользователя и команду."))
+
+        if self.category and self.subcategory and self.category != self.subcategory.category:
+             raise ValidationError(_("Подкатегория не принадлежит выбранной категории."))
+
+        if self.status == "completed" and not self.completion_date:
+            self.completion_date = timezone.now()  # Автоматическое заполнение completion_date
+        elif self.status != "completed" and self.completion_date:
+            self.completion_date = None
+
+        if self.is_overdue and self.status not in ["completed", "cancelled", "overdue"]:
+            self.status = "overdue"  # Автоматическая смена статуса на "overdue"
+
+
+    def save(self, *args, **kwargs):
+        """Генерирует уникальный task_number и назначает роли при сохранении задачи."""
+        self.clean()  # Вызываем clean() перед сохранением
+        if not self.task_number:
+            self.task_number = self.generate_unique_task_number()
+
         super().save(*args, **kwargs)
 
-        # If task is assigned to a team, assign the team leader as the executor
+        # Назначение ролей при сохранении задачи
         if self.team:
-            leader = self.team.team_leader
-            if leader:
-                TaskUserRole.objects.get_or_create(task=self, user=leader, role=TaskUserRole.RoleChoices.EXECUTOR)
+            self.assign_team_roles()
 
-            # Assign all team members as watchers
-            for member in self.team.members.exclude(id=leader.id):
-                TaskUserRole.objects.get_or_create(task=self, user=member, role=TaskUserRole.RoleChoices.WATCHER)
-
-        # If task is assigned, automatically assign the team based on the assignee's profile
+        # Автоматическое назначение команды, если задача назначена на пользователя
         if self.assignee and not self.team:
             self.team = self.assignee.user_profile.team
+            super().save(*args, **kwargs)  # Call super().save() again to save the team change
 
+    def assign_team_roles(self):
+        """Назначает роли для команды и её участников."""
+        if not self.team:
+            return
 
+        leader = self.team.team_leader
+        if leader:
+            TaskUserRole.objects.get_or_create(task=self, user=leader, role=TaskUserRole.RoleChoices.EXECUTOR)
+
+        for member in self.team.members.exclude(id=leader.id):
+            TaskUserRole.objects.get_or_create(task=self, user=member, role=TaskUserRole.RoleChoices.WATCHER)
 
     def generate_unique_task_number(self):
-        """Генерирует уникальный номер задачи с блокировкой транзакции"""
+        """Генерирует уникальный номер задачи."""
         if not self.campaign:
-            raise ValueError("Cannot create task without a campaign!")
+            raise ValueError("Нельзя создать задачу без кампании!")
 
         campaign_code = unidecode(self.campaign.name).upper().replace(" ", "")[:4] or "TASK"
-        print(campaign_code)
 
         for attempt in range(10):
             with transaction.atomic():
@@ -163,13 +279,29 @@ class Task(BaseModel):
 
                 task_number = f"{campaign_code}-{next_number:04d}"
 
-                # Проверяем ещё раз, не появился ли этот номер в БД
                 if not Task.objects.filter(task_number=task_number).exists():
                     return task_number
 
+        logger.error("Не удалось сгенерировать уникальный номер задачи после 10 попыток!")
         raise IntegrityError("Не удалось сгенерировать уникальный номер задачи после 10 попыток!")
 
+    def get_absolute_url(self):
+        """Возвращает URL для просмотра задачи."""
+        from django.urls import reverse
+        return reverse("tasks:task_detail", kwargs={"pk": self.pk})
 
+    def get_status_display(self):
+        """Возвращает строковое представление статуса задачи."""
+        return dict(self.TASK_STATUS_CHOICES).get(self.status, self.status)
+
+    def get_priority_display(self):
+        """Возвращает строковое представление приоритета задачи."""
+        return self.TaskPriority(self.priority).label
+
+    @property
+    def is_overdue(self):
+        """Проверяет, просрочена ли задача."""
+        return self.deadline and self.deadline < timezone.now() and self.status not in ["completed", "cancelled", "overdue"]
 
     class Meta:
         verbose_name = _("Задача")
@@ -186,6 +318,7 @@ class Task(BaseModel):
 
     def __str__(self):
         return f"{self.task_number} - {self.campaign.name} - {self.description[:50]}"
+
 
 # ------------------------ Фотографии ------------------------
 
