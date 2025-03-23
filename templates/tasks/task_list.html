@@ -1,4 +1,4 @@
-{% extends 'list_base.html' %}
+{% extends 'base.html' %}
 {% load i18n app_filters %}
 
 {% block list_title %}
@@ -8,10 +8,8 @@
 {% endblock %}
 
 {% block list_actions %}
-<div class="flex space-x-4 items-center"> <!-- Added items-center -->
-    <button hx-get="{% url 'tasks:task_create' %}"
-            hx-target="#modal-content"
-            hx-swap="innerHTML"
+<div class="flex space-x-4 items-center">
+    <button id="createTaskBtn"
             class="px-5 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 transition-all">
         ➕ {% trans 'Создать задачу' %}
     </button>
@@ -98,7 +96,6 @@
     {% endfor %}
 </div>
 
-
 <!-- 📌 Горизонтальный список -->
 <div id="task-list" class="overflow-x-auto bg-white shadow-md rounded-xl border border-gray-200 p-3 {% if view_type == 'kanban' %}hidden{% endif %}">
     <table class="min-w-full divide-y divide-gray-300 text-sm">
@@ -118,7 +115,7 @@
                 <td class="px-4 py-2 text-gray-600 whitespace-nowrap">{{ task.campaign.name }}</td>
                 <td class="px-4 py-2">
                     <select class="status-dropdown appearance-none px-3 py-1.5 rounded-md text-xs font-medium bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 transition-all"
-                            name="status" hx-swap="none">
+                            name="status" >
                         {% for status, task_list in tasks_by_status.items %}
                             <option value="{{ status }}" {% if task.status == status %}selected{% endif %}>{% trans status|capfirst %}</option>
                         {% endfor %}
@@ -126,16 +123,12 @@
                 </td>
                 <td class="px-4 py-2 text-gray-600 whitespace-nowrap">{{ task.get_priority_display }}</td>
                 <td class="px-4 py-2 flex space-x-1">
-                    <button hx-get="{% url 'tasks:task_update' task.pk %}"
-                            hx-target="#modal-content"
-                            hx-swap="innerHTML"
-                            class="px-2 py-1 rounded-md text-xs text-gray-800 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition-all">
+                    <button data-task-id="{{ task.pk }}"
+                            class="edit-task-btn px-2 py-1 rounded-md text-xs text-gray-800 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition-all">
                         ✏️
                     </button>
-                    <button hx-get="{% url 'tasks:task_delete' task.pk %}"
-                            hx-target="#modal-content"
-                            hx-swap="innerHTML"
-                            class="px-2 py-1 rounded-md text-xs text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50 transition-all">
+                    <button data-task-id="{{ task.pk }}"
+                            class="delete-task-btn px-2 py-1 rounded-md text-xs text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50 transition-all">
                         ❌
                     </button>
                 </td>
@@ -186,318 +179,378 @@
 
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const taskList = document.getElementById('task-list');
-        const kanbanBoard = document.getElementById('kanban-board');
-        const toggleViewBtn = document.getElementById('toggleViewBtn');
-        const resetHiddenColumnsBtn = document.getElementById('resetHiddenColumnsBtn');
-        const columnToggleDropdown = document.getElementById('column-toggle-dropdown'); // Добавляем
-        const pagination = document.getElementById('pagination');
+document.addEventListener('DOMContentLoaded', function() {
+    const taskList = document.getElementById('task-list');
+    const kanbanBoard = document.getElementById('kanban-board');
+    const toggleViewBtn = document.getElementById('toggleViewBtn');
+    const resetHiddenColumnsBtn = document.getElementById('resetHiddenColumnsBtn');
+    const columnToggleDropdown = document.getElementById('column-toggle-dropdown');
+    const pagination = document.getElementById('pagination');
+    const createTaskBtn = document.getElementById('createTaskBtn'); // Кнопка создания
 
-        // Load saved view
-        let currentView = localStorage.getItem('taskView') || 'kanban';
+    // Load saved view
+    let currentView = localStorage.getItem('taskView') || 'kanban';
+    setView(currentView);
+
+    // Toggle view
+    toggleViewBtn.addEventListener('click', function() {
+        currentView = (currentView === 'list') ? 'kanban' : 'list';
         setView(currentView);
+        localStorage.setItem('taskView', currentView);
+        //  Больше не нужно: window.location.href = `?view=${currentView}`;
+    });
 
-        // Toggle view
-        toggleViewBtn.addEventListener('click', function() {
-            currentView = (currentView === 'list') ? 'kanban' : 'list';
-            setView(currentView);
-            localStorage.setItem('taskView', currentView);
-            window.location.href = `?view=${currentView}`;
+    function setView(view) {
+        if (view === 'list') {
+            taskList.classList.remove('hidden');
+            kanbanBoard.classList.add('hidden');
+            columnToggleDropdown.classList.add('hidden');
+            if (pagination) pagination.classList.remove('hidden');
+        } else {
+            taskList.classList.add('hidden');
+            kanbanBoard.classList.remove('hidden');
+            columnToggleDropdown.classList.remove('hidden');
+            if (pagination) pagination.classList.add('hidden');
+        }
+    }
+
+    // --- Sorting (Оставляем как было, HTMX тут не нужен) ---
+    document.querySelectorAll('.sort-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const table = this.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const columnIndex = this.cellIndex;
+            const order = this.dataset.order = -(this.dataset.order || -1);
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[columnIndex].textContent.trim();
+                const cellB = rowB.cells[columnIndex].textContent.trim();
+                return order * cellA.localeCompare(cellB, undefined, { numeric: true });
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            saveSortState(this.dataset.column, order);
         });
+    });
 
-        function setView(view) {
-            if (view === 'list') {
-                taskList.classList.remove('hidden');
-                kanbanBoard.classList.add('hidden');
-                columnToggleDropdown.classList.add('hidden'); // Скрываем дропдаун
-                if (pagination) pagination.classList.remove('hidden');
-            } else {
-                taskList.classList.add('hidden');
-                kanbanBoard.classList.remove('hidden');
-                columnToggleDropdown.classList.remove('hidden'); // Показываем дропдаун
-                if (pagination) pagination.classList.add('hidden');
+    // --- WebSocket setup ---
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
+
+    function connectWebSocket() {
+        socket.onopen = function() {
+            console.log('WebSocket connection established.');
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error: ', error);
+            document.getElementById('loading-indicator').classList.add('hidden');
+            showNotification('Ошибка соединения с сервером.', 'error');
+        };
+
+        socket.onclose = function() {
+            console.log('WebSocket connection closed.');
+            showNotification('Соединение потеряно, попытка переподключения...', 'error');
+            setTimeout(connectWebSocket, 5000);
+        };
+    }
+    connectWebSocket();
+
+   // --- Status dropdown change handler ---
+    document.querySelectorAll('.status-dropdown').forEach(select => {
+        let previousStatus = select.value;
+
+        select.addEventListener('change', function() {
+            const taskId = this.closest('tr').id.replace('task-', '');
+            const newStatus = this.value;
+
+            if (!newStatus) {
+                showNotification("Ошибка: статус не выбран!", 'error');
+                this.value = previousStatus; // Restore previous value
+                return;
             }
+
+            document.getElementById('loading-indicator').classList.remove('hidden');
+
+            socket.send(JSON.stringify({
+                type: 'status_update',
+                task_id: taskId,
+                status: newStatus
+            }));
+
+            previousStatus = newStatus; // Update previous value, even if the socket send fails.
+        });
+    });
+
+
+    socket.onmessage = function(event) {
+        console.log("Raw WebSocket message:", event.data);
+        try {
+            const data = JSON.parse(event.data);
+            console.log("Parsed WebSocket message:", data);
+            console.log("Full data object:", data); // Debugging
+
+            if (data.type === 'status_update') {
+                if (data.success) {
+                    console.log("Status update successful!");
+                    const taskRowList = document.querySelector(`#task-list #task-${data.task_id}`);
+                    const taskDivKanban = document.querySelector(`#kanban-board #task-${data.task_id}`);
+
+                    if (taskRowList) {
+                        taskRowList.querySelector('.status-dropdown').value = data.new_status;
+                    }
+
+                    if (taskDivKanban) {
+                        const targetColumn = document.querySelector(`.kanban-column[data-status="${data.new_status}"] .kanban-tasks`);
+                        if (targetColumn) {
+                            targetColumn.appendChild(taskDivKanban);
+                            updateTaskCounts();  // Обновляем счетчики
+                        }
+                    }
+                    document.getElementById('loading-indicator').classList.add('hidden');
+                    showNotification('Статус задачи обновлен', 'success');
+
+                } else {
+                    console.error("Status update failed:", data);
+                    document.getElementById('loading-indicator').classList.add('hidden');
+                    let errorMessage = data.message || "An unknown error occurred.";
+                    showNotification(errorMessage, 'error');
+                }
+            }
+        } catch (error) {
+            console.error("Error parsing WebSocket message:", error);
+            document.getElementById('loading-indicator').classList.add('hidden');
+            showNotification("Error parsing WebSocket message", 'error');
+        }
+    };
+
+
+    socket.onerror = function(error) {
+        console.error('WebSocket error: ', error);
+         document.getElementById('loading-indicator').classList.add('hidden');
+    };
+
+    socket.onclose = function() {
+        console.log('WebSocket connection closed.');
+    };
+
+    function showNotification(message, type = 'info') {
+        const config = {
+            text: message,
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            stopOnFocus: true,
+        };
+
+        if (type === 'error') {
+            config.style = { background: '#f44336' };
+        } else if (type === 'success') {
+            config.style = { background: '#4CAF50' };
+        } else {
+            config.style = { background: '#777' };
         }
 
-        // Sorting
-        document.querySelectorAll('.sort-header').forEach(header => {
-            header.addEventListener('click', function() {
-                const table = this.closest('table');
-                const tbody = table.querySelector('tbody');
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-                const columnIndex = this.cellIndex;
-                const order = this.dataset.order = -(this.dataset.order || -1);
+        Toastify(config).showToast();
+    }
 
-                rows.sort((rowA, rowB) => {
-                    const cellA = rowA.cells[columnIndex].textContent.trim();
-                    const cellB = rowB.cells[columnIndex].textContent.trim();
-                    return order * cellA.localeCompare(cellB, undefined, { numeric: true });
+    // --- Kanban Drag & Drop using SortableJS ---
+    document.querySelectorAll('.kanban-tasks').forEach(column => {
+        new Sortable(column, {
+            group: 'shared',
+            animation: 150,
+            ghostClass: 'bg-gray-200',
+            chosenClass: 'shadow-xl',
+            dragClass: 'cursor-grabbing',
+            easing: "cubic-bezier(1, 0, 0, 1)",
+
+            onStart: function(evt){
+                document.querySelectorAll('.kanban-column').forEach(col => {
+                    col.classList.add('bg-gray-100');
+                });
+            },
+
+            onEnd: function (evt) {
+                document.querySelectorAll('.kanban-column').forEach(col => {
+                    col.classList.remove('bg-gray-100');
                 });
 
-                rows.forEach(row => tbody.appendChild(row));
-                saveSortState(this.dataset.column, order); // Save the state
-            });
-        });
-
-        // WebSocket setup
-        const socket = new WebSocket('ws://' + window.location.host + '/ws/task_updates/');
-
-        function connectWebSocket() {
-            socket.onopen = function() {
-                console.log('WebSocket connection established.');
-            };
-
-            socket.onerror = function(error) {
-                console.error('WebSocket error: ', error);
-                document.getElementById('loading-indicator').classList.add('hidden');
-                showNotification('Ошибка соединения с сервером.', 'error');
-            };
-
-            socket.onclose = function() {
-                console.log('WebSocket connection closed.');
-                showNotification('Соединение потеряно, попытка переподключения...', 'error');
-                setTimeout(connectWebSocket, 5000); // Try to reconnect after 5 seconds
-            };
-        }
-        connectWebSocket();
-
-        // Status dropdown change handler
-        document.querySelectorAll('.status-dropdown').forEach(select => {
-            let previousStatus = select.value;
-
-            select.addEventListener('change', function() {
-                const taskId = this.closest('tr').id.replace('task-', '');
-                const newStatus = this.value;
-
-                if (!newStatus) {
-                    showNotification("Ошибка: статус не выбран!", 'error');
-                    this.value = previousStatus; // Restore previous value
-                    return;
-                }
-
-
-                document.getElementById('loading-indicator').classList.remove('hidden');
+                const taskId = evt.item.getAttribute('data-task-id');
+                const newStatus = evt.to.closest('.kanban-column').getAttribute('data-status');
 
                 socket.send(JSON.stringify({
                     type: 'status_update',
                     task_id: taskId,
                     status: newStatus
                 }));
-
-                previousStatus = newStatus; // Update previous value
-            });
+            },
         });
-
-        socket.onmessage = function(event) {
-            console.log("Raw WebSocket message:", event.data);
-            try {
-                const data = JSON.parse(event.data);
-                console.log("Parsed WebSocket message:", data);
-
-                // Добавим отладочную печать, чтобы увидеть, что приходит в data
-                console.log("Full data object:", data);
-
-                if (data.type === 'status_update') {
-                    // ПРОВЕРЬТЕ, ЧТО ПОЛЕ success ПРИСУТСТВУЕТ И ИМЕЕТ ПРАВИЛЬНЫЙ РЕГИСТР
-                    if (data.success) {  //  <--  Убедитесь, что здесь именно 'success'
-                        console.log("Status update successful!");
-                        const taskRowList = document.querySelector(`#task-list #task-${data.task_id}`);
-                        const taskDivKanban = document.querySelector(`#kanban-board #task-${data.task_id}`);
-
-                        if (taskRowList) {
-                            taskRowList.querySelector('.status-dropdown').value = data.new_status;
-                        }
-
-                        if (taskDivKanban) {
-                            const targetColumn = document.querySelector(`.kanban-column[data-status="${data.new_status}"] .kanban-tasks`);
-                            if (targetColumn) {
-                                targetColumn.appendChild(taskDivKanban);
-                                updateTaskCounts();
-                            }
-                        }
-                        document.getElementById('loading-indicator').classList.add('hidden');
-                        showNotification('Статус задачи обновлен', 'success');
-
-                    } else {
-                        // Обработка ошибок:
-                        console.error("Status update failed:", data);
-                        document.getElementById('loading-indicator').classList.add('hidden');
-
-                        // Покажем сообщение об ошибке, используя Toastify:
-                        let errorMessage = data.message || "An unknown error occurred."; // Используем сообщение от сервера, если есть
-                        showNotification(errorMessage, 'error');
-                    }
-                }
-            } catch (error) {
-                console.error("Error parsing WebSocket message:", error);
-                document.getElementById('loading-indicator').classList.add('hidden');
-                showNotification("Error parsing WebSocket message", 'error'); // Добавим уведомление
-            }
-        };
-
-
-        socket.onerror = function(error) {
-            console.error('WebSocket error: ', error);
-            document.getElementById('loading-indicator').classList.add('hidden');
-        };
-
-        socket.onclose = function() {
-            console.log('WebSocket connection closed.');
-        };
-
-        function showNotification(message, type = 'info') {
-            const config = {
-                text: message,
-                duration: 3000,
-                close: true,
-                gravity: "top",
-                position: "right",
-                stopOnFocus: true,
-            };
-
-            if (type === 'error') {
-                config.style = { background: '#f44336' }; // Красный для ошибок
-            } else if (type === 'success') {
-                config.style = { background: '#4CAF50' }; // Зеленый для успеха
-            } else {
-                config.style = { background: '#777' };   // Серый для info
-            }
-
-            Toastify(config).showToast();
-        }
-
-        // Kanban Drag & Drop using SortableJS
-        document.querySelectorAll('.kanban-tasks').forEach(column => {
-            new Sortable(column, {
-                group: 'shared', // set all lists to same group
-                animation: 150,
-                ghostClass: 'bg-gray-200', // Class name for the drop placeholder
-                chosenClass: 'shadow-xl',   // Class when item is selected
-                dragClass: 'cursor-grabbing',      //  Class when item is dragged
-                easing: "cubic-bezier(1, 0, 0, 1)", // Easing for smoother animation
-
-                onStart: function(evt){
-                    // Add highlight to all columns
-                    document.querySelectorAll('.kanban-column').forEach(col => {
-                        col.classList.add('bg-gray-100');
-                    });
-                },
-
-                onEnd: function (evt) {
-                    // Remove highlight from all columns
-                    document.querySelectorAll('.kanban-column').forEach(col => {
-                        col.classList.remove('bg-gray-100');
-                    });
-
-
-                    const taskId = evt.item.getAttribute('data-task-id');
-                    const newStatus = evt.to.closest('.kanban-column').getAttribute('data-status');
-
-                    socket.send(JSON.stringify({
-                        type: 'status_update',
-                        task_id: taskId,
-                        status: newStatus
-                    }));
-                },
-            });
-        });
-        // Function to update task counts
-        function updateTaskCounts() {
-            document.querySelectorAll('.kanban-column').forEach(column => {
-                const taskCount = column.querySelectorAll('.kanban-task').length;
-                column.querySelector('.task-count').textContent = taskCount;
-            });
-        }
-
-        // Call updateTaskCounts initially to set counts on page load
-        document.addEventListener('DOMContentLoaded', updateTaskCounts);
-
-
-        // ---  Скрытие/показ колонок ---
-
-        // Добавляем data-status к .kanban-column-wrapper
-        document.querySelectorAll('.kanban-column-wrapper').forEach(wrapper => {
-            const status = wrapper.querySelector('.kanban-column').dataset.status;
-            wrapper.dataset.status = status;
-        });
-
-        // Обработчик для кнопки сброса
-        resetHiddenColumnsBtn.addEventListener('click', function() {
-            localStorage.removeItem('hiddenColumns'); // Удаляем данные из localStorage
-            document.querySelectorAll('.kanban-column-wrapper').forEach(wrapper => {
-                wrapper.classList.remove('hidden'); // Показываем все колонки
-            });
-            //Сбрасываем тоггл кнопки в начальное состояние
-            document.querySelectorAll('.toggle-column-checkbox').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-        });
-
-        // Восстановление состояния скрытых колонок и чекбоксов
-        function restoreHiddenColumns() {
-            const hiddenColumns = JSON.parse(localStorage.getItem('hiddenColumns') || '[]');
-            hiddenColumns.forEach(status => {
-                const columnWrapper = document.querySelector(`.kanban-column-wrapper[data-status="${status}"]`);
-                if (columnWrapper) {
-                    columnWrapper.classList.add('hidden');
-                    // Находим соответствующий чекбокс и устанавливаем его в checked
-                    const checkbox = document.querySelector(`.toggle-column-checkbox[data-status="${status}"]`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                }
-            });
-        }
-        restoreHiddenColumns();
-
-        //  Обработчик для чекбоксов
-        document.querySelectorAll('.toggle-column-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const status = this.dataset.status;
-                const columnWrapper = document.querySelector(`.kanban-column-wrapper[data-status="${status}"]`);
-
-                if (columnWrapper) {
-                    let hiddenColumns = JSON.parse(localStorage.getItem('hiddenColumns') || '[]');
-                    if (this.checked) {
-                        //  Добавляем в hiddenColumns, если чекнут
-                        hiddenColumns.push(status);
-                        columnWrapper.classList.add('hidden');
-                    } else {
-                        //  Удаляем из hiddenColumns, если не чекнут
-                        hiddenColumns = hiddenColumns.filter(s => s !== status);
-                        columnWrapper.classList.remove('hidden');
-                    }
-                    localStorage.setItem('hiddenColumns', JSON.stringify(hiddenColumns));
-                }
-            });
-        });
-
-
-        // Сохранение состояния сортировки
-        function saveSortState(column, order) {
-            localStorage.setItem('sortColumn', column);
-            localStorage.setItem('sortOrder', order);
-        }
-
-        // Восстановление состояния сортировки
-        function restoreSortState() {
-            const columnIndex = localStorage.getItem('sortColumn');
-            const order = localStorage.getItem('sortOrder');
-
-            if (columnIndex !== null && order !== null) {
-                const header = document.querySelector(`.sort-header[data-column="${columnIndex}"]`);
-                if (header) {
-                    header.dataset.order = order;
-                    header.click();  // Trigger a click to apply the sorting
-                }
-            }
-        }
-
-        // Call restoreSortState on page load
-        restoreSortState();
-
     });
+
+    function updateTaskCounts() {
+        document.querySelectorAll('.kanban-column').forEach(column => {
+            const taskCount = column.querySelectorAll('.kanban-task').length;
+            column.querySelector('.task-count').textContent = taskCount;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', updateTaskCounts);
+
+    // ---  Скрытие/показ колонок ---
+
+    document.querySelectorAll('.kanban-column-wrapper').forEach(wrapper => {
+        const status = wrapper.querySelector('.kanban-column').dataset.status;
+        wrapper.dataset.status = status;
+    });
+
+    resetHiddenColumnsBtn.addEventListener('click', function() {
+        localStorage.removeItem('hiddenColumns');
+        document.querySelectorAll('.kanban-column-wrapper').forEach(wrapper => {
+            wrapper.classList.remove('hidden');
+        });
+        document.querySelectorAll('.toggle-column-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateKanbanLayout(); //  Пересчет
+    });
+
+    function restoreHiddenColumns() {
+        const hiddenColumns = JSON.parse(localStorage.getItem('hiddenColumns') || '[]');
+        hiddenColumns.forEach(status => {
+            const columnWrapper = document.querySelector(`.kanban-column-wrapper[data-status="${status}"]`);
+            if (columnWrapper) {
+                columnWrapper.classList.add('hidden');
+                const checkbox = document.querySelector(`.toggle-column-checkbox[data-status="${status}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            }
+        });
+        updateKanbanLayout(); // Пересчет
+    }
+    restoreHiddenColumns();
+
+
+    document.querySelectorAll('.toggle-column-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const status = this.dataset.status;
+            const columnWrapper = document.querySelector(`.kanban-column-wrapper[data-status="${status}"]`);
+
+            if (columnWrapper) {
+                let hiddenColumns = JSON.parse(localStorage.getItem('hiddenColumns') || '[]');
+                if (this.checked) {
+                    hiddenColumns.push(status);
+                    columnWrapper.classList.add('hidden');
+                } else {
+                    hiddenColumns = hiddenColumns.filter(s => s !== status);
+                    columnWrapper.classList.remove('hidden');
+                }
+                localStorage.setItem('hiddenColumns', JSON.stringify(hiddenColumns));
+                updateKanbanLayout();  // Пересчет
+            }
+        });
+    });
+
+    function updateKanbanLayout() {
+        const kanbanBoard = document.getElementById('kanban-board');
+        const visibleColumns = kanbanBoard.querySelectorAll('.kanban-column-wrapper:not(.hidden)');
+
+        if (visibleColumns.length > 0) {
+            kanbanBoard.classList.add('justify-center');
+            kanbanBoard.classList.remove('justify-between');
+        } else {
+            kanbanBoard.classList.remove('justify-center');
+            kanbanBoard.classList.add('justify-between');
+        }
+    }
+
+    function saveSortState(column, order) {
+        localStorage.setItem('sortColumn', column);
+        localStorage.setItem('sortOrder', order);
+    }
+
+    function restoreSortState() {
+        const columnIndex = localStorage.getItem('sortColumn');
+        const order = localStorage.getItem('sortOrder');
+
+        if (columnIndex !== null && order !== null) {
+            const header = document.querySelector(`.sort-header[data-column="${columnIndex}"]`);
+            if (header) {
+                header.dataset.order = order;
+                header.click();  //  Больше не нужно, сортировка на клиенте
+            }
+        }
+    }
+    restoreSortState(); // Вызываем при загрузке
+
+    // --- Modal ---
+    function openModal(content) {
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+        modalContent.innerHTML = content;
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('modal');
+        modal.classList.add('hidden');
+        document.getElementById('modal-content').innerHTML = ''; // Clear content
+    }
+
+    //  Закрытие модалки
+    document.getElementById('modal').addEventListener('click', function(event) {
+      if (event.target === this) { //  Кликнули именно по фону, а не по содержимому
+        closeModal();
+      }
+    });
+
+
+    // --- Create Task (Fetch API) ---
+    createTaskBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        fetch(this.getAttribute('hx-get') || this.getAttribute('href')) //  Поддержка href
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                openModal(html);
+            })
+            .catch(error => {
+                console.error("Error fetching create form:", error);
+                showNotification('Ошибка при загрузке формы создания.', 'error');
+            });
+    });
+
+    // --- Edit and Delete (Fetch API) ---
+    document.querySelectorAll('.edit-task-btn, .delete-task-btn').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            const url = this.getAttribute('hx-get') || this.getAttribute('href'); //  Поддержка href
+            if (!url) {
+                console.error("No URL found for edit/delete button");
+                return;
+            }
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                         throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    openModal(html);
+                })
+                .catch(error => {
+                    console.error("Error fetching edit/delete form:", error);
+                    showNotification('Ошибка при загрузке формы.', 'error');
+                });
+        });
+    });
+});
 
 </script>
 {% endblock %}
