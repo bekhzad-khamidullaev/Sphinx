@@ -25,7 +25,7 @@ CACHES = {
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['windevs.uz', 'ddm.tshtt.uz','109.94.172.194','127.0.0.1','localhost', '10.10.137.120']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -232,8 +232,8 @@ LOGGING = {
 
 CRISPY_TEMPLATE_PACK = 'tailwind'
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_NAME = 'sessionid'
 # Static files (Whitenoise)
