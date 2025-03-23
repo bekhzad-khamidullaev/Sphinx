@@ -113,11 +113,11 @@
             <form method="post" action="{% url 'set_language' %}" class="px-4 py-2">
                 {% csrf_token %}
                 <select name="language" onchange="this.form.submit()" class="w-full text-gray-800 bg-gray-100 rounded-lg p-2 border">
-                    <option value="en" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>{% trans 'Uzbek' %}</option>
+                    <option value="uz" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>{% trans 'Uzbek' %}</option>
                     <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>{% trans 'Русский' %}</option>
                     <option value="en" {% if LANGUAGE_CODE == "en" %}selected{% endif %}>{% trans 'English' %}</option>
-                    <option value="ru" {% if LANGUAGE_CODE == "fr" %}selected{% endif %}>{% trans 'Français' %}</option>
-                    <option value="en" {% if LANGUAGE_CODE == "es" %}selected{% endif %}>{% trans 'Español' %}</option>
+                    <option value="fr" {% if LANGUAGE_CODE == "fr" %}selected{% endif %}>{% trans 'Français' %}</option>
+                    <option value="es" {% if LANGUAGE_CODE == "es" %}selected{% endif %}>{% trans 'Español' %}</option>
                 </select>
             </form>
             <hr class="my-1">
