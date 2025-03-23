@@ -1,0 +1,883 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-23 09:43+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+#: .\config\settings.py:134
+msgid "Uzbek"
+msgstr "O'zbek"
+
+#: .\config\settings.py:135
+msgid "Русский"
+msgstr "Ruscha"
+
+#: .\config\settings.py:136
+msgid "English"
+msgstr "Inglizcha"
+
+#: .\config\settings.py:137
+msgid "Español"
+msgstr "Ispancha"
+
+#: .\config\settings.py:138
+msgid "Français"
+msgstr "Fransuzcha"
+
+#: .\tasks\admin.py:18
+msgid "Даты"
+msgstr "Sanalar"
+
+#: .\tasks\admin.py:50
+msgid "Подробности"
+msgstr "Tafsilotlar"
+
+#: .\tasks\admin.py:51
+msgid "Сроки"
+msgstr "Muddalar"
+
+#: .\tasks\admin.py:52
+msgid "Фото/Вложения"
+msgstr "Foto/Yüklamalar"
+
+#: .\tasks\admin.py:53 .\tasks\admin.py:78
+msgid "Системная информация"
+msgstr "Tizim ma'lumotlari"
+
+#: .\tasks\admin.py:56 .\tasks\admin.py:81
+msgid "Системная информация (только для чтения)"
+msgstr "Tizim ma'lumotlari (faqat o'qish uchun)"
+
+#: .\tasks\apps.py:7
+msgid "Tasks"
+msgstr "Vazifalar"
+
+#: .\tasks\forms.py:20
+msgid "Team name"
+msgstr "Jamoa nomi"
+
+#: .\tasks\forms.py:21
+msgid "Team description"
+msgstr "Jamoa tavsifi"
+
+#: .\tasks\forms.py:33
+msgid "Campaign name"
+msgstr "Kampaniya nomi"
+
+#: .\tasks\forms.py:34
+msgid "Campaign description"
+msgstr "Kampaniya tavsifi"
+
+#: .\tasks\forms.py:42 .\tasks\forms.py:135 .\templates\users\login.html:26
+msgid "Password"
+msgstr "Parol"
+
+#: .\tasks\forms.py:56
+msgid "Role name"
+msgstr "Rol nomi"
+
+#: .\tasks\forms.py:66
+msgid "Category name"
+msgstr "Kategoriya nomi"
+
+#: .\tasks\forms.py:67
+msgid "Category description"
+msgstr "Kategoriya tavsifi"
+
+#: .\tasks\forms.py:78
+msgid "Subcategory name"
+msgstr "Pastki kategoriya nomi"
+
+#: .\tasks\forms.py:79
+msgid "Subcategory description"
+msgstr "Pastki kategoriya tavsifi"
+
+#: .\tasks\forms.py:92
+msgid "Task description"
+msgstr "Vazifa tavsifi"
+
+#: .\tasks\forms.py:114
+msgid "Photo description (optional)"
+msgstr "Foto tavsifi (ixtiyoriy)"
+
+#: .\tasks\forms.py:128
+msgid "Username"
+msgstr "Foydalanuvchi nomi"
+
+#: .\tasks\forms.py:131
+msgid "Enter username"
+msgstr "Foydalanuvchi nomini kiriting"
+
+#: .\tasks\forms.py:138
+msgid "Enter password"
+msgstr "Parolni kiriting"
+
+#: .\tasks\forms.py:147
+msgid "Login"
+msgstr "Kirish"
+
+#: .\tasks\models.py:23 .\templates\tasks\task_detail.html:138
+#: .\user_profiles\models.py:9
+msgid "Дата создания"
+msgstr "Yaratilgan sana"
+
+#: .\tasks\models.py:24 .\templates\tasks\task_detail.html:146
+#: .\user_profiles\models.py:10
+msgid "Дата обновления"
+msgstr "Yangilangan sana"
+
+#: .\tasks\models.py:36
+msgid "Название кампании"
+msgstr "Kampaniya nomi"
+
+#: .\tasks\models.py:37
+msgid "Описание кампании"
+msgstr "Kampaniya tavsifi"
+
+#: .\tasks\models.py:38 .\templates\tasks\task_detail.html:106
+msgid "Дата начала"
+msgstr "Boshlanish sanasi"
+
+#: .\tasks\models.py:39 .\templates\tasks\task_detail.html:114
+msgid "Дата завершения"
+msgstr "Tugash sanasi"
+
+#: .\tasks\models.py:45
+msgid "Дата завершения не может быть раньше даты начала."
+msgstr "Tugash sanasi boshlanish sanasidan oldin bo'lishi mumkin emas."
+
+#: .\tasks\models.py:71 .\templates\tasks\task_detail.html:34
+#: .\templates\tasks\task_list.html:34
+msgid "Кампания"
+msgstr "Kampaniya"
+
+#: .\tasks\models.py:72 .\templates\base.html:90
+#: .\templates\tasks\campaign_list.html:6
+msgid "Кампании"
+msgstr "Kampaniyalar"
+
+#: .\tasks\models.py:83
+msgid "Название категории"
+msgstr "Kategoriya nomi"
+
+#: .\tasks\models.py:84
+msgid "Описание категории"
+msgstr "Kategoriya tavsifi"
+
+#: .\tasks\models.py:91
+msgid "Категория с таким названием уже существует."
+msgstr "Bu nomdagi kategoriya allaqachon mavjud."
+
+#: .\tasks\models.py:117
+msgid "Категория задач"
+msgstr "Vazifalar kategoriyasi"
+
+#: .\tasks\models.py:118 .\templates\tasks\category_list.html:6
+msgid "Категории задач"
+msgstr "Vazifalar kategoriyalari"
+
+#: .\tasks\models.py:127 .\templates\tasks\subcategory_list.html:28
+#: .\templates\tasks\task_detail.html:66
+msgid "Категория"
+msgstr "Kategoriya"
+
+#: .\tasks\models.py:128
+msgid "Название подкатегории"
+msgstr "Pastki kategoriya nomi"
+
+#: .\tasks\models.py:129
+msgid "Описание подкатегории"
+msgstr "Pastki kategoriya tavsifi"
+
+#: .\tasks\models.py:136
+msgid "Подкатегория с таким названием уже существует в этой категории."
+msgstr "Bu kategoriyada shu nomdagi pastki kategoriya allaqachon mavjud."
+
+#: .\tasks\models.py:162
+msgid "Подкатегория задач"
+msgstr "Vazifalar pastki kategoriyasi"
+
+#: .\tasks\models.py:163 .\templates\tasks\subcategory_list.html:5
+msgid "Подкатегории задач"
+msgstr "Vazifalar pastki kategoriyalari"
+
+#: .\tasks\models.py:181
+msgid "Высокий"
+msgstr "Yuqori"
+
+#: .\tasks\models.py:182
+msgid "Выше среднего"
+msgstr "O'rtadan yuqori"
+
+#: .\tasks\models.py:183
+msgid "Средний"
+msgstr "O'rtacha"
+
+#: .\tasks\models.py:184
+msgid "Ниже среднего"
+msgstr "O'rtadan past"
+
+#: .\tasks\models.py:185
+msgid "Низкий"
+msgstr "Past"
+
+#: .\tasks\models.py:188
+msgid "Новая"
+msgstr "Yangi"
+
+#: .\tasks\models.py:189
+msgid "В работе"
+msgstr "Ish jarayonida"
+
+#: .\tasks\models.py:190
+msgid "Отложена"
+msgstr "Keyinga qoldirilgan"
+
+#: .\tasks\models.py:191
+msgid "Выполнена"
+msgstr "Bajarilgan"
+
+#: .\tasks\models.py:192
+msgid "Отменена"
+msgstr "Bekor qilingan"
+
+#: .\tasks\models.py:193
+msgid "Просрочена"
+msgstr "Muddati o'tgan"
+
+#: .\tasks\models.py:199
+msgid "Номер задачи"
+msgstr "Vazifa raqami"
+
+#: .\tasks\models.py:200
+msgid "Описание задачи"
+msgstr "Vazifa tavsifi"
+
+#: .\tasks\models.py:215
+msgid "Дата завершения не может быть раньше дедлайна."
+msgstr "Tugash sanasi muddatdan oldin bo'lishi mumkin emas."
+
+#: .\tasks\models.py:218
+msgid "Задача не может быть назначена одновременно на пользователя и команду."
+msgstr "Vazifa bir vaqtning o'zida foydalanuvchi va jamoaga tayinlanishi mumkin emas."
+
+#: .\tasks\models.py:221
+msgid "Подкатегория не принадлежит выбранной категории."
+msgstr "Pastki kategoriya tanlangan kategoriyaga tegishli emas."
+
+#: .\tasks\models.py:307 .\templates\tasks\task_list.html:33
+msgid "Задача"
+msgstr "Vazifa"
+
+#: .\tasks\models.py:308 .\templates\base.html:83
+#: .\templates\tasks\task_list.html:6
+msgid "Задачи"
+msgstr "Vazifalar"
+
+#: .\tasks\models.py:329
+msgid "Описание фотографии"
+msgstr "Foto tavsifi"
+
+#: .\tasks\models.py:332
+msgid "Фотография к задаче"
+msgstr "Vazifaga foto"
+
+#: .\tasks\models.py:333
+msgid "Фотографии к задачам"
+msgstr "Vazifalarga fotolar"
+
+#: .\tasks\views.py:404
+msgid "Задача успешно создана!"
+msgstr "Vazifa muvaffaqiyatli yaratildi!"
+
+#: .\tasks\views.py:420
+msgid "Вы не имеете доступа к этой задаче."
+msgstr "Sizga bu vazifaga kirish huquqi yo'q."
+
+#: .\tasks\views.py:429
+msgid "Задача обновлена!"
+msgstr "Vazifa yangilandi!"
+
+#: .\tasks\views.py:472
+msgid "Задача удалена!"
+msgstr "Vazifa o'chirildi!"
+
+#: .\templates\auth\login.html:5
+msgid "Вход"
+msgstr "Kirish"
+
+#: .\templates\auth\login.html:9
+msgid "Вход в систему"
+msgstr "Tizimga kirish"
+
+#: .\templates\auth\login.html:24
+msgid "Имя пользователя"
+msgstr "Foydalanuvchi nomi"
+
+#: .\templates\auth\login.html:33
+msgid "Пароль"
+msgstr "Parol"
+
+#: .\templates\auth\login.html:46
+msgid "Запомнить меня"
+msgstr "Meni eslab qol"
+
+#: .\templates\auth\login.html:52
+msgid "Забыли пароль?"
+msgstr "Parolni unutdingizmi?"
+
+#: .\templates\auth\login.html:59
+msgid "Войти"
+msgstr "Kirish"
+
+#: .\templates\base.html:88
+msgid "Категории"
+msgstr "Kategoriyalar"
+
+#: .\templates\base.html:89
+msgid "Список задач"
+msgstr "Vazifalar ro'yxati"
+
+#: .\templates\base.html:105
+msgid "Мой профиль"
+msgstr "Mening profilim"
+
+#: .\templates\base.html:106
+msgid "Входящие"
+msgstr "Kiruvchi xabarlar"
+
+#: .\templates\base.html:108
+msgid "Админка"
+msgstr "Admin panel"
+
+#: .\templates\base.html:110
+msgid "Чаты"
+msgstr "Chatlar"
+
+#: .\templates\base.html:122
+msgid "Выход"
+msgstr "Chiqish"
+
+#: .\templates\detail_base.html:10
+msgid "Детали"
+msgstr "Tafsilotlar"
+
+#: .\templates\detail_base.html:18 .\templates\detail_base.html:19
+#: .\templates\tasks\task_detail.html:17
+msgid "Назад к списку"
+msgstr "Ro'yxatga qaytish"
+
+#: .\templates\modals\campaign_delete.html:5
+msgid "Удаление кампании"
+msgstr "Kampaniyani o'chirish"
+
+#: .\templates\modals\campaign_delete.html:9
+msgid "Вы уверены, что хотите удалить кампанию"
+msgstr "Kampaniyani o'chirishni istaysizmi?"
+
+#: .\templates\modals\campaign_form.html:5
+#: .\templates\tasks\campaign_list.html:39
+msgid "Редактировать кампанию"
+msgstr "Kampaniyani tahrirlash"
+
+#: .\templates\modals\campaign_form.html:5
+msgid "Добавить кампанию"
+msgstr "Kampaniya qo'shish"
+
+#: .\templates\modals\campaign_form.html:18
+#: .\templates\modals\category_form.html:18
+#: .\templates\modals\modal_task_form.html:18
+#: .\templates\modals\role_form.html:18
+#: .\templates\modals\subcategory_form.html:18
+#: .\templates\modals\team_form.html:18 .\templates\modals\user_form.html:18
+msgid "Ошибка!"
+msgstr "Xato!"
+
+#: .\templates\modals\campaign_form.html:18
+#: .\templates\modals\category_form.html:18
+#: .\templates\modals\modal_task_form.html:18
+#: .\templates\modals\role_form.html:18
+#: .\templates\modals\subcategory_form.html:18
+#: .\templates\modals\team_form.html:18 .\templates\modals\user_form.html:18
+msgid "Пожалуйста, исправьте ошибки ниже."
+msgstr "Iltimos, quyidagi xatolarni to'g'rilang."
+
+#: .\templates\modals\category_delete.html:5
+msgid "Удаление категории"
+msgstr "Kategoriyani o'chirish"
+
+#: .\templates\modals\category_delete.html:9
+msgid "Вы уверены, что хотите удалить категорию"
+msgstr "Kategoriyani o'chirishni istaysizmi?"
+
+#: .\templates\modals\category_form.html:5
+#: .\templates\tasks\category_list.html:40
+msgid "Редактировать категорию"
+msgstr "Kategoriyani tahrirlash"
+
+#: .\templates\modals\category_form.html:5
+msgid "Добавить категорию"
+msgstr "Kategoriya qo'shish"
+
+#: .\templates\modals\modal_delete_confirm_base.html:14
+msgid "Delete this item"
+msgstr "Ushbu elementni o'chirish"
+
+#: .\templates\modals\modal_delete_confirm_base.html:15
+#: .\templates\modals\role_delete.html:31
+#: .\templates\modals\subcategory_delete.html:30
+#: .\templates\modals\team_delete.html:31
+#: .\templates\tasks\campaign_list.html:49
+#: .\templates\tasks\category_list.html:50
+#: .\templates\tasks\subcategory_list.html:48
+#: .\templates\users\role_list.html:49 .\templates\users\team_list.html:56
+#: .\templates\users\user_list.html:60
+msgid "Удалить"
+msgstr "O'chirish"
+
+#: .\templates\modals\modal_delete_confirm_base.html:19
+msgid "Cancel the deletion"
+msgstr "O'chirishni bekor qilish"
+
+#: .\templates\modals\modal_delete_confirm_base.html:20
+#: .\templates\modals\modal_form_base.html:24
+msgid "Отмена"
+msgstr "Bekor qilish"
+
+#: .\templates\modals\modal_form_base.html:28
+#: .\templates\modals\role_form.html:48
+#: .\templates\modals\subcategory_form.html:48
+msgid "Сохранить"
+msgstr "Saqlash"
+
+#: .\templates\modals\modal_task_delete.html:5
+msgid "Удаление задачи"
+msgstr "Vazifani o'chirish"
+
+#: .\templates\modals\modal_task_delete.html:9
+msgid "Вы уверены, что хотите удалить задачу"
+msgstr "Vazifani o'chirishni istaysizmi?"
+
+#: .\templates\modals\modal_task_form.html:5
+msgid "Редактировать задачу"
+msgstr "Vazifani tahrirlash"
+
+#: .\templates\modals\modal_task_form.html:5
+#: .\templates\tasks\task_list.html:16
+msgid "Создать задачу"
+msgstr "Vazifa yaratish"
+
+#: .\templates\modals\role_create.html:3
+msgid "Создание роли"
+msgstr "Rol yaratish"
+
+#: .\templates\modals\role_create.html:6
+msgid "Создание новой роли"
+msgstr "Yangi rol yaratish"
+
+#: .\templates\modals\role_create.html:31 .\templates\users\role_list.html:17
+msgid "Создать роль"
+msgstr "Rol yaratish"
+
+#: .\templates\modals\role_delete.html:5
+msgid "Удаление роли"
+msgstr "Rolni o'chirish"
+
+#: .\templates\modals\role_delete.html:9
+msgid "Вы уверены, что хотите удалить роль"
+msgstr "Rolni o'chirishni istaysizmi?"
+
+#: .\templates\modals\role_delete.html:10
+msgid "Это действие необратимо."
+msgstr "Bu harakatni qaytarib bo'lmaydi."
+
+#: .\templates\modals\role_delete.html:28 .\templates\modals\role_form.html:45
+#: .\templates\modals\subcategory_delete.html:27
+#: .\templates\modals\subcategory_form.html:45
+#: .\templates\modals\team_delete.html:28 .\templates\modals\team_form.html:48
+#: .\templates\modals\user_delete.html:29 .\templates\modals\user_form.html:48
+msgid "Отменить"
+msgstr "Bekor qilish"
+
+#: .\templates\modals\role_form.html:5 .\templates\users\role_list.html:39
+msgid "Редактировать роль"
+msgstr "Rolni tahrirlash"
+
+#: .\templates\modals\role_form.html:5
+msgid "Добавить роль"
+msgstr "Rol qo'shish"
+
+#: .\templates\modals\subcategory_delete.html:5
+msgid "Удаление подкатегории"
+msgstr "Pastki kategoriyani o'chirish"
+
+#: .\templates\modals\subcategory_delete.html:9
+msgid "Вы уверены, что хотите удалить подкатегорию"
+msgstr "Pastki kategoriyani o'chirishni istaysizmi?"
+
+#: .\templates\modals\subcategory_form.html:5
+#: .\templates\tasks\subcategory_list.html:38
+msgid "Редактировать подкатегорию"
+msgstr "Pastki kategoriyani tahrirlash"
+
+#: .\templates\modals\subcategory_form.html:5
+msgid "Добавить подкатегорию"
+msgstr "Pastki kategoriya qo'shish"
+
+#: .\templates\modals\subcategory_form.html:48
+msgid "Добавить"
+msgstr "Qo'shish"
+
+#: .\templates\modals\team_delete.html:5
+msgid "Удаление команды"
+msgstr "Jamoani o'chirish"
+
+#: .\templates\modals\team_delete.html:9
+msgid "Вы уверены, что хотите удалить команду"
+msgstr "Jamoani o'chirishni istaysizmi?"
+
+#: .\templates\modals\team_delete.html:10
+#: .\templates\modals\user_delete.html:11
+msgid "Это действие нельзя будет отменить."
+msgstr "Bu harakatni qaytarib bo'lmaydi."
+
+#: .\templates\modals\team_form.html:5 .\templates\users\team_list.html:46
+msgid "Редактировать команду"
+msgstr "Jamoani tahrirlash"
+
+#: .\templates\modals\team_form.html:5 .\templates\modals\team_form.html:51
+msgid "Добавить команду"
+msgstr "Jamoa qo'shish"
+
+#: .\templates\modals\team_form.html:51
+msgid "Обновить команду"
+msgstr "Jamoani yangilash"
+
+#: .\templates\modals\user_delete.html:5
+msgid "Удаление пользователя"
+msgstr "Foydalanuvchini o'chirish"
+
+#: .\templates\modals\user_delete.html:9
+msgid "Вы уверены, что хотите удалить пользователя"
+msgstr "Foydalanuvchini o'chirishni istaysizmi?"
+
+#: .\templates\modals\user_delete.html:31 .\templates\users\user_list.html:58
+msgid "Удалить пользователя"
+msgstr "Foydalanuvchini o'chirish"
+
+#: .\templates\modals\user_form.html:5 .\templates\users\user_list.html:50
+msgid "Редактировать пользователя"
+msgstr "Foydalanuvchini tahrirlash"
+
+#: .\templates\modals\user_form.html:5 .\templates\modals\user_form.html:51
+msgid "Добавить пользователя"
+msgstr "Foydalanuvchi qo'shish"
+
+#: .\templates\modals\user_form.html:51
+msgid "Обновить пользователя"
+msgstr "Foydalanuvchini yangilash"
+
+#: .\templates\tasks\campaign_list.html:15
+msgid "Создать новую кампанию"
+msgstr "Yangi kampaniya yaratish"
+
+#: .\templates\tasks\campaign_list.html:17
+msgid "Создать кампанию"
+msgstr "Kampaniya yaratish"
+
+#: .\templates\tasks\campaign_list.html:41
+#: .\templates\tasks\category_list.html:42
+#: .\templates\tasks\subcategory_list.html:40
+#: .\templates\tasks\task_detail.html:14 .\templates\users\role_list.html:41
+#: .\templates\users\team_list.html:48 .\templates\users\user_list.html:52
+msgid "Редактировать"
+msgstr "Tahrirlash"
+
+#: .\templates\tasks\campaign_list.html:47
+msgid "Удалить кампанию"
+msgstr "Kampaniyani o'chirish"
+
+#: .\templates\tasks\campaign_list.html:56
+msgid "Нет кампаний."
+msgstr "Kampaniyalar mavjud emas."
+
+#: .\templates\tasks\category_list.html:15
+msgid "Создать новую категорию"
+msgstr "Yangi kategoriya yaratish"
+
+#: .\templates\tasks\category_list.html:17
+msgid "Создать категорию"
+msgstr "Kategoriya yaratish"
+
+#: .\templates\tasks\category_list.html:48
+msgid "Удалить категорию"
+msgstr "Kategoriyani o'chirish"
+
+#: .\templates\tasks\category_list.html:57
+msgid "Нет категорий задач."
+msgstr "Vazifalar kategoriyalari mavjud emas."
+
+#: .\templates\tasks\category_list.html:68
+msgid "Назад"
+msgstr "Orqaga"
+
+#: .\templates\tasks\category_list.html:73 .\templates\tasks\task_list.html:80
+msgid "Страница"
+msgstr "Sahifa"
+
+#: .\templates\tasks\category_list.html:73 .\templates\tasks\task_list.html:80
+msgid "из"
+msgstr "dan"
+
+#: .\templates\tasks\category_list.html:79
+msgid "Вперед"
+msgstr "Oldinga"
+
+#: .\templates\tasks\subcategory_list.html:13
+msgid "Создать новую подкатегорию"
+msgstr "Yangi pastki kategoriya yaratish"
+
+#: .\templates\tasks\subcategory_list.html:15
+msgid "Создать подкатегорию"
+msgstr "Pastki kategoriya yaratish"
+
+#: .\templates\tasks\subcategory_list.html:46
+msgid "Удалить подкатегорию"
+msgstr "Pastki kategoriyani o'chirish"
+
+#: .\templates\tasks\subcategory_list.html:55
+msgid "Нет подкатегорий задач."
+msgstr "Vazifalar pastki kategoriyalari mavjud emas."
+
+#: .\templates\tasks\task_detail.html:24
+msgid "Информация о задаче"
+msgstr "Vazifa haqida ma'lumot"
+
+#: .\templates\tasks\task_detail.html:27
+msgid "Подробная информация о задаче"
+msgstr "Vazifa haqida batafsil ma'lumot"
+
+#: .\templates\tasks\task_detail.html:42 .\templates\tasks\task_list.html:35
+msgid "Статус"
+msgstr "Holat"
+
+#: .\templates\tasks\task_detail.html:50
+msgid "Описание"
+msgstr "Tavsif"
+
+#: .\templates\tasks\task_detail.html:58 .\templates\tasks\task_list.html:36
+msgid "Приоритет"
+msgstr "Prioritet"
+
+#: .\templates\tasks\task_detail.html:74
+msgid "Подкатегория"
+msgstr "Pastki kategoriya"
+
+#: .\templates\tasks\task_detail.html:82 .\user_profiles\models.py:37
+msgid "Команда"
+msgstr "Jamoa"
+
+#: .\templates\tasks\task_detail.html:90 .\user_profiles\models.py:62
+msgid "Исполнитель"
+msgstr "Ijrochi"
+
+#: .\templates\tasks\task_detail.html:98
+msgid "Крайний срок"
+msgstr "Muddat"
+
+#: .\templates\tasks\task_detail.html:122
+msgid "Оценка времени"
+msgstr "Vaqt bahosi"
+
+#: .\templates\tasks\task_detail.html:130
+msgid "Создатель"
+msgstr "Yaratuvchi"
+
+#: .\templates\tasks\task_list.html:21
+msgid "Переключить вид"
+msgstr "Ko'rinishni o'zgartirish"
+
+#: .\templates\tasks\task_list.html:37
+msgid "Действия"
+msgstr "Harakatlar"
+
+#: .\templates\tasks\task_list.html:70
+msgid "Нет задач."
+msgstr "Vazifalar mavjud emas."
+
+#: .\templates\tasks\task_list.html:119
+msgid "Нет задач в этом статусе"
+msgstr "Bu holatda vazifalar mavjud emas."
+
+#: .\templates\tasks\task_summary_report.html:4
+msgid "Отчет по статусам задач"
+msgstr "Vazifalar holati bo'yicha hisobot"
+
+#: .\templates\tasks\task_summary_report.html:7
+msgid "Сводка задач по статусам"
+msgstr "Vazifalar holati bo'yicha yig'ma"
+
+#: .\templates\tasks\task_summary_report.html:14
+msgid "Статус задачи"
+msgstr "Vazifa holati"
+
+#: .\templates\tasks\task_summary_report.html:17
+msgid "Количество задач"
+msgstr "Vazifalar soni"
+
+#: .\templates\tasks\task_summary_report.html:40
+msgid "Нет данных для отчета."
+msgstr "Hisobot uchun ma'lumot yo'q."
+
+#: .\templates\users\login.html:18
+msgid "Sign in to your account"
+msgstr "Hisobingizga kiring"
+
+#: .\templates\users\login.html:22
+msgid "Your username"
+msgstr "Foydalanuvchi nomingiz"
+
+#: .\templates\users\login.html:23
+msgid "puppetmaster"
+msgstr "qo'g'irchoq ustasi"
+
+#: .\templates\users\login.html:30
+msgid "Forgot password?"
+msgstr "Parolni unutdingizmi?"
+
+#: .\templates\users\login.html:33
+msgid "Sign in"
+msgstr "Kirish"
+
+#: .\templates\users\login.html:36
+msgid "Don’t have an account yet?"
+msgstr "Hali hisobingiz yo'qmi?"
+
+#: .\templates\users\login.html:36
+msgid "Sign up"
+msgstr "Ro'yxatdan o'tish"
+
+#: .\templates\users\role_list.html:6 .\user_profiles\models.py:51
+msgid "Роли"
+msgstr "Rollar"
+
+#: .\templates\users\role_list.html:15
+msgid "Создать новую роль"
+msgstr "Yangi rol yaratish"
+
+#: .\templates\users\role_list.html:47
+msgid "Удалить роль"
+msgstr "Rolni o'chirish"
+
+#: .\templates\users\role_list.html:56
+msgid "Нет ролей."
+msgstr "Rollar mavjud emas."
+
+#: .\templates\users\team_list.html:6 .\user_profiles\models.py:38
+msgid "Команды"
+msgstr "Jamoalar"
+
+#: .\templates\users\team_list.html:15
+msgid "Создать новую команду"
+msgstr "Yangi jamoa yaratish"
+
+#: .\templates\users\team_list.html:17
+msgid "Создать команду"
+msgstr "Jamoa yaratish"
+
+#: .\templates\users\team_list.html:30
+msgid "Лидер команды"
+msgstr "Jamoa rahbari"
+
+#: .\templates\users\team_list.html:34
+msgid "Нет лидера"
+msgstr "Rahbar yo'q"
+
+#: .\templates\users\team_list.html:54
+msgid "Удалить команду"
+msgstr "Jamoani o'chirish"
+
+#: .\templates\users\team_list.html:63
+msgid "Нет команд."
+msgstr "Jamoalar mavjud emas."
+
+#: .\templates\users\user_list.html:6
+msgid "Пользователи"
+msgstr "Foydalanuvchilar"
+
+#: .\templates\users\user_list.html:15
+msgid "Создать нового пользователя"
+msgstr "Yangi foydalanuvchi yaratish"
+
+#: .\templates\users\user_list.html:17
+msgid "Создать пользователя"
+msgstr "Foydalanuvchi yaratish"
+
+#: .\templates\users\user_list.html:34
+msgid "Email"
+msgstr "Elektron pochta"
+
+#: .\templates\users\user_list.html:35 .\user_profiles\models.py:50
+msgid "Роль"
+msgstr "Rol"
+
+#: .\templates\users\user_list.html:39
+msgid "Нет роли"
+msgstr "Rol yo'q"
+
+#: .\templates\users\user_list.html:67
+msgid "Нет пользователей."
+msgstr "Foydalanuvchilar mavjud emas."
+
+#: .\user_profiles\models.py:31
+msgid "Название команды"
+msgstr "Jamoa nomi"
+
+#: .\user_profiles\models.py:34
+msgid "Описание команды"
+msgstr "Jamoa tavsifi"
+
+#: .\user_profiles\models.py:47
+msgid "Название роли"
+msgstr "Rol nomi"
+
+#: .\user_profiles\models.py:63
+msgid "Наблюдатель"
+msgstr "Kuzatuvchi"
+
+#: .\user_profiles\models.py:64
+msgid "Ответственный"
+msgstr "Mas'ul"
+
+#: .\user_profiles\models.py:71
+msgid "Роль пользователя в задаче"
+msgstr "Foydalanuvchining vazifadagi roli"
+
+#: .\user_profiles\models.py:72
+msgid "Роли пользователей в задачах"
+msgstr "Foydalanuvchilarning vazifalardagi rollari"
+
+#: .\user_profiles\views.py:53
+msgid "Successfully logged in!"
+msgstr "Muvaffaqiyatli kirdingiz!"
+
+#: .\user_profiles\views.py:56
+msgid "Invalid credentials. Please try again!"
+msgstr "Noto'g'ri ma'lumotlar. Iltimos, qayta urinib ko'ring!"
+
+#: .\user_profiles\views.py:71
+msgid "Successfully logged out!"
+msgstr "Muvaffaqiyatli chiqdingiz!"

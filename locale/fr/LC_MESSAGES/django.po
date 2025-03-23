@@ -1,0 +1,883 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-23 09:45+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: .\config\settings.py:134
+msgid "Uzbek"
+msgstr ""
+
+#: .\config\settings.py:135
+msgid "Русский"
+msgstr ""
+
+#: .\config\settings.py:136
+msgid "English"
+msgstr ""
+
+#: .\config\settings.py:137
+msgid "Español"
+msgstr ""
+
+#: .\config\settings.py:138
+msgid "Français"
+msgstr ""
+
+#: .\tasks\admin.py:18
+msgid "Даты"
+msgstr ""
+
+#: .\tasks\admin.py:50
+msgid "Подробности"
+msgstr ""
+
+#: .\tasks\admin.py:51
+msgid "Сроки"
+msgstr ""
+
+#: .\tasks\admin.py:52
+msgid "Фото/Вложения"
+msgstr ""
+
+#: .\tasks\admin.py:53 .\tasks\admin.py:78
+msgid "Системная информация"
+msgstr ""
+
+#: .\tasks\admin.py:56 .\tasks\admin.py:81
+msgid "Системная информация (только для чтения)"
+msgstr ""
+
+#: .\tasks\apps.py:7
+msgid "Tasks"
+msgstr ""
+
+#: .\tasks\forms.py:20
+msgid "Team name"
+msgstr ""
+
+#: .\tasks\forms.py:21
+msgid "Team description"
+msgstr ""
+
+#: .\tasks\forms.py:33
+msgid "Campaign name"
+msgstr ""
+
+#: .\tasks\forms.py:34
+msgid "Campaign description"
+msgstr ""
+
+#: .\tasks\forms.py:42 .\tasks\forms.py:135 .\templates\users\login.html:26
+msgid "Password"
+msgstr ""
+
+#: .\tasks\forms.py:56
+msgid "Role name"
+msgstr ""
+
+#: .\tasks\forms.py:66
+msgid "Category name"
+msgstr ""
+
+#: .\tasks\forms.py:67
+msgid "Category description"
+msgstr ""
+
+#: .\tasks\forms.py:78
+msgid "Subcategory name"
+msgstr ""
+
+#: .\tasks\forms.py:79
+msgid "Subcategory description"
+msgstr ""
+
+#: .\tasks\forms.py:92
+msgid "Task description"
+msgstr ""
+
+#: .\tasks\forms.py:114
+msgid "Photo description (optional)"
+msgstr ""
+
+#: .\tasks\forms.py:128
+msgid "Username"
+msgstr ""
+
+#: .\tasks\forms.py:131
+msgid "Enter username"
+msgstr ""
+
+#: .\tasks\forms.py:138
+msgid "Enter password"
+msgstr ""
+
+#: .\tasks\forms.py:147
+msgid "Login"
+msgstr ""
+
+#: .\tasks\models.py:23 .\templates\tasks\task_detail.html:138
+#: .\user_profiles\models.py:9
+msgid "Дата создания"
+msgstr ""
+
+#: .\tasks\models.py:24 .\templates\tasks\task_detail.html:146
+#: .\user_profiles\models.py:10
+msgid "Дата обновления"
+msgstr ""
+
+#: .\tasks\models.py:36
+msgid "Название кампании"
+msgstr ""
+
+#: .\tasks\models.py:37
+msgid "Описание кампании"
+msgstr ""
+
+#: .\tasks\models.py:38 .\templates\tasks\task_detail.html:106
+msgid "Дата начала"
+msgstr ""
+
+#: .\tasks\models.py:39 .\templates\tasks\task_detail.html:114
+msgid "Дата завершения"
+msgstr ""
+
+#: .\tasks\models.py:45
+msgid "Дата завершения не может быть раньше даты начала."
+msgstr ""
+
+#: .\tasks\models.py:71 .\templates\tasks\task_detail.html:34
+#: .\templates\tasks\task_list.html:34
+msgid "Кампания"
+msgstr ""
+
+#: .\tasks\models.py:72 .\templates\base.html:90
+#: .\templates\tasks\campaign_list.html:6
+msgid "Кампании"
+msgstr ""
+
+#: .\tasks\models.py:83
+msgid "Название категории"
+msgstr ""
+
+#: .\tasks\models.py:84
+msgid "Описание категории"
+msgstr ""
+
+#: .\tasks\models.py:91
+msgid "Категория с таким названием уже существует."
+msgstr ""
+
+#: .\tasks\models.py:117
+msgid "Категория задач"
+msgstr ""
+
+#: .\tasks\models.py:118 .\templates\tasks\category_list.html:6
+msgid "Категории задач"
+msgstr ""
+
+#: .\tasks\models.py:127 .\templates\tasks\subcategory_list.html:28
+#: .\templates\tasks\task_detail.html:66
+msgid "Категория"
+msgstr ""
+
+#: .\tasks\models.py:128
+msgid "Название подкатегории"
+msgstr ""
+
+#: .\tasks\models.py:129
+msgid "Описание подкатегории"
+msgstr ""
+
+#: .\tasks\models.py:136
+msgid "Подкатегория с таким названием уже существует в этой категории."
+msgstr ""
+
+#: .\tasks\models.py:162
+msgid "Подкатегория задач"
+msgstr ""
+
+#: .\tasks\models.py:163 .\templates\tasks\subcategory_list.html:5
+msgid "Подкатегории задач"
+msgstr ""
+
+#: .\tasks\models.py:181
+msgid "Высокий"
+msgstr ""
+
+#: .\tasks\models.py:182
+msgid "Выше среднего"
+msgstr ""
+
+#: .\tasks\models.py:183
+msgid "Средний"
+msgstr ""
+
+#: .\tasks\models.py:184
+msgid "Ниже среднего"
+msgstr ""
+
+#: .\tasks\models.py:185
+msgid "Низкий"
+msgstr ""
+
+#: .\tasks\models.py:188
+msgid "Новая"
+msgstr ""
+
+#: .\tasks\models.py:189
+msgid "В работе"
+msgstr ""
+
+#: .\tasks\models.py:190
+msgid "Отложена"
+msgstr ""
+
+#: .\tasks\models.py:191
+msgid "Выполнена"
+msgstr ""
+
+#: .\tasks\models.py:192
+msgid "Отменена"
+msgstr ""
+
+#: .\tasks\models.py:193
+msgid "Просрочена"
+msgstr ""
+
+#: .\tasks\models.py:199
+msgid "Номер задачи"
+msgstr ""
+
+#: .\tasks\models.py:200
+msgid "Описание задачи"
+msgstr ""
+
+#: .\tasks\models.py:215
+msgid "Дата завершения не может быть раньше дедлайна."
+msgstr ""
+
+#: .\tasks\models.py:218
+msgid "Задача не может быть назначена одновременно на пользователя и команду."
+msgstr ""
+
+#: .\tasks\models.py:221
+msgid "Подкатегория не принадлежит выбранной категории."
+msgstr ""
+
+#: .\tasks\models.py:307 .\templates\tasks\task_list.html:33
+msgid "Задача"
+msgstr ""
+
+#: .\tasks\models.py:308 .\templates\base.html:83
+#: .\templates\tasks\task_list.html:6
+msgid "Задачи"
+msgstr ""
+
+#: .\tasks\models.py:329
+msgid "Описание фотографии"
+msgstr ""
+
+#: .\tasks\models.py:332
+msgid "Фотография к задаче"
+msgstr ""
+
+#: .\tasks\models.py:333
+msgid "Фотографии к задачам"
+msgstr ""
+
+#: .\tasks\views.py:404
+msgid "Задача успешно создана!"
+msgstr ""
+
+#: .\tasks\views.py:420
+msgid "Вы не имеете доступа к этой задаче."
+msgstr ""
+
+#: .\tasks\views.py:429
+msgid "Задача обновлена!"
+msgstr ""
+
+#: .\tasks\views.py:472
+msgid "Задача удалена!"
+msgstr ""
+
+#: .\templates\auth\login.html:5
+msgid "Вход"
+msgstr ""
+
+#: .\templates\auth\login.html:9
+msgid "Вход в систему"
+msgstr ""
+
+#: .\templates\auth\login.html:24
+msgid "Имя пользователя"
+msgstr ""
+
+#: .\templates\auth\login.html:33
+msgid "Пароль"
+msgstr ""
+
+#: .\templates\auth\login.html:46
+msgid "Запомнить меня"
+msgstr ""
+
+#: .\templates\auth\login.html:52
+msgid "Забыли пароль?"
+msgstr ""
+
+#: .\templates\auth\login.html:59
+msgid "Войти"
+msgstr ""
+
+#: .\templates\base.html:88
+msgid "Категории"
+msgstr ""
+
+#: .\templates\base.html:89
+msgid "Список задач"
+msgstr ""
+
+#: .\templates\base.html:105
+msgid "Мой профиль"
+msgstr ""
+
+#: .\templates\base.html:106
+msgid "Входящие"
+msgstr ""
+
+#: .\templates\base.html:108
+msgid "Админка"
+msgstr ""
+
+#: .\templates\base.html:110
+msgid "Чаты"
+msgstr ""
+
+#: .\templates\base.html:122
+msgid "Выход"
+msgstr ""
+
+#: .\templates\detail_base.html:10
+msgid "Детали"
+msgstr ""
+
+#: .\templates\detail_base.html:18 .\templates\detail_base.html:19
+#: .\templates\tasks\task_detail.html:17
+msgid "Назад к списку"
+msgstr ""
+
+#: .\templates\modals\campaign_delete.html:5
+msgid "Удаление кампании"
+msgstr ""
+
+#: .\templates\modals\campaign_delete.html:9
+msgid "Вы уверены, что хотите удалить кампанию"
+msgstr ""
+
+#: .\templates\modals\campaign_form.html:5
+#: .\templates\tasks\campaign_list.html:39
+msgid "Редактировать кампанию"
+msgstr ""
+
+#: .\templates\modals\campaign_form.html:5
+msgid "Добавить кампанию"
+msgstr ""
+
+#: .\templates\modals\campaign_form.html:18
+#: .\templates\modals\category_form.html:18
+#: .\templates\modals\modal_task_form.html:18
+#: .\templates\modals\role_form.html:18
+#: .\templates\modals\subcategory_form.html:18
+#: .\templates\modals\team_form.html:18 .\templates\modals\user_form.html:18
+msgid "Ошибка!"
+msgstr ""
+
+#: .\templates\modals\campaign_form.html:18
+#: .\templates\modals\category_form.html:18
+#: .\templates\modals\modal_task_form.html:18
+#: .\templates\modals\role_form.html:18
+#: .\templates\modals\subcategory_form.html:18
+#: .\templates\modals\team_form.html:18 .\templates\modals\user_form.html:18
+msgid "Пожалуйста, исправьте ошибки ниже."
+msgstr ""
+
+#: .\templates\modals\category_delete.html:5
+msgid "Удаление категории"
+msgstr ""
+
+#: .\templates\modals\category_delete.html:9
+msgid "Вы уверены, что хотите удалить категорию"
+msgstr ""
+
+#: .\templates\modals\category_form.html:5
+#: .\templates\tasks\category_list.html:40
+msgid "Редактировать категорию"
+msgstr ""
+
+#: .\templates\modals\category_form.html:5
+msgid "Добавить категорию"
+msgstr ""
+
+#: .\templates\modals\modal_delete_confirm_base.html:14
+msgid "Delete this item"
+msgstr ""
+
+#: .\templates\modals\modal_delete_confirm_base.html:15
+#: .\templates\modals\role_delete.html:31
+#: .\templates\modals\subcategory_delete.html:30
+#: .\templates\modals\team_delete.html:31
+#: .\templates\tasks\campaign_list.html:49
+#: .\templates\tasks\category_list.html:50
+#: .\templates\tasks\subcategory_list.html:48
+#: .\templates\users\role_list.html:49 .\templates\users\team_list.html:56
+#: .\templates\users\user_list.html:60
+msgid "Удалить"
+msgstr ""
+
+#: .\templates\modals\modal_delete_confirm_base.html:19
+msgid "Cancel the deletion"
+msgstr ""
+
+#: .\templates\modals\modal_delete_confirm_base.html:20
+#: .\templates\modals\modal_form_base.html:24
+msgid "Отмена"
+msgstr ""
+
+#: .\templates\modals\modal_form_base.html:28
+#: .\templates\modals\role_form.html:48
+#: .\templates\modals\subcategory_form.html:48
+msgid "Сохранить"
+msgstr ""
+
+#: .\templates\modals\modal_task_delete.html:5
+msgid "Удаление задачи"
+msgstr ""
+
+#: .\templates\modals\modal_task_delete.html:9
+msgid "Вы уверены, что хотите удалить задачу"
+msgstr ""
+
+#: .\templates\modals\modal_task_form.html:5
+msgid "Редактировать задачу"
+msgstr ""
+
+#: .\templates\modals\modal_task_form.html:5
+#: .\templates\tasks\task_list.html:16
+msgid "Создать задачу"
+msgstr ""
+
+#: .\templates\modals\role_create.html:3
+msgid "Создание роли"
+msgstr ""
+
+#: .\templates\modals\role_create.html:6
+msgid "Создание новой роли"
+msgstr ""
+
+#: .\templates\modals\role_create.html:31 .\templates\users\role_list.html:17
+msgid "Создать роль"
+msgstr ""
+
+#: .\templates\modals\role_delete.html:5
+msgid "Удаление роли"
+msgstr ""
+
+#: .\templates\modals\role_delete.html:9
+msgid "Вы уверены, что хотите удалить роль"
+msgstr ""
+
+#: .\templates\modals\role_delete.html:10
+msgid "Это действие необратимо."
+msgstr ""
+
+#: .\templates\modals\role_delete.html:28 .\templates\modals\role_form.html:45
+#: .\templates\modals\subcategory_delete.html:27
+#: .\templates\modals\subcategory_form.html:45
+#: .\templates\modals\team_delete.html:28 .\templates\modals\team_form.html:48
+#: .\templates\modals\user_delete.html:29 .\templates\modals\user_form.html:48
+msgid "Отменить"
+msgstr ""
+
+#: .\templates\modals\role_form.html:5 .\templates\users\role_list.html:39
+msgid "Редактировать роль"
+msgstr ""
+
+#: .\templates\modals\role_form.html:5
+msgid "Добавить роль"
+msgstr ""
+
+#: .\templates\modals\subcategory_delete.html:5
+msgid "Удаление подкатегории"
+msgstr ""
+
+#: .\templates\modals\subcategory_delete.html:9
+msgid "Вы уверены, что хотите удалить подкатегорию"
+msgstr ""
+
+#: .\templates\modals\subcategory_form.html:5
+#: .\templates\tasks\subcategory_list.html:38
+msgid "Редактировать подкатегорию"
+msgstr ""
+
+#: .\templates\modals\subcategory_form.html:5
+msgid "Добавить подкатегорию"
+msgstr ""
+
+#: .\templates\modals\subcategory_form.html:48
+msgid "Добавить"
+msgstr ""
+
+#: .\templates\modals\team_delete.html:5
+msgid "Удаление команды"
+msgstr ""
+
+#: .\templates\modals\team_delete.html:9
+msgid "Вы уверены, что хотите удалить команду"
+msgstr ""
+
+#: .\templates\modals\team_delete.html:10
+#: .\templates\modals\user_delete.html:11
+msgid "Это действие нельзя будет отменить."
+msgstr ""
+
+#: .\templates\modals\team_form.html:5 .\templates\users\team_list.html:46
+msgid "Редактировать команду"
+msgstr ""
+
+#: .\templates\modals\team_form.html:5 .\templates\modals\team_form.html:51
+msgid "Добавить команду"
+msgstr ""
+
+#: .\templates\modals\team_form.html:51
+msgid "Обновить команду"
+msgstr ""
+
+#: .\templates\modals\user_delete.html:5
+msgid "Удаление пользователя"
+msgstr ""
+
+#: .\templates\modals\user_delete.html:9
+msgid "Вы уверены, что хотите удалить пользователя"
+msgstr ""
+
+#: .\templates\modals\user_delete.html:31 .\templates\users\user_list.html:58
+msgid "Удалить пользователя"
+msgstr ""
+
+#: .\templates\modals\user_form.html:5 .\templates\users\user_list.html:50
+msgid "Редактировать пользователя"
+msgstr ""
+
+#: .\templates\modals\user_form.html:5 .\templates\modals\user_form.html:51
+msgid "Добавить пользователя"
+msgstr ""
+
+#: .\templates\modals\user_form.html:51
+msgid "Обновить пользователя"
+msgstr ""
+
+#: .\templates\tasks\campaign_list.html:15
+msgid "Создать новую кампанию"
+msgstr ""
+
+#: .\templates\tasks\campaign_list.html:17
+msgid "Создать кампанию"
+msgstr ""
+
+#: .\templates\tasks\campaign_list.html:41
+#: .\templates\tasks\category_list.html:42
+#: .\templates\tasks\subcategory_list.html:40
+#: .\templates\tasks\task_detail.html:14 .\templates\users\role_list.html:41
+#: .\templates\users\team_list.html:48 .\templates\users\user_list.html:52
+msgid "Редактировать"
+msgstr ""
+
+#: .\templates\tasks\campaign_list.html:47
+msgid "Удалить кампанию"
+msgstr ""
+
+#: .\templates\tasks\campaign_list.html:56
+msgid "Нет кампаний."
+msgstr ""
+
+#: .\templates\tasks\category_list.html:15
+msgid "Создать новую категорию"
+msgstr ""
+
+#: .\templates\tasks\category_list.html:17
+msgid "Создать категорию"
+msgstr ""
+
+#: .\templates\tasks\category_list.html:48
+msgid "Удалить категорию"
+msgstr ""
+
+#: .\templates\tasks\category_list.html:57
+msgid "Нет категорий задач."
+msgstr ""
+
+#: .\templates\tasks\category_list.html:68
+msgid "Назад"
+msgstr ""
+
+#: .\templates\tasks\category_list.html:73 .\templates\tasks\task_list.html:80
+msgid "Страница"
+msgstr ""
+
+#: .\templates\tasks\category_list.html:73 .\templates\tasks\task_list.html:80
+msgid "из"
+msgstr ""
+
+#: .\templates\tasks\category_list.html:79
+msgid "Вперед"
+msgstr ""
+
+#: .\templates\tasks\subcategory_list.html:13
+msgid "Создать новую подкатегорию"
+msgstr ""
+
+#: .\templates\tasks\subcategory_list.html:15
+msgid "Создать подкатегорию"
+msgstr ""
+
+#: .\templates\tasks\subcategory_list.html:46
+msgid "Удалить подкатегорию"
+msgstr ""
+
+#: .\templates\tasks\subcategory_list.html:55
+msgid "Нет подкатегорий задач."
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:24
+msgid "Информация о задаче"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:27
+msgid "Подробная информация о задаче"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:42 .\templates\tasks\task_list.html:35
+msgid "Статус"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:50
+msgid "Описание"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:58 .\templates\tasks\task_list.html:36
+msgid "Приоритет"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:74
+msgid "Подкатегория"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:82 .\user_profiles\models.py:37
+msgid "Команда"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:90 .\user_profiles\models.py:62
+msgid "Исполнитель"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:98
+msgid "Крайний срок"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:122
+msgid "Оценка времени"
+msgstr ""
+
+#: .\templates\tasks\task_detail.html:130
+msgid "Создатель"
+msgstr ""
+
+#: .\templates\tasks\task_list.html:21
+msgid "Переключить вид"
+msgstr ""
+
+#: .\templates\tasks\task_list.html:37
+msgid "Действия"
+msgstr ""
+
+#: .\templates\tasks\task_list.html:70
+msgid "Нет задач."
+msgstr ""
+
+#: .\templates\tasks\task_list.html:119
+msgid "Нет задач в этом статусе"
+msgstr ""
+
+#: .\templates\tasks\task_summary_report.html:4
+msgid "Отчет по статусам задач"
+msgstr ""
+
+#: .\templates\tasks\task_summary_report.html:7
+msgid "Сводка задач по статусам"
+msgstr ""
+
+#: .\templates\tasks\task_summary_report.html:14
+msgid "Статус задачи"
+msgstr ""
+
+#: .\templates\tasks\task_summary_report.html:17
+msgid "Количество задач"
+msgstr ""
+
+#: .\templates\tasks\task_summary_report.html:40
+msgid "Нет данных для отчета."
+msgstr ""
+
+#: .\templates\users\login.html:18
+msgid "Sign in to your account"
+msgstr ""
+
+#: .\templates\users\login.html:22
+msgid "Your username"
+msgstr ""
+
+#: .\templates\users\login.html:23
+msgid "puppetmaster"
+msgstr ""
+
+#: .\templates\users\login.html:30
+msgid "Forgot password?"
+msgstr ""
+
+#: .\templates\users\login.html:33
+msgid "Sign in"
+msgstr ""
+
+#: .\templates\users\login.html:36
+msgid "Don’t have an account yet?"
+msgstr ""
+
+#: .\templates\users\login.html:36
+msgid "Sign up"
+msgstr ""
+
+#: .\templates\users\role_list.html:6 .\user_profiles\models.py:51
+msgid "Роли"
+msgstr ""
+
+#: .\templates\users\role_list.html:15
+msgid "Создать новую роль"
+msgstr ""
+
+#: .\templates\users\role_list.html:47
+msgid "Удалить роль"
+msgstr ""
+
+#: .\templates\users\role_list.html:56
+msgid "Нет ролей."
+msgstr ""
+
+#: .\templates\users\team_list.html:6 .\user_profiles\models.py:38
+msgid "Команды"
+msgstr ""
+
+#: .\templates\users\team_list.html:15
+msgid "Создать новую команду"
+msgstr ""
+
+#: .\templates\users\team_list.html:17
+msgid "Создать команду"
+msgstr ""
+
+#: .\templates\users\team_list.html:30
+msgid "Лидер команды"
+msgstr ""
+
+#: .\templates\users\team_list.html:34
+msgid "Нет лидера"
+msgstr ""
+
+#: .\templates\users\team_list.html:54
+msgid "Удалить команду"
+msgstr ""
+
+#: .\templates\users\team_list.html:63
+msgid "Нет команд."
+msgstr ""
+
+#: .\templates\users\user_list.html:6
+msgid "Пользователи"
+msgstr ""
+
+#: .\templates\users\user_list.html:15
+msgid "Создать нового пользователя"
+msgstr ""
+
+#: .\templates\users\user_list.html:17
+msgid "Создать пользователя"
+msgstr ""
+
+#: .\templates\users\user_list.html:34
+msgid "Email"
+msgstr ""
+
+#: .\templates\users\user_list.html:35 .\user_profiles\models.py:50
+msgid "Роль"
+msgstr ""
+
+#: .\templates\users\user_list.html:39
+msgid "Нет роли"
+msgstr ""
+
+#: .\templates\users\user_list.html:67
+msgid "Нет пользователей."
+msgstr ""
+
+#: .\user_profiles\models.py:31
+msgid "Название команды"
+msgstr ""
+
+#: .\user_profiles\models.py:34
+msgid "Описание команды"
+msgstr ""
+
+#: .\user_profiles\models.py:47
+msgid "Название роли"
+msgstr ""
+
+#: .\user_profiles\models.py:63
+msgid "Наблюдатель"
+msgstr ""
+
+#: .\user_profiles\models.py:64
+msgid "Ответственный"
+msgstr ""
+
+#: .\user_profiles\models.py:71
+msgid "Роль пользователя в задаче"
+msgstr ""
+
+#: .\user_profiles\models.py:72
+msgid "Роли пользователей в задачах"
+msgstr ""
+
+#: .\user_profiles\views.py:53
+msgid "Successfully logged in!"
+msgstr ""
+
+#: .\user_profiles\views.py:56
+msgid "Invalid credentials. Please try again!"
+msgstr ""
+
+#: .\user_profiles\views.py:71
+msgid "Successfully logged out!"
+msgstr ""
