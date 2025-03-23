@@ -1,23 +1,24 @@
-{% load static %}
+class="text-3xl font-semibold text-gray-900 sm:text-4xl"{% load static %}
 {% load i18n %}
 <!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}" style="height: 100vh; overflow: hidden;">
+<html lang="{{ LANGUAGE_CODE }}" style="height: 100vh;">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="shortcut icon" href="{% static 'img/fav.png' %}" type="image/x-icon">
-    <link rel="stylesheet" href="https://kit-pro.fontawesome.com/releases/v5.12.1/css/pro.min.css">
-    <!-- TailwindCSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- TailwindCSS (using Play CDN for simplicity, consider JIT in production) -->
+    <script src="https://cdn.tailwindcss.com/"></script>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" 
-          integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+          integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
           crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
+
     <!-- HTMX -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.9/htmx.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.9/ext/ws.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://unpkg.com/alpinejs@3.14.9/dist/cdn.min.js"></script>
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.14.9/dist/cdn.min.js" defer></script> <!-- defer is important for Alpine -->
+
     <!-- Apple-Inspired Styles -->
     <style>
         body {
@@ -26,11 +27,43 @@
         .cupertino-shadow {
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
+        /* Preloader Styles */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Ensure it's on top */
+            transition: opacity 0.5s ease; /* Smooth fade-out */
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3498db; /* Tailwind blue-500 */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 
     <title>{% block title %}{% endblock %}</title>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-gray-50 text-gray-900" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+<!-- Preloader -->
+<div id="preloader">
+    <div class="spinner"></div>
+</div>
 
 {% if user.is_authenticated %}
 <!-- Navbar -->
@@ -42,13 +75,13 @@
         </a>
     </div>
 
-    <!-- Dropdown Задачи -->
-    <div class="relative mx-4">
-        <button id="tasksDropdown" class="flex items-center bg-white px-4 py-2 rounded-full shadow hover:bg-gray-100 transition-all duration-200">
+     <!-- Dropdown Задачи -->
+    <div class="relative mx-4" x-data="{ open: false }">
+        <button @click="open = !open" id="tasksDropdown" class="flex items-center bg-white px-4 py-2 rounded-full shadow hover:bg-gray-100 transition-all duration-200">
             {% trans 'Задачи' %}
             <i class="fas fa-chevron-down ml-2 text-sm"></i>
         </button>
-        <div id="tasksMenu" class="absolute left-0 mt-2 w-56 bg-white shadow-xl rounded-2xl overflow-hidden hidden transition-opacity duration-300">
+        <div x-show="open" @click.outside="open = false" id="tasksMenu" class="absolute left-0 mt-2 w-56 bg-white shadow-xl rounded-2xl overflow-hidden transition-opacity duration-300" x-cloak>
             <ul class="py-2">
                 <li><a href="{% url 'tasks:category_list' %}" class="block px-4 py-2 hover:bg-gray-100 transition-all">{% trans 'Категории' %}</a></li>
                 <li><a href="{% url 'tasks:task_list' %}" class="block px-4 py-2 hover:bg-gray-100 transition-all">{% trans 'Список задач' %}</a></li>
@@ -57,15 +90,16 @@
         </div>
     </div>
 
+
     <div class="flex-1 flex justify-center">{% block list_actions %}{% endblock %}</div>
 
     <!-- User Menu -->
-    <div class="relative">
-        <button id="userMenuBtn" class="flex items-center px-4 py-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-all">
+    <div class="relative" x-data="{ open: false }">
+        <button @click="open = !open" id="userMenuBtn" class="flex items-center px-4 py-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-all">
             <img class="w-8 h-8 rounded-full object-cover" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}">
             <span class="ml-2 text-gray-800">{{ user.get_full_name }}</span>
         </button>
-        <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-xl hidden transition-opacity duration-300">
+        <div x-show="open" @click.outside="open = false" id="userMenu" class="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-xl  transition-opacity duration-300" x-cloak>
             <a href="#" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Профиль' %}</a>
             <a href="#" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Входящие' %}</a>
             {% if user.is_superuser %}
@@ -82,26 +116,29 @@
     {% block content %}{% endblock %}
 </main>
 
-<!-- Модальное окно -->
-<div id="modal" class="fixed inset-0 bg-black bg-opacity-30 hidden flex items-center justify-center">
+<!-- Modal -->
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-30 hidden flex items-center justify-center" x-data="{ open: false }" @modal-open.window="open = true" @modal-close.window="open = false" x-show="open" x-cloak>
     <div class="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full relative">
-        <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-600 hover:text-gray-800">✖</button>
+        <button @click="$dispatch('modal-close')" class="absolute top-2 right-2 text-gray-600 hover:text-gray-800">✖</button>
         <div id="modal-content"></div>
     </div>
 </div>
 
 
 {% else %}
-{% include 'users/login.html' %}
+    {% include 'users/login.html' %}
 {% endif %}
 
 
 <!-- Script -->
 {% block scripts %}{% endblock %}
+
+<!-- Notification and WebSocket -->
 <script>
-    // WebSocket Connection
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/tasks/');
-    socket.onmessage = function(e) {
+    // WebSocket Connection (for task updates)
+    const taskSocket = new WebSocket('ws://' + window.location.host + '/ws/tasks/');
+
+    taskSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
         if (data.message) {
             showNotification(data.message);
@@ -110,100 +147,42 @@
 
     // Show Notification
     function showNotification(message) {
-        const notification = document.createElement('div');
-        notification.classList.add('notification');
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 5000);
-        const sound = new Audio('/static/sounds/notification.mp3');
-        sound.play();
-    }
-</script>
+      const notification = document.createElement('div');
+      notification.classList.add('fixed', 'bottom-5', 'right-5', 'bg-blue-500', 'text-white', 'py-2', 'px-4', 'rounded', 'shadow-lg', 'z-50', 'transition-opacity', 'duration-500', 'ease-in-out');
+      notification.textContent = message;
+      document.body.appendChild(notification);
 
-<!-- CSS for pop-up notifications -->
-<style>
-    .notification {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background-color: #444;
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 16px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    }
-</style>
+      // Play sound
+      const sound = new Audio("{% static 'sounds/notification.mp3' %}");  // Corrected path
+        sound.play().catch(error => {
+            console.warn("Autoplay was prevented. User interaction is likely needed.", error);
+        });
 
-<script>
-    // Dropdown меню
-    document.getElementById('tasksDropdown').addEventListener('click', function() {
-        let menu = document.getElementById('tasksMenu');
-        menu.classList.toggle('hidden');
-    });
+      // Fade out and remove
+      setTimeout(() => {
+        notification.classList.add('opacity-0'); // Start fade out
+        setTimeout(() => {
+          notification.remove();
+        }, 500); // Remove after fade out (0.5s)
+      }, 3000); // Show for 3 seconds
+    }
+
+    // HTMX and Modal Handling
     document.body.addEventListener('htmx:afterSwap', function(event) {
         if (event.detail.target.id === "modal-content") {
-            openModal(); // ✅ Теперь точно откроется модалка!
+            // Dispatch a custom event to open the modal
+            window.dispatchEvent(new CustomEvent('modal-open'));
         }
     });
     
-    function closeModal() {
-        let modal = document.getElementById("modal");
-        if (modal) {
-            modal.classList.add("hidden");
-            let modalContent = document.getElementById("modal-content");
-            if (modalContent) {
-                modalContent.innerHTML = ''; // Очищаем содержимое
-            }
-        }
-    }
-    function openModal() {
-        let modal = document.getElementById("modal");
-        if (modal) {
-            modal.classList.remove("hidden");
-            console.log("✅ Modal Opened!");
-        } else {
-            console.error("❌ Modal NOT FOUND!");
-        }
-    }
-    
-    // User Menu Toggle
-    document.getElementById('userMenuBtn').addEventListener('click', function() {
-        let menu = document.getElementById('userMenu');
-        menu.classList.toggle('hidden');
-        setTimeout(() => menu.classList.toggle('opacity-0'), 10);
-    });
-
-    // Sidebar Toggle
-    const sideBar = document.getElementById('sideBar');
-    const sideBarOpenBtn = document.getElementById('sideBarOpenBtn');
-    const sideBarCloseBtn = document.getElementById('sideBarCloseBtn');
-    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-
-    function openSidebar() {
-        sideBar.classList.remove('-translate-x-full');
-        sidebarBackdrop.classList.remove('hidden');
-    }
-
-    function closeSidebar() {
-        sideBar.classList.add('-translate-x-full');
-        sidebarBackdrop.classList.add('hidden');
-    }
-
-    sideBarOpenBtn.addEventListener('click', openSidebar);
-    sideBarCloseBtn.addEventListener('click', closeSidebar);
-    sidebarBackdrop.addEventListener('click', closeSidebar);
-
-    // Dropdown Toggle
-    document.getElementById('dropdownTasksButton').addEventListener('click', function() {
-        document.getElementById('dropdown-1').classList.toggle('hidden');
-    });
-    document.getElementById('dropdownChatsButton').addEventListener('click', function() {
-        document.getElementById('dropdown-2').classList.toggle('hidden');
+    // Preloader handling
+    window.addEventListener('load', function() {
+        const preloader = document.getElementById('preloader');
+        preloader.style.opacity = '0'; // Fade out
+        setTimeout(() => {
+            preloader.style.display = 'none'; // Hide completely after fade
+        }, 500); // Match the transition duration
     });
 </script>
-
-<script src="{% static 'js/scripts.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
 </body>
 </html>

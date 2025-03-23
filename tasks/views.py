@@ -23,6 +23,7 @@ from django.views.generic.edit import FormView, View
 from django.views.generic.base import TemplateView
 from django.forms.models import inlineformset_factory
 from django_filters.views import FilterView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 import django_filters
 from django_filters import FilterSet, ChoiceFilter, ModelChoiceFilter, rest_framework as filters
 from django_filters.views import FilterView
@@ -342,8 +343,9 @@ class TaskListView(LoginRequiredMixin, FilterView):
     model = Task
     template_name = "tasks/task_list.html"
     context_object_name = "tasks"
-    paginate_by = 10  # Number of tasks per page
+    paginate_by = 10
     filterset_class = TaskFilter
+    
 
     def get_queryset(self):
         """Optimized query + filtering based on user permissions."""
@@ -363,51 +365,78 @@ class TaskListView(LoginRequiredMixin, FilterView):
         return queryset
 
     def get_context_data(self, **kwargs):
-        """Add pagination and status grouping to the context."""
+        """Add pagination, status grouping, and view type to context."""
         context = super().get_context_data(**kwargs)
+
+        # Determine view type (list or kanban). Default to kanban.
+        view_type = self.request.GET.get('view', 'kanban')
+        context['view_type'] = view_type
+
+        # Status grouping (for both list and kanban)
         status_mapping = {status[0]: status[1] for status in Task.TASK_STATUS_CHOICES}
+        context['status_mapping'] = status_mapping
+
         tasks_by_status = {key: [] for key in status_mapping}
-        for task in context["tasks"]:
-            tasks_by_status[task.status].append(task)
-        context["tasks_by_status"] = tasks_by_status
-        context["status_mapping"] = status_mapping
+        all_tasks = self.get_queryset() # Get *all* tasks (filtered, but not paginated)
+
+        if view_type == 'list':
+            # Pagination is handled automatically by ListView/FilterView if paginate_by is set.
+            #  No need to manually create a Paginator object.
+             for task in context['page_obj']:  # Iterate over the *paginated* tasks
+                tasks_by_status[task.status].append(task)
+
+        else:  # Kanban view: no pagination
+            for task in all_tasks: # all tasks without pagination
+                tasks_by_status[task.status].append(task)
+
+        context['tasks_by_status'] = tasks_by_status
+        context['filterset'] = self.filterset # Pass the filterset to the template
         return context
-        
 
 
-class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, generic.CreateView):
+class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Task
     form_class = TaskForm
-    template_name = "modals/modal_task_form.html"
+    template_name = "modals/modal_task_form.html"  # Consistent naming
     success_url = reverse_lazy("tasks:task_list")
     success_message = _("Задача успешно создана!")
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
+        form.instance.status = 'new'
         return super().form_valid(form)
 
 
-class TaskDetailView(LoginRequiredMixin, generic.DetailView):
+class TaskDetailView(LoginRequiredMixin, DetailView):
     model = Task
     template_name = "tasks/task_detail.html"
     context_object_name = "task"
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset=queryset)
-        if not self.request.user.is_superuser and obj.assignee != self.request.user:
-            raise Http404(_("Вы не имеете доступа к этой задаче."))
+        if not self.request.user.is_superuser and obj.assignee != self.request.user and self.request.user not in obj.team.members.all():
+            raise Http404(_("Вы не имеете доступа к этой задаче."))  # More specific check
         return obj
 
 
-class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, generic.UpdateView):
+class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Task
     form_class = TaskForm
     template_name = "modals/modal_task_form.html"
     success_url = reverse_lazy("tasks:task_list")
     success_message = _("Задача обновлена!")
 
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+        if not user.is_superuser:
+          queryset = queryset.filter(Q(assignee=user) | Q(team__in=user.teams.all()))
+        return queryset
+
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Use extra=1 for a single additional form, max_num for safety
         TaskPhotoFormSet = inlineformset_factory(Task, TaskPhoto, form=TaskPhotoForm, extra=1, max_num=10, can_delete=True)
         if self.request.POST:
             context["photo_formset"] = TaskPhotoFormSet(self.request.POST, self.request.FILES, instance=self.object)
@@ -419,17 +448,27 @@ class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, generic.UpdateView
         context = self.get_context_data()
         photo_formset = context["photo_formset"]
         if photo_formset.is_valid():
-            photo_formset.instance = self.object
+            photo_formset.instance = self.object  # Set the instance before saving
             photo_formset.save()
             return super().form_valid(form)
         return self.form_invalid(form)
 
 
-class TaskDeleteView(LoginRequiredMixin, SuccessMessageMixin, generic.DeleteView):
+class TaskDeleteView(LoginRequiredMixin, DeleteView):  # No need for SuccessMessageMixin here
     model = Task
-    template_name = "tasks/task_confirm_delete.html"
+    template_name = "tasks/task_confirm_delete.html"  # Consistent naming
     success_url = reverse_lazy("tasks:task_list")
-    success_message = _("Задача удалена!")
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+        if not user.is_superuser:
+            queryset = queryset.filter(Q(assignee=user) | Q(team__in=user.teams.all()))
+        return queryset
+
+    def form_valid(self, form):  # Add form_valid to display success message
+        messages.success(self.request, _("Задача удалена!"))
+        return super().form_valid(form)
 
 
 class TaskPerformView(LoginRequiredMixin, generic.DetailView):
