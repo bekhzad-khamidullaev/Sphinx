@@ -1,14 +1,14 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from .models import (
-    Campaign, TaskCategory, TaskSubcategory,
+    Project, TaskCategory, TaskSubcategory,
     Task, TaskPhoto
 )
 from user_profiles.admin import TaskUserRoleInline
 
 # --- КАМПАНИИ ---
-@admin.register(Campaign)
-class CampaignAdmin(admin.ModelAdmin):
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
     list_display = ("name", "start_date", "end_date", "created_at")
     search_fields = ("name", "description")
     list_filter = ("start_date", "end_date")
@@ -39,14 +39,14 @@ class TaskPhotoInline(admin.TabularInline):
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     inlines = [TaskPhotoInline, TaskUserRoleInline]  # TaskPhoto managed via inline
-    list_display = ("task_number", "campaign", "status", "priority", "deadline", "assignee", "created_at")
-    list_filter = ("status", "priority", "category", "subcategory", "campaign", "team", "assignee", "deadline", "created_at")
-    search_fields = ("task_number", "description", "campaign__name", "assignee__username", "team__name")
+    list_display = ("task_number", "project", "status", "priority", "deadline", "assignee", "created_at")
+    list_filter = ("status", "priority", "category", "subcategory", "project", "team", "assignee", "deadline", "created_at")
+    search_fields = ("task_number", "description", "project__name", "assignee__username", "team__name")
     ordering = ("task_number",)
     date_hierarchy = "created_at"
     
     fieldsets = (
-        (None, {"fields": ("task_number", "campaign", "description")}),
+        (None, {"fields": ("task_number", "project", "description")}),
         (_("Подробности"), {"fields": ("category", "subcategory", "status", "priority", "assignee", "team")}),
         (_("Сроки"), {"fields": ("deadline", "start_date", "completion_date"), "classes": ("collapse",)}),
         (_("Фото/Вложения"), {"fields": (), "classes": ("collapse",)}),  # Remove task_photos

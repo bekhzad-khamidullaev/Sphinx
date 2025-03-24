@@ -3,18 +3,18 @@ import random
 from datetime import timedelta
 from django.utils import timezone
 from faker import Faker
-from tasks.models import Campaign, TaskCategory, TaskSubcategory, Task, TaskPhoto
+from tasks.models import Project, TaskCategory, TaskSubcategory, Task, TaskPhoto
 from user_profiles.models import Team, User
 
 fake = Faker()
 
 
-class CampaignFactory(factory.django.DjangoModelFactory):
+class ProjectFactory(factory.django.DjangoModelFactory):
     """Фабрика для создания кампаний"""
     class Meta:
-        model = Campaign
+        model = Project
 
-    name = factory.Sequence(lambda n: f"{n}Campaign")
+    name = factory.Sequence(lambda n: f"{n}Project")
     description = factory.LazyAttribute(lambda _: fake.text(max_nb_chars=200))
     start_date = factory.LazyFunction(timezone.now)
     end_date = factory.LazyFunction(lambda: timezone.now() + timedelta(days=random.randint(10, 100)))
@@ -63,7 +63,7 @@ class TaskFactory(factory.django.DjangoModelFactory):
         model = Task
 
     team = factory.SubFactory(TeamFactory)
-    campaign = factory.SubFactory(CampaignFactory)
+    project = factory.SubFactory(ProjectFactory)
     category = factory.SubFactory(TaskCategoryFactory)
     subcategory = factory.SubFactory(TaskSubcategoryFactory)
     description = factory.LazyAttribute(lambda _: fake.text(max_nb_chars=250))

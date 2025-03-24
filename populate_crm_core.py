@@ -4,7 +4,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project_name.settings')  #
 django.setup()
 
 from faker import Faker
-from crm_core.models import Campaign, TaskCategory, TaskSubcategory, Task, TaskPhoto
+from crm_core.models import Project, TaskCategory, TaskSubcategory, Task, TaskPhoto
 from user_profiles.models import Team, UserProfile  # Импортируем модели из user_profiles
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -13,18 +13,18 @@ from datetime import timedelta
 
 fake = Faker('ru_RU')  # Используем русскую локализацию для Faker, если нужно русские данные
 
-def populate_campaigns(num_campaigns=5):
+def populate_projects(num_projects=5):
     """Создает фиктивные кампании."""
-    for _ in range(num_campaigns):
+    for _ in range(num_projects):
         name = fake.company() + " кампания"
-        campaign = Campaign(
+        project = Project(
             name=name,
             description=fake.text(),
             start_date=fake.date_between(start_date='-30d', end_date='today'),
             end_date=fake.date_between(start_date='today', end_date='+30d'),
         )
-        campaign.save()
-        print(f"Создана кампания: {campaign.name}")
+        project.save()
+        print(f"Создана кампания: {project.name}")
 
 def populate_task_categories(num_categories=5):
     """Создает фиктивные категории задач."""
@@ -57,13 +57,13 @@ def populate_task_subcategories(num_subcategories=10):
 
 def populate_tasks(num_tasks=20):
     """Создает фиктивные задачи."""
-    campaigns = Campaign.objects.all()
+    projects = Project.objects.all()
     categories = TaskCategory.objects.all()
     subcategories = TaskSubcategory.objects.all()
     users = get_user_model().objects.all()  # Получаем всех пользователей
     teams = Team.objects.all() # Получаем все команды
 
-    if not campaigns or not categories or not subcategories or not users or not teams:
+    if not projects or not categories or not subcategories or not users or not teams:
         print("Сначала создайте кампании, категории, подкатегории, пользователей и команды!")
         return
 
@@ -71,7 +71,7 @@ def populate_tasks(num_tasks=20):
     task_priorities = [Task.TaskPriority.HIGH, Task.TaskPriority.MEDIUM_HIGH, Task.TaskPriority.MEDIUM, Task.TaskPriority.MEDIUM_LOW, Task.TaskPriority.LOW]
 
     for _ in range(num_tasks):
-        campaign = random.choice(campaigns)
+        project = random.choice(projects)
         category = random.choice(categories) if categories else None
         subcategory = random.choice(subcategories) if subcategories else None
         assignee = random.choice(users) if users else None
@@ -86,7 +86,7 @@ def populate_tasks(num_tasks=20):
 
 
         task = Task(
-            campaign=campaign,
+            project=project,
             category=category,
             subcategory=subcategory,
             description=fake.text(),
@@ -101,7 +101,7 @@ def populate_tasks(num_tasks=20):
             created_by=created_by,
         )
         task.save() # save() автоматически генерирует task_number
-        print(f"Создана задача: {task.task_number} в кампании {campaign.name}")
+        print(f"Создана задача: {task.task_number} в кампании {project.name}")
 
 def populate_task_photos(num_photos=30):
     """Создает фиктивные фотографии задач."""
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     print("Заполнение базы данных фиктивными данными...")
 
     # Важно соблюдать порядок создания, чтобы не было ошибок внешних ключей
-    populate_campaigns()
+    populate_projects()
     populate_task_categories()
     populate_task_subcategories()
 

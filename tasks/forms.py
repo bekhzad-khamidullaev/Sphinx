@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.forms import modelformset_factory
 from .models import (
-    Task, TaskPhoto, Campaign, TaskCategory,
+    Task, TaskPhoto, Project, TaskCategory,
     TaskSubcategory
 )
 from user_profiles.models import User, Role, Team
@@ -54,10 +54,10 @@ class TeamForm(forms.ModelForm):
         return name
 
 
-# --- Form for Campaign ---
-class CampaignForm(forms.ModelForm):
+# --- Form for Project ---
+class ProjectForm(forms.ModelForm):
     class Meta:
-        model = Campaign
+        model = Project
         fields = ["name", "description", "start_date", "end_date"]
         widgets = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
@@ -66,8 +66,8 @@ class CampaignForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        add_common_attrs(self.fields["name"], placeholder=_("Campaign name"))
-        add_common_attrs(self.fields["description"], placeholder=_("Campaign description"))
+        add_common_attrs(self.fields["name"], placeholder=_("Project name"))
+        add_common_attrs(self.fields["description"], placeholder=_("Project description"))
         self.fields["description"].widget.attrs["rows"] = 3
 
         self.helper = FormHelper()
@@ -77,7 +77,7 @@ class CampaignForm(forms.ModelForm):
             Field("start_date"),
             Field("end_date"),
             FormActions(
-                Submit("submit", _("Save Campaign"), css_class="btn btn-success"),
+                Submit("submit", _("Save Project"), css_class="btn btn-success"),
                 css_class="mt-2"
             )
         )
@@ -240,7 +240,7 @@ class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
         fields = [
-            "campaign", "category", "subcategory", "description",
+            "project", "category", "subcategory", "description",
             "assignee", "team", "status", "priority", "deadline", "start_date", "estimated_time"
         ]
         widgets = {
@@ -252,7 +252,7 @@ class TaskForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        add_common_attrs(self.fields["campaign"])
+        add_common_attrs(self.fields["project"])
         add_common_attrs(self.fields["category"])
         add_common_attrs(self.fields["subcategory"])
         add_common_attrs(self.fields["description"], placeholder=_("Task description"))
@@ -269,7 +269,7 @@ class TaskForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            Field("campaign"),
+            Field("project"),
             Field("category"),
             Field("subcategory"),
             Field("description"),

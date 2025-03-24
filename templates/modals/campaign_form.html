@@ -2,14 +2,14 @@
 {% load i18n app_filters %}
 
 {% block modal_title %}
-    {% if campaign %}✏️ {% trans 'Редактировать кампанию' %}{% else %}➕ {% trans 'Добавить кампанию' %}{% endif %}
+    {% if project %}✏️ {% trans 'Редактировать кампанию' %}{% else %}➕ {% trans 'Добавить кампанию' %}{% endif %}
 {% endblock %}
 
 {% block form_action %}
-    {% if campaign %}{% url 'tasks:update_campaign' campaign.id %}{% else %}{% url 'tasks:create_campaign' %}{% endif %}
+    {% if project %}{% url 'tasks:update_project' project.id %}{% else %}{% url 'tasks:create_project' %}{% endif %}
 {% endblock %}
 
-{% block form_target %} #campaign-list {% endblock %}
+{% block form_target %} #project-list {% endblock %}
 {% block form_swap %} beforeend {% endblock %}
 
 {% block form_fields %}

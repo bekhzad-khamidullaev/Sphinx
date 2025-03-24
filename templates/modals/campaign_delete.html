@@ -6,15 +6,15 @@
 {% endblock %}
 
 {% block delete_modal_message %}
-    {% trans 'Вы уверены, что хотите удалить кампанию' %} <strong>{{ campaign.name }}</strong>?
+    {% trans 'Вы уверены, что хотите удалить кампанию' %} <strong>{{ project.name }}</strong>?
 {% endblock %}
 
 {% block delete_url %}
-    {% url 'tasks:delete_campaign' campaign.pk %}
+    {% url 'tasks:delete_project' project.pk %}
 {% endblock %}
 
 {% block delete_target %}
-    #campaign-{{ campaign.pk }}  {# Замените на ID элемента кампании в списке, например, li или tr #}
+    #project-{{ project.pk }}  {# Замените на ID элемента кампании в списке, например, li или tr #}
 {% endblock %}
 
 {% block delete_swap %}

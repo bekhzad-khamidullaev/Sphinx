@@ -13,7 +13,6 @@ from unidecode import unidecode
 import time
 import logging
 from user_profiles.models import TaskUserRole
-from datetime import timedelta
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ class BaseModel(models.Model):
 
 # ------------------------ Кампании ------------------------
 
-class Campaign(BaseModel):
+class Project(BaseModel):
     name = models.CharField(max_length=200, verbose_name=_("Название кампании"), db_index=True)
     description = models.TextField(blank=True, verbose_name=_("Описание кампании"))
     start_date = models.DateField(null=True, blank=True, verbose_name=_("Дата начала"))
@@ -53,26 +52,26 @@ class Campaign(BaseModel):
 
         action = "create" if is_new else "update"
         async_to_sync(self.channel_layer.group_send)(
-            "campaigns", {"type": "updateCampaigns", "message": {"action": action, "id": self.id, "name": self.name}}
+            "projects", {"type": "updateProjects", "message": {"action": action, "id": self.id, "name": self.name}}
         )
 
     def delete(self, *args, **kwargs):
         """Отправка уведомления по WebSocket при удалении кампании."""
         async_to_sync(self.channel_layer.group_send)(
-            "campaigns", {"type": "updateCampaigns", "message": {"action": "delete", "id": self.id}}
+            "projects", {"type": "updateProjects", "message": {"action": "delete", "id": self.id}}
         )
         super().delete(*args, **kwargs)
 
     def get_absolute_url(self):
         """Возвращает URL для просмотра кампании."""
         from django.urls import reverse
-        return reverse("tasks:campaign_detail", kwargs={"pk": self.pk})
+        return reverse("tasks:project_detail", kwargs={"pk": self.pk})
 
     class Meta:
         verbose_name = _("Кампания")
         verbose_name_plural = _("Кампании")
         ordering = ["name", "-created_at"]
-        indexes = [models.Index(fields=["name"], name="campaign_name_idx")]
+        indexes = [models.Index(fields=["name"], name="project_name_idx")]
 
     def __str__(self):
         return self.name
@@ -194,7 +193,7 @@ class Task(BaseModel):
         ("overdue", _("Просрочена")),
     ]
 
-    campaign = models.ForeignKey("tasks.Campaign", on_delete=models.CASCADE, related_name="tasks", db_index=True)
+    project = models.ForeignKey("tasks.Project", on_delete=models.CASCADE, related_name="tasks", db_index=True)
     category = models.ForeignKey("tasks.TaskCategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks", db_index=True)
     subcategory = models.ForeignKey("tasks.TaskSubcategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks", db_index=True)
     task_number = models.CharField(max_length=20, unique=True, blank=True, verbose_name=_("Номер задачи"), db_index=True)
@@ -229,9 +228,6 @@ class Task(BaseModel):
         if self.is_overdue and self.status not in ["completed", "cancelled", "overdue"]:
             self.status = "overdue"  # Автоматическая смена статуса на "overdue"
 
-        if self.estimated_time and self.estimated_time < timedelta(minutes=1):
-            raise ValidationError(_("Estimated time must be at least 1 minute."))
-
 
     def save(self, *args, **kwargs):
         """Генерирует уникальный task_number и назначает роли при сохранении задачи."""
@@ -264,14 +260,14 @@ class Task(BaseModel):
 
     def generate_unique_task_number(self):
         """Генерирует уникальный номер задачи."""
-        if not self.campaign:
+        if not self.project:
             raise ValueError("Нельзя создать задачу без кампании!")
 
-        campaign_code = unidecode(self.campaign.name).upper().replace(" ", "")[:4] or "TASK"
+        project_code = unidecode(self.project.name).upper().replace(" ", "")[:4] or "TASK"
 
         for attempt in range(10):
             with transaction.atomic():
-                last_task = Task.objects.select_for_update().filter(campaign=self.campaign).order_by("-id").first()
+                last_task = Task.objects.select_for_update().filter(project=self.project).order_by("-id").first()
                 next_number = 1
 
                 if last_task and last_task.task_number:
@@ -281,7 +277,7 @@ class Task(BaseModel):
                     except ValueError:
                         pass  # Игнорируем ошибки
 
-                task_number = f"{campaign_code}-{next_number:04d}"
+                task_number = f"{project_code}-{next_number:04d}"
 
                 if not Task.objects.filter(task_number=task_number).exists():
                     return task_number
@@ -321,7 +317,7 @@ class Task(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.task_number} - {self.campaign.name} - {self.description[:50]}"
+        return f"{self.task_number} - {self.project.name} - {self.description[:50]}"
 
 
 # ------------------------ Фотографии ------------------------

@@ -28,7 +28,7 @@ def send_task_completed_notification(sender, **kwargs):
 
             subject = _(f"Задача '{task.task_number}': Выполнена")
             message = _(
-                f"Задача '{task.task_number} ({task.campaign.name})' была отмечена как *Выполнена*.\n\n"
+                f"Задача '{task.task_number} ({task.project.name})' была отмечена как *Выполнена*.\n\n"
                 f"Описание: {task.description[:200]}...\n\n"
                 f"Статус: {task.get_status_display()}\n\n"
                 f"Подробности задачи: {task_detail_url}"

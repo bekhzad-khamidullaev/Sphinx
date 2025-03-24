@@ -1,7 +1,7 @@
 # serializers.py
 from rest_framework import serializers
 from .models import (
-    Campaign,
+    Project,
     TaskCategory,
     TaskSubcategory,
     Task,
@@ -10,9 +10,9 @@ from .models import (
 from user_profiles.models import User
 
 
-class CampaignSerializer(serializers.ModelSerializer):
+class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Campaign
+        model = Project
         fields = "__all__"
 
 
@@ -36,7 +36,7 @@ class TaskSerializer(serializers.ModelSerializer):
     status_name = serializers.CharField(source="get_status_display", read_only=True) # Use choice display
     category_name = serializers.CharField(source="category.name", read_only=True)
     subcategory_name = serializers.CharField(source="subcategory.name", read_only=True)
-    campaign_name = serializers.CharField(source="campaign.name", read_only=True)
+    project_name = serializers.CharField(source="project.name", read_only=True)
     team_name = serializers.CharField(source="team.name", read_only=True)
     assignee_username = serializers.CharField(source="assignee.username", read_only=True)
     created_by_username = serializers.CharField(
@@ -49,7 +49,7 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "task_number",
-            "campaign",
+            "project",
             "category",
             "subcategory",
             "description",
@@ -68,7 +68,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "status_name",
             "category_name",
             "subcategory_name",
-            "campaign_name",
+            "project_name",
             "team_name",
             "assignee_username",
             "created_by_username",

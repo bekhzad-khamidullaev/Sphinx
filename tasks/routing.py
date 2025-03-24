@@ -9,8 +9,8 @@ websocket_urlpatterns = [
     # Generic WebSocket connection (e.g., for receiving updates)
     re_path(r'ws/generic/(?P<group>\w+)/$', consumers.GenericConsumer.as_asgi()),
 
-    # Campaign WebSocket connection
-    re_path(r'ws/campaigns/$', consumers.CampaignConsumer.as_asgi()),
+    # Project WebSocket connection
+    re_path(r'ws/projects/$', consumers.ProjectConsumer.as_asgi()),
 
     # Team WebSocket connection
     re_path(r'ws/teams/$', consumers.TeamConsumer.as_asgi()),

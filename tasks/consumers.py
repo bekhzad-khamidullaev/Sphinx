@@ -118,10 +118,10 @@ class SubcategoryConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event["message"]))
         
 
-class CampaignConsumer(AsyncWebsocketConsumer):
+class ProjectConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         user = self.scope["user"]
-        self.group_name = f"campaign_{user.id}"
+        self.group_name = f"project_{user.id}"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
@@ -130,9 +130,9 @@ class CampaignConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        await self.channel_layer.group_send(self.group_name, {"type": "updateCampaigns", "message": data})
+        await self.channel_layer.group_send(self.group_name, {"type": "updateProjects", "message": data})
 
-    async def updateCampaigns(self, event):
+    async def updateProjects(self, event):
         await self.send(text_data=json.dumps(event["message"]))
 
 

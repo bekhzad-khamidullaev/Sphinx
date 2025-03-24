@@ -6,7 +6,7 @@ app_name = "tasks"
 
 # API router
 router = DefaultRouter()
-router.register(r'campaigns', views.CampaignViewSet)
+router.register(r'projects', views.ProjectViewSet)
 router.register(r'task-categories', views.TaskCategoryViewSet)
 router.register(r'task-subcategories', views.TaskSubcategoryViewSet)
 router.register(r'tasks', views.TaskViewSet)
@@ -28,13 +28,13 @@ urlpatterns = [
     path('tasks/<int:pk>/perform/', views.TaskPerformView.as_view(), name='task_perform'),
     path('tasks/update_status/<int:task_id>/', views.update_task_status, name='update_task_status'),
 
-    # Campaign management URLs
-    path('campaigns/', views.campaign_list, name='campaign_list'),
-    path('campaigns/create/', views.modal_create_campaign, name='modal_create_campaign'),
-    path('campaigns/<int:pk>/update/', views.modal_update_campaign, name='modal_update_campaign'),
-    path('campaigns/<int:pk>/delete/', views.modal_delete_campaign, name='modal_delete_campaign'),
-    path('campaigns/create/', views.create_campaign, name='create_campaign'),
-    path('campaigns/<int:pk>/delete/', views.delete_campaign, name='delete_campaign'),
+    # Project management URLs
+    path('projects/', views.project_list, name='project_list'),
+    path('projects/create/', views.modal_create_project, name='modal_create_project'),
+    path('projects/<int:pk>/update/', views.modal_update_project, name='modal_update_project'),
+    path('projects/<int:pk>/delete/', views.modal_delete_project, name='modal_delete_project'),
+    path('projects/create/', views.create_project, name='create_project'),
+    path('projects/<int:pk>/delete/', views.delete_project, name='delete_project'),
 
     # Category management URLs
     path('categories/', views.category_list, name='category_list'),

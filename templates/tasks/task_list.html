@@ -93,7 +93,7 @@
                              class="kanban-task bg-white rounded-lg shadow-md p-3 cursor-grab transition-shadow duration-200 hover:shadow-lg"
                              draggable="true" data-task-id="{{ task.pk }}">
                             <h4 class="font-medium text-neutral-900 text-sm">
-                                {{ task.campaign.name }} - {{ task.task_number }}</h4>
+                                {{ task.project.name }} - {{ task.task_number }}</h4>
                         </div>
                     {% empty %}
                         <p class="text-gray-500 text-sm">{% trans 'Нет задач в этом статусе' %}</p>
@@ -110,7 +110,7 @@
         <thead>
         <tr class="bg-gray-100 text-xs text-gray-700 uppercase">
             <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="task_number">📌 {% trans 'Задача' %}</th>
-            <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="campaign">🎯 {% trans 'Кампания' %}</th>
+            <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="project">🎯 {% trans 'Проект' %}</th>
             <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="status">🚦 {% trans 'Статус' %}</th>
             <th class="px-4 py-2 text-left cursor-pointer sort-header" data-column="priority">⚡ {% trans 'Приоритет' %}</th>
             <th class="px-4 py-2 text-left">✏️ {% trans 'Действия' %}</th>
@@ -120,7 +120,7 @@
         {% for task in page_obj %}
             <tr id="task-{{ task.pk }}" class="hover:bg-gray-50 transition-all">
                 <td class="px-4 py-2 text-gray-900 whitespace-nowrap">{{ task.task_number }}</td>
-                <td class="px-4 py-2 text-gray-600 whitespace-nowrap">{{ task.campaign.name }}</td>
+                <td class="px-4 py-2 text-gray-600 whitespace-nowrap">{{ task.project.name }}</td>
                 <td class="px-4 py-2">
                     <select class="status-dropdown appearance-none px-3 py-1.5 rounded-md text-xs font-medium bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 transition-all"
                             name="status" >

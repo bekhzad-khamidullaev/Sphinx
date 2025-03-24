@@ -29,13 +29,13 @@ from django_filters.views import FilterView
 from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from .forms import (
-    LoginForm, TaskPhotoForm, TaskForm, CampaignForm, UserCreateForm,
+    LoginForm, TaskPhotoForm, TaskForm, ProjectForm, UserCreateForm,
     RoleForm, TaskCategoryForm, TaskSubcategoryForm, TeamForm
 )
-from .models import Campaign, TaskCategory, TaskSubcategory, Task, TaskPhoto
+from .models import Project, TaskCategory, TaskSubcategory, Task, TaskPhoto
 from .reports import task_summary_report
 from .serializers import (
-    CampaignSerializer, TaskCategorySerializer, TaskSubcategorySerializer,
+    ProjectSerializer, TaskCategorySerializer, TaskSubcategorySerializer,
     TaskSerializer, TaskPhotoSerializer
 )
 from .signals import task_completed
@@ -75,9 +75,9 @@ class SuccessMessageMixin:
 
 # ------------------------ API ViewSets ------------------------
 
-class CampaignViewSet(viewsets.ModelViewSet):
-    queryset = Campaign.objects.all()
-    serializer_class = CampaignSerializer
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 
@@ -95,13 +95,13 @@ class TaskSubcategoryViewSet(viewsets.ModelViewSet):
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all().select_related(
-        "campaign", "category", "subcategory", "assignee", "team", "created_by"
+        "project", "category", "subcategory", "assignee", "team", "created_by"
     )
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     filter_backends = [filters.DjangoFilterBackend]
     filterset_fields = [
-        "status", "priority", "category", "subcategory", "campaign", "team", "assignee", "created_by"
+        "status", "priority", "category", "subcategory", "project", "team", "assignee", "created_by"
     ]
 
 
@@ -114,28 +114,28 @@ class TaskPhotoViewSet(viewsets.ModelViewSet):
 # ------------------------ CRUD Функции для Кампаний ------------------------
 
 @login_required
-def campaign_list(request):
-    campaigns = Campaign.objects.all()
+def project_list(request):
+    projects = Project.objects.all()
 
-    return render(request, "tasks/campaign_list.html", {"campaigns": campaigns})
+    return render(request, "tasks/project_list.html", {"projects": projects})
 
-
-
-@login_required
-def modal_create_campaign(request):
-    form = CampaignForm()
-    return render(request, "modals/campaign_form.html", {"form": form})
 
 
 @login_required
-def create_campaign(request):
+def modal_create_project(request):
+    form = ProjectForm()
+    return render(request, "modals/project_form.html", {"form": form})
+
+
+@login_required
+def create_project(request):
     if request.method == "POST":
-        form = CampaignForm(request.POST)
+        form = ProjectForm(request.POST)
         if form.is_valid():
-            campaign = form.save()
+            project = form.save()
             WebSocketNotificationMixin().send_ws_notification(
-                "campaigns",
-                {"type": "updateCampaigns", "message": {"action": "create", "id": campaign.id, "name": campaign.name}}
+                "projects",
+                {"type": "updateProjects", "message": {"action": "create", "id": project.id, "name": project.name}}
             )
             messages.success(request, "Кампания успешно создана!")
             return HttpResponse('<script>location.reload()</script>')
@@ -143,34 +143,34 @@ def create_campaign(request):
 
 
 @login_required
-def modal_update_campaign(request, pk):
-    campaign = get_object_or_404(Campaign, pk=pk)
+def modal_update_project(request, pk):
+    project = get_object_or_404(Project, pk=pk)
     if request.method == "POST":
-        form = CampaignForm(request.POST, instance=campaign)
+        form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
             form.save()
             return HttpResponse('<script>location.reload()</script>')
     else:
-        form = CampaignForm(instance=campaign)
-    return render(request, "modals/campaign_form.html", {"form": form})
+        form = ProjectForm(instance=project)
+    return render(request, "modals/project_form.html", {"form": form})
 
 
 @login_required
-def modal_delete_campaign(request, pk):
-    campaign = get_object_or_404(Campaign, pk=pk)
+def modal_delete_project(request, pk):
+    project = get_object_or_404(Project, pk=pk)
     if request.method == "POST":
-        campaign.delete()
+        project.delete()
         return HttpResponse('<script>location.reload()</script>')
-    return render(request, "modals/campaign_confirm_delete.html", {"campaign": campaign})
+    return render(request, "modals/project_confirm_delete.html", {"project": project})
 
 
 @login_required
-def delete_campaign(request, pk):
-    campaign = get_object_or_404(Campaign, pk=pk)
-    campaign.delete()
+def delete_project(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    project.delete()
     WebSocketNotificationMixin().send_ws_notification(
-        "campaigns",
-        {"type": "updateCampaigns", "message": {"action": "delete", "id": pk}}
+        "projects",
+        {"type": "updateProjects", "message": {"action": "delete", "id": pk}}
     )
     messages.success(request, "Кампания удалена!")
     return HttpResponse('<script>location.reload()</script>')
@@ -355,15 +355,15 @@ class TaskListView(LoginRequiredMixin, FilterView):
         user = self.request.user
         if user.is_superuser:
             queryset = Task.objects.select_related(
-                "campaign", "category", "subcategory", "assignee", "team", "created_by"
+                "project", "category", "subcategory", "assignee", "team", "created_by"
             )
         elif hasattr(user, "user_profile") and user.user_profile.team:
             queryset = Task.objects.filter(Q(assignee=user) | Q(team=user.user_profile.team)).select_related(
-                "campaign", "category", "subcategory", "assignee", "team", "created_by"
+                "project", "category", "subcategory", "assignee", "team", "created_by"
             )
         else:
             queryset = Task.objects.filter(assignee=user).select_related(
-                "campaign", "category", "subcategory", "assignee", "team", "created_by"
+                "project", "category", "subcategory", "assignee", "team", "created_by"
             )
         return queryset
 
@@ -603,7 +603,7 @@ def completed_tasks_report(request):
     start_date = timezone.now() - timedelta(days=30)
     completed_tasks = Task.objects.filter(
         status="completed", completion_date__gte=start_date
-    ).select_related("assignee", "campaign")
+    ).select_related("assignee", "project")
 
     context = {
         "completed_tasks": completed_tasks,
@@ -617,7 +617,7 @@ def completed_tasks_report(request):
 def overdue_tasks_report(request):
     overdue_tasks = Task.objects.filter(
         deadline__lt=timezone.now(), status__in=["new", "in_progress", "on_hold"]
-    ).select_related("assignee", "campaign")
+    ).select_related("assignee", "project")
 
     context = {"overdue_tasks": overdue_tasks}
     return render(request, "reports/overdue_tasks_report.html", context)
@@ -627,7 +627,7 @@ def overdue_tasks_report(request):
 def active_tasks_report(request):
     active_tasks = Task.objects.filter(
         status__in=["new", "in_progress", "on_hold"]
-    ).select_related("assignee", "campaign")
+    ).select_related("assignee", "project")
 
     context = {"active_tasks": active_tasks}
     return render(request, "reports/active_tasks_report.html", context)

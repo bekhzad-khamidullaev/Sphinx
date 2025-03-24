@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from user_profiles.models import Team
 from tasks.factories import (
-    CampaignFactory, TaskCategoryFactory, TaskSubcategoryFactory, 
+    ProjectFactory, TaskCategoryFactory, TaskSubcategoryFactory, 
     TaskFactory, TaskPhotoFactory
 )
 
@@ -51,8 +51,8 @@ def create_test_data():
     """Создание тестовых данных с Factory Boy."""
     print("Создаём тестовые данные...")
 
-    campaigns = CampaignFactory.create_batch(5)
-    print(f"Создано {len(campaigns)} кампаний")
+    projects = ProjectFactory.create_batch(5)
+    print(f"Создано {len(projects)} кампаний")
 
     categories = TaskCategoryFactory.create_batch(10)
     print(f"Создано {len(categories)} категорий")
