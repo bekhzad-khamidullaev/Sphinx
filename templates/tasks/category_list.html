@@ -19,43 +19,66 @@
 {% endblock %}
 
 {% block list_content %}
-    <ul id="category-list" role="list" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for category in categories %}
-        <li id="category-{{ category.pk }}" class="bg-white/80 backdrop-blur-lg shadow-md overflow-hidden rounded-xl border border-gray-200 transition-all hover:shadow-lg">
-            <div class="px-5 py-4">
-                <h3 class="text-lg font-semibold text-gray-800">
-                    {{ category.name }}
-                </h3>
-                <p class="mt-2 text-sm text-gray-600">
-                    {{ category.description|truncatechars:100 }}
-                </p>
-            </div>
-            <div class="border-t border-gray-200">
-                <div class="bg-gray-50 px-5 py-3 flex justify-end space-x-2 rounded-b-xl">
-                    <button
-                        hx-get="{% url 'tasks:modal_update_category' category.pk %}"
-                        hx-target="#modal-content"
-                        class="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-gray-800 bg-white border border-gray-300 hover:bg-gray-100 transition-all"
-                        aria-label="{% trans 'Редактировать категорию' %}"
-                    >
-                        ✏️ {% trans 'Редактировать' %}
-                    </button>
-                    <button
-                        hx-get="{% url 'tasks:modal_delete_category' category.pk %}"
-                        hx-target="#modal-content"
-                        class="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400 transition-all"
-                        aria-label="{% trans 'Удалить категорию' %}"
-                    >
-                        ❌ {% trans 'Удалить' %}
-                    </button>
+    <div class="relative">
+        <ul id="category-list" role="list" class="mt-4 flex space-x-6 overflow-x-auto pb-4">
+            {% for category in categories %}
+            <li id="category-{{ category.pk }}" class="w-64 flex-shrink-0 bg-white/80 backdrop-blur-lg shadow-md overflow-hidden rounded-xl border border-gray-200 transition-all hover:shadow-lg">
+                <div class="px-5 py-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        {{ category.name }}
+                    </h3>
+                    <p class="mt-2 text-sm text-gray-600">
+                        {{ category.description|truncatechars:100 }}
+                    </p>
                 </div>
-            </div>
-        </li>
-        {% empty %}
-        <li class="text-center text-gray-500 py-6">
-            <span class="text-lg font-medium">{% trans 'Нет категорий задач.' %}</span>
-            <i class="fas fa-clipboard-list text-gray-400 mt-2 text-2xl"></i>
-        </li>
-        {% endfor %}
-    </ul>
+                <div class="border-t border-gray-200">
+                    <div class="bg-gray-50 px-5 py-3 flex justify-end space-x-2 rounded-b-xl">
+                        <button
+                            hx-get="{% url 'tasks:modal_update_category' category.pk %}"
+                            hx-target="#modal-content"
+                            class="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-gray-800 bg-white border border-gray-300 hover:bg-gray-100 transition-all"
+                            aria-label="{% trans 'Редактировать категорию' %}"
+                        >
+                            ✏️ {% trans 'Редактировать' %}
+                        </button>
+                        <button
+                            hx-get="{% url 'tasks:modal_delete_category' category.pk %}"
+                            hx-target="#modal-content"
+                            class="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400 transition-all"
+                            aria-label="{% trans 'Удалить категорию' %}"
+                        >
+                            ❌ {% trans 'Удалить' %}
+                        </button>
+                    </div>
+                </div>
+            </li>
+            {% empty %}
+            <li class="text-center text-gray-500 py-6 w-full">
+                <span class="text-lg font-medium">{% trans 'Нет категорий задач.' %}</span>
+                <i class="fas fa-clipboard-list text-gray-400 mt-2 text-2xl"></i>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Пагинация -->
+        <div class="flex justify-center items-center mt-4 space-x-4">
+            {% if categories.has_previous %}
+            <a href="?page={{ categories.previous_page_number }}" 
+               class="px-4 py-2 bg-gray-200 rounded-full text-gray-700 hover:bg-gray-300 transition-all">
+                ⬅️ {% trans 'Назад' %}
+            </a>
+            {% endif %}
+
+            <span class="text-gray-600">
+                {% trans 'Страница' %} {{ categories.number }} {% trans 'из' %} {{ categories.paginator.num_pages }}
+            </span>
+
+            {% if categories.has_next %}
+            <a href="?page={{ categories.next_page_number }}" 
+               class="px-4 py-2 bg-gray-200 rounded-full text-gray-700 hover:bg-gray-300 transition-all">
+                {% trans 'Вперед' %} ➡️
+            </a>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

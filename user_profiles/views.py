@@ -7,9 +7,14 @@ from .models import TaskUserRole, Team, User, Role
 from rest_framework import viewsets, permissions, parsers, status
 from .serializers import TeamSerializer, RoleSerializer, UserSerializer
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.vary import vary_on_cookie
+from django.views.decorators.cache import never_cache
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from tasks.forms import RoleForm, UserCreateForm, TeamForm
+import sys
+
+sys.setrecursionlimit(2000)
 
 
 channel_layer = get_channel_layer()
@@ -35,6 +40,8 @@ class UserViewSet(viewsets.ModelViewSet):
 # ------------------------ Authentication ------------------------
 
 @csrf_protect
+@vary_on_cookie
+@never_cache
 def base(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -50,11 +57,15 @@ def base(request):
 
     return render(request, 'base.html')
 
-
+@csrf_protect
+@vary_on_cookie
+@never_cache
 def user_login(request):
     return redirect('user_profiles:base')
 
-
+@csrf_protect
+@vary_on_cookie
+@never_cache
 def user_logout(request):
     auth_logout(request)
     messages.success(request, _('Successfully logged out!'))

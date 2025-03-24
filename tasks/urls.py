@@ -13,7 +13,7 @@ router.register(r'tasks', views.TaskViewSet)
 router.register(r'task-photos', views.TaskPhotoViewSet)
 
 urlpatterns = [
-    # Auth URLs
+    # Auth URLs (если нужно)
     # path('login/', views.LoginView.as_view(), name='login'),
     # path('logout/', views.LogoutView.as_view(), name='logout'),
     # path('clear-messages/', views.clear_messages, name='clear_messages'),
@@ -26,7 +26,7 @@ urlpatterns = [
     path('tasks/<int:pk>/update/', views.TaskUpdateView.as_view(), name='task_update'),
     path('tasks/<int:pk>/delete/', views.TaskDeleteView.as_view(), name='task_delete'),
     path('tasks/<int:pk>/perform/', views.TaskPerformView.as_view(), name='task_perform'),
-    path("tasks/update_status/<int:task_id>/", views.update_task_status, name="update_task_status"),
+    path('tasks/update_status/<int:task_id>/', views.update_task_status, name='update_task_status'),
 
     # Campaign management URLs
     path('campaigns/', views.campaign_list, name='campaign_list'),
@@ -56,6 +56,19 @@ urlpatterns = [
 
     # Report URLs
     path('tasks/export/excel/', views.export_tasks_to_excel, name='export_tasks_to_excel'),
+    path('tasks/completed/', views.completed_tasks_report, name='completed_tasks_report'),
+    path('tasks/overdue/', views.overdue_tasks_report, name='overdue_tasks_report'),
+    path('tasks/active/', views.active_tasks_report, name='active_tasks_report'),
+    path('tasks/team-performance/', views.team_performance_report, name='team_performance_report'),
+    path('tasks/employee-workload/', views.employee_workload_report, name='employee_workload_report'),
+    path('tasks/abc-analysis/', views.abc_analysis_report, name='abc_analysis_report'),
+    path('tasks/sla/', views.sla_report, name='sla_report'),
+    path('tasks/progress-chart/', views.task_progress_chart, name='task_progress_chart'),
+    path('tasks/gantt-chart/', views.gantt_chart, name='gantt_chart'),
+    path('tasks/duration-report/', views.task_duration_report, name='task_duration_report'),
+    path('tasks/issues/', views.issues_report, name='issues_report'),
+    path('tasks/delay-reasons/', views.delay_reasons_report, name='delay_reasons_report'),
+    path('tasks/cancelled/', views.cancelled_tasks_report, name='cancelled_tasks_report'),
 
     # API URLs
     path('api/', include(router.urls)),

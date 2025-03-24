@@ -1,22 +1,18 @@
+# tasks/views.py
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
-
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 import logging
 import pandas as pd
 from django.utils.timezone import make_naive
-from django.db.models import Q
-
+from django.db.models import Q, Count, Avg, F, Case, When, Value, CharField
 from django.contrib import messages
-from django.contrib.auth import get_user_model, login, logout, authenticate
-from django.contrib.auth.views import LoginView as DjangoLoginView, LogoutView as DjangoLogoutView
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.messages.views import SuccessMessageMixin
-from django.db.models import Q
-from django.forms import inlineformset_factory
+from django.core.paginator import Paginator
 from django.http import HttpResponse, Http404, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -25,22 +21,19 @@ from django.utils.translation import gettext_lazy as _
 from django.views import generic
 from django.views.generic.edit import FormView, View
 from django.views.generic.base import TemplateView
-
+from django.forms.models import inlineformset_factory
+from django_filters.views import FilterView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 import django_filters
 from django_filters import FilterSet, ChoiceFilter, ModelChoiceFilter, rest_framework as filters
 from django_filters.views import FilterView
-from rest_framework import viewsets, permissions, parsers, status
-from rest_framework.decorators import action
+from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
-from rest_framework.response import Response
-
 from .forms import (
-    LoginForm, TaskPhotoForm, TaskForm, CampaignForm, UserCreateForm, 
+    LoginForm, TaskPhotoForm, TaskForm, CampaignForm, UserCreateForm,
     RoleForm, TaskCategoryForm, TaskSubcategoryForm, TeamForm
 )
-from .models import (
-    Campaign, TaskCategory, TaskSubcategory, Task, TaskPhoto
-)
+from .models import Campaign, TaskCategory, TaskSubcategory, Task, TaskPhoto
 from .reports import task_summary_report
 from .serializers import (
     CampaignSerializer, TaskCategorySerializer, TaskSubcategorySerializer,
@@ -48,36 +41,37 @@ from .serializers import (
 )
 from .signals import task_completed
 from .filters import TaskFilter
-
+import matplotlib.pyplot as plt
+import io
+import urllib, base64
+import plotly.express as px
 
 channel_layer = get_channel_layer()
-
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-# ------------------------ Auth Views ------------------------
 
-# class LoginView(DjangoLoginView):
-#     template_name = "auth/login.html"
-#     redirect_authenticated_user = True
+# ------------------------ Миксины для общих операций ------------------------
 
-#     def get_success_url(self):
-#         # Параметр 'next' в URL или по умолчанию редиректим на 'tasks:task_list'
-#         return self.request.GET.get('next', reverse_lazy('tasks:task_list'))
+class WebSocketNotificationMixin:
+    """Миксин для отправки уведомлений через WebSocket."""
 
-# class LogoutView(DjangoLogoutView):
-#     next_page = reverse_lazy("tasks:login")
+    def send_ws_notification(self, group_name, message):
+        """Отправляет уведомление в группу WebSocket."""
+        async_to_sync(channel_layer.group_send)(group_name, message)
 
-#     def dispatch(self, request, *args, **kwargs):
-#         messages.success(request, _('Вы успешно вышли из системы.'))
-#         return super().dispatch(request, *args, **kwargs)
 
-# def clear_messages(request):
-#     # Очищаем сообщения
-#     get_messages(request).clear()
-#     # Редиректим обратно на страницу входа или на главную
-#     return HttpResponseRedirect(reverse('tasks:login'))
-    
+class SuccessMessageMixin:
+    """Миксин для добавления сообщений об успешном выполнении."""
+
+    success_message = None
+
+    def form_valid(self, form):
+        if self.success_message:
+            messages.success(self.request, self.success_message)
+        return super().form_valid(form)
+
+
 # ------------------------ API ViewSets ------------------------
 
 class CampaignViewSet(viewsets.ModelViewSet):
@@ -85,51 +79,52 @@ class CampaignViewSet(viewsets.ModelViewSet):
     serializer_class = CampaignSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+
 class TaskCategoryViewSet(viewsets.ModelViewSet):
     queryset = TaskCategory.objects.all()
     serializer_class = TaskCategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
 
 class TaskSubcategoryViewSet(viewsets.ModelViewSet):
     queryset = TaskSubcategory.objects.all()
     serializer_class = TaskSubcategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = Task.objects.all().select_related("campaign", "category", "subcategory", "assignee", "team", "created_by")
+    queryset = Task.objects.all().select_related(
+        "campaign", "category", "subcategory", "assignee", "team", "created_by"
+    )
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     filter_backends = [filters.DjangoFilterBackend]
-    filterset_fields = ["status", "priority", "category", "subcategory", "campaign", "team", "assignee", "created_by"]
+    filterset_fields = [
+        "status", "priority", "category", "subcategory", "campaign", "team", "assignee", "created_by"
+    ]
+
 
 class TaskPhotoViewSet(viewsets.ModelViewSet):
-    """Manage task photos."""
     queryset = TaskPhoto.objects.all()
     serializer_class = TaskPhotoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    
-# ------------------------ CRUD ФУНКЦИИ ------------------------
+
+
+# ------------------------ CRUD Функции для Кампаний ------------------------
 
 @login_required
 def campaign_list(request):
     campaigns = Campaign.objects.all()
-    return render(request, "campaign_list.html", {"campaigns": campaigns})
+
+    return render(request, "tasks/campaign_list.html", {"campaigns": campaigns})
+
+
 
 @login_required
 def modal_create_campaign(request):
     form = CampaignForm()
     return render(request, "modals/campaign_form.html", {"form": form})
 
-@login_required
-def modal_update_campaign(request, pk):
-    campaign = get_object_or_404(Campaign, pk=pk)
-    form = CampaignForm(instance=campaign)
-    return render(request, "modals/campaign_form.html", {"form": form})
-
-@login_required
-def modal_delete_campaign(request, pk):
-    campaign = get_object_or_404(Campaign, pk=pk)
-    return render(request, "modals/campaign_delete.html", {"campaign": campaign})
 
 @login_required
 def create_campaign(request):
@@ -137,151 +132,367 @@ def create_campaign(request):
         form = CampaignForm(request.POST)
         if form.is_valid():
             campaign = form.save()
-            async_to_sync(channel_layer.group_send)(
-                "campaigns", {"type": "updateCampaigns", "message": {"action": "create", "id": campaign.id, "name": campaign.name}}
+            WebSocketNotificationMixin().send_ws_notification(
+                "campaigns",
+                {"type": "updateCampaigns", "message": {"action": "create", "id": campaign.id, "name": campaign.name}}
             )
             messages.success(request, "Кампания успешно создана!")
             return HttpResponse('<script>location.reload()</script>')
     return HttpResponse(status=400)
 
+
+@login_required
+def modal_update_campaign(request, pk):
+    campaign = get_object_or_404(Campaign, pk=pk)
+    if request.method == "POST":
+        form = CampaignForm(request.POST, instance=campaign)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('<script>location.reload()</script>')
+    else:
+        form = CampaignForm(instance=campaign)
+    return render(request, "modals/campaign_form.html", {"form": form})
+
+
+@login_required
+def modal_delete_campaign(request, pk):
+    campaign = get_object_or_404(Campaign, pk=pk)
+    if request.method == "POST":
+        campaign.delete()
+        return HttpResponse('<script>location.reload()</script>')
+    return render(request, "modals/campaign_confirm_delete.html", {"campaign": campaign})
+
+
 @login_required
 def delete_campaign(request, pk):
     campaign = get_object_or_404(Campaign, pk=pk)
     campaign.delete()
-    async_to_sync(channel_layer.group_send)( 
-        "campaigns", {"type": "updateCampaigns", "message": {"action": "delete", "id": pk}}
+    WebSocketNotificationMixin().send_ws_notification(
+        "campaigns",
+        {"type": "updateCampaigns", "message": {"action": "delete", "id": pk}}
     )
     messages.success(request, "Кампания удалена!")
     return HttpResponse('<script>location.reload()</script>')
 
-# ------------------------ Категории ------------------------
+
+# ------------------------ CRUD Функции для Категорий ------------------------
 
 @login_required
 def category_list(request):
     categories = TaskCategory.objects.all()
     return render(request, "tasks/category_list.html", {"categories": categories})
 
+
 @login_required
 def modal_create_category(request):
-    form = TaskCategoryForm()
+    if request.method == "POST":
+        form = TaskCategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('<script>location.reload()</script>')
+    else:
+        form = TaskCategoryForm()
     return render(request, "modals/category_form.html", {"form": form})
+
 
 @login_required
 def create_category(request):
-    form = TaskCategoryForm(request.POST)
-    if form.is_valid():
-        category = form.save()
-        async_to_sync(channel_layer.group_send)(
-            "categories",
-            {"type": "updateData", "message": {"action": "create", "name": category.name}}
-        )
-        messages.success(request, "Категория успешно создана!")
-        return HttpResponse('<script>location.reload()</script>')
+    if request.method == "POST":
+        form = TaskCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            WebSocketNotificationMixin().send_ws_notification(
+                "categories",
+                {"type": "updateData", "message": {"action": "create", "name": category.name}}
+            )
+            messages.success(request, "Категория успешно создана!")
+            return HttpResponse('<script>location.reload()</script>')
     return render(request, "modals/category_form.html", {"form": form})
+
 
 @login_required
 def modal_update_category(request, pk):
     category = get_object_or_404(TaskCategory, pk=pk)
-    form = TaskCategoryForm(instance=category)
-    return render(request, "modals/category_form.html", {"form": form, "category": category})
+    if request.method == "POST":
+        form = TaskCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('<script>location.reload()</script>')
+    else:
+        form = TaskCategoryForm(instance=category)
+    return render(request, "modals/category_form.html", {"form": form})
+
 
 @login_required
 def update_category(request, pk):
     category = get_object_or_404(TaskCategory, pk=pk)
-    form = TaskCategoryForm(request.POST, instance=category)
-    if form.is_valid():
-        form.save()
-        async_to_sync(channel_layer.group_send)(
-            "categories",
-            {"type": "updateData", "message": {"action": "update", "name": category.name}}
-        )
-        messages.success(request, "Категория обновлена!")
-        return HttpResponse('<script>location.reload()</script>')
-    return render(request, "modals/category_form.html", {"form": form, "category": category})
+    if request.method == "POST":
+        form = TaskCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('<script>location.reload()</script>')
+    else:
+        form = TaskCategoryForm(instance=category)
+    return render(request, "modals/category_form.html", {"form": form})
+
 
 @login_required
 def modal_delete_category(request, pk):
     category = get_object_or_404(TaskCategory, pk=pk)
-    return render(request, "modals/category_delete.html", {"category": category})
+    if request.method == "POST":
+        category.delete()
+        return HttpResponse('<script>location.reload()</script>')
+    return render(request, "modals/category_confirm_delete.html", {"category": category})
+
 
 @login_required
 def delete_category(request, pk):
     category = get_object_or_404(TaskCategory, pk=pk)
     category.delete()
-    async_to_sync(channel_layer.group_send)(
+    WebSocketNotificationMixin().send_ws_notification(
         "categories",
         {"type": "updateData", "message": {"action": "delete", "id": pk}}
     )
     messages.success(request, "Категория удалена!")
     return HttpResponse('<script>location.reload()</script>')
 
-# ------------------------ Подкатегории ------------------------
+
+# ------------------------ CRUD Функции для Подкатегорий ------------------------
 
 @login_required
 def subcategory_list(request):
-    subcategories = TaskSubcategory.objects.select_related("category").all()
+    subcategories = TaskSubcategory.objects.all()
     return render(request, "tasks/subcategory_list.html", {"subcategories": subcategories})
+
 
 @login_required
 def modal_create_subcategory(request):
-    form = TaskSubcategoryForm()
+    if request.method == "POST":
+        form = TaskSubcategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('<script>location.reload()</script>')
+    else:
+        form = TaskSubcategoryForm()
     return render(request, "modals/subcategory_form.html", {"form": form})
+
 
 @login_required
 def create_subcategory(request):
-    form = TaskSubcategoryForm(request.POST)
-    if form.is_valid():
-        subcategory = form.save()
-        async_to_sync(channel_layer.group_send)(
-            "subcategories",
-            {"type": "updateData", "message": {"action": "create", "name": subcategory.name}}
-        )
-        messages.success(request, "Подкатегория успешно создана!")
-        return HttpResponse('<script>location.reload()</script>')
+    if request.method == "POST":
+        form = TaskSubcategoryForm(request.POST)
+        if form.is_valid():
+            subcategory = form.save()
+            WebSocketNotificationMixin().send_ws_notification(
+                "subcategories",
+                {"type": "updateData", "message": {"action": "create", "name": subcategory.name}}
+            )
+            messages.success(request, "Подкатегория успешно создана!")
+            return HttpResponse('<script>location.reload()</script>')
     return render(request, "modals/subcategory_form.html", {"form": form})
+
 
 @login_required
 def modal_update_subcategory(request, pk):
     subcategory = get_object_or_404(TaskSubcategory, pk=pk)
-    form = TaskSubcategoryForm(instance=subcategory)
-    return render(request, "modals/subcategory_form.html", {"form": form, "subcategory": subcategory})
+    if request.method == "POST":
+        form = TaskSubcategoryForm(request.POST, instance=subcategory)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('<script>location.reload()</script>')
+    else:
+        form = TaskSubcategoryForm(instance=subcategory)
+    return render(request, "modals/subcategory_form.html", {"form": form})
+
 
 @login_required
 def update_subcategory(request, pk):
     subcategory = get_object_or_404(TaskSubcategory, pk=pk)
-    form = TaskSubcategoryForm(request.POST, instance=subcategory)
-    if form.is_valid():
-        form.save()
-        async_to_sync(channel_layer.group_send)(
-            "subcategories",
-            {"type": "updateData", "message": {"action": "update", "name": subcategory.name}}
-        )
-        messages.success(request, "Подкатегория обновлена!")
-        return HttpResponse('<script>location.reload()</script>')
-    return render(request, "modals/subcategory_form.html", {"form": form, "subcategory": subcategory})
+    if request.method == "POST":
+        form = TaskSubcategoryForm(request.POST, instance=subcategory)
+        if form.is_valid():
+            form.save()
+            return HttpResponse('<script>location.reload()</script>')
+    else:
+        form = TaskSubcategoryForm(instance=subcategory)
+    return render(request, "modals/subcategory_form.html", {"form": form})
+
 
 @login_required
 def modal_delete_subcategory(request, pk):
     subcategory = get_object_or_404(TaskSubcategory, pk=pk)
-    return render(request, "modals/subcategory_delete.html", {"subcategory": subcategory})
+    if request.method == "POST":
+        subcategory.delete()
+        return HttpResponse('<script>location.reload()</script>')
+    return render(request, "modals/subcategory_confirm_delete.html", {"subcategory": subcategory})
+
 
 @login_required
 def delete_subcategory(request, pk):
     subcategory = get_object_or_404(TaskSubcategory, pk=pk)
     subcategory.delete()
-    async_to_sync(channel_layer.group_send)(
+    WebSocketNotificationMixin().send_ws_notification(
         "subcategories",
         {"type": "updateData", "message": {"action": "delete", "id": pk}}
     )
     messages.success(request, "Подкатегория удалена!")
     return HttpResponse('<script>location.reload()</script>')
 
+
+# ------------------------ Tasks ------------------------
+
+class TaskListView(LoginRequiredMixin, FilterView):
+    model = Task
+    template_name = "tasks/task_list.html"
+    context_object_name = "tasks"
+    paginate_by = 10
+    filterset_class = TaskFilter
+    
+
+    def get_queryset(self):
+        """Optimized query + filtering based on user permissions."""
+        user = self.request.user
+        if user.is_superuser:
+            queryset = Task.objects.select_related(
+                "campaign", "category", "subcategory", "assignee", "team", "created_by"
+            )
+        elif hasattr(user, "team") and user.team:
+            queryset = Task.objects.filter(Q(assignee=user) | Q(team=user.team)).select_related(
+                "campaign", "category", "subcategory", "assignee", "team", "created_by"
+            )
+        else:
+            queryset = Task.objects.filter(assignee=user).select_related(
+                "campaign", "category", "subcategory", "assignee", "team", "created_by"
+            )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        """Add pagination, status grouping, and view type to context."""
+        context = super().get_context_data(**kwargs)
+
+        # Determine view type (list or kanban). Default to kanban.
+        view_type = self.request.GET.get('view', 'kanban')
+        context['view_type'] = view_type
+
+        # Status grouping (for both list and kanban)
+        status_mapping = {status[0]: status[1] for status in Task.TASK_STATUS_CHOICES}
+        context['status_mapping'] = status_mapping
+
+        tasks_by_status = {key: [] for key in status_mapping}
+        all_tasks = self.get_queryset() # Get *all* tasks (filtered, but not paginated)
+
+        if view_type == 'list':
+            # Pagination is handled automatically by ListView/FilterView if paginate_by is set.
+            #  No need to manually create a Paginator object.
+             for task in context['page_obj']:  # Iterate over the *paginated* tasks
+                tasks_by_status[task.status].append(task)
+
+        else:  # Kanban view: no pagination
+            for task in all_tasks: # all tasks without pagination
+                tasks_by_status[task.status].append(task)
+
+        context['tasks_by_status'] = tasks_by_status
+        context['filterset'] = self.filterset # Pass the filterset to the template
+        return context
+
+
+class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    model = Task
+    form_class = TaskForm
+    template_name = "modals/modal_task_form.html"  # Consistent naming
+    success_url = reverse_lazy("tasks:task_list")
+    success_message = _("Задача успешно создана!")
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.status = 'new'
+        return super().form_valid(form)
+
+
+class TaskDetailView(LoginRequiredMixin, DetailView):
+    model = Task
+    template_name = "tasks/task_detail.html"
+    context_object_name = "task"
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset=queryset)
+        if not self.request.user.is_superuser and obj.assignee != self.request.user and self.request.user not in obj.team.members.all():
+            raise Http404(_("Вы не имеете доступа к этой задаче."))  # More specific check
+        return obj
+
+
+class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    model = Task
+    form_class = TaskForm
+    template_name = "modals/modal_task_form.html"
+    success_url = reverse_lazy("tasks:task_list")
+    success_message = _("Задача обновлена!")
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+        if not user.is_superuser:
+          queryset = queryset.filter(Q(assignee=user) | Q(team__in=user.teams.all()))
+        return queryset
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Use extra=1 for a single additional form, max_num for safety
+        TaskPhotoFormSet = inlineformset_factory(Task, TaskPhoto, form=TaskPhotoForm, extra=1, max_num=10, can_delete=True)
+        if self.request.POST:
+            context["photo_formset"] = TaskPhotoFormSet(self.request.POST, self.request.FILES, instance=self.object)
+        else:
+            context["photo_formset"] = TaskPhotoFormSet(instance=self.object)
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        photo_formset = context["photo_formset"]
+        if photo_formset.is_valid():
+            photo_formset.instance = self.object  # Set the instance before saving
+            photo_formset.save()
+            return super().form_valid(form)
+        return self.form_invalid(form)
+
+
+class TaskDeleteView(LoginRequiredMixin, DeleteView):  # No need for SuccessMessageMixin here
+    model = Task
+    template_name = "tasks/task_confirm_delete.html"  # Consistent naming
+    success_url = reverse_lazy("tasks:task_list")
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+        if not user.is_superuser:
+            queryset = queryset.filter(Q(assignee=user) | Q(team__in=user.teams.all()))
+        return queryset
+
+    def form_valid(self, form):  # Add form_valid to display success message
+        messages.success(self.request, _("Задача удалена!"))
+        return super().form_valid(form)
+
+
+class TaskPerformView(LoginRequiredMixin, generic.DetailView):
+    model = Task
+    template_name = "tasks/task_perform.html"
+    context_object_name = "task"
+
+
+class TaskSummaryReportView(LoginRequiredMixin, TemplateView):
+    template_name = "reports/task_summary_report.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add any context data you need for the report
+        return context
+
+
 # ------------------------ Отчёты ------------------------
 
 @login_required
 def export_tasks_to_excel(request):
     tasks = Task.objects.all().values("task_number", "description", "deadline", "completion_date")
-
     df = pd.DataFrame(list(tasks))
 
     # Преобразование всех дат в наивные
@@ -294,124 +505,198 @@ def export_tasks_to_excel(request):
 
     with pd.ExcelWriter(response, engine="xlsxwriter") as writer:
         df.to_excel(writer, index=False, sheet_name="Tasks")
+        worksheet = writer.sheets["Tasks"]
+        worksheet.set_column("A:A", 15)  # task_number
+        worksheet.set_column("B:B", 50)  # description
+        worksheet.set_column("C:C", 20)  # deadline
+        worksheet.set_column("D:D", 20)  # completion_date
+        writer.save()
 
     return response
 
-# ------------------------ Tasks ------------------------
+
+@login_required
+def completed_tasks_report(request):
+    start_date = timezone.now() - timedelta(days=30)
+    completed_tasks = Task.objects.filter(
+        status="completed", completion_date__gte=start_date
+    ).select_related("assignee", "campaign")
+
+    context = {
+        "completed_tasks": completed_tasks,
+        "start_date": start_date,
+        "end_date": timezone.now(),
+    }
+    return render(request, "reports/completed_tasks_report.html", context)
 
 
-class TaskListView(LoginRequiredMixin, FilterView):
-    model = Task
-    template_name = "tasks/task_list.html"
-    context_object_name = "tasks"
-    paginate_by = 10
-    filterset_class = TaskFilter
+@login_required
+def overdue_tasks_report(request):
+    overdue_tasks = Task.objects.filter(
+        deadline__lt=timezone.now(), status__in=["new", "in_progress", "on_hold"]
+    ).select_related("assignee", "campaign")
 
-    def get_queryset(self):
-        """Оптимизированный запрос + Фильтрация по правам пользователя"""
-        user = self.request.user
+    context = {"overdue_tasks": overdue_tasks}
+    return render(request, "reports/overdue_tasks_report.html", context)
 
-        # ✅ Суперюзер видит все задачи
-        if user.is_superuser:
-            return Task.objects.select_related("campaign", "category", "subcategory", "assignee", "team", "created_by")
 
-        # ✅ Лидер команды видит свои задачи + задачи своей команды
-        if hasattr(user, "team") and user.team:
-            return Task.objects.filter(Q(assignee=user) | Q(team=user.team)).select_related(
-                "campaign", "category", "subcategory", "assignee", "team", "created_by"
-            )
+@login_required
+def active_tasks_report(request):
+    active_tasks = Task.objects.filter(
+        status__in=["new", "in_progress", "on_hold"]
+    ).select_related("assignee", "campaign")
 
-        # ✅ Обычный пользователь видит только свои задачи
-        return Task.objects.filter(assignee=user).select_related(
-            "campaign", "category", "subcategory", "assignee", "team", "created_by"
+    context = {"active_tasks": active_tasks}
+    return render(request, "reports/active_tasks_report.html", context)
+
+
+@login_required
+def team_performance_report(request):
+    performance_data = (
+        Task.objects.filter(status="completed")
+        .values("assignee__username")
+        .annotate(
+            total_tasks=Count("id"),
+            avg_completion_time=Avg(F("completion_date") - F("start_date")),
         )
+    )
 
-    def get_context_data(self, **kwargs):
-        """Группировка задач по статусу + доступные задачи"""
-        context = super().get_context_data(**kwargs)
-        
-        status_mapping = {status[0]: status[1] for status in Task.TASK_STATUS_CHOICES}
-        tasks_by_status = {key: [] for key in status_mapping}
-        print(tasks_by_status)
-        for task in context["tasks"]:
-            status = task.status
-            tasks_by_status[status].append(task)
-
-        context["tasks_by_status"] = tasks_by_status
-        context["status_mapping"] = status_mapping
-
-        print(context["status_mapping"])
-        return context
+    context = {"performance_data": performance_data}
+    return render(request, "reports/team_performance_report.html", context)
 
 
-    def post(self, request, *args, **kwargs):
-        return HttpResponseNotAllowed(["GET"])
+@login_required
+def employee_workload_report(request):
+    workload_data = (
+        Task.objects.filter(status__in=["new", "in_progress", "on_hold"])
+        .values("assignee__username")
+        .annotate(total_tasks=Count("id"))
+    )
+
+    context = {"workload_data": workload_data}
+    return render(request, "reports/employee_workload_report.html", context)
 
 
+@login_required
+def abc_analysis_report(request):
+    tasks = Task.objects.annotate(
+        priority_group=Case(
+            When(priority=1, then=Value("A")),
+            When(priority__in=[2, 3], then=Value("B")),
+            When(priority__in=[4, 5], then=Value("C")),
+            default=Value("Unknown"),
+            output_field=CharField(),
+        )
+    ).values("priority_group").annotate(total_tasks=Count("id"))
 
-class TaskCreateView(LoginRequiredMixin, generic.CreateView):
-    model = Task
-    form_class = TaskForm
-    template_name = "modals/modal_task_form.html"
-    success_url = reverse_lazy("tasks:task_list")
+    context = {"tasks": tasks}
+    return render(request, "reports/abc_analysis_report.html", context)
 
-    def form_valid(self, form):
-        form.instance.created_by = self.request.user
-        messages.success(self.request, _("Задача успешно создана!"))
-        return super().form_valid(form)
 
-class TaskDetailView(LoginRequiredMixin, generic.DetailView):
-    model = Task
-    template_name = "tasks/task_detail.html"
-    context_object_name = "task"
+@login_required
+def sla_report(request):
+    sla_data = (
+        Task.objects.filter(status="completed")
+        .annotate(
+            sla_met=Case(
+                When(completion_date__lte=F("deadline"), then=Value("Met")),
+                default=Value("Not Met"),
+                output_field=CharField(),
+            )
+        )
+        .values("sla_met")
+        .annotate(total_tasks=Count("id"))
+    )
 
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset=queryset)
-        if not self.request.user.is_superuser and obj.assignee != self.request.user:
-            raise Http404(_("Вы не имеете доступа к этой задаче."))
-        return obj
+    context = {"sla_data": sla_data}
+    return render(request, "reports/sla_report.html", context)
 
-class TaskUpdateView(LoginRequiredMixin, generic.UpdateView):
-    model = Task
-    form_class = TaskForm
-    template_name = "modals/modal_task_form.html"
-    success_url = reverse_lazy("tasks:task_list")
 
-    def form_valid(self, form):
-        messages.success(self.request, _("Задача обновлена!"))
-        return super().form_valid(form)
+@login_required
+def task_progress_chart(request):
+    tasks = Task.objects.all()
+    status_counts = tasks.values("status").annotate(total=Count("id"))
 
-class TaskDeleteView(LoginRequiredMixin, generic.DeleteView):
-    model = Task
-    template_name = "tasks/task_confirm_delete.html"
-    success_url = reverse_lazy("tasks:task_list")
+    # Создание графика
+    plt.figure(figsize=(10, 6))
+    plt.bar([x["status"] for x in status_counts], [x["total"] for x in status_counts])
+    plt.xlabel("Статус")
+    plt.ylabel("Количество задач")
+    plt.title("Прогресс выполнения задач")
 
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, _("Задача удалена!"))
-        return super().delete(request, *args, **kwargs)
+    # Сохранение графика в буфер
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    string = base64.b64encode(buf.read())
+    uri = urllib.parse.quote(string)
 
-class TaskPerformView(LoginRequiredMixin, generic.View):
-    def post(self, request, pk):
-        task = get_object_or_404(Task, pk=pk)
-        if task.status == "completed":
-            messages.info(request, _(f"Задача '{task.task_number}' уже выполнена."))
-        else:
-            task.status = "completed"
-            task.completion_date = timezone.now()
-            task.save()
-            task_completed.send(sender=Task, task=task)
-            messages.success(request, _(f"Задача '{task.task_number}' выполнена!"))
-        return redirect("tasks:task_detail", pk=pk)
+    context = {"chart": uri}
+    return render(request, "reports/task_progress_chart.html", context)
 
-class TaskSummaryReportView(TemplateView):
-    template_name = 'tasks/task_summary_report.html'
+
+@login_required
+def gantt_chart(request):
+    tasks = Task.objects.all().values("task_number", "start_date", "deadline", "status")
+    df = pd.DataFrame(list(tasks))
+
+    fig = px.timeline(
+        df,
+        x_start="start_date",
+        x_end="deadline",
+        y="task_number",
+        color="status",
+        title="Диаграмма Ганта",
+    )
+    chart = fig.to_html(full_html=False)
+
+    context = {"chart": chart}
+    return render(request, "reports/gantt_chart.html", context)
+
+
+@login_required
+def task_duration_report(request):
+    duration_data = (
+        Task.objects.filter(status="completed")
+        .annotate(duration=F("completion_date") - F("start_date"))
+        .values("task_number", "duration")
+    )
+
+    context = {"duration_data": duration_data}
+    return render(request, "reports/task_duration_report.html", context)
+
+
+@login_required
+def issues_report(request):
+    issues = Task.objects.filter(description__icontains="баг").select_related("assignee")
+
+    context = {"issues": issues}
+    return render(request, "reports/issues_report.html", context)
+
+
+@login_required
+def delay_reasons_report(request):
+    delayed_tasks = Task.objects.filter(
+        deadline__lt=timezone.now(), status__in=["new", "in_progress", "on_hold"]
+    ).select_related("assignee")
+
+    context = {"delayed_tasks": delayed_tasks}
+    return render(request, "reports/delay_reasons_report.html", context)
+
+
+@login_required
+def cancelled_tasks_report(request):
+    cancelled_tasks = Task.objects.filter(status="cancelled").select_related("assignee")
+
+    context = {"cancelled_tasks": cancelled_tasks}
+    return render(request, "reports/cancelled_tasks_report.html", context)
+
+
+# ------------------------ AJAX ------------------------
 
 @csrf_exempt
 def update_task_status(request, task_id):
     if request.method == 'POST':
-        if request.content_type != 'application/json':
-            return JsonResponse({'error': f'Invalid content type {request.content_type}'}, status=415)
-
         try:
             data = json.loads(request.body)
             status = data.get('status')
@@ -429,4 +714,6 @@ def update_task_status(request, task_id):
         except Task.DoesNotExist:
             return JsonResponse({'error': 'Task not found'}, status=404)
         except Exception as e:
+            logger.error(f"Error updating task status: {e}")
             return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
