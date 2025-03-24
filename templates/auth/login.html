@@ -1,8 +1,7 @@
-{% extends 'base.html' %}
 {% load i18n %}
-{% load crispy_forms_tags %} {# Хотя crispy_forms_tags не используются напрямую, можно оставить на случай, если захотим добавить стилизацию через crispy forms позже #}
+{% load crispy_forms_tags %}
 
-{% block title %}{% trans "Вход" %} - ServiceDesk 2.0{% endblock %}
+{% comment %} {% block title %}ServiceDesk 2.0{% endblock %} {% endcomment %}
 
 {% block content %}
     <div class="max-w-md mx-auto mt-16 p-6 bg-white rounded-lg shadow-xl">

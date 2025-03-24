@@ -6,7 +6,7 @@ from .models import (
 )
 from user_profiles.admin import TaskUserRoleInline
 
-# --- КАМПАНИИ ---
+# --- Проекты ---
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("name", "start_date", "end_date", "created_at")
