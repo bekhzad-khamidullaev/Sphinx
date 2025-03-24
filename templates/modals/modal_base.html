@@ -1,5 +1,6 @@
+{# modals/modal_base.html #}
 {% load i18n app_filters %}
-<div class="contents">
-    {% block modal_content %}
-    {% endblock %}
+<div class="contents bg-white rounded-t-3xl overflow-hidden max-w-md w-full sm:w-[36rem] md:w-[40rem] lg:w-[44rem] flex flex-col">
+  {% block modal_content %}
+  {% endblock %}
 </div>

@@ -1,4 +1,3 @@
-# tasks/views.py
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
@@ -45,6 +44,8 @@ import matplotlib.pyplot as plt
 import io
 import urllib, base64
 import plotly.express as px
+
+from user_profiles.models import TaskUserRole
 
 channel_layer = get_channel_layer()
 logger = logging.getLogger(__name__)
@@ -356,8 +357,8 @@ class TaskListView(LoginRequiredMixin, FilterView):
             queryset = Task.objects.select_related(
                 "campaign", "category", "subcategory", "assignee", "team", "created_by"
             )
-        elif hasattr(user, "team") and user.team:
-            queryset = Task.objects.filter(Q(assignee=user) | Q(team=user.team)).select_related(
+        elif hasattr(user, "user_profile") and user.user_profile.team:
+            queryset = Task.objects.filter(Q(assignee=user) | Q(team=user.user_profile.team)).select_related(
                 "campaign", "category", "subcategory", "assignee", "team", "created_by"
             )
         else:
@@ -403,11 +404,54 @@ class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     success_url = reverse_lazy("tasks:task_list")
     success_message = _("Задача успешно создана!")
 
+    def get_form_kwargs(self):
+        """Pass current user to form to filter assignees."""
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         form.instance.created_by = self.request.user
+
+        # Logic for setting status to 'new'
         form.instance.status = 'new'
+
+        # Save the task instance
+        task = form.save()
+
+        # Handle assignees and watchers
+        self.handle_assignees_and_watchers(task)
+
         return super().form_valid(form)
 
+    def handle_assignees_and_watchers(self, task):
+        """Assign roles based on team/assignee selection."""
+        # Clear existing roles
+        TaskUserRole.objects.filter(task=task).delete()
+
+        if task.team:
+            # If a team is assigned, make the team leader an EXECUTOR
+            if task.team.team_leader:
+                TaskUserRole.objects.get_or_create(
+                    task=task, user=task.team.team_leader, role=TaskUserRole.RoleChoices.EXECUTOR
+                )
+
+            # Make other team members WATCHERS
+            for member in task.team.members.exclude(id=task.team.team_leader.id if task.team.team_leader else None):
+                TaskUserRole.objects.get_or_create(
+                    task=task, user=member, role=TaskUserRole.RoleChoices.WATCHER
+                )
+
+        elif task.assignee:
+            # If a specific assignee is selected, make them the EXECUTOR
+            TaskUserRole.objects.get_or_create(
+                task=task, user=task.assignee, role=TaskUserRole.RoleChoices.EXECUTOR
+            )
+
+            # Optionally, allow adding other watchers manually through a separate field
+            # Example:  watchers = form.cleaned_data.get('watchers')
+            # for watcher in watchers:
+            #     TaskUserRole.objects.get_or_create(task=task, user=watcher, role=TaskUserRole.RoleChoices.WATCHER)
 
 class TaskDetailView(LoginRequiredMixin, DetailView):
     model = Task
@@ -416,7 +460,7 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset=queryset)
-        if not self.request.user.is_superuser and obj.assignee != self.request.user and self.request.user not in obj.team.members.all():
+        if not self.request.user.is_superuser and obj.assignee != self.request.user and (not obj.team or self.request.user not in obj.team.members.all()):
             raise Http404(_("Вы не имеете доступа к этой задаче."))  # More specific check
         return obj
 
@@ -428,13 +472,17 @@ class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     success_url = reverse_lazy("tasks:task_list")
     success_message = _("Задача обновлена!")
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def get_queryset(self):
         user = self.request.user
         queryset = super().get_queryset()
         if not user.is_superuser:
-          queryset = queryset.filter(Q(assignee=user) | Q(team__in=user.teams.all()))
+            queryset = queryset.filter(Q(assignee=user) | Q(team__in=[team.id for team in user.user_profile.teams.all()]))  # Corrected this line
         return queryset
-
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -447,6 +495,11 @@ class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
         return context
 
     def form_valid(self, form):
+        task = form.save()  # Get the saved task instance
+
+        # Handle assignees and watchers
+        self.handle_assignees_and_watchers(task)
+
         context = self.get_context_data()
         photo_formset = context["photo_formset"]
         if photo_formset.is_valid():
@@ -454,6 +507,36 @@ class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
             photo_formset.save()
             return super().form_valid(form)
         return self.form_invalid(form)
+
+
+    def handle_assignees_and_watchers(self, task):
+        """Assign roles based on team/assignee selection."""
+        # Clear existing roles
+        TaskUserRole.objects.filter(task=task).delete()
+
+        if task.team:
+            # If a team is assigned, make the team leader an EXECUTOR
+            if task.team.team_leader:
+                TaskUserRole.objects.get_or_create(
+                    task=task, user=task.team.team_leader, role=TaskUserRole.RoleChoices.EXECUTOR
+                )
+
+            # Make other team members WATCHERS
+            for member in task.team.members.exclude(id=task.team.team_leader.id if task.team.team_leader else None):
+                TaskUserRole.objects.get_or_create(
+                    task=task, user=member, role=TaskUserRole.RoleChoices.WATCHER
+                )
+
+        elif task.assignee:
+            # If a specific assignee is selected, make them the EXECUTOR
+            TaskUserRole.objects.get_or_create(
+                task=task, user=task.assignee, role=TaskUserRole.RoleChoices.EXECUTOR
+            )
+
+            # Optionally, allow adding other watchers manually through a separate field
+            # Example:  watchers = form.cleaned_data.get('watchers')
+            # for watcher in watchers:
+            #     TaskUserRole.objects.get_or_create(task=task, user=watcher, role=TaskUserRole.RoleChoices.WATCHER)
 
 
 class TaskDeleteView(LoginRequiredMixin, DeleteView):  # No need for SuccessMessageMixin here
@@ -465,7 +548,7 @@ class TaskDeleteView(LoginRequiredMixin, DeleteView):  # No need for SuccessMess
         user = self.request.user
         queryset = super().get_queryset()
         if not user.is_superuser:
-            queryset = queryset.filter(Q(assignee=user) | Q(team__in=user.teams.all()))
+            queryset = queryset.filter(Q(assignee=user) | Q(team__in=[team.id for team in user.user_profile.teams.all()])) # Corrected this line
         return queryset
 
     def form_valid(self, form):  # Add form_valid to display success message

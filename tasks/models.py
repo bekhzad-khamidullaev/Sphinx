@@ -13,6 +13,7 @@ from unidecode import unidecode
 import time
 import logging
 from user_profiles.models import TaskUserRole
+from datetime import timedelta
 
 
 logger = logging.getLogger(__name__)
@@ -227,6 +228,9 @@ class Task(BaseModel):
 
         if self.is_overdue and self.status not in ["completed", "cancelled", "overdue"]:
             self.status = "overdue"  # Автоматическая смена статуса на "overdue"
+
+        if self.estimated_time and self.estimated_time < timedelta(minutes=1):
+            raise ValidationError(_("Estimated time must be at least 1 minute."))
 
 
     def save(self, *args, **kwargs):

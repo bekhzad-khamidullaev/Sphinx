@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'list_base.html' %}
 {% load i18n app_filters %}
 
 {% block list_title %}
@@ -9,9 +9,17 @@
 
 {% block list_actions %}
 <div class="flex space-x-4 items-center">
-    <button id="createTaskBtn"
+    <button @click="
+        fetch('{% url 'tasks:task_create' %}')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('modal-content').innerHTML = html;
+                $dispatch('modal-open'); // Dispatch the event *after* the content is loaded
+            })
+            .catch(error => console.error('Error:', error));
+    "
             class="px-5 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 transition-all">
-        ➕ {% trans 'Создать задачу' %}
+            ➕ {% trans 'Создать задачу' %}
     </button>
 
     <button id="toggleViewBtn"
@@ -62,8 +70,8 @@
 <div id="kanban-board"
      class="mt-8 flex flex-nowrap overflow-x-auto gap-4 {% if view_type == 'list' %}hidden{% endif %}">
     {% for status, task_list in tasks_by_status.items %}
-        <div class="kanban-column-wrapper flex-shrink-0 w-60" data-status="{{ status }}">
-            <div class="kanban-column w-full min-h-[500px] max-h-[600px] rounded-xl shadow-lg overflow-y-auto"
+        <div class="kanban-column-wrapper flex-shrink-0 w-55" data-status="{{ status }}">
+            <div class="kanban-column w-full min-h-[400px] max-h-[550px] rounded-xl shadow-lg overflow-y-auto"
                  data-status="{{ status }}">
                 <h3 class="text-lg font-semibold text-neutral-800 p-3 sticky top-0 z-10 rounded-t-xl flex justify-between items-center
                     {% if status == 'new' %}bg-neutral-50 border-2
