@@ -2,82 +2,69 @@
 {% load i18n %}
 
 {% block list_title %}
-    <h2 class="text-3xl font-semibold text-gray-900 sm:text-4xl bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-        {% trans 'Категории задач' %}
-    </h2>
+    <h2 class="text-lg font-semibold text-gray-900 text-center">{% trans 'Категории задач' %}</h2>
 {% endblock %}
 
 {% block list_actions %}
-    <button
-        hx-get="{% url 'tasks:modal_create_category' %}"
-        hx-target="#modal-content"
-        class="ml-3 inline-flex items-center px-5 py-2 rounded-full shadow-md text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition-all"
-        aria-label="{% trans 'Создать новую категорию' %}"
-    >
+    <a href="{% url 'tasks:create_category' %}"
+       class="px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-all">
         ➕ {% trans 'Создать категорию' %}
-    </button>
+    </a>
 {% endblock %}
 
 {% block list_content %}
-    <div class="relative">
-        <ul id="category-list" role="list" class="mt-4 flex space-x-6 overflow-x-auto pb-4">
-            {% for category in categories %}
-            <li id="category-{{ category.pk }}" class="w-64 flex-shrink-0 bg-white/80 backdrop-blur-lg shadow-md overflow-hidden rounded-xl border border-gray-200 transition-all hover:shadow-lg">
-                <div class="px-5 py-4">
-                    <h3 class="text-lg font-semibold text-gray-800">
-                        {{ category.name }}
-                    </h3>
-                    <p class="mt-2 text-sm text-gray-600">
-                        {{ category.description|truncatechars:100 }}
-                    </p>
-                </div>
-                <div class="border-t border-gray-200">
-                    <div class="bg-gray-50 px-5 py-3 flex justify-end space-x-2 rounded-b-xl">
-                        <button
-                            hx-get="{% url 'tasks:modal_update_category' category.pk %}"
-                            hx-target="#modal-content"
-                            class="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-gray-800 bg-white border border-gray-300 hover:bg-gray-100 transition-all"
-                            aria-label="{% trans 'Редактировать категорию' %}"
-                        >
-                            ✏️ {% trans 'Редактировать' %}
-                        </button>
-                        <button
-                            hx-get="{% url 'tasks:modal_delete_category' category.pk %}"
-                            hx-target="#modal-content"
-                            class="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400 transition-all"
-                            aria-label="{% trans 'Удалить категорию' %}"
-                        >
-                            ❌ {% trans 'Удалить' %}
-                        </button>
-                    </div>
-                </div>
-            </li>
-            {% empty %}
-            <li class="text-center text-gray-500 py-6 w-full">
-                <span class="text-lg font-medium">{% trans 'Нет категорий задач.' %}</span>
-                <i class="fas fa-clipboard-list text-gray-400 mt-2 text-2xl"></i>
-            </li>
-            {% endfor %}
-        </ul>
-
-        <!-- Пагинация -->
-        <div class="flex justify-center items-center mt-4 space-x-4">
+    <div class="bg-white shadow-md rounded-lg p-3 border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-300 text-sm">
+            <thead class="bg-gray-100 text-gray-700 text-xs uppercase">
+                <tr>
+                    <th class="px-4 py-2 text-left">📌 {% trans 'Название' %}</th>
+                    <th class="px-4 py-2 text-left">📄 {% trans 'Описание' %}</th>
+                    <th class="px-4 py-2 text-right">✏️ {% trans 'Действия' %}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for category in categories %}
+                    <tr class="hover:bg-gray-50 transition-all">
+                        <td class="px-4 py-2 font-medium text-gray-900">{{ category.name }}</td>
+                        <td class="px-4 py-2 text-gray-600 truncate">{{ category.description|truncatechars:80 }}</td>
+                        <td class="px-4 py-2 flex justify-end space-x-2">
+                            <a href="{% url 'tasks:update_category' category.pk %}"
+                               class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-all text-xs">
+                                ✏️
+                            </a>
+                            <a href="{% url 'tasks:delete_category' category.pk %}"
+                               class="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all text-xs">
+                                ❌
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="px-4 py-2 text-center text-gray-500">{% trans 'Нет категорий задач.' %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Пагинация -->
+    <div class="mt-4 flex justify-between items-center">
+        <span class="text-sm text-gray-600">
+            {% trans 'Страница' %} {{ categories.number }} {% trans 'из' %} {{ categories.paginator.num_pages }}
+        </span>
+        <div class="flex space-x-1">
             {% if categories.has_previous %}
-            <a href="?page={{ categories.previous_page_number }}" 
-               class="px-4 py-2 bg-gray-200 rounded-full text-gray-700 hover:bg-gray-300 transition-all">
-                ⬅️ {% trans 'Назад' %}
-            </a>
+                <a href="?page=1"
+                   class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300">«</a>
+                <a href="?page={{ categories.previous_page_number }}"
+                   class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300">‹</a>
             {% endif %}
-
-            <span class="text-gray-600">
-                {% trans 'Страница' %} {{ categories.number }} {% trans 'из' %} {{ categories.paginator.num_pages }}
-            </span>
-
+            <span class="px-3 py-1 bg-gray-300 text-gray-900 rounded-lg text-sm">{{ categories.number }}</span>
             {% if categories.has_next %}
-            <a href="?page={{ categories.next_page_number }}" 
-               class="px-4 py-2 bg-gray-200 rounded-full text-gray-700 hover:bg-gray-300 transition-all">
-                {% trans 'Вперед' %} ➡️
-            </a>
+                <a href="?page={{ categories.next_page_number }}"
+                   class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300">›</a>
+                <a href="?page={{ categories.paginator.num_pages }}"
+                   class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300">»</a>
             {% endif %}
         </div>
     </div>

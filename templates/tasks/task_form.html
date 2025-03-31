@@ -1,0 +1,52 @@
+{% load i18n widget_tweaks %}
+
+<form method="post" action="{% if task %}{% url 'tasks:task_update' pk=task.pk %}{% else %}{% url 'tasks:task_create' %}{% endif %}"
+      data-task-form="true" class="space-y-4">
+    {% csrf_token %}
+
+    <h2 id="modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
+        {% if task %}{% trans 'Редактировать задачу' %}{% else %}{% trans 'Создать задачу' %}{% endif %}
+    </h2>
+
+    {# Ошибки, не связанные с полями #}
+    <div class="non-field-errors">
+        {% if form.non_field_errors %}
+            <div class="p-3 bg-red-50 dark:bg-dark-700 border border-red-200 dark:border-red-500 rounded text-red-700 dark:text-red-300 text-sm">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Рендеринг полей формы #}
+    {% for field in form %}
+        <div>
+            <label for="{{ field.id_for_label }}" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ field.label }}</label>
+            {% render_field field class+="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:focus:ring-ios-blue" %}
+            {% if field.help_text %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>
+            {% endif %}
+            {# Контейнер для ошибок поля будет добавлен JS #}
+             {% if field.errors %}
+                <div class="form-error-message text-red-600 dark:text-red-400 text-xs mt-1">
+                    {% for error in field.errors %}<span>{{ error }}</span>{% endfor %}
+                </div>
+                 <script>
+                    // Добавляем класс ошибки к полю при рендеринге с ошибкой
+                    document.getElementById("{{ field.id_for_label }}").classList.add('border-red-500', 'dark:border-red-400');
+                    document.getElementById("{{ field.id_for_label }}").setAttribute('aria-invalid', 'true');
+                </script>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <div class="flex justify-end pt-4 space-x-3">
+        <button type="button" @click="$dispatch('modal-close')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-dark-700 dark:text-gray-300 dark:border-dark-600 dark:hover:bg-dark-600">
+            {% trans 'Отмена' %}
+        </button>
+        <button type="submit" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-700">
+            {% trans 'Сохранить' %}
+        </button>
+    </div>
+</form>

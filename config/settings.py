@@ -212,11 +212,18 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs/crm.log'),
+            'encoding': 'utf-8',  # Add this line
+        },
+    },
+   'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
         },
     },
     'loggers': {
@@ -248,3 +255,6 @@ CACHES = {
         "LOCATION": "unique-snowflake",
     }
 }
+
+
+

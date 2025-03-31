@@ -303,6 +303,50 @@ class Task(BaseModel):
         """Проверяет, просрочена ли задача."""
         return self.deadline and self.deadline < timezone.now() and self.status not in ["completed", "cancelled", "overdue"]
 
+    def has_permission_to_change(self, user):
+        """
+        Проверяет, имеет ли пользователь право изменять (статус, и т.д.) этой задачи.
+        АДАПТИРУЙТЕ ЭТУ ЛОГИКУ ПОД ВАШИ ПРАВИЛА!
+        """
+        if not user or not user.is_authenticated:
+            logger.debug(f"Permission check failed for task {self.id}: User not authenticated.")
+            return False
+
+        # Суперпользователь может всё
+        if user.is_superuser:
+            logger.debug(f"Permission granted for task {self.id}: User {user.username} is superuser.")
+            return True
+
+        # Создатель задачи может её изменять
+        if self.created_by_id == user.id:
+            logger.debug(f"Permission granted for task {self.id}: User {user.username} is creator.")
+            return True
+
+        # Назначенный исполнитель может изменять
+        if self.assignee_id == user.id:
+            logger.debug(f"Permission granted for task {self.id}: User {user.username} is assignee.")
+            return True # TODO: Add logic here if assignee can only change certain statuses?
+
+        # Лидер команды, которой назначена задача, может изменять
+        # Check if team exists and has a leader before accessing team_leader.id
+        if self.team and self.team.team_leader_id and self.team.team_leader_id == user.id:
+             logger.debug(f"Permission granted for task {self.id}: User {user.username} is leader of assigned team {self.team.name}.")
+             return True
+
+        # Проверка через роли TaskUserRole (Пример - раскомментируйте и настройте, если используете)
+        required_roles = [TaskUserRole.RoleChoices.EXECUTOR, TaskUserRole.RoleChoices.RESPONSIBLE]
+        if TaskUserRole.objects.filter(
+            task_id=self.id,
+            user_id=user.id,
+            role__in=required_roles
+        ).exists():
+            logger.debug(f"Permission granted for task {self.id}: User {user.username} has role in {required_roles}.")
+            return True
+
+        # Если ни одно из условий не выполнено
+        logger.debug(f"User {user.username} has NO permission to change task {self.id} based on current rules (creator: {self.created_by_id}, assignee: {self.assignee_id}, team_leader: {self.team.team_leader_id if self.team else 'N/A'}).")
+        return False
+
     class Meta:
         verbose_name = _("Задача")
         verbose_name_plural = _("Задачи")

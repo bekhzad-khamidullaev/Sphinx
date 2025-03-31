@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import now
 
 # ------------------------ Базовая Модель ------------------------
 
@@ -58,21 +59,61 @@ class Role(models.Model):
 # ------------------------ Роли пользователей в задачах ------------------------
 
 class TaskUserRole(models.Model):
+    # Consider moving RoleChoices here if Role model is removed
     class RoleChoices(models.TextChoices):
         EXECUTOR = "executor", _("Исполнитель")
         WATCHER = "watcher", _("Наблюдатель")
         RESPONSIBLE = "responsible", _("Ответственный")
+        # Add other roles as needed, e.g., REVIEWER, REPORTER
 
-    task = models.ForeignKey("tasks.Task", on_delete=models.CASCADE, related_name="user_roles", db_index=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="task_roles", db_index=True)
-    role = models.CharField(max_length=20, choices=RoleChoices.choices, default=RoleChoices.EXECUTOR, db_index=True)
+    # Use CASCADE carefully, maybe SET_NULL or PROTECT is better depending on requirements
+    task = models.ForeignKey(
+        "tasks.Task", # Use string notation to avoid import issues
+        on_delete=models.CASCADE,
+        related_name="user_roles",
+        db_index=True,
+        verbose_name=_("Задача")
+        )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="task_roles",
+        db_index=True,
+        verbose_name=_("Пользователь")
+        )
+    role = models.CharField(
+        max_length=20,
+        choices=RoleChoices.choices,
+        # default=RoleChoices.WATCHER, # Default might be WATCHER instead of EXECUTOR
+        db_index=True,
+        verbose_name=_("Роль")
+        )
+
+    # Add created_at/updated_at if needed, inheriting BaseModel is an option
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата назначения"))
+
 
     class Meta:
         verbose_name = _("Роль пользователя в задаче")
         verbose_name_plural = _("Роли пользователей в задачах")
-        unique_together = ("task", "user", "role")
-        indexes = [models.Index(fields=["task", "user", "role"], name="taskuserrole_unique_role_idx")]
+        # Ensure a user can only have one role per task
+        unique_together = ("task", "user") # Removed 'role' if user has only one role per task
+        # If user can have multiple roles (e.g., watcher AND executor), keep role in unique_together
+        # unique_together = ("task", "user", "role")
+
+        indexes = [
+             # Index for the unique constraint if role is included
+             # models.Index(fields=["task", "user", "role"], name="taskuserrole_unique_role_idx"),
+             # Index for the unique constraint if role is NOT included
+              models.Index(fields=["task", "user"], name="taskuserrole_task_user_idx"),
+             # Separate indexes for common lookups
+             models.Index(fields=["task"], name="taskuserrole_task_idx"),
+             models.Index(fields=["user"], name="taskuserrole_user_idx"),
+        ]
+        ordering = ['task', 'user'] # Default ordering
 
     def __str__(self):
-        return f"{self.user.username} - {self.get_role_display()} ({self.task.task_number})"
-
+         # Access related fields safely
+        user_name = self.user.username if self.user else _("Unknown User")
+        task_num = self.task.task_number if self.task else _("Unknown Task")
+        return f"{user_name} - {self.get_role_display()} ({task_num})"

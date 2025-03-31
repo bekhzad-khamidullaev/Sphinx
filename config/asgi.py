@@ -1,4 +1,3 @@
-# crm/asgi.py
 import os
 
 # Set the DJANGO_SETTINGS_MODULE *before* calling django.setup() or importing any Django components.

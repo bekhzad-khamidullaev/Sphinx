@@ -1,6 +1,23 @@
 from django.contrib import messages
 from django.utils.timezone import now
 from tasks.models import Task
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
+
+def has_task_access(user, task, edit=False):
+    """ Проверяет доступ к задаче. """
+    if user.is_superuser:
+        return True
+    if user.has_perm('tasks.view_task') or (edit and user.has_perm('tasks.change_task')):
+        return True
+    if task.assignee == user or task.created_by == user:
+        return True
+    if hasattr(user, 'user_profile') and task.team in user.user_profile.teams.all():
+        return True
+    if edit and task.team and task.team.team_leader == user:
+        return True
+    return False
+
 
 def send_notification(request, task):
     """Функция отправки уведомлений через Django Messages"""

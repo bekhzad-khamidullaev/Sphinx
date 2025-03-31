@@ -1,75 +1,65 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views
 
-app_name = "tasks"
+from .views import project, category, subcategory, task, report, api, ajax
 
-# API router
+app_name = 'tasks'
+
 router = DefaultRouter()
-router.register(r'projects', views.ProjectViewSet)
-router.register(r'task-categories', views.TaskCategoryViewSet)
-router.register(r'task-subcategories', views.TaskSubcategoryViewSet)
-router.register(r'tasks', views.TaskViewSet)
-router.register(r'task-photos', views.TaskPhotoViewSet)
+router.register(r'projects', api.ProjectViewSet, basename='project-api')
+router.register(r'categories', api.TaskCategoryViewSet, basename='category-api')
+router.register(r'subcategories', api.TaskSubcategoryViewSet, basename='subcategory-api')
+router.register(r'tasks', api.TaskViewSet, basename='task-api')
+router.register(r'photos', api.TaskPhotoViewSet, basename='photo-api')
 
 urlpatterns = [
-    # Auth URLs (если нужно)
-    # path('login/', views.LoginView.as_view(), name='login'),
-    # path('logout/', views.LogoutView.as_view(), name='logout'),
-    # path('clear-messages/', views.clear_messages, name='clear_messages'),
+    # API endpoints (DRF router + custom suggestion endpoint)
+    path('api/', include(router.urls)),
+    path('api/search-suggestions/', api.SearchSuggestionsView.as_view(), name='search-suggestions-api'), # New endpoint
 
-    # Task management URLs
-    path('tasks/', views.TaskListView.as_view(), name='task_list'),
-    path('tasks/summary/', views.TaskSummaryReportView.as_view(), name='task_summary_report'),
-    path('tasks/create/', views.TaskCreateView.as_view(), name='task_create'),
-    path('tasks/<int:pk>/', views.TaskDetailView.as_view(), name='task_detail'),
-    path('tasks/<int:pk>/update/', views.TaskUpdateView.as_view(), name='task_update'),
-    path('tasks/<int:pk>/delete/', views.TaskDeleteView.as_view(), name='task_delete'),
-    path('tasks/<int:pk>/perform/', views.TaskPerformView.as_view(), name='task_perform'),
-    path('tasks/update_status/<int:task_id>/', views.update_task_status, name='update_task_status'),
+    # Project URLs
+    path('projects/', project.ProjectListView.as_view(), name='project_list'),
+    path('projects/create/', project.ProjectCreateView.as_view(), name='project_create'),
+    path('projects/<int:pk>/update/', project.ProjectUpdateView.as_view(), name='project_update'),
+    path('projects/<int:pk>/delete/', project.ProjectDeleteView.as_view(), name='project_delete'),
 
-    # Project management URLs
-    path('projects/', views.project_list, name='project_list'),
-    path('projects/create/', views.modal_create_project, name='modal_create_project'),
-    path('projects/<int:pk>/update/', views.modal_update_project, name='modal_update_project'),
-    path('projects/<int:pk>/delete/', views.modal_delete_project, name='modal_delete_project'),
-    path('projects/create/', views.create_project, name='create_project'),
-    path('projects/<int:pk>/delete/', views.delete_project, name='delete_project'),
+    # Category URLs
+    path('categories/', category.TaskCategoryListView.as_view(), name='category_list'),
+    path('categories/create/', category.TaskCategoryCreateView.as_view(), name='category_create'),
+    path('categories/<int:pk>/update/', category.TaskCategoryUpdateView.as_view(), name='category_update'),
+    path('categories/<int:pk>/delete/', category.TaskCategoryDeleteView.as_view(), name='category_delete'),
 
-    # Category management URLs
-    path('categories/', views.category_list, name='category_list'),
-    path('categories/create/', views.modal_create_category, name='modal_create_category'),
-    path('categories/create/', views.create_category, name='create_category'),
-    path('categories/<int:pk>/update/', views.modal_update_category, name='modal_update_category'),
-    path('categories/<int:pk>/update/', views.update_category, name='update_category'),
-    path('categories/<int:pk>/delete/', views.modal_delete_category, name='modal_delete_category'),
-    path('categories/<int:pk>/delete/', views.delete_category, name='delete_category'),
+    # Subcategory URLs
+    path('subcategories/', subcategory.TaskSubcategoryListView.as_view(), name='subcategory_list'),
+    path('subcategories/create/', subcategory.TaskSubcategoryCreateView.as_view(), name='subcategory_create'),
+    path('subcategories/<int:pk>/update/', subcategory.TaskSubcategoryUpdateView.as_view(), name='subcategory_update'),
+    path('subcategories/<int:pk>/delete/', subcategory.TaskSubcategoryDeleteView.as_view(), name='subcategory_delete'),
 
-    # Subcategory management URLs
-    path('subcategories/', views.subcategory_list, name='subcategory_list'),
-    path('subcategories/create/', views.modal_create_subcategory, name='modal_create_subcategory'),
-    path('subcategories/create/', views.create_subcategory, name='create_subcategory'),
-    path('subcategories/<int:pk>/update/', views.modal_update_subcategory, name='modal_update_subcategory'),
-    path('subcategories/<int:pk>/update/', views.update_subcategory, name='update_subcategory'),
-    path('subcategories/<int:pk>/delete/', views.modal_delete_subcategory, name='modal_delete_subcategory'),
-    path('subcategories/<int:pk>/delete/', views.delete_subcategory, name='delete_subcategory'),
+    # Task URLs
+    path('tasks/', task.TaskListView.as_view(), name='task_list'),
+    path('tasks/create/', task.TaskCreateView.as_view(), name='task_create'),
+    path('tasks/<int:pk>/', task.TaskDetailView.as_view(), name='task_detail'),
+    path('tasks/<int:pk>/update/', task.TaskUpdateView.as_view(), name='task_update'),
+    path('tasks/<int:pk>/delete/', task.TaskDeleteView.as_view(), name='task_delete'),
+    path('tasks/<int:pk>/perform/', task.TaskPerformView.as_view(), name='task_perform'),
+
+    # AJAX URL
+    path('ajax/tasks/<int:task_id>/update-status/', ajax.update_task_status, name='ajax_update_task_status'),
 
     # Report URLs
-    path('tasks/export/excel/', views.export_tasks_to_excel, name='export_tasks_to_excel'),
-    path('tasks/completed/', views.completed_tasks_report, name='completed_tasks_report'),
-    path('tasks/overdue/', views.overdue_tasks_report, name='overdue_tasks_report'),
-    path('tasks/active/', views.active_tasks_report, name='active_tasks_report'),
-    path('tasks/team-performance/', views.team_performance_report, name='team_performance_report'),
-    path('tasks/employee-workload/', views.employee_workload_report, name='employee_workload_report'),
-    path('tasks/abc-analysis/', views.abc_analysis_report, name='abc_analysis_report'),
-    path('tasks/sla/', views.sla_report, name='sla_report'),
-    path('tasks/progress-chart/', views.task_progress_chart, name='task_progress_chart'),
-    path('tasks/gantt-chart/', views.gantt_chart, name='gantt_chart'),
-    path('tasks/duration-report/', views.task_duration_report, name='task_duration_report'),
-    path('tasks/issues/', views.issues_report, name='issues_report'),
-    path('tasks/delay-reasons/', views.delay_reasons_report, name='delay_reasons_report'),
-    path('tasks/cancelled/', views.cancelled_tasks_report, name='cancelled_tasks_report'),
-
-    # API URLs
-    path('api/', include(router.urls)),
+    path('reports/export/excel/', report.export_tasks_to_excel, name='export_tasks_excel'),
+    path('reports/completed/', report.completed_tasks_report, name='report_completed_tasks'),
+    path('reports/overdue/', report.overdue_tasks_report, name='report_overdue_tasks'),
+    path('reports/active/', report.active_tasks_report, name='report_active_tasks'),
+    path('reports/performance/', report.team_performance_report, name='report_team_performance'),
+    path('reports/workload/', report.employee_workload_report, name='report_employee_workload'),
+    path('reports/abc/', report.abc_analysis_report, name='report_abc_analysis'),
+    path('reports/sla/', report.sla_report, name='report_sla'),
+    path('reports/duration/', report.task_duration_report, name='report_task_duration'),
+    path('reports/issues/', report.issues_report, name='report_issues'),
+    path('reports/delay-reasons/', report.delay_reasons_report, name='report_delay_reasons'),
+    path('reports/cancelled/', report.cancelled_tasks_report, name='report_cancelled_tasks'),
+    path('reports/charts/progress/', report.task_progress_chart, name='chart_task_progress'),
+    path('reports/charts/gantt/', report.gantt_chart, name='chart_gantt'),
+    path('reports/summary/', report.TaskSummaryReportView.as_view(), name='report_task_summary'),
 ]
