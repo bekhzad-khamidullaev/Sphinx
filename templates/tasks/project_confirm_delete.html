@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title|default:_("Удаление проекта") }}{% endblock %}
+
+{% block list_title %}
+<h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
+    {{ page_title }}
+</h1>
+{% endblock %}
+
+{% block list_content %}
+<div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 mt-6 max-w-lg mx-auto">
+
+    <p class="text-gray-700 dark:text-gray-300 mb-4">
+        {% blocktrans with project_name=object.name %}
+        Вы уверены, что хотите удалить проект <strong>"{{ project_name }}"</strong>?
+        {% endblocktrans %}
+    </p>
+    <p class="text-yellow-600 dark:text-yellow-400 font-semibold mb-6">{% trans "Внимание: Все задачи, связанные с этим проектом, также будут удалены!" %}</p>
+    <p class="text-red-600 dark:text-red-400 font-semibold mb-6">{% trans "Это действие нельзя будет отменить!" %}</p>
+
+
+    <form method="post" action="">
+        {% csrf_token %}
+        <div class="flex justify-end space-x-3">
+            <a href="{% url 'tasks:project_list' %}" class="px-4 py-2 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 dark:focus:ring-offset-dark-800 transition-all shadow">
+                {% trans 'Отмена' %}
+            </a>
+            <button type="submit" class="px-4 py-2 rounded-full text-sm font-medium bg-red-500 dark:bg-ios-red text-white hover:bg-red-600 dark:hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-dark-800 transition-all shadow">
+                <i class="fas fa-trash mr-2"></i> {% trans 'Да, удалить проект и все его задачи' %}
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, signal });
             if (!response.ok) { if (signal.aborted) return; throw new Error(`HTTP error ${response.status}`); }
             const data = await response.json(); if (signal.aborted) return;
-            targetBox.innerHTML = ''; // Clear old
+            targetBox.innerHTML = '';
             if (data.results && data.results.length > 0) {
                 data.results.forEach(item => {
                     const link = document.createElement('a');
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     [searchInput, mobileSearchInput].forEach(input => {
         if (!input) return;
-        const targetBox = suggestionsBox; // Assuming same suggestion box for mobile for now
+        const targetBox = suggestionsBox;
         input.addEventListener('input', (event) => {
             const query = event.target.value.trim(); clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => fetchSuggestions(query, input, targetBox), 300);

@@ -1,270 +1,381 @@
 # user_profiles/views.py
 import sys
-import logging # Добавлен импорт logging
-from django.conf import settings # Добавлен импорт settings
-from django.urls import reverse # Добавлен импорт reverse
-from django.http import HttpResponse, JsonResponse # Добавлен импорт JsonResponse
+import logging
+from django.conf import settings
+from django.db.models import Q
+from django.urls import reverse, reverse_lazy # Добавлен reverse_lazy
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect # Добавлен HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.decorators import login_required # permission_required убран, т.к. не используется явно здесь
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin # Для CBV
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_POST # <--- ДОБАВЬТЕ ЭТОТ ИМПОРТ
+from django.views.decorators.http import require_POST
+# Импорты для CBV
+from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView
+from django.contrib.messages.views import SuccessMessageMixin
 
 from rest_framework import viewsets, permissions, status
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from .models import TaskUserRole, Team, User, Department # Убедитесь, что Department импортирован, если используется
-from .serializers import TeamSerializer, UserSerializer # Убран RoleSerializer
-# Убран RoleForm, добавлены UserUpdateForm (если вы создали его)
-from tasks.forms import UserCreateForm, TeamForm #, UserUpdateForm
+from .models import TaskUserRole, Team, User, Department
+from .serializers import TeamSerializer, UserSerializer
 
-logger = logging.getLogger(__name__) # Инициализация логгера
+from django.contrib.auth.views import PasswordChangeView, PasswordChangeDoneView
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.messages.views import SuccessMessageMixin
+from tasks.models import Task
+# user_profiles/views.py
+from .forms import TeamForm, UserCreateForm, UserUpdateForm, UserProfileEditForm, LoginForm
 
-# sys.setrecursionlimit(2000) # Можно оставить, если нужно
-
+logger = logging.getLogger(__name__)
 channel_layer = get_channel_layer()
 
-# ------------------------ API ViewSets ------------------------
-# ... (ViewSet'ы как были) ...
+
+class UserProfileView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    """Отображение и редактирование профиля текущего пользователя."""
+    model = User
+    form_class = UserProfileEditForm # Используем нашу форму
+    template_name = 'users/user_profile.html'
+    success_url = reverse_lazy('user_profiles:profile_view')
+    success_message = _("Профиль успешно обновлен.")
+
+    def get_object(self, queryset=None):
+        # Объектом всегда является текущий пользователь
+        return self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context['page_title'] = _("Мой профиль")
+        context['profile_user'] = user # Передаем пользователя для отображения
+
+        # --- Получаем историю задач ---
+        user_tasks_qs = Task.objects.filter(
+            Q(created_by=user) | Q(user_roles__user=user)
+        ).select_related(
+            'project', 'created_by'
+        ).prefetch_related(
+            'user_roles__user'
+        ).distinct().order_by('-updated_at')
+
+        # Пагинация для истории задач
+        paginator = Paginator(user_tasks_qs, 10) # 10 задач на страницу
+        page_number = self.request.GET.get('task_page')
+        try:
+             task_page_obj = paginator.page(page_number)
+        except PageNotAnInteger:
+             task_page_obj = paginator.page(1)
+        except EmptyPage:
+             task_page_obj = paginator.page(paginator.num_pages)
+
+        context['task_history_page'] = task_page_obj
+        # -----------------------------
+
+        return context
+
+    def form_valid(self, form):
+         # SuccessMessageMixin покажет сообщение автоматически
+         # Форма сохраняет и основные поля, и настройки в своем методе save()
+         return super().form_valid(form)
+
+# --- Представления для смены пароля (если нужны кастомные шаблоны) ---
+# Используем встроенные LoginRequiredMixin для них
+class UserPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
+     template_name = 'users/password_change_form.html' # Ваш кастомный шаблон
+     success_url = reverse_lazy('user_profiles:password_change_done')
+     success_message = _("Ваш пароль был успешно изменен.")
+
+     def form_valid(self, form):
+         messages.success(self.request, self.success_message)
+         return super().form_valid(form)
+
+     def get_context_data(self, **kwargs):
+         context = super().get_context_data(**kwargs)
+         context['page_title'] = _("Смена пароля")
+         return context
+
+class UserPasswordChangeDoneView(LoginRequiredMixin, PasswordChangeDoneView):
+      template_name = 'users/password_change_done.html' # Ваш кастомный шаблон
+
+      def get_context_data(self, **kwargs):
+         context = super().get_context_data(**kwargs)
+         context['page_title'] = _("Пароль изменен")
+         return context
+
+# ==============================================================================
+# API ViewSets (без изменений)
+# ==============================================================================
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 class UserViewSet(viewsets.ModelViewSet):
-    """Manage users."""
-    queryset = User.objects.all().select_related('department').prefetch_related('teams', 'groups') # Оптимизация
+    queryset = User.objects.all().select_related('department').prefetch_related('teams', 'groups')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser] # Ограничить доступ администраторам
+    permission_classes = [permissions.IsAdminUser]
 
-# ------------------------ Authentication ------------------------
+# ==============================================================================
+# Authentication (без изменений)
+# ==============================================================================
 @csrf_protect
 @vary_on_cookie
 @never_cache
 def base(request):
     if request.user.is_authenticated:
-        # Если пользователь уже аутентифицирован, перенаправляем на дашборд
-        return redirect(settings.LOGIN_REDIRECT_URL)
+        redirect_url = request.GET.get('next', settings.LOGIN_REDIRECT_URL)
+        return redirect(redirect_url)
+
+    next_page = request.GET.get('next', '/')
+    error_message_for_template = "" # Инициализируем пустой строкой
+    success_message_for_template = "" # Инициализируем пустой строкой
 
     if request.method == 'POST':
-        # Используем LoginForm для обработки POST
-        form = LoginForm(request, data=request.POST) # Используем LoginForm из tasks.forms
+        form = LoginForm(request, data=request.POST)
         if form.is_valid():
-            user = form.get_user()
-            auth_login(request, user)
-            messages.success(request, _('Вы успешно вошли в систему!'))
-            # Перенаправляем на страницу, указанную в 'next', или на дашборд
-            next_url = request.POST.get('next', settings.LOGIN_REDIRECT_URL)
-            return redirect(next_url)
+            # ... (логика успешного входа и редиректа) ...
+            user = form.get_user(); auth_login(request, user)
+            redirect_url = request.POST.get('next', settings.LOGIN_REDIRECT_URL)
+            return redirect(redirect_url)
         else:
-            # Если форма невалидна, показываем ошибки
-            messages.error(request, _('Неверное имя пользователя или пароль.'))
-            # Снова рендерим шаблон с формой и ошибками
-            return render(request, 'registration/login.html', {'form': form}) # Используем стандартный шаблон или ваш 'base.html'
-    else:
-        # Для GET запроса просто показываем форму входа
-        form = LoginForm() # Используем LoginForm из tasks.forms
+            error_message_for_template = _('Неверное имя пользователя или пароль.')
+            # Передаем пустую строку для success_message
+            context = {'form': form, 'next': request.POST.get('next', next_page), 'error_message': error_message_for_template, 'success_message': success_message_for_template}
+            return render(request, 'users/login.html', context)
+    else: # GET Request
+        form = LoginForm(request)
+        # Проверяем параметр успешного выхода
+        if request.GET.get('logged_out') == '1':
+            success_message_for_template = _('Вы успешно вышли из системы.')
 
-    # Рендерим шаблон login.html (или ваш base.html, если он содержит форму)
-    # Лучше использовать отдельный шаблон для входа: 'registration/login.html'
-    return render(request, 'registration/login.html', {'form': form})
+    # Передаем error_message и success_message в контекст
+    context = {'form': form, 'next': next_page, 'error_message': error_message_for_template, 'success_message': success_message_for_template}
+    return render(request, 'users/login.html', context)
 
-@csrf_protect
-@vary_on_cookie
-@never_cache
-def user_login(request):
-    # Эта view теперь может просто перенаправлять на 'base', если 'base' рендерит форму,
-    # или быть основной точкой входа для логина, как показано в 'base' выше.
-    # Для ясности, лучше переименовать 'base' в 'login_view' или использовать стандартный LoginView Django.
-    # Пока оставим перенаправление на 'base'.
-    return redirect('user_profiles:base')
-
+# Обновляем logout, чтобы он передавал параметр для Toastify
 @csrf_protect
 @vary_on_cookie
 @never_cache
 def user_logout(request):
     auth_logout(request)
-    messages.success(request, _('Вы успешно вышли из системы.'))
-    return redirect(settings.LOGOUT_REDIRECT_URL) # Используем настройку
+    # messages.success(request, _('Вы успешно вышли из системы.')) # Убираем Django message
+    # Редирект на страницу входа с параметром для Toastify
+    logout_url = reverse('user_profiles:base')
+    return redirect(f"{logout_url}?logged_out=1")
 
-# ------------------------ Users ------------------------
+@csrf_protect
+@vary_on_cookie
+@never_cache
+def user_login(request):
+    return redirect('user_profiles:base')
 
-@login_required
-def user_list(request):
-    users = User.objects.filter(is_active=True).prefetch_related('groups', 'teams') # Фильтруем активных
-    return render(request, "users/user_list.html", {"users": users})
+# ==============================================================================
+# Users (Используем CBV - Class-Based Views)
+# ==============================================================================
 
-# --- Модальные окна (рендерят только шаблон) ---
-@login_required
-def modal_create_user(request):
-    form = UserCreateForm()
-    action_url = reverse('user_profiles:create_user')
-    # Убедитесь, что шаблон 'modals/user_form.html' существует
-    return render(request, "modals/user_form.html", {"form": form, "action_url": action_url, "form_title": _("Создать пользователя")})
+class UserListView(LoginRequiredMixin, ListView):
+    """Отображает список активных пользователей."""
+    model = User
+    template_name = "users/user_list.html" # Укажите правильный путь
+    context_object_name = "users"
+    paginate_by = 20 # Добавляем пагинацию
 
-@login_required
-def modal_update_user(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    # Используйте UserUpdateForm, если он создан, иначе UserCreateForm может не подойти
-    form = UserUpdateForm(instance=user) # Предполагаем, что UserUpdateForm существует
-    action_url = reverse('user_profiles:update_user', kwargs={'pk': pk})
-    return render(request, "modals/user_form.html", {"form": form, "instance": user, "action_url": action_url, "form_title": _("Редактировать пользователя")})
+    def get_queryset(self):
+        # Показываем только активных, оптимизируем запрос
+        return User.objects.filter(is_active=True).select_related('department').prefetch_related('groups', 'teams').order_by('last_name', 'first_name')
 
-@login_required
-def modal_delete_user(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    action_url = reverse('user_profiles:delete_user', kwargs={'pk': pk})
-    # Убедитесь, что шаблон 'modals/user_delete_confirmation.html' существует
-    return render(request, "modals/user_delete_confirmation.html", {"user_to_delete": user, "action_url": action_url})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Пользователи")
+        return context
 
-# --- Обработчики действий (POST запросы) ---
-@login_required
-@require_POST # Теперь декоратор импортирован
-def create_user(request):
-    form = UserCreateForm(request.POST, request.FILES)
-    if form.is_valid():
-        user = form.save()
-        logger.info(f"User '{user.username}' created by '{request.user.username}'.")
+class UserCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    """Страница создания нового пользователя."""
+    model = User
+    form_class = UserCreateForm # Используем нашу форму создания
+    template_name = "users/user_form.html" # Шаблон формы
+    success_url = reverse_lazy("user_profiles:user_list") # Куда перейти после успеха
+    success_message = _("Пользователь '%(username)s' успешно создан!")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Создать пользователя")
+        context['form_action_text'] = _("Создать")
+        return context
+
+    def form_valid(self, form):
+        # WebSocket уведомление перед вызовом super().form_valid(), т.к. он делает редирект
+        user = form.save(commit=False) # Пока не сохраняем, чтобы получить объект
+        response = super().form_valid(form) # Теперь сохраняем и получаем редирект
+        logger.info(f"User '{self.object.username}' created by '{self.request.user.username}'.")
         try:
             async_to_sync(channel_layer.group_send)(
                 "users_list",
-                {"type": "user_update", "message": {"action": "create", "id": user.id, "username": user.username}}
+                {"type": "user_update", "message": {"action": "create", "id": self.object.id, "username": self.object.username}}
             )
         except Exception as e:
             logger.error(f"Failed to send user creation WebSocket notification: {e}")
-        messages.success(request, _("Пользователь '%s' успешно создан!") % user.display_name)
-        return JsonResponse({'success': True, 'message': _("Пользователь создан.")})
-    else:
-        logger.warning(f"User creation failed for user '{request.user.username}'. Errors: {form.errors.get_json_data()}")
-        return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
+        # Сообщение об успехе добавится через SuccessMessageMixin
+        return response
 
-# Добавлено представление для обновления пользователя
-@login_required
-@require_POST
-def update_user(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    form = UserUpdateForm(request.POST, request.FILES, instance=user) # Используем UserUpdateForm
-    if form.is_valid():
-        updated_user = form.save()
-        logger.info(f"User '{updated_user.username}' updated by '{request.user.username}'.")
-        # Добавить WebSocket уведомление об обновлении, если нужно
-        messages.success(request, _("Данные пользователя '%s' обновлены.") % updated_user.display_name)
-        return JsonResponse({'success': True, 'message': _("Данные пользователя обновлены.")})
-    else:
-        logger.warning(f"User update failed for user '{user.username}' by '{request.user.username}'. Errors: {form.errors.get_json_data()}")
-        return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
+class UserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    """Страница редактирования пользователя."""
+    model = User
+    form_class = UserUpdateForm # Используем форму обновления
+    template_name = "users/user_form.html"
+    success_url = reverse_lazy("user_profiles:user_list")
+    success_message = _("Данные пользователя '%(username)s' обновлены.")
+    # context_object_name = "user_to_edit" # Можно задать имя объекта в контексте
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Редактировать пользователя: %s") % self.object.display_name
+        context['form_action_text'] = _("Сохранить")
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        logger.info(f"User '{self.object.username}' updated by '{self.request.user.username}'.")
+        # Добавить WebSocket уведомление, если нужно
+        return response
+
+class UserDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
+    """Страница подтверждения удаления пользователя."""
+    model = User
+    template_name = "users/user_confirm_delete.html" # Шаблон подтверждения
+    success_url = reverse_lazy("user_profiles:user_list")
+    success_message = _("Пользователь удален!")
+    # context_object_name = "user_to_delete"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Удалить пользователя: %s") % self.object.display_name
+        return context
+
+    def form_valid(self, form):
+        # Проверка на самоудаление
+        if self.request.user == self.object:
+             messages.error(self.request, _("Вы не можете удалить свой собственный аккаунт."))
+             return redirect(self.success_url)
+
+        user_display_name = self.object.display_name
+        user_id = self.object.id
+        logger.info(f"User '{user_display_name}' (ID: {user_id}) deleted by '{self.request.user.username}'.")
+
+        # SuccessMessageMixin покажет сообщение перед редиректом
+        response = super().form_valid(form)
+
+        # WebSocket уведомление
+        try:
+            async_to_sync(channel_layer.group_send)(
+                "users_list",
+                {"type": "user_update", "message": {"action": "delete", "id": user_id}}
+            )
+        except Exception as e:
+            logger.error(f"Failed to send user deletion WebSocket notification: {e}")
+
+        return response
+
+# --- УДАЛЯЕМ ПРЕДСТАВЛЕНИЯ ДЛЯ МОДАЛЬНЫХ ОКОН ---
+# modal_create_user, modal_update_user, modal_delete_user
+
+# --- УДАЛЯЕМ ФУНКЦИОНАЛЬНЫЕ ПРЕДСТАВЛЕНИЯ, т.к. используем CBV ---
+# create_user, update_user, delete_user
 
 
-@login_required
-@require_POST # Теперь декоратор импортирован
-def delete_user(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    if request.user == user:
-         logger.warning(f"User '{request.user.username}' attempted to delete self.")
-         return JsonResponse({'success': False, 'message': _("Самоудаление запрещено.")}, status=403)
+# ==============================================================================
+# Teams (Используем CBV - Class-Based Views)
+# ==============================================================================
 
-    user_display_name = user.display_name
-    user_id = user.id
-    user.delete()
-    logger.info(f"User '{user_display_name}' (ID: {user_id}) deleted by '{request.user.username}'.")
-    try:
-        async_to_sync(channel_layer.group_send)(
-            "users_list",
-            {"type": "user_update", "message": {"action": "delete", "id": user_id}}
-        )
-    except Exception as e:
-        logger.error(f"Failed to send user deletion WebSocket notification: {e}")
+class TeamListView(LoginRequiredMixin, ListView):
+    """Отображает список команд."""
+    model = Team
+    template_name = "users/team_list.html" # Укажите правильный путь
+    context_object_name = "teams"
+    paginate_by = 20
 
-    messages.success(request, _("Пользователь '%s' удален!") % user_display_name)
-    return JsonResponse({'success': True, 'message': _("Пользователь удален.")})
+    def get_queryset(self):
+        return Team.objects.select_related('team_leader', 'department').prefetch_related('members').order_by('name')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Команды")
+        return context
 
-# ------------------------ Teams ------------------------
-@login_required
-def team_list(request):
-    teams = Team.objects.all().prefetch_related('members', 'team_leader', 'department')
-    return render(request, "users/team_list.html", {"teams": teams})
+class TeamCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    """Страница создания новой команды."""
+    model = Team
+    form_class = TeamForm
+    template_name = "users/team_form.html" # Шаблон формы
+    success_url = reverse_lazy("user_profiles:team_list")
+    success_message = _("Команда '%(name)s' успешно создана!")
 
-# --- Модальные окна для Команд ---
-@login_required
-def modal_create_team(request):
-    form = TeamForm()
-    action_url = reverse('user_profiles:create_team')
-    return render(request, "modals/team_form.html", {"form": form, "action_url": action_url, "form_title": _("Создать команду")})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Создать команду")
+        context['form_action_text'] = _("Создать")
+        return context
 
-@login_required
-def modal_update_team(request, pk):
-    team = get_object_or_404(Team, pk=pk)
-    form = TeamForm(instance=team)
-    action_url = reverse('user_profiles:update_team', kwargs={'pk': pk})
-    return render(request, "modals/team_form.html", {"form": form, "instance": team, "action_url": action_url, "form_title": _("Редактировать команду")})
-
-@login_required
-def modal_delete_team(request, pk):
-    team = get_object_or_404(Team, pk=pk)
-    action_url = reverse('user_profiles:delete_team', kwargs={'pk': pk})
-    # Убедитесь, что шаблон 'modals/team_delete_confirmation.html' существует
-    return render(request, "modals/team_delete_confirmation.html", {"team_to_delete": team, "action_url": action_url})
-
-# --- Обработчики действий для Команд ---
-@login_required
-@require_POST # Теперь декоратор импортирован
-def create_team(request):
-    form = TeamForm(request.POST)
-    if form.is_valid():
-        team = form.save()
-        logger.info(f"Team '{team.name}' created by '{request.user.username}'.")
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        logger.info(f"Team '{self.object.name}' created by '{self.request.user.username}'.")
         try:
             async_to_sync(channel_layer.group_send)(
                 "teams_list",
-                {"type": "team_update", "message": {"action": "create", "id": team.id, "name": team.name}}
+                {"type": "team_update", "message": {"action": "create", "id": self.object.id, "name": self.object.name}}
             )
         except Exception as e:
             logger.error(f"Failed to send team creation WebSocket notification: {e}")
-        messages.success(request, _("Команда '%s' успешно создана!") % team.name)
-        return JsonResponse({'success': True, 'message': _("Команда создана.")})
-    else:
-        logger.warning(f"Team creation failed by '{request.user.username}'. Errors: {form.errors.get_json_data()}")
-        return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
+        return response
 
-# Добавлено представление для обновления команды
-@login_required
-@require_POST
-def update_team(request, pk):
-    team = get_object_or_404(Team, pk=pk)
-    form = TeamForm(request.POST, instance=team)
-    if form.is_valid():
-        updated_team = form.save()
-        logger.info(f"Team '{updated_team.name}' updated by '{request.user.username}'.")
+class TeamUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    """Страница редактирования команды."""
+    model = Team
+    form_class = TeamForm
+    template_name = "users/team_form.html"
+    success_url = reverse_lazy("user_profiles:team_list")
+    success_message = _("Данные команды '%(name)s' обновлены.")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Редактировать команду: %s") % self.object.name
+        context['form_action_text'] = _("Сохранить")
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        logger.info(f"Team '{self.object.name}' updated by '{self.request.user.username}'.")
         # Добавить WebSocket уведомление об обновлении, если нужно
-        messages.success(request, _("Данные команды '%s' обновлены.") % updated_team.name)
-        return JsonResponse({'success': True, 'message': _("Данные команды обновлены.")})
-    else:
-        logger.warning(f"Team update failed for team '{team.name}' by '{request.user.username}'. Errors: {form.errors.get_json_data()}")
-        return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
+        return response
 
-@login_required
-@require_POST # Теперь декоратор импортирован
-def delete_team(request, pk):
-    team = get_object_or_404(Team, pk=pk)
-    team_name = team.name
-    team_id = team.id
-    team.delete()
-    logger.info(f"Team '{team_name}' (ID: {team_id}) deleted by '{request.user.username}'.")
-    try:
-        async_to_sync(channel_layer.group_send)(
-            "teams_list",
-            {"type": "team_update", "message": {"action": "delete", "id": team_id}}
-        )
-    except Exception as e:
-        logger.error(f"Failed to send team deletion WebSocket notification: {e}")
-    messages.success(request, _("Команда '%s' удалена!") % team_name)
-    return JsonResponse({'success': True, 'message': _("Команда удалена.")})
+class TeamDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
+    """Страница подтверждения удаления команды."""
+    model = Team
+    template_name = "users/team_confirm_delete.html" # Шаблон подтверждения
+    success_url = reverse_lazy("user_profiles:team_list")
+    success_message = _("Команда удалена!")
 
-# Импортируем нужную форму Login
-from tasks.forms import LoginForm
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Удалить команду: %s") % self.object.name
+        return context
+
+    def form_valid(self, form):
+        team_name = self.object.name
+        team_id = self.object.id
+        logger.info(f"Team '{team_name}' (ID: {team_id}) deleted by '{self.request.user.username}'.")
+        response = super().form_valid(form)
+        try:
+            async_to_sync(channel_layer.group_send)(
+                "teams_list",
+                {"type": "team_update", "message": {"action": "delete", "id": team_id}}
+            )
+        except Exception as e:
+            logger.error(f"Failed to send team deletion WebSocket notification: {e}")
+        return response

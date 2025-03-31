@@ -15,7 +15,7 @@ router.register(r'photos', api.TaskPhotoViewSet, basename='photo-api')
 urlpatterns = [
     # API endpoints (DRF router + custom suggestion endpoint)
     path('api/', include(router.urls)),
-    path('api/search-suggestions/', api.SearchSuggestionsView.as_view(), name='search-suggestions-api'), # New endpoint
+    path('api/search-suggestions/', api.SearchSuggestionsView.as_view(), name='search-suggestions-api'),
 
     # Project URLs
     path('projects/', project.ProjectListView.as_view(), name='project_list'),

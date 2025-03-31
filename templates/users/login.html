@@ -1,42 +1,95 @@
-{% comment %} {% extends 'base.html' %} {% endcomment %}
-{% load i18n %}
-{% load crispy_forms_tags %}
-{% load static %}
-{% include "includes/messages.html" %}
-<form method="POST" action="{% url 'user_profiles:base' %}">
-    {% csrf_token %}
-    <section class="bg-gray-100">
-        <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-            <a href="/" class="flex items-center mb-6 text-2xl font-semibold text-gray-900 ">
-                <img src="{% static 'img/logo.png' %}" class="w-10 flex-none">
-                <strong class="capitalize ml-1 flex-1">Sphinx</strong>
-            </a>
-            <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:border-gray-700">
-                <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                    <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
-                        {% trans "Sign in to your account" %}
-                    </h1>
-                    <form class="space-y-4 md:space-y-6" action="#">
-                        <div>
-                            <label for="username" class="block mb-2 text-sm font-medium text-gray-900 ">{% trans "Your username" %}</label>
-                            <input type="username" name="username" id="username" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5" placeholder="{% trans 'puppetmaster' %}" required="">
-                        </div>
-                        <div>
-                            <label for="password" class="block mb-2 text-sm font-medium text-gray-900 ">{% trans "Password" %}</label>
-                            <input type="password" name="password" id="password" placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-teal-600 focus:border-teal-600 block w-full p-2.5" required="">
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <a href="#" class="text-sm font-medium text-teal-600 hover:underline dark:text-teal-500">{% trans "Forgot password?" %}</a>
-                        </div>
-                        <button type="submit" class="w-full text-white bg-teal-600 hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-teal-600 dark:hover:bg-teal-700 dark:focus:ring-teal-800">
-                            {% trans "Sign in" %}
-                        </button>
-                        <!-- <p class="text-sm font-light text-gray-500 dark:text-gray-400">
-                            {% trans "Don’t have an account yet?" %} <a href="#" class="font-medium text-teal-600 hover:underline dark:text-teal-500">{% trans "Sign up" %}</a>
-                        </p> -->
-                    </form>
-                </div>
-            </div>
+{% load i18n static %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" class="h-full">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="{% trans "Sphinx - Task Management System - Login" %}">
+    <link rel="shortcut icon" href="{% static 'img/fav.png' %}" type="image/x-icon">
+
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://unpkg.com">
+
+    <script src="https://cdn.tailwindcss.com/"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { dark: { 50: '#f9f9f9', 100: '#f2f2f2', 200: '#e5e5e5', 300: '#d1d1d1', 400: '#b3b3b3', 500: '#8e8e93', 600: '#636366', 700: '#48484a', 800: '#3a3a3c', 900: '#2c2c2e', 950: '#1c1c1e', }, ios: { blue: '#0a84ff', green: '#30d158', indigo: '#5e5ce6', orange: '#ff9f0a', pink: '#ff375f', purple: '#bf5af2', red: '#ff453a', teal: '#64d2ff', yellow: '#ffd60a', } } } } }
+
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+
+    <title>{% trans "Вход" %} | Sphinx</title>
+</head>
+<body class="h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-dark-900 px-4 py-12 sm:px-6 lg:px-8">
+
+    <button id="darkModeToggle" aria-label="{% trans "Переключить тему" %}" class="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-white dark:bg-dark-800 shadow-lg flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700 transition-all">
+        <i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:block"></i>
+    </button>
+
+    <div class="max-w-md w-full space-y-6 bg-white dark:bg-dark-800 p-6 sm:p-8 md:p-10 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-700">
+        <div>
+            <img class="mx-auto h-12 w-auto" src="{% static 'img/logo.png' %}" alt="{% trans "Sphinx Логотип" %}">
+            <h2 class="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {% trans "Вход в аккаунт" %}
+            </h2>
         </div>
-    </section>
-</form>
+
+        <form class="mt-8 space-y-6" action="{% url 'user_profiles:base' %}" method="post">
+             {% csrf_token %}
+             <input type="hidden" name="next" value="{{ next }}">
+
+             <div>
+                 <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                     {{ form.username.label_tag }}
+                 </label>
+                 <div class="mt-1">
+                     <input type="{{ form.username.field.widget.input_type }}"
+                            name="{{ form.username.name }}"
+                            autocomplete="username"
+                            required
+                            id="{{ form.username.id_for_label }}"
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500 dark:focus:ring-ios-blue dark:focus:border-ios-blue sm:text-sm"
+                            placeholder="{% trans "Имя пользователя или Email" %}">
+                 </div>
+             </div>
+
+             <div>
+                 <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                     {{ form.password.label_tag }}
+                 </label>
+                 <div class="mt-1">
+                      <input type="{{ form.password.field.widget.input_type }}"
+                            name="{{ form.password.name }}"
+                            autocomplete="current-password"
+                            required
+                            id="{{ form.password.id_for_label }}"
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500 dark:focus:ring-ios-blue dark:focus:border-ios-blue sm:text-sm"
+                            placeholder="{% trans "••••••••" %}">
+                 </div>
+             </div>
+
+             <div class="pt-2">
+                 <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition duration-150 ease-in-out">
+                     {% trans 'Войти' %}
+                 </button>
+             </div>
+        </form>
+
+         <div class="text-sm text-center">
+            <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-ios-blue dark:hover:text-blue-400">
+                {% trans "Забыли пароль?" %}
+            </a>
+        </div>
+    </div>
+
+    <script src="{% static 'js/main.js' %}" defer></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</body>
+</html>

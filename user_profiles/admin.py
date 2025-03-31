@@ -49,7 +49,7 @@ class UserAdmin(BaseUserAdmin):
     # Add custom fields to the fieldsets
     # Extend the default fieldsets
     fieldsets = BaseUserAdmin.fieldsets + (
-        (_('Дополнительная информация'), {'fields': ('phone_number', 'job_title', 'department', 'image')}),
+        (_('Дополнительная информация'), {'fields': ('phone_number', 'job_title', 'department', 'image', 'settings')}),
     )
     # Add custom fields to the add form fieldsets as well
     add_fieldsets = BaseUserAdmin.add_fieldsets + (

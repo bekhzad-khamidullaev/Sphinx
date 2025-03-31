@@ -1,71 +1,70 @@
-{% extends 'list_base.html' %}
-{% load i18n %}
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "Категории Задач" %}{% endblock %}
 
 {% block list_title %}
-    <h2 class="text-lg font-semibold text-gray-900 text-center">{% trans 'Категории задач' %}</h2>
+<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
+    {% trans 'Категории Задач' %}
+</h1>
 {% endblock %}
 
 {% block list_actions %}
-    <a href="{% url 'tasks:create_category' %}"
-       class="px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-all">
-        ➕ {% trans 'Создать категорию' %}
+{# Кнопка Создать на десктопе #}
+<div class="flex space-x-3 items-center ml-4">
+    <a href="{% url 'tasks:category_create' %}" class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-teal-500 dark:bg-ios-teal text-white hover:bg-teal-600 dark:hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-dark-800 transition-all shadow">
+        <i class="fas fa-folder-plus mr-2"></i> {% trans 'Создать категорию' %}
     </a>
+     {# Можно добавить фильтры #}
+</div>
+{% endblock %}
+
+{% block list_actions_mobile %}
+{# Кнопка Создать на мобильных #}
+<a href="{% url 'tasks:category_create' %}" class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-teal-500 dark:bg-ios-teal text-white hover:bg-teal-600 dark:hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-dark-950 transition-all shadow">
+    <i class="fas fa-folder-plus mr-2"></i> {% trans 'Создать категорию' %}
+</a>
 {% endblock %}
 
 {% block list_content %}
-    <div class="bg-white shadow-md rounded-lg p-3 border border-gray-200">
-        <table class="min-w-full divide-y divide-gray-300 text-sm">
-            <thead class="bg-gray-100 text-gray-700 text-xs uppercase">
-                <tr>
-                    <th class="px-4 py-2 text-left">📌 {% trans 'Название' %}</th>
-                    <th class="px-4 py-2 text-left">📄 {% trans 'Описание' %}</th>
-                    <th class="px-4 py-2 text-right">✏️ {% trans 'Действия' %}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-                {% for category in categories %}
-                    <tr class="hover:bg-gray-50 transition-all">
-                        <td class="px-4 py-2 font-medium text-gray-900">{{ category.name }}</td>
-                        <td class="px-4 py-2 text-gray-600 truncate">{{ category.description|truncatechars:80 }}</td>
-                        <td class="px-4 py-2 flex justify-end space-x-2">
-                            <a href="{% url 'tasks:update_category' category.pk %}"
-                               class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-all text-xs">
-                                ✏️
-                            </a>
-                            <a href="{% url 'tasks:delete_category' category.pk %}"
-                               class="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all text-xs">
-                                ❌
-                            </a>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="3" class="px-4 py-2 text-center text-gray-500">{% trans 'Нет категорий задач.' %}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    
-    <!-- Пагинация -->
-    <div class="mt-4 flex justify-between items-center">
-        <span class="text-sm text-gray-600">
-            {% trans 'Страница' %} {{ categories.number }} {% trans 'из' %} {{ categories.paginator.num_pages }}
-        </span>
-        <div class="flex space-x-1">
-            {% if categories.has_previous %}
-                <a href="?page=1"
-                   class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300">«</a>
-                <a href="?page={{ categories.previous_page_number }}"
-                   class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300">‹</a>
-            {% endif %}
-            <span class="px-3 py-1 bg-gray-300 text-gray-900 rounded-lg text-sm">{{ categories.number }}</span>
-            {% if categories.has_next %}
-                <a href="?page={{ categories.next_page_number }}"
-                   class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300">›</a>
-                <a href="?page={{ categories.paginator.num_pages }}"
-                   class="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300">»</a>
-            {% endif %}
-        </div>
-    </div>
+<div class="mt-6 overflow-x-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+        <thead class="bg-gray-50 dark:bg-dark-700">
+        <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th scope="col" class="px-4 py-3"><i class="fas fa-folder fa-fw mr-1"></i>{% trans 'Название категории' %}</th>
+            <th scope="col" class="px-4 py-3"><i class="fas fa-info-circle fa-fw mr-1"></i>{% trans 'Описание' %}</th>
+            <th scope="col" class="px-4 py-3"><i class="fas fa-tasks fa-fw mr-1"></i>{% trans 'Задач' %}</th>
+            <th scope="col" class="px-4 py-3 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия' %}</th>
+        </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
+            {% for category in object_list %} {# Или context_object_name вашего ListView #}
+            <tr id="category-row-{{ category.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300">
+                <td class="px-4 py-3 whitespace-nowrap font-medium">
+                     {# Ссылка на список задач с фильтром по этой категории #}
+                     <a href="{% url 'tasks:task_list' %}?category={{ category.pk }}" class="text-blue-600 dark:text-blue-400 hover:underline">{{ category.name }}</a>
+                </td>
+                <td class="px-4 py-3">{{ category.description|truncatechars:80|default:"-" }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-center">{{ category.tasks.count }}</td>
+                <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <div class="flex items-center justify-center space-x-2">
+                        <a href="{% url 'tasks:category_update' pk=category.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-600 rounded-full transition-colors focus:outline-none"><i class="fas fa-edit fa-fw"></i></a>
+                        <a href="{% url 'tasks:category_delete' pk=category.pk %}" title="{% trans 'Удалить' %}" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-full transition-colors focus:outline-none"><i class="fas fa-trash fa-fw"></i></a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+                <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400 italic"><i class="fas fa-folder-open fa-2x mb-2 text-gray-400 dark:text-gray-500"></i><br>{% trans 'Категории не найдены.' %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# Пагинация #}
+{% if is_paginated %}
+<div class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm">
+    {% include "includes/pagination.html" with page_obj=page_obj %}
+</div>
+{% endif %}
+
 {% endblock %}

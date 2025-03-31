@@ -1,6 +1,6 @@
 # tasks/models.py
 import logging
-from datetime import timedelta # Добавлен импорт для сигнала
+from datetime import timedelta
 from unidecode import unidecode
 
 from django.conf import settings
@@ -314,6 +314,10 @@ class Task(BaseModel):
             has_perm = is_creator or is_responsible
             if has_perm: logger.debug(f"Perm 'assign_users' granted for task {self.id} to user {user.username} (creator={is_creator}, resp={is_responsible}).")
             return has_perm
+        if permission_type == 'add_comment':
+            has_perm = is_creator or is_participant
+            if has_perm: logger.debug(f"Perm 'add_comment' granted for task {self.id} to user {user.username}.")
+            return has_perm
 
         logger.debug(f"Permission denied for user {user.username} on task {self.id} for action '{permission_type}'. Roles: {user_roles_set}, Creator: {is_creator}")
         return False
@@ -336,6 +340,48 @@ class Task(BaseModel):
         num = self.task_number or f"ID:{self.id}"
         return f"[{num}] {self.title[:60]}"
 
+
+# ==============================================================================
+# Task Comments Model
+# ==============================================================================
+class TaskComment(BaseModel):
+    """Комментарий к задаче."""
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='comments', # Имя для доступа task.comments.all()
+        verbose_name=_("Задача"),
+        db_index=True
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, # Сохраняем коммент, даже если юзер удален
+        related_name='task_comments',
+        verbose_name=_("Автор"),
+        null=True, # Автор может быть null, если пользователь удален
+        blank=False, # Но при создании автор должен быть
+        db_index=True
+    )
+    text = models.TextField(
+        verbose_name=_("Текст комментария"),
+        blank=False # Комментарий не может быть пустым
+    )
+    # created_at, updated_at наследуются от BaseModel
+
+    class Meta:
+        verbose_name = _("Комментарий к задаче")
+        verbose_name_plural = _("Комментарии к задачам")
+        ordering = ['created_at'] # По умолчанию сначала старые
+        indexes = [
+            models.Index(fields=['task']),
+            models.Index(fields=['author']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        author_name = self.author.display_name if self.author else _("Удаленный пользователь")
+        task_display = self.task.task_number or f"ID:{self.task_id}"
+        return f"Комментарий от {author_name} к {task_display} ({self.created_at:%d.%m.%y %H:%M})"
 
 # ------------------------ Task Photos ------------------------
 class TaskPhoto(BaseModel):

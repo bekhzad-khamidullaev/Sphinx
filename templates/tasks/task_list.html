@@ -16,12 +16,17 @@
     <a href="{% url 'tasks:task_create' %}" class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-800 transition-all shadow">
         <i class="fas fa-plus mr-2"></i> {% trans 'Создать задачу' %}
     </a>
-    {# Кнопка переключения вида - JS будет управлять иконкой/текстом #}
-    <button type="button" id="toggleViewBtn" class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-800 transition-all shadow" aria-pressed="false">
-        <i id="viewIcon" class="fas fa-columns mr-2"></i> <span id="viewText">{% trans 'Вид: Канбан' %}</span>
+    <button type="button" id="toggleViewBtn"
+        class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-800 transition-all shadow" aria-pressed="false"
+        aria-pressed="false"
+        data-kanban-text="{% trans 'Вид: Канбан' %}"
+        data-list-text="{% trans 'Вид: Список' %}"
+        >
+    <i id="viewIcon" class="fas fa-columns mr-2"></i>
+    <span id="viewText">{% trans 'Вид: Канбан' %}</span> {# Начальный текст #}
     </button>
-    {# Кнопка управления колонками - JS будет показывать/скрывать в зависимости от вида #}
-    <div id="column-toggle-dropdown" class="relative hidden"> {# Изначально скрыта, JS покажет для Канбана #}
+
+    <div id="column-toggle-dropdown" class="relative hidden">
         <button id="dropdownHoverButton" data-dropdown-toggle="dropdownHover" data-dropdown-trigger="hover" class="flex items-center text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-gray-300 dark:focus:ring-offset-dark-800 font-medium rounded-full text-sm px-4 py-2 text-center inline-flex items-center transition-all shadow" type="button">
             <i class="fas fa-columns mr-2"></i> {% trans 'Колонки' %} <svg class="w-2.5 h-2.5 ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/></svg>
         </button>
@@ -50,8 +55,14 @@
 <a href="{% url 'tasks:task_create' %}" class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-950 transition-all shadow">
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать задачу' %}
 </a>
-<button type="button" id="toggleViewBtnMobile" class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-950 transition-all shadow" aria-pressed="false">
-     <i id="viewIconMobile" class="fas fa-columns mr-2"></i> <span id="viewTextMobile">{% trans 'Канбан' %}</span>
+<button type="button" id="toggleViewBtnMobile"
+    class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-950 transition-all shadow" aria-pressed="false"
+        aria-pressed="false"
+        data-kanban-text="{% trans 'Канбан' %}"
+        data-list-text="{% trans 'Список' %}"
+        >
+     <i id="viewIconMobile" class="fas fa-columns mr-2"></i>
+     <span id="viewTextMobile">{% trans 'Канбан' %}</span>
 </button>
 {% endblock %}
 
@@ -74,7 +85,7 @@
                     <span>{{ status_display_name|default:status }}</span>
                     <span class="task-count bg-gray-300 dark:bg-dark-600 text-gray-700 dark:text-gray-300 rounded-full px-2 py-0.5 text-xs font-mono">{{ task_list|length }}</span>
                 </h3>
-                <div class="kanban-tasks space-y-3 p-3 overflow-y-auto flex-1 min-h-[100px]">
+                <div class="kanban-tasks space-y-3 p-3 overflow-y-auto flex-1 min-h-[500px] max-h-[550px] overflow-x-auto">
                     {% for task in task_list %}
                     <div id="task-{{ task.pk }}"
                             class="kanban-task bg-white dark:bg-dark-700 rounded-lg shadow p-3 cursor-grab transition-shadow duration-200 hover:shadow-lg border border-transparent hover:border-blue-300 dark:hover:border-blue-600"
@@ -203,10 +214,9 @@
 {% endblock %}
 
 {% block scripts %}
-{# Убедитесь, что SortableJS подключен, если используется Канбан #}
+
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-{# Подключаем основной JS файл задач #}
-<script src="{% static 'js/tasks.js' %}" defer></script>
+<!-- <script src="{% static 'js/tasks.js' %}" defer></script> -->
 <script src="{% static 'js/tasks_no_modal.js' %}" defer></script>
 
 {% endblock %}

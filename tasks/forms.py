@@ -5,11 +5,8 @@ from datetime import timedelta
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Row, Field, Submit, HTML
-from crispy_forms.bootstrap import FormActions # Убраны неиспользуемые PrependedText, AppendedText
+from crispy_forms.bootstrap import FormActions
 from django import forms
-# Правильные импорты для Group и базовых форм User
-from django.contrib.auth.models import Group
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm as BaseUserCreationForm
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.forms import modelformset_factory, inlineformset_factory
@@ -18,77 +15,22 @@ from django.utils import timezone
 # Импорты моделей из текущего приложения tasks
 from .models import (
     Task, TaskPhoto, Project, TaskCategory,
-    TaskSubcategory
+    TaskSubcategory, TaskComment
 )
-# Импорты моделей из приложения user_profiles
-from user_profiles.models import User, Team, Department, TaskUserRole
+# Импорты моделей из приложения user_profiles (только то, что нужно для TaskForm)
+from user_profiles.models import User, TaskUserRole # Убрали Team, Department
 
 logger = logging.getLogger(__name__)
 
-# --- Utility function for adding common attributes ---
+# --- Utility function --- (Можно вынести в отдельный utils.py, если используется в нескольких местах)
 def add_common_attrs(field, placeholder=None, input_class="form-control"):
-    """Добавляет CSS класс и placeholder к полю формы, если они еще не заданы в виджете."""
     attrs = field.widget.attrs
     current_classes = attrs.get('class', '')
-    # Добавляем класс только если его нет
     if input_class not in current_classes.split():
         attrs['class'] = f'{current_classes} {input_class}'.strip()
-    # Добавляем placeholder только если он не задан
     if placeholder and 'placeholder' not in attrs:
         attrs["placeholder"] = placeholder
-    # Обновляем атрибуты виджета
     field.widget.attrs.update(attrs)
-
-# ==============================================================================
-# Form for Team
-# ==============================================================================
-class TeamForm(forms.ModelForm):
-    members = forms.ModelMultipleChoiceField(
-        queryset=User.objects.filter(is_active=True).order_by('username'),
-        widget=forms.SelectMultiple(attrs={'class': 'select2-multiple', 'data-placeholder': _("Выберите участников...")}), # Добавлен placeholder
-        required=False,
-        label=_("Участники")
-    )
-    team_leader = forms.ModelChoiceField(
-        queryset=User.objects.filter(is_active=True).order_by('username'),
-        required=False, # Лидер может быть не выбран
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите лидера...")}),
-        label=_("Лидер команды")
-    )
-    department = forms.ModelChoiceField(
-        queryset=Department.objects.all().order_by('name'),
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите отдел...")}),
-        label=_("Отдел")
-    )
-
-    class Meta:
-        model = Team
-        fields = ["name", "team_leader", "members", "department", "description"]
-        widgets = {
-            'name': forms.TextInput(attrs={'placeholder': _("Название команды")}),
-            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': _("Описание команды (опционально)")}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Применяем add_common_attrs только к полям без кастомных виджетов в Meta или определенных явно
-        # add_common_attrs(self.fields["name"]) # Уже есть placeholder в виджете
-        # add_common_attrs(self.fields["description"]) # Уже есть placeholder и rows в виджете
-
-        self.helper = FormHelper(self)
-        self.helper.form_method = 'post'
-        self.helper.form_tag = False # Тег <form> будет в шаблоне
-        self.helper.disable_csrf = True # CSRF токен будет в шаблоне
-        self.helper.layout = Layout(
-            Field("name", css_class="mb-3"),
-            Field("team_leader", css_class="mb-3"),
-            Field("department", css_class="mb-3"),
-            Field("members", css_class="mb-3"),
-            Field("description", css_class="mb-3"),
-            # Кнопки лучше добавлять в шаблоне
-            # FormActions( Submit("submit", _("Сохранить команду"), css_class="btn btn-primary"),)
-        )
 
 # ==============================================================================
 # Form for Project
@@ -106,7 +48,6 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Стили заданы через Meta.widgets
         self.helper = FormHelper(self)
         self.helper.form_method = 'post'
         self.helper.form_tag = False
@@ -117,158 +58,10 @@ class ProjectForm(forms.ModelForm):
             Row(
                  Field("start_date", wrapper_class="col-md-6"),
                  Field("end_date", wrapper_class="col-md-6"),
-                 css_class="mb-3" # Отступ для строки
+                 css_class="mb-3"
             ),
-            # Кнопки лучше добавлять в шаблоне
-            # FormActions( Submit("submit", _("Сохранить проект"), css_class="btn btn-primary"),)
+            # Кнопки добавляются в шаблоне
         )
-
-# ==============================================================================
-# Form for User Creation
-# ==============================================================================
-class UserCreateForm(BaseUserCreationForm):
-    email = forms.EmailField(required=True, label=_("Email"), widget=forms.EmailInput(attrs={'placeholder': 'your@email.com'}))
-    first_name = forms.CharField(max_length=150, required=False, label=_("Имя"))
-    last_name = forms.CharField(max_length=150, required=False, label=_("Фамилия"))
-    phone_number = forms.CharField(max_length=20, required=False, label=_("Номер телефона"))
-    job_title = forms.CharField(max_length=100, required=False, label=_("Должность"))
-    department = forms.ModelChoiceField(
-        queryset=Department.objects.all().order_by('name'),
-        required=False,
-        label=_("Отдел"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите отдел...")})
-        )
-    image = forms.ImageField(required=False, label=_("Аватар"), widget=forms.ClearableFileInput)
-
-    class Meta(BaseUserCreationForm.Meta):
-        model = User
-        fields = BaseUserCreationForm.Meta.fields + (
-            'email', 'first_name', 'last_name', 'phone_number',
-            'job_title', 'department', 'image'
-            )
-        # Можно задать виджеты здесь, если нужно
-        # widgets = { 'username': forms.TextInput(attrs={'placeholder': _("Имя пользователя (логин)")}) }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Применяем стили к полям, у которых нет явного виджета в Meta или определении
-        for field_name, field in self.fields.items():
-             if 'password' in field_name:
-                 field.widget.attrs['placeholder'] = _("Пароль")
-             elif field_name == 'username':
-                 field.widget.attrs['placeholder'] = _("Имя пользователя (логин)")
-             # Применяем add_common_attrs, если нет кастомного виджета
-             if field_name not in self.Meta.widgets and not isinstance(field.widget, (forms.PasswordInput, forms.EmailInput, forms.ClearableFileInput, forms.Select)):
-                 add_common_attrs(field)
-             # Устанавливаем класс для select виджета department
-             elif field_name == 'department':
-                 field.widget.attrs['class'] = 'form-select select2-single'
-
-
-        self.helper = FormHelper(self)
-        self.helper.form_method = 'post'
-        self.helper.form_tag = False
-        self.helper.disable_csrf = True
-        self.helper.layout = Layout(
-             Fieldset(
-                _("Учетные данные"),
-                Field("username"),
-                Field("email"),
-                Field("password"),
-                Field("password_confirmation"),
-             ),
-             Fieldset(
-                 _("Личная информация"),
-                Field("first_name"),
-                Field("last_name"),
-                Field("phone_number"),
-                Field("job_title"),
-                Field("department"),
-                Field("image"),
-             )
-             # Кнопки лучше добавлять в шаблоне
-             # FormActions( Submit("submit", _("Создать пользователя"), css_class="btn btn-primary"), )
-        )
-
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if email and User.objects.filter(email__iexact=email).exists():
-            raise ValidationError(_("Пользователь с таким email уже существует."))
-        return email
-
-# ==============================================================================
-# Form for User Update
-# ==============================================================================
-class UserUpdateForm(forms.ModelForm):
-    groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all().order_by('name'), # Используем импортированный Group
-        required=False,
-        widget=forms.SelectMultiple(attrs={'class': 'select2-multiple', 'data-placeholder': _("Выберите группы...")}),
-        label=_("Группы прав")
-    )
-    department = forms.ModelChoiceField(
-        queryset=Department.objects.all().order_by('name'),
-        required=False,
-        label=_("Отдел"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите отдел...")})
-    )
-
-    class Meta:
-        model = User
-        fields = [
-            'username', 'email', 'first_name', 'last_name', 'phone_number',
-            'job_title', 'department', 'image', 'is_active', 'is_staff', 'groups'
-        ]
-        # Определяем виджеты здесь для единообразия
-        widgets = {
-            'username': forms.TextInput(attrs={'placeholder': _("Имя пользователя (логин)")}),
-            'email': forms.EmailInput(attrs={'placeholder': 'your@email.com'}),
-            'image': forms.ClearableFileInput(),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}), # Класс для чекбокса
-            'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}), # Класс для чекбокса
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Применяем add_common_attrs к полям без явного виджета в Meta или определении
-        for field_name, field in self.fields.items():
-            if field_name not in self.Meta.widgets and not isinstance(field, (forms.ModelMultipleChoiceField, forms.ModelChoiceField)):
-                 add_common_attrs(field)
-
-        self.helper = FormHelper(self)
-        self.helper.form_method = 'post'
-        self.helper.form_tag = False
-        self.helper.disable_csrf = True
-        self.helper.layout = Layout(
-             Fieldset(
-                 _("Основная информация"),
-                 Row( Field('username', wrapper_class='col-md-6'), Field('email', wrapper_class='col-md-6'), css_class='mb-3'),
-                 Row( Field('first_name', wrapper_class='col-md-6'), Field('last_name', wrapper_class='col-md-6'), css_class='mb-3'),
-                 Row( Field('phone_number', wrapper_class='col-md-6'), Field('job_title', wrapper_class='col-md-6'), css_class='mb-3'),
-                 Field('department', css_class='mb-3'),
-                 Field('image', css_class='mb-3'),
-             ),
-             Fieldset(
-                  _("Права и статус"),
-                 Row(
-                     # Оборачиваем чекбоксы для стилизации Tailwind/Bootstrap
-                     Div(Field('is_active'), css_class='form-check form-switch mb-2 col-md-6'),
-                     Div(Field('is_staff'), css_class='form-check form-switch mb-2 col-md-6'),
-                     css_class='mb-3'
-                 ),
-                 Field('groups', css_class='mb-3'),
-             ),
-             # Кнопки лучше добавлять в шаблоне
-             # FormActions( Submit("submit", _("Сохранить изменения"), css_class="btn btn-primary"),)
-        )
-
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        # Проверяем email только если он был изменен
-        if email and self.instance and self.instance.pk and email != self.instance.email:
-            if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
-                raise ValidationError(_("Пользователь с таким email уже существует."))
-        return email
 
 # ==============================================================================
 # Form for Task Category
@@ -285,21 +78,13 @@ class TaskCategoryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.helper.form_method = 'post'
-        self.helper.form_tag = False
-        self.helper.disable_csrf = True
-        self.helper.layout = Layout(
-            Field("name", css_class="mb-3"),
-            Field("description", css_class="mb-3"),
-            # Кнопки лучше добавлять в шаблоне
-            # FormActions( Submit("submit", _("Сохранить категорию"), css_class="btn btn-primary"),)
-        )
+        self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
+        self.helper.layout = Layout( Field("name", css_class="mb-3"), Field("description", css_class="mb-3"), )
 
 # ==============================================================================
 # Form for Task Subcategory
 # ==============================================================================
 class TaskSubcategoryForm(forms.ModelForm):
-    # Явно определяем поле категории, чтобы использовать Select2
     category = forms.ModelChoiceField(
         queryset=TaskCategory.objects.all().order_by('name'),
         label=_('Категория'),
@@ -307,7 +92,7 @@ class TaskSubcategoryForm(forms.ModelForm):
     )
     class Meta:
         model = TaskSubcategory
-        fields = ["category", "name", "description"] # 'category' теперь определено выше
+        fields = ["category", "name", "description"]
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': _("Название подкатегории")}),
             'description': forms.Textarea(attrs={'rows': 3, 'placeholder': _("Описание (опционально)")}),
@@ -315,72 +100,39 @@ class TaskSubcategoryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # add_common_attrs к name и description не нужен, т.к. есть placeholder
         self.helper = FormHelper(self)
-        self.helper.form_method = 'post'
-        self.helper.form_tag = False
-        self.helper.disable_csrf = True
-        self.helper.layout = Layout(
-            Field("category", css_class="mb-3"),
-            Field("name", css_class="mb-3"),
-            Field("description", css_class="mb-3"),
-            # Кнопки лучше добавлять в шаблоне
-            # FormActions( Submit("submit", _("Сохранить подкатегорию"), css_class="btn btn-primary"), )
-        )
+        self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
+        self.helper.layout = Layout( Field("category", css_class="mb-3"), Field("name", css_class="mb-3"), Field("description", css_class="mb-3"),)
 
 # ==============================================================================
 # Form for Task
 # ==============================================================================
 class TaskForm(forms.ModelForm):
     project = forms.ModelChoiceField(
-         queryset=Project.objects.all().order_by('name'),
-         label=_("Проект"),
-         widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите проект...")})
-     )
+         queryset=Project.objects.all().order_by('name'), label=_("Проект"),
+         widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите проект...")}))
     category = forms.ModelChoiceField(
-        queryset=TaskCategory.objects.all().order_by('name'),
-        required=False,
-        label=_("Категория"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите категорию (опционально)..."), 'id': 'id_task_category'}) # Добавлен ID для JS
-     )
+        queryset=TaskCategory.objects.all().order_by('name'), required=False, label=_("Категория"),
+        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите категорию (опционально)..."), 'id': 'id_task_category'}))
     subcategory = forms.ModelChoiceField(
-        queryset=TaskSubcategory.objects.none(), # Заполняется динамически JS
-        required=False,
-        label=_("Подкатегория"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Сначала выберите категорию..."), 'id': 'id_task_subcategory'}) # Добавлен ID для JS
-     )
+        queryset=TaskSubcategory.objects.none(), required=False, label=_("Подкатегория"),
+        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Сначала выберите категорию..."), 'id': 'id_task_subcategory'}))
     priority = forms.ChoiceField(
-         choices=Task.TaskPriority.choices,
-         label=_("Приоритет"),
-         initial=Task.TaskPriority.MEDIUM, # Устанавливаем дефолт явно
-         widget=forms.Select(attrs={'class': 'form-select'})
-     )
+         choices=Task.TaskPriority.choices, label=_("Приоритет"), initial=Task.TaskPriority.MEDIUM,
+         widget=forms.Select(attrs={'class': 'form-select'}))
     responsible_user = forms.ModelChoiceField(
-        queryset=User.objects.filter(is_active=True).order_by('username'),
-        required=False,
-        label=_("Ответственный"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите ответственного...")})
-    )
+        queryset=User.objects.filter(is_active=True).order_by('username'), required=False, label=_("Ответственный"),
+        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите ответственного...")}))
     executors = forms.ModelMultipleChoiceField(
-        queryset=User.objects.filter(is_active=True).order_by('username'),
-        required=False,
-        label=_("Исполнители"),
-        widget=forms.SelectMultiple(attrs={'class': 'select2-multiple', 'data-placeholder': _("Выберите исполнителей...")})
-    )
+        queryset=User.objects.filter(is_active=True).order_by('username'), required=False, label=_("Исполнители"),
+        widget=forms.SelectMultiple(attrs={'class': 'select2-multiple', 'data-placeholder': _("Выберите исполнителей...")}))
     watchers = forms.ModelMultipleChoiceField(
-        queryset=User.objects.filter(is_active=True).order_by('username'),
-        required=False,
-        label=_("Наблюдатели"),
-        widget=forms.SelectMultiple(attrs={'class': 'select2-multiple', 'data-placeholder': _("Выберите наблюдателей...")})
-    )
+        queryset=User.objects.filter(is_active=True).order_by('username'), required=False, label=_("Наблюдатели"),
+        widget=forms.SelectMultiple(attrs={'class': 'select2-multiple', 'data-placeholder': _("Выберите наблюдателей...")}))
 
     class Meta:
         model = Task
-        # Исключаем поля, определенные явно выше, и авто-поля
-        fields = [
-            "title", "description",
-            "deadline", "start_date", "estimated_time",
-        ]
+        fields = [ "title", "description", "deadline", "start_date", "estimated_time", ]
         widgets = {
             "title": forms.TextInput(attrs={'placeholder': _("Краткое и понятное название задачи")}),
             "description": forms.Textarea(attrs={'rows': 5, 'placeholder': _("Подробное описание, шаги выполнения, ожидаемый результат...")}),
@@ -388,89 +140,37 @@ class TaskForm(forms.ModelForm):
             "start_date": forms.DateTimeInput(attrs={"type": "datetime-local", 'class': 'form-control'}),
             "estimated_time": forms.TextInput(attrs={'placeholder': _('Напр., 1d 2h 30m или 45m'), 'class': 'form-control'}),
         }
-        # Указываем лейблы здесь, если они отличаются от стандартных
-        labels = {
-            'title': _('Название задачи'),
-            'description': _('Описание задачи'),
-            'deadline': _('Крайний срок'),
-            'start_date': _('Дата начала'),
-            'estimated_time': _('Планируемое время'),
-        }
+        labels = { 'title': _('Название задачи'), 'description': _('Описание задачи'), 'deadline': _('Крайний срок'), 'start_date': _('Дата начала'), 'estimated_time': _('Планируемое время'), }
 
     def __init__(self, *args, **kwargs):
-        instance = kwargs.get('instance')
-        initial_data = kwargs.get('initial', {}) # Получаем initial, если он передан
-
-        # Устанавливаем начальные роли, если редактируем задачу
+        instance = kwargs.get('instance'); initial_data = kwargs.get('initial', {})
         if instance and instance.pk:
             try:
                  roles_data = TaskUserRole.objects.filter(task=instance).values('user_id', 'role')
                  resp_id = next((r['user_id'] for r in roles_data if r['role'] == TaskUserRole.RoleChoices.RESPONSIBLE), None)
-                 # Записываем в initial_data, чтобы не перезаписать другие initial значения
-                 initial_data['responsible_user'] = resp_id
-                 initial_data['executors'] = [r['user_id'] for r in roles_data if r['role'] == TaskUserRole.RoleChoices.EXECUTOR]
-                 initial_data['watchers'] = [r['user_id'] for r in roles_data if r['role'] == TaskUserRole.RoleChoices.WATCHER]
-                 kwargs['initial'] = initial_data # Обновляем kwargs['initial']
+                 initial_data['responsible_user'] = resp_id; initial_data['executors'] = [r['user_id'] for r in roles_data if r['role'] == TaskUserRole.RoleChoices.EXECUTOR]; initial_data['watchers'] = [r['user_id'] for r in roles_data if r['role'] == TaskUserRole.RoleChoices.WATCHER]
+                 kwargs['initial'] = initial_data
                  logger.debug(f"TaskForm Init: Initial roles set for task {instance.pk}: {initial_data}")
-            except Exception as e:
-                 logger.error(f"Error fetching initial roles for task {instance.pk}: {e}")
-
-        super().__init__(*args, **kwargs) # Вызываем init родителя
-
-        # Настройка FormHelper
-        self.helper = FormHelper(self)
-        self.helper.form_method = 'post'
-        self.helper.form_tag = False
-        self.helper.disable_csrf = True
+            except Exception as e: logger.error(f"Error fetching initial roles for task {instance.pk}: {e}")
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self); self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
         self.helper.layout = Layout(
-            Fieldset(
-                _('Основная информация'),
-                Field('project'),
-                Field('title'),
-                Field('description'),
-                Row( Field('category', wrapper_class='col-md-6'), Field('subcategory', wrapper_class='col-md-6'), css_class='mb-3'),
-                 css_class='border-b border-gray-200 dark:border-dark-600 pb-4 mb-4'
-            ),
-            Fieldset(
-                _('Участники'),
-                Field('responsible_user', css_class='mb-3'), # Добавляем отступы
-                Field('executors', css_class='mb-3'),
-                Field('watchers', css_class='mb-3'),
-                 css_class='border-b border-gray-200 dark:border-dark-600 pb-4 mb-4'
-            ),
-             Fieldset(
-                _('Сроки и планирование'),
-                Row( Field('priority', wrapper_class='col-md-4'), Field('start_date', wrapper_class='col-md-4'), Field('deadline', wrapper_class='col-md-4'), css_class='mb-3'),
-                 Row( Field('estimated_time', wrapper_class='col-md-4'), HTML('<div class="col-md-8"></div>'), css_class='mb-3')
-            )
-            # Кнопки рендерятся в шаблоне
-        )
-
-        # Динамические подкатегории
+            Fieldset( _('Основная информация'), Field('project'), Field('title'), Field('description'), Row( Field('category', wrapper_class='col-md-6'), Field('subcategory', wrapper_class='col-md-6'), css_class='mb-3'), css_class='border-b border-gray-200 dark:border-dark-600 pb-4 mb-4' ),
+            Fieldset( _('Участники'), Field('responsible_user', css_class='mb-3'), Field('executors', css_class='mb-3'), Field('watchers', css_class='mb-3'), css_class='border-b border-gray-200 dark:border-dark-600 pb-4 mb-4' ),
+            Fieldset( _('Сроки и планирование'), Row( Field('priority', wrapper_class='col-md-4'), Field('start_date', wrapper_class='col-md-4'), Field('deadline', wrapper_class='col-md-4'), css_class='mb-3'), Row( Field('estimated_time', wrapper_class='col-md-4'), HTML('<div class="col-md-8"></div>'), css_class='mb-3')))
         category_id = None
-        if 'category' in self.data:
-             category_id = self.data.get('category')
-        elif instance and instance.category_id:
-             category_id = instance.category_id
-
+        if 'category' in self.data: category_id = self.data.get('category')
+        elif instance and instance.category_id: category_id = instance.category_id
         if category_id:
-             try:
-                 self.fields['subcategory'].queryset = TaskSubcategory.objects.filter(category_id=category_id).order_by('name')
-                 self.fields['subcategory'].widget.attrs.pop('disabled', None) # Включаем поле
-             except (ValueError, TypeError):
-                 self.fields['subcategory'].queryset = TaskSubcategory.objects.none()
-                 self.fields['subcategory'].widget.attrs['disabled'] = True
-        else:
-             self.fields['subcategory'].queryset = TaskSubcategory.objects.none()
-             self.fields['subcategory'].widget.attrs['disabled'] = True
-
+             try: self.fields['subcategory'].queryset = TaskSubcategory.objects.filter(category_id=category_id).order_by('name'); self.fields['subcategory'].widget.attrs.pop('disabled', None)
+             except (ValueError, TypeError): self.fields['subcategory'].queryset = TaskSubcategory.objects.none(); self.fields['subcategory'].widget.attrs['disabled'] = True
+        else: self.fields['subcategory'].queryset = TaskSubcategory.objects.none(); self.fields['subcategory'].widget.attrs['disabled'] = True
 
     def clean_estimated_time(self):
-        duration_str = self.cleaned_data.get('estimated_time')
+        duration_str = self.cleaned_data.get('estimated_time');
         if isinstance(duration_str, timedelta): return duration_str
         if not duration_str: return None
-        pattern = re.compile(r'((?P<days>\d+)\s*d)?\s*((?P<hours>\d+)\s*h)?\s*((?P<minutes>\d+)\s*m)?')
-        match = pattern.match(duration_str.lower().strip())
+        pattern = re.compile(r'((?P<days>\d+)\s*d)?\s*((?P<hours>\d+)\s*h)?\s*((?P<minutes>\d+)\s*m)?'); match = pattern.match(duration_str.lower().strip())
         if not match or not match.group(0):
              if duration_str.isdigit():
                  minutes = int(duration_str)
@@ -481,22 +181,15 @@ class TaskForm(forms.ModelForm):
         if parts.get('hours'): time_params['hours'] = int(parts['hours'])
         if parts.get('minutes'): time_params['minutes'] = int(parts['minutes'])
         if not time_params: raise ValidationError(_("Укажите хотя бы одно значение времени (d, h, m)."))
-        try:
-            duration = timedelta(**time_params);
-            if duration.total_seconds() <= 0: raise ValidationError(_("Оценка времени должна быть положительной."))
-            return duration
+        try: duration = timedelta(**time_params); assert duration.total_seconds() > 0 or ValidationError(_("Оценка времени должна быть положительной.")); return duration
         except ValueError: raise ValidationError(_("Некорректные значения времени."))
 
     def save(self, commit=True):
-        task = super().save(commit=False)
-        # created_by устанавливается в представлении перед вызовом save()
-        if commit:
-            task.save()
-            self._save_roles(task)
+        task = super().save(commit=False);
+        if commit: task.save(); self._save_roles(task)
         return task
 
     def _save_roles(self, task):
-        # ... (Код сохранения ролей без изменений) ...
         TaskUserRole.objects.filter( task=task, role__in=[TaskUserRole.RoleChoices.RESPONSIBLE, TaskUserRole.RoleChoices.EXECUTOR, TaskUserRole.RoleChoices.WATCHER] ).delete()
         roles_to_create = []; responsible = self.cleaned_data.get('responsible_user'); executors = self.cleaned_data.get('executors', User.objects.none()); watchers = self.cleaned_data.get('watchers', User.objects.none()); primary_users = set()
         if responsible: roles_to_create.append(TaskUserRole(task=task, user=responsible, role=TaskUserRole.RoleChoices.RESPONSIBLE)); primary_users.add(responsible)
@@ -509,7 +202,6 @@ class TaskForm(forms.ModelForm):
             try: TaskUserRole.objects.bulk_create(roles_to_create, ignore_conflicts=True); logger.info(f"Saved roles for task {task.id}. Count: {len(roles_to_create)}")
             except Exception as e: logger.error(f"Error saving roles for task {task.id}: {e}")
 
-
 # ==============================================================================
 # Form for Task Photo
 # ==============================================================================
@@ -519,32 +211,32 @@ class TaskPhotoForm(forms.ModelForm):
         fields = ["photo", "description"]
         widgets = {
              'description': forms.Textarea(attrs={'rows': 2, 'placeholder': _("Краткое описание фото (опционально)")}),
-             'photo': forms.ClearableFileInput(attrs={'class': 'form-control'}), # Используем стандартный виджет Django
+             'photo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+        labels = { 'photo': _('Файл фото'), 'description': _('Описание фото'), }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+# ==============================================================================
+# Form for Task Comment
+# ==============================================================================
+class TaskCommentForm(forms.ModelForm):
+    class Meta:
+        model = TaskComment
+        fields = ['text']
+        widgets = {
+            'text': forms.Textarea(
+
+                attrs={
+                    'rows': 3,
+                    'placeholder': _("Введите ваш комментарий..."),
+                    'class': 'form-textarea mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-dark-600 dark:border-dark-500 dark:text-gray-200 sm:text-sm',
+                    'aria-label': _("Текст комментария") # Добавляем aria-label СЮДА
+                }
+                # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+            )
         }
         labels = {
-             'photo': _('Файл фото'),
-             'description': _('Описание фото'),
+            'text': '', # Скрываем стандартный label
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Стили заданы в Meta.widgets
-
-# ==============================================================================
-# Form for Login
-# ==============================================================================
-class LoginForm(AuthenticationForm):
-    username = forms.CharField(widget=forms.TextInput(attrs={'placeholder': _('Имя пользователя или Email'), 'class': 'form-control'}))
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': _('Пароль'), 'class': 'form-control'}))
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        self.helper.form_tag = False # Тег <form> будет в шаблоне
-        self.helper.disable_csrf = True # CSRF токен будет в шаблоне
-        self.helper.layout = Layout(
-            Field("username", css_class="mb-3"),
-            Field("password", css_class="mb-3"),
-            # Кнопка рендерится в шаблоне users/login.html
-            # FormActions( Submit("submit", _("Войти"), css_class="btn btn-primary w-100"), )
-        )

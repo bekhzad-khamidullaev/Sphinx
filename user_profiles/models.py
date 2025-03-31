@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.db.models import JSONField
 
 # Use django-mptt for efficient hierarchical structures (optional but recommended)
 # from mptt.models import MPTTModel, TreeForeignKey
@@ -66,7 +67,7 @@ class User(AbstractUser):
     # USERNAME_FIELD = 'email'
     # REQUIRED_FIELDS = ['username'] # Keep username required if not using email
 
-    # Add fields like phone number, job title, etc.
+    settings = JSONField(_("Настройки пользователя"), default=dict, blank=True)
     email = models.EmailField(_('email address'), unique=True) # Ensure email is unique
     phone_number = models.CharField(_("Номер телефона"), max_length=20, blank=True, null=True)
     job_title = models.CharField(_("Должность"), max_length=100, blank=True, null=True)
@@ -119,22 +120,21 @@ class User(AbstractUser):
          """Returns full name or username."""
          return self.get_full_name() or self.username
 
-# Remove UserProfile if department and other fields are directly on User model
-# class UserProfile(models.Model):
-#     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_profile')
-#     # Move department here if UserProfile is kept
-#     # department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
-#     team = models.ForeignKey('user_profiles.Team', on_delete=models.SET_NULL, null=True, blank=True, related_name="member_profiles") # Keep if team membership is managed via profile
+    # --- Метод для получения конкретной настройки ---
+    def get_setting(self, key, default=None):
+        """Возвращает значение настройки по ключу или значение по умолчанию."""
+        # Обеспечиваем, что self.settings это словарь
+        if not isinstance(self.settings, dict):
+            self.settings = {} # Исправляем, если тип некорректный
+        return self.settings.get(key, default)
 
-#     def __str__(self):
-#         return self.user.username
-
-# @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-# def create_or_update_user_profile(sender, instance, created, **kwargs):
-#     """Ensure UserProfile exists for every User."""
-#     if created:
-#         UserProfile.objects.create(user=instance)
-#     instance.user_profile.save()
+    # --- Метод для установки конкретной настройки ---
+    def set_setting(self, key, value):
+        """Устанавливает значение настройки и сохраняет пользователя."""
+        if not isinstance(self.settings, dict):
+            self.settings = {}
+        self.settings[key] = value
+        self.save(update_fields=['settings'])
 
 
 # ------------------------ Teams ------------------------

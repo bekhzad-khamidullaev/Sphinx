@@ -17,4 +17,8 @@ websocket_urlpatterns = [
 
     # User WebSocket connection
     re_path(r'ws/users/$', consumers.UserConsumer.as_asgi()),
+
+    # Comments WebSocket connection
+    re_path(r'^ws/tasks/(?P<task_id>\d+)/comments/$', consumers.TaskCommentConsumer.as_asgi()),
+
 ]

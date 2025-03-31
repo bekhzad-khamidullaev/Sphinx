@@ -1,68 +1,68 @@
-{% extends 'list_base.html' %}
-{% load i18n %}
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "Команды" %}{% endblock %}
 
 {% block list_title %}
-    <h2 class="text-3xl font-semibold text-gray-900 sm:text-4xl bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-        {% trans 'Команды' %}
-    </h2>
+<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
+    {% trans 'Команды' %}
+</h1>
 {% endblock %}
 
 {% block list_actions %}
-    <button
-        hx-get="{% url 'crm_core:modal_create_team' %}"
-        hx-target="#modal-content"
-        class="ml-3 inline-flex items-center px-5 py-2 rounded-full shadow-md text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition-all"
-        aria-label="{% trans 'Создать новую команду' %}"
-    >
-        ➕ {% trans 'Создать команду' %}
-    </button>
+{# Кнопка Создать на десктопе #}
+<div class="flex space-x-3 items-center ml-4">
+    <a href="{% url 'user_profiles:team_create' %}" class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-800 transition-all shadow">
+        <i class="fas fa-users-cog mr-2"></i> {% trans 'Создать команду' %}
+    </a>
+</div>
+{% endblock %}
+
+{% block list_actions_mobile %}
+{# Кнопка Создать на мобильных #}
+<a href="{% url 'user_profiles:team_create' %}" class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-950 transition-all shadow">
+    <i class="fas fa-users-cog mr-2"></i> {% trans 'Создать команду' %}
+</a>
 {% endblock %}
 
 {% block list_content %}
-    <ul id="team-list" role="list" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for team in teams %}
-        <li id="team-{{ team.pk }}" class="bg-white/80 backdrop-blur-lg shadow-md overflow-hidden rounded-xl border border-gray-200 transition-all hover:shadow-lg">
-            <div class="px-5 py-4">
-                <h3 class="text-lg font-semibold text-gray-800">
-                    {{ team.name }}
-                </h3>
-                <p class="mt-2 text-sm text-gray-600">
-                    <span class="font-medium">{% trans 'Лидер команды' %}:</span> 
-                    {% if team.team_leader %}
-                        {{ team.team_leader.username }}
-                    {% else %}
-                        <span class="italic text-gray-400">{% trans 'Нет лидера' %}</span>
-                    {% endif %}
-                    <br>
-                    {{ team.description|truncatechars:100 }}
-                </p>
-            </div>
-            <div class="border-t border-gray-200">
-                <div class="bg-gray-50 px-5 py-3 flex justify-end space-x-2 rounded-b-xl">
-                    <button
-                        hx-get="{% url 'crm_core:modal_update_team' team.pk %}"
-                        hx-target="#modal-content"
-                        class="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-gray-800 bg-white border border-gray-300 hover:bg-gray-100 transition-all"
-                        aria-label="{% trans 'Редактировать команду' %}"
-                    >
-                        ✏️ {% trans 'Редактировать' %}
-                    </button>
-                    <button
-                        hx-get="{% url 'crm_core:modal_delete_team' team.pk %}"
-                        hx-target="#modal-content"
-                        class="inline-flex items-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400 transition-all"
-                        aria-label="{% trans 'Удалить команду' %}"
-                    >
-                        ❌ {% trans 'Удалить' %}
-                    </button>
-                </div>
-            </div>
-        </li>
-        {% empty %}
-        <li class="text-center text-gray-500 py-6">
-            <span class="text-lg font-medium">{% trans 'Нет команд.' %}</span>
-            <i class="fas fa-users-slash text-gray-400 mt-2 text-2xl"></i>
-        </li>
-        {% endfor %}
-    </ul>
+<div class="mt-6 overflow-x-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+        <thead class="bg-gray-50 dark:bg-dark-700">
+        <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th scope="col" class="px-4 py-3"><i class="fas fa-users fa-fw mr-1"></i>{% trans 'Название команды' %}</th>
+            <th scope="col" class="px-4 py-3"><i class="fas fa-user-tie fa-fw mr-1"></i>{% trans 'Лидер' %}</th>
+            <th scope="col" class="px-4 py-3"><i class="fas fa-building fa-fw mr-1"></i>{% trans 'Отдел' %}</th>
+            <th scope="col" class="px-4 py-3 text-center"><i class="fas fa-user-friends fa-fw mr-1"></i>{% trans 'Участники' %}</th>
+            <th scope="col" class="px-4 py-3 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия' %}</th>
+        </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
+            {% for team in object_list %} {# Используем object_list из ListView #}
+            <tr id="team-row-{{ team.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300">
+                <td class="px-4 py-3 whitespace-nowrap font-medium">{{ team.name }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ team.team_leader.display_name|default:"-" }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ team.department.name|default:"-" }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-center">{{ team.members.count }}</td>
+                <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <div class="flex items-center justify-center space-x-2">
+                        <a href="{% url 'user_profiles:team_update' pk=team.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-600 rounded-full transition-colors focus:outline-none"><i class="fas fa-edit fa-fw"></i></a>
+                        <a href="{% url 'user_profiles:team_delete' pk=team.pk %}" title="{% trans 'Удалить' %}" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-full transition-colors focus:outline-none"><i class="fas fa-trash fa-fw"></i></a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+                <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400 italic"><i class="fas fa-users-slash fa-2x mb-2 text-gray-400 dark:text-gray-500"></i><br>{% trans 'Команды не найдены.' %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# Пагинация #}
+{% if is_paginated %}
+<div class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm">
+    {% include "includes/pagination.html" with page_obj=page_obj %}
+</div>
+{% endif %}
+
 {% endblock %}

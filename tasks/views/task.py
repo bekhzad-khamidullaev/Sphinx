@@ -4,19 +4,20 @@ import logging
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.forms.models import inlineformset_factory
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django_filters.views import FilterView
+from django.contrib import messages
 # Paginator импортируется базовым классом, но ошибки можно импортировать
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Локальные импорты
 from ..models import Task, TaskPhoto
 from user_profiles.models import TaskUserRole # Импорт из user_profiles
-from ..forms import TaskForm, TaskPhotoForm
+from ..forms import TaskForm, TaskPhotoForm, TaskCommentForm
 from ..filters import TaskFilter
 from .mixins import SuccessMessageMixin
 
@@ -136,10 +137,13 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "task"
 
     def get_queryset(self):
-        """Оптимизированный queryset для деталей задачи."""
         return super().get_queryset().select_related(
             "project", "category", "subcategory", "created_by"
-        ).prefetch_related('photos', 'user_roles__user') # Prefetch user roles and users
+        ).prefetch_related(
+            'photos',
+            'comments__author', # Предзагружаем комментарии и их авторов
+            'user_roles__user'
+        )
 
     def get_object(self, queryset=None):
         """Проверяет права доступа перед возвратом объекта."""
@@ -154,21 +158,74 @@ class TaskDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         task = self.object
         context['page_title'] = f"{_('Задача')}: {task.title}"
-        # Используем методы модели для получения ролей
         context['responsible_users'] = task.get_responsible_users()
         context['executors'] = task.get_executors()
         context['watchers'] = task.get_watchers()
-        # Добавляем формсет для отображения фото (не для добавления)
         TaskPhotoInlineFormSet = inlineformset_factory(Task, TaskPhoto, form=TaskPhotoForm, extra=0, can_delete=False)
         context['photo_formset'] = TaskPhotoInlineFormSet(instance=task)
-
-        # Права для кнопок в шаблоне
+        if 'comment_form' not in context: context['comment_form'] = TaskCommentForm()
         context['can_change_task'] = task.has_permission(self.request.user, 'change')
         context['can_delete_task'] = task.has_permission(self.request.user, 'delete')
         context['can_change_status'] = task.has_permission(self.request.user, 'change_status')
         context['can_assign_users'] = task.has_permission(self.request.user, 'assign_users')
-
+        context['can_add_comment'] = task.has_permission(self.request.user, 'add_comment')
+        context['comments'] = task.comments.select_related('author').all() # Оптимизация
         return context
+
+    def post(self, request, *args, **kwargs):
+        """Обрабатывает отправку формы комментария (AJAX или стандартный POST)."""
+        self.object = self.get_object()
+        user = request.user
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+        if not self.object.has_permission(user, 'add_comment'):
+             error_message = _("У вас нет прав для добавления комментария к этой задаче.")
+             if is_ajax:
+                 return JsonResponse({'success': False, 'error': error_message}, status=403)
+             else:
+                 messages.error(request, error_message)
+                 return redirect(self.object.get_absolute_url())
+
+        form = TaskCommentForm(request.POST)
+
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.task = self.object
+            comment.author = user
+            comment.save()
+            logger.info(f"User {user.username} added comment {comment.id} to task {self.object.id}")
+
+            # --- Возвращаем JSON для AJAX запроса ---
+            if is_ajax:
+                # Возвращаем данные нового комментария для добавления в DOM через JS
+                author_avatar_url = user.image.url if user.image else static('img/user.svg') # Получаем URL аватара
+                comment_data = {
+                    'id': comment.id,
+                    'text': comment.text, # JS должен будет экранировать
+                    'created_at_iso': comment.created_at.isoformat(),
+                    'author': {
+                        'id': user.id,
+                        'name': user.display_name,
+                        'avatar_url': author_avatar_url
+                    },
+                }
+                return JsonResponse({'success': True, 'comment': comment_data})
+            # --- Для стандартного POST - редирект ---
+            else:
+                messages.success(request, _("Ваш комментарий успешно добавлен."))
+                return HttpResponseRedirect(self.object.get_absolute_url() + '#comments') # Используем HttpResponseRedirect
+        else:
+            # --- Ошибки валидации ---
+            error_message = _("Ошибка при добавлении комментария. Проверьте текст.")
+            logger.warning(f"Invalid comment submitted by user {user.username} for task {self.object.id}. Errors: {form.errors.as_json()}")
+            if is_ajax:
+                # Возвращаем ошибки формы в JSON
+                 return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
+            else:
+                # Показываем страницу снова с ошибками
+                messages.error(request, error_message)
+                context = self.get_context_data(comment_form=form) # Передаем невалидную форму
+                return self.render_to_response(context)
 
 # ==============================================================================
 # Base View for Task Forms (Create & Update)
@@ -390,3 +447,4 @@ class TaskPerformView(LoginRequiredMixin, DetailView):
              if key in [Task.StatusChoices.IN_PROGRESS, Task.StatusChoices.ON_HOLD, Task.StatusChoices.COMPLETED] # Пример доступных статусов для кнопок
         ]
         return context
+
