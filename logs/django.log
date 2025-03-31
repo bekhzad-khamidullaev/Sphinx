@@ -13112,3 +13112,4 @@ DEBUG 2025-03-31 17:01:01,434 task 19092 19480 User bekhzad queryset count (filt
 ERROR 2025-03-31 17:01:01,439 task 19092 19480 Pagination context ('page_obj', 'paginator') not found after super().get_context_data()
 ERROR 2025-03-31 17:01:04,818 app_filters 19092 19664 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
 DEBUG 2025-03-31 17:01:26,087 task 19092 8604 User bekhzad queryset count (filtered): 0
+ERROR 2025-03-31 17:01:26,091 task 19092 8604 Pagination context ('page_obj', 'paginator') not found after super().get_context_data()
