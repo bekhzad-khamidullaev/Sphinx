@@ -1571,3 +1571,4 @@ DEBUG 2025-03-31 14:10:50,589 models 10996 16984 Permission granted for task 1: 
 DEBUG 2025-03-31 14:10:50,589 models 10996 16984 Permission granted for task 1: User admin is superuser.
 DEBUG 2025-03-31 14:10:50,589 models 10996 16984 Permission granted for task 1: User admin is superuser.
 DEBUG 2025-03-31 14:10:50,589 models 10996 16984 Permission granted for task 1: User admin is superuser.
+WARNING 2025-03-31 14:10:50,666 log 10996 7720 Not Found: /media/profile_pics/user.svg
