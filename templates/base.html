@@ -156,31 +156,56 @@
         </main>
 
         <!-- Modal -->
-        <div id="modal"
+        <!-- <div id="modal"
              class="fixed inset-0 bg-black bg-opacity-40 dark:bg-black/60 hidden items-center justify-center z-[1000] p-4"
              x-data="{ open: false }"
              x-show="open"
              @modal-open.window="open = true"
-             @modal-close.window="open = false; document.getElementById('modal-content').innerHTML='';"
+             @modal-close.window="open = false; document.getElementById('modal-content').innerHTML='';" {# Очищаем только контент при закрытии #}
              x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
              x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-             aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
-             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="$dispatch('modal-close')"></div>
-             <div class="bg-white dark:bg-dark-800 p-5 md:p-6 rounded-xl shadow-2xl max-w-lg w-full relative transform transition-all mx-auto"
+             role="dialog" aria-modal="true" x-cloak
+             aria-labelledby="task-modal-title" {# Связываем с новым заголовком #}
+             >
+             {# Overlay для закрытия по клику вне окна #}
+             <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="open = false"></div>
+
+             {# Само модальное окно #}
+             <div class="bg-white dark:bg-dark-800 rounded-xl shadow-2xl w-full max-w-lg relative transform transition-all mx-auto flex flex-col max-h-[90vh]"
                  x-show="open"
-                 @click.outside="$dispatch('modal-close')"
+                 @click.stop {# Предотвращаем закрытие при клике внутри окна #}
                  x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-                <button @click="$dispatch('modal-close')" class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors" aria-label="{% trans 'Close modal' %}">
-                    <i class="fas fa-times fa-lg"></i>
-                </button>
-                <div id="modal-content" class="max-h-[80vh] overflow-y-auto pr-2">
-                     <!-- Индикатор загрузки для модалки -->
-                    <!-- <div id="modal-loading-indicator" class="hidden absolute inset-0 bg-white/80 dark:bg-dark-800/80 flex items-center justify-center z-10"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i></div> -->
-                    <!-- Контент будет загружен сюда -->
-                </div>
+
+                 {# Шапка модального окна #}
+                 <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-700 flex-shrink-0">
+                    {# --- ДОБАВЛЕН ЭЛЕМЕНТ ЗАГОЛОВКА --- #}
+                    <h2 id="task-modal-title" class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+                        {% trans 'Загрузка...' %} {# Начальный текст заголовка #}
+                    </h2>
+                    {# --- КОНЕЦ ДОБАВЛЕНИЯ --- #}
+                    <button @click="open = false" class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors" aria-label="{% trans 'Close modal' %}">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                 </div>
+
+                 {# Тело модального окна с прокруткой #}
+                 <div id="modal-content" class="p-5 md:p-6 overflow-y-auto flex-grow">
+                     {# Сюда будет загружена форма #}
+                     {# Опциональный индикатор загрузки внутри тела #}
+                     <div id="modal-loading-indicator" class="hidden text-center py-8">
+                          <i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i>
+                     </div>
+                 </div>
+
+                {# Футер модального окна (если нужен для кнопок формы) - кнопки теперь рендерятся внутри формы #}
+                {# <div class="flex justify-end p-4 border-t border-gray-200 dark:border-dark-700 flex-shrink-0">
+                    <button type="button" @click="open = false" class="btn-secondary">Отмена</button>
+                    <button type="submit" form="task-modal-form" class="btn-primary ml-3">Сохранить</button> {# form="ID_ФОРМЫ" #}
+                {# </div> #}
+
             </div>
-        </div>
+        </div> -->
 
     {% else %}
         <div class="flex items-center justify-center min-h-screen">

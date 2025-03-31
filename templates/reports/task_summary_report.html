@@ -1,0 +1,44 @@
+{# tasks/templates/tasks/reports/task_summary_report.html #}
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} app-tasks model-task report-summary{% endblock %}
+
+{% block content_title %}<h1>{{ page_title }}</h1>{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+› <a href="{% url 'admin:app_list' app_label='tasks' %}">{{ opts.app_config.verbose_name }}</a>
+› <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+› {{ page_title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        {% trans "Сводная информация по задачам." %}
+    </p>
+
+    {# Здесь разместите содержимое вашего сводного отчета #}
+    {# Например, карточки с ключевыми показателями, небольшие таблицы или графики #}
+
+    <div class="module">
+        <h2>{% trans "Пример данных" %}</h2>
+        {% if summary_data %}
+            {# Отображение данных из summary_data #}
+            <pre>{{ summary_data|pprint }}</pre> {# pprint - пример, нужен кастомный тег или просто вывод #}
+        {% else %}
+            <p>{% trans "Нет данных для сводного отчета." %}</p>
+        {% endif %}
+    </div>
+
+     <div class="mt-4">
+         <a href="{% url 'admin:tasks_task_report_export_excel' %}" class="button">
+            <i class="fas fa-file-excel mr-1"></i> {% trans "Экспорт всех задач в Excel" %}
+         </a>
+    </div>
+</div>
+{% endblock %}

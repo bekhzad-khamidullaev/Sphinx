@@ -1,0 +1,85 @@
+{# tasks/templates/tasks/reports/delay_reasons_report.html #}
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} app-tasks model-task report-delay{% endblock %}
+
+{% block content_title %}<h1>{{ page_title }}</h1>{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+› <a href="{% url 'admin:app_list' app_label='tasks' %}">{{ opts.app_config.verbose_name }}</a>
+› <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+› {{ page_title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    {% if report_info %}
+    <p class="messagelist"><li class="info">{{ report_info }}</li></p>
+    {% endif %}
+    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        {% trans "Список просроченных задач. Добавьте поле 'причина задержки' в модель Task для полноценного анализа." %}
+    </p>
+
+    <div class="module" id="changelist">
+        <div class="results">
+            <table id="result_list" class="w-full">
+                <thead>
+                <tr>
+                    <th scope="col" class="sortable column-deadline sorted ascending">
+                       <div class="text"><span>{% trans 'Срок' %}</span></div><div class="sortoptions"><a href="#" class="sortremove" title="{% trans 'Remove from sorting' %}"></a></div><div class="clear"></div>
+                    </th>
+                    <th scope="col" class="sortable column-task_number">
+                       <div class="text"><span>{% trans 'Номер задачи' %}</span></div><div class="clear"></div>
+                    </th>
+                    <th scope="col" class="sortable column-title">
+                       <div class="text"><span>{% trans 'Название' %}</span></div><div class="clear"></div>
+                    </th>
+                     <th scope="col" class="sortable column-project">
+                       <div class="text"><span>{% trans 'Проект' %}</span></div><div class="clear"></div>
+                    </th>
+                     <th scope="col" class="sortable column-participants">
+                       <div class="text"><span>{% trans 'Участники' %}</span></div><div class="clear"></div>
+                    </th>
+                     <th scope="col" class="sortable column-status">
+                       <div class="text"><span>{% trans 'Текущий статус' %}</span></div><div class="clear"></div>
+                    </th>
+                    {# Добавьте колонку для причины, если поле будет в модели #}
+                    {# <th scope="col"><div><span>Причина задержки</span></div></th> #}
+                </tr>
+                </thead>
+                <tbody>
+                {% for task in page_obj %}
+                <tr class="{% cycle 'row1' 'row2' %} error">
+                    <td class="field-deadline nowrap"><strong>{{ task.deadline|date:"d.m.Y H:i" }}</strong></td>
+                    <td class="field-task_number"><a href="{% url 'admin:tasks_task_change' task.pk %}">{{ task.task_number }}</a></td>
+                    <td class="field-title">{{ task.title|truncatechars:50 }}</td>
+                    <td class="field-project">{{ task.project.name|default:"-" }}</td>
+                    <td class="field-participants">
+                         {% for role_user in task.user_roles.all %}
+                              {% if role_user.user %}
+                                   <span title="{{ role_user.get_role_display }}">
+                                        <a href="{% url 'admin:user_profiles_user_change' role_user.user.pk %}">{{ role_user.user.display_name }}</a>{% if not forloop.last %}, {% endif %}
+                                   </span>
+                              {% endif %}
+                         {% empty %}<span class="text-gray-500">-</span>{% endfor %}
+                    </td>
+                     <td class="field-status">{{ task.get_status_display }}</td>
+                     {# <td>{{ task.delay_reason|default:"-" }}</td> #}
+                </tr>
+                {% empty %}
+                <tr class="empty-row"><td colspan="6">{% trans "Нет просроченных задач." %}</td></tr> {# Обновите colspan, если добавили колонку #}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if paginator.num_pages > 1 %}
+            {% include "admin/includes/pagination.html" with cl=page_obj page_num=page_obj.number pages=paginator.num_pages %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

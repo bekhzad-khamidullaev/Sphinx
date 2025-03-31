@@ -1,0 +1,47 @@
+{# tasks/templates/reports/gantt_chart.html #}
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {# Дополнительные стили, если нужны для Plotly #}
+{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} app-tasks model-task report-chart-gantt{% endblock %}
+
+{% block content_title %}<h1>{{ page_title }}</h1>{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+› <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+› <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+› {{ page_title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    {% if message %}
+        <p class="messagelist"><li class="warning">{{ message }}</li></p>
+    {% endif %}
+
+    <div class="module">
+        <h2>{% trans "Диаграмма Ганта" %}</h2>
+        {% if chart %}
+            {# Вставляем HTML код графика Plotly #}
+            <div style="overflow-x: auto;"> {# Добавляем контейнер с прокруткой #}
+                 {{ chart|safe }}
+            </div>
+        {% else %}
+            <p>{% trans "Не удалось сгенерировать диаграмму Ганта." %}</p>
+        {% endif %}
+    </div>
+
+     {# Кнопка экспорта #}
+     <div class="mt-4">
+         <a href="{% url 'admin:tasks_task_report_export_excel' %}" class="button">{% trans "Экспорт всех задач в Excel" %}</a>
+    </div>
+</div>
+{% endblock %}

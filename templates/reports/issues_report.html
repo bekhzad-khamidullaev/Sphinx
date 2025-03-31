@@ -1,0 +1,78 @@
+{# tasks/templates/tasks/reports/issues_report.html #}
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} app-tasks model-task report-issues{% endblock %}
+
+{% block content_title %}<h1>{{ page_title }}</h1>{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+› <a href="{% url 'admin:app_list' app_label='tasks' %}">{{ opts.app_config.verbose_name }}</a>
+› <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+› {{ page_title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        {% trans "Отчет по задачам, в названии или описании которых содержатся ключевые слова, указывающие на возможные ошибки или дефекты." %}
+    </p>
+    <div class="module" id="changelist">
+        <div class="results">
+            <table id="result_list" class="w-full">
+                <thead>
+                <tr>
+                    <th scope="col" class="sortable column-created_at sorted descending">
+                       <div class="text"><span>{% trans 'Дата создания' %}</span></div><div class="sortoptions"><a href="#" class="sortremove" title="{% trans 'Remove from sorting' %}"></a></div><div class="clear"></div>
+                    </th>
+                    <th scope="col" class="sortable column-task_number">
+                       <div class="text"><span>{% trans 'Номер задачи' %}</span></div><div class="clear"></div>
+                    </th>
+                    <th scope="col" class="sortable column-title">
+                       <div class="text"><span>{% trans 'Название' %}</span></div><div class="clear"></div>
+                    </th>
+                     <th scope="col" class="sortable column-project">
+                       <div class="text"><span>{% trans 'Проект' %}</span></div><div class="clear"></div>
+                    </th>
+                     <th scope="col" class="sortable column-participants">
+                       <div class="text"><span>{% trans 'Участники' %}</span></div><div class="clear"></div>
+                    </th>
+                     <th scope="col" class="sortable column-status">
+                       <div class="text"><span>{% trans 'Статус' %}</span></div><div class="clear"></div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for task in page_obj %}
+                <tr class="{% cycle 'row1' 'row2' %} warning"> {# Класс warning для подсветки #}
+                    <td class="field-created_at nowrap">{{ task.created_at|date:"d.m.Y H:i" }}</td>
+                    <td class="field-task_number"><a href="{% url 'admin:tasks_task_change' task.pk %}">{{ task.task_number }}</a></td>
+                    <td class="field-title">{{ task.title|truncatechars:50 }}</td>
+                    <td class="field-project">{{ task.project.name|default:"-" }}</td>
+                    <td class="field-participants">
+                         {% for role_user in task.user_roles.all %}
+                              {% if role_user.user %}
+                                   <span title="{{ role_user.get_role_display }}">
+                                        <a href="{% url 'admin:user_profiles_user_change' role_user.user.pk %}">{{ role_user.user.display_name }}</a>{% if not forloop.last %}, {% endif %}
+                                   </span>
+                              {% endif %}
+                         {% empty %}<span class="text-gray-500">-</span>{% endfor %}
+                    </td>
+                     <td class="field-status">{{ task.get_status_display }}</td>
+                </tr>
+                {% empty %}
+                <tr class="empty-row"><td colspan="6">{% trans "Не найдено задач, похожих на баги/дефекты." %}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if paginator.num_pages > 1 %}
+            {% include "admin/includes/pagination.html" with cl=page_obj page_num=page_obj.number pages=paginator.num_pages %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

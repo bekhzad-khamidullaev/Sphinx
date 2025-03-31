@@ -548,53 +548,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadFormIntoModal(url) {
         console.log(`Loading form from: ${url}`);
-        const modalTitleElement = document.getElementById('task-modal-title'); // ID заголовка модалки
-        const modalBodyElement = document.getElementById('task-modal-body'); // ID тела модалки
+        const modalTitleElement = document.getElementById('task-modal-title');
+        const modalBodyElement = document.getElementById('modal-content');
+        const modalElement = document.getElementById('modal'); // Основной контейнер
 
-        if (!modalTitleElement || !modalBodyElement) {
-             console.error("Modal title or body element not found.");
+        if (!modalTitleElement || !modalBodyElement || !modalElement) {
+             console.error("Modal title, body, or main container element not found.");
              if(window.showNotification) showNotification('Ошибка интерфейса: не найдены элементы модального окна.', 'error');
              return;
         }
 
-        // Показываем индикатор загрузки модалки (если есть)
         const modalLoading = document.getElementById('modal-loading-indicator');
         if(modalLoading) modalLoading.classList.remove('hidden');
-        modalBodyElement.innerHTML = ''; // Очищаем старое содержимое
+        modalBodyElement.innerHTML = '';
+        modalTitleElement.textContent = 'Загрузка...';
 
         try {
-            const response = await window.authenticatedFetch(url, { method: 'GET' }); // Используем GET для получения формы
+            const response = await window.authenticatedFetch(url, { method: 'GET' });
             if (response.ok) {
                 const html = await response.text();
                 modalBodyElement.innerHTML = html;
-                // Пытаемся извлечь заголовок из ответа (если он там есть)
+
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = html;
-                const formTitle = tempDiv.querySelector('h2')?.textContent || tempDiv.querySelector('h3')?.textContent || (_('Задача')); // Fallback title
+                const formTitle = tempDiv.querySelector('h2')?.textContent
+                               || tempDiv.querySelector('h3')?.textContent
+                               || tempDiv.querySelector('.page-title')?.textContent
+                               || 'Форма';
                 modalTitleElement.textContent = formTitle;
 
-                // Инициализируем Select2 или другие JS виджеты внутри загруженной формы
                  if (typeof $ !== 'undefined' && $.fn.select2) {
-                      $(modalBodyElement).find('.select2-single').select2({ theme: 'bootstrap-5', width: '100%' });
-                      $(modalBodyElement).find('.select2-multiple').select2({ theme: 'bootstrap-5', width: '100%' });
+                      $(modalBodyElement).find('.select2-single').select2({ theme: 'bootstrap-5', width: '100%', dropdownParent: $(modalElement) });
+                      $(modalBodyElement).find('.select2-multiple').select2({ theme: 'bootstrap-5', width: '100%', dropdownParent: $(modalElement) });
                  }
-                // Показываем модальное окно (зависит от вашей библиотеки модалок, например, Bootstrap)
-                const modalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById('task-form-modal'));
-                modalInstance.show();
+                window.dispatchEvent(new CustomEvent('modal-open'));
 
             } else {
                 console.error(`Failed to load form from ${url}: ${response.status}`);
-                modalBodyElement.innerHTML = `<p class="text-red-500">${_('Не удалось загрузить форму.')}</p>`;
-                 modalTitleElement.textContent = _('Ошибка');
-                 const modalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById('task-form-modal'));
-                 modalInstance.show(); // Показываем модалку с ошибкой
+                modalBodyElement.innerHTML = `<p class="text-red-500">Не удалось загрузить форму.</p>`;
+                modalTitleElement.textContent = 'Ошибка';
+                window.dispatchEvent(new CustomEvent('modal-open'));
             }
         } catch (error) {
             console.error(`Error loading form from ${url}:`, error);
-            modalBodyElement.innerHTML = `<p class="text-red-500">${_('Ошибка сети при загрузке формы.')}</p>`;
-            modalTitleElement.textContent = _('Ошибка');
-            const modalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById('task-form-modal'));
-            modalInstance.show();
+            modalBodyElement.innerHTML = `<p class="text-red-500">Ошибка сети при загрузке формы.</p>`;
+            modalTitleElement.textContent = 'Ошибка';
+            window.dispatchEvent(new CustomEvent('modal-open'));
         } finally {
              if(modalLoading) modalLoading.classList.add('hidden');
         }
@@ -629,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok && responseData.success) {
                 console.log("Form submitted successfully:", responseData.message);
-                if (window.showNotification) showNotification(responseData.message || _('Данные сохранены.'), 'success');
+                if (window.showNotification) showNotification(responseData.message || ('Данные сохранены.'), 'success');
                 // Закрываем модальное окно
                 const modalInstance = bootstrap.Modal.getInstance(document.getElementById('task-form-modal'));
                  if (modalInstance) modalInstance.hide();
@@ -641,24 +640,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (responseData.errors) {
                      console.warn("Form validation errors:", responseData.errors);
                      displayFormErrors(form, responseData.errors);
-                     if (window.showNotification) showNotification(_('Пожалуйста, исправьте ошибки в форме.'), 'warning');
+                     if (window.showNotification) showNotification(('Пожалуйста, исправьте ошибки в форме.'), 'warning');
                 } else {
                     console.error("Form submission failed:", responseData.message || `Server error ${response.status}`);
-                    if (window.showNotification) showNotification(responseData.message || _('Ошибка сохранения данных.'), 'error');
+                    if (window.showNotification) showNotification(responseData.message || ('Ошибка сохранения данных.'), 'error');
                      // Отобразить общую ошибку над формой
                      const generalErrorDiv = document.createElement('div');
                      generalErrorDiv.className = 'alert alert-danger form-errors'; // Используйте свои классы
-                     generalErrorDiv.textContent = responseData.message || _('Произошла неизвестная ошибка.');
+                     generalErrorDiv.textContent = responseData.message || ('Произошла неизвестная ошибка.');
                      form.prepend(generalErrorDiv);
                 }
             }
         } catch (error) {
             console.error("Error submitting form:", error);
-            if (window.showNotification) showNotification(_('Ошибка сети при отправке формы.'), 'error');
+            if (window.showNotification) showNotification(('Ошибка сети при отправке формы.'), 'error');
              // Отобразить общую ошибку над формой
              const generalErrorDiv = document.createElement('div');
              generalErrorDiv.className = 'alert alert-danger form-errors';
-             generalErrorDiv.textContent = _('Ошибка сети.');
+             generalErrorDiv.textContent = ('Ошибка сети.');
              form.prepend(generalErrorDiv);
         } finally {
              if(submitButton) {

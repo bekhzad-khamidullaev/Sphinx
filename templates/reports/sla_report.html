@@ -1,0 +1,59 @@
+{# tasks/templates/tasks/reports/sla_report.html #}
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} app-tasks model-task report-sla{% endblock %}
+
+{% block content_title %}<h1>{{ page_title }}</h1>{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+› <a href="{% url 'admin:app_list' app_label='tasks' %}">{{ opts.app_config.verbose_name }}</a>
+› <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+› {{ page_title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        {% trans "Отчет по количеству задач, выполненных в срок (SLA Met) и с нарушением срока (SLA Not Met)." %}
+    </p>
+    <div class="module" id="changelist">
+        <div class="results">
+            <table id="result_list" class="w-full">
+                <thead>
+                <tr>
+                    <th scope="col" class="sortable column-sla_met">
+                       <div class="text"><span>{% trans 'Соблюдение SLA' %}</span></div><div class="clear"></div>
+                    </th>
+                    <th scope="col" class="sortable column-total_tasks">
+                       <div class="text"><span>{% trans 'Количество задач' %}</span></div><div class="clear"></div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in sla_data %}
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td class="field-sla_met">
+                        {% if item.sla_met == "Met" %}
+                           <span style="color: green;"> <i class="fas fa-check-circle"></i> {% trans "Выполнено в срок" %}</span>
+                        {% elif item.sla_met == "Not Met" %}
+                            <span style="color: red;"><i class="fas fa-exclamation-triangle"></i> {% trans "Срок нарушен" %}</span>
+                        {% else %}
+                            {{ item.sla_met }}
+                        {% endif %}
+                    </td>
+                    <td class="field-total_tasks number">{{ item.total_tasks }}</td>
+                </tr>
+                {% empty %}
+                <tr class="empty-row"><td colspan="2">{% trans "Нет данных для анализа SLA." %}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

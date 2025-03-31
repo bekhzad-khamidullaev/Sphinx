@@ -1,0 +1,53 @@
+{# tasks/templates/tasks/reports/employee_workload_report.html #}
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} app-tasks model-task report-workload{% endblock %}
+
+{% block content_title %}<h1>{{ page_title }}</h1>{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+› <a href="{% url 'admin:app_list' app_label='tasks' %}">{{ opts.app_config.verbose_name }}</a>
+› <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+› {{ page_title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        {% trans "Отчет по количеству активных (незавершенных) задач, назначенных пользователям с ролью 'Исполнитель'." %}
+    </p>
+    <div class="module" id="changelist">
+        <div class="results">
+            <table id="result_list" class="w-full">
+                <thead>
+                <tr>
+                    <th scope="col" class="sortable column-user">
+                       <div class="text"><span>{% trans 'Исполнитель' %}</span></div><div class="clear"></div>
+                    </th>
+                    <th scope="col" class="sortable column-total_tasks sorted descending">
+                       <div class="text"><span>{% trans 'Активных задач' %}</span></div><div class="sortoptions"><a href="#" class="sortremove" title="{% trans 'Remove from sorting' %}"></a></div><div class="clear"></div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in workload_data %}
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td class="field-user">
+                        {{ item.user__first_name|default:'' }} {{ item.user__last_name|default:'' }} ({{ item.user__username }})
+                    </td>
+                    <td class="field-total_tasks number"><strong>{{ item.total_tasks }}</strong></td>
+                </tr>
+                {% empty %}
+                <tr class="empty-row"><td colspan="2">{% trans "Нет данных о загрузке исполнителей." %}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

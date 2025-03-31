@@ -1,0 +1,24 @@
+{% extends "admin/app_index.html" %}
+{% load i18n %}
+
+{% block sidebar %}
+{{ block.super }} {# Отображаем стандартный сайдбар #}
+
+{# Добавляем свой блок со ссылкой на отчеты #}
+<div class="module">
+    <h2>{% trans "Отчеты" %}</h2>
+    <table>
+        <tr>
+            <th scope="row"><a href="{% url 'admin:tasks_task_reports' %}">{% trans "Отчеты по задачам" %}</a></th>
+            <td><a href="{% url 'admin:tasks_task_reports' %}" class="viewlink">{% trans "Просмотр" %}</a></td>
+        </tr>
+        {# Можно добавить сюда прямые ссылки на самые важные отчеты, если нужно #}
+        {#
+        <tr>
+            <th scope="row"><a href="{% url 'admin:tasks_task_report_overdue' %}">{% trans "Просроченные задачи" %}</a></th>
+            <td><a href="{% url 'admin:tasks_task_report_overdue' %}" class="viewlink">{% trans "Просмотр" %}</a></td>
+        </tr>
+        #}
+    </table>
+</div>
+{% endblock %}

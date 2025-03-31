@@ -1,0 +1,94 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block coltype %}colM{% endblock %}
+{% block bodyclass %}{{ block.super }} app-tasks model-task report-list{% endblock %}
+
+{% block content_title %}<h1>{{ title }}</h1>{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+› <a href="{% url 'admin:app_list' app_label='tasks' %}">{{ opts.app_config.verbose_name }}</a>
+› <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+› {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <p class="mb-4">{% trans "Выберите необходимый отчет из списка ниже:" %}</p>
+
+    <div class="module">
+        <table id="result_list" class="w-full"> {# Используем таблицу для выравнивания #}
+            <thead>
+                <tr><th>{% trans "Название отчета" %}</th><th>{% trans "Описание" %}</th></tr>
+            </thead>
+             <tbody>
+                {# Генерируем строки для каждого отчета #}
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.completed }}">{% trans "Завершенные задачи (30 дн)" %}</a></td>
+                    <td>{% trans "Задачи, выполненные за последние 30 дней." %}</td>
+                </tr>
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.overdue }}">{% trans "Просроченные задачи" %}</a></td>
+                    <td>{% trans "Задачи, срок выполнения которых истек." %}</td>
+                </tr>
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.active }}">{% trans "Активные задачи" %}</a></td>
+                    <td>{% trans "Задачи в статусах 'Новая', 'В работе', 'Отложена'." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.performance }}">{% trans "Производительность исполнителей" %}</a></td>
+                    <td>{% trans "Количество завершенных задач по исполнителям." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.workload }}">{% trans "Загрузка исполнителей" %}</a></td>
+                    <td>{% trans "Количество активных задач по исполнителям." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.duration }}">{% trans "Длительность выполнения" %}</a></td>
+                    <td>{% trans "Фактическое время выполнения завершенных задач." %}</td>
+                </tr>
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.abc }}">{% trans "ABC-анализ по приоритетам" %}</a></td>
+                    <td>{% trans "Распределение задач по группам приоритета." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.sla }}">{% trans "Соблюдение SLA" %}</a></td>
+                    <td>{% trans "Процент задач, выполненных в установленный срок." %}</td>
+                </tr>
+                <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.issues }}">{% trans "Возможные баги/дефекты" %}</a></td>
+                    <td>{% trans "Задачи, содержащие ключевые слова ошибок." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.delay_reasons }}">{% trans "Просроченные (для анализа)" %}</a></td>
+                    <td>{% trans "Список просроченных задач." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.cancelled }}">{% trans "Отмененные задачи" %}</a></td>
+                    <td>{% trans "Список отмененных задач." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.chart_progress }}">{% trans "График: Прогресс по статусам" %}</a></td>
+                    <td>{% trans "Гистограмма распределения задач по статусам." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.chart_gantt }}">{% trans "График: Диаграмма Ганта" %}</a></td>
+                    <td>{% trans "Временная диаграмма выполнения задач." %}</td>
+                </tr>
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.summary }}">{% trans "Сводный отчет" %}</a></td>
+                    <td>{% trans "Общая сводка по задачам (требует настройки)." %}</td>
+                </tr>
+                 {# Отдельно кнопка экспорта #}
+                 <tr class="{% cycle 'row1' 'row2' %}">
+                    <td><a href="{{ report_urls.export_excel }}" class="button">{% trans "Экспорт всех задач в Excel" %}</a></td>
+                    <td>{% trans "Выгрузить все задачи в формате XLSX." %}</td>
+                </tr>
+             </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

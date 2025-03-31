@@ -72,7 +72,7 @@ class User(AbstractUser):
     job_title = models.CharField(_("Должность"), max_length=100, blank=True, null=True)
     image = models.ImageField(
         _("Аватар"),
-        default='profile_pics/default_avatar.svg', # Use a default SVG or image
+        default='profile_pics/user.svg', # Use a default SVG or image
         upload_to='profile_pics/',
         blank=True
     )
