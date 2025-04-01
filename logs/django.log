@@ -50772,3 +50772,23 @@ DEBUG 2025-04-01 08:01:48,521 task 20392 10780 Context prepared. View: 'list'. P
 DEBUG 2025-04-01 08:01:52,935 task 20392 19864 Context prepared. View: 'list'. Page: 1/1. Tasks on page: 2. Total filtered: 2
 DEBUG 2025-04-01 09:01:45,435 task 20392 15712 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
 ERROR 2025-04-01 09:01:52,604 app_filters 20392 20888 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
+DEBUG 2025-04-01 09:07:17,553 task 20392 21392 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
+WARNING 2025-04-01 09:08:25,756 log 20392 6952 Not Found: /favicon.ico
+ERROR 2025-04-01 09:08:29,411 app_filters 20392 16548 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
+DEBUG 2025-04-01 09:10:11,561 task 20392 19544 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
+INFO 2025-04-01 09:11:50,665 ajax 20392 14792 AJAX update_task_status called for task 1 by user admin
+DEBUG 2025-04-01 09:11:50,668 models 20392 14792 Permission granted for task 1: User admin is superuser.
+DEBUG 2025-04-01 09:11:50,668 ajax 20392 14792 Received new status 'completed' for task 1
+DEBUG 2025-04-01 09:11:50,673 ajax 20392 14792 Setting completion_date for task 1
+DEBUG 2025-04-01 09:11:50,687 models 20392 14792 Sent WebSocket update for Task 1 (Status: completed, Completed: True)
+INFO 2025-04-01 09:11:50,690 ajax 20392 14792 Task 1 status updated from 'overdue' to 'completed' by admin.
+INFO 2025-04-01 09:11:56,058 ajax 20392 17900 AJAX update_task_status called for task 1 by user admin
+DEBUG 2025-04-01 09:11:56,062 models 20392 17900 Permission granted for task 1: User admin is superuser.
+DEBUG 2025-04-01 09:11:56,062 ajax 20392 17900 Received new status 'overdue' for task 1
+DEBUG 2025-04-01 09:11:56,062 ajax 20392 17900 Clearing completion_date for task 1
+DEBUG 2025-04-01 09:11:56,068 models 20392 17900 Task 1: Clearing completion_date because status changed from COMPLETED.
+DEBUG 2025-04-01 09:11:56,093 models 20392 17900 Sent WebSocket update for Task 1 (Status: overdue, Completed: False)
+INFO 2025-04-01 09:11:56,094 ajax 20392 17900 Task 1 status updated from 'completed' to 'overdue' by admin.
+ERROR 2025-04-01 09:12:04,690 app_filters 20392 11628 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
+ERROR 2025-04-01 09:18:13,145 app_filters 20392 4352 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
+DEBUG 2025-04-01 09:18:20,665 task 20392 7092 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
