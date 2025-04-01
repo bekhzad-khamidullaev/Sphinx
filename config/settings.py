@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist', # For JWT token blacklisting
     'simple_history',       # For model history tracking
     'django_browser_reload', # For auto-reloading in development
+    'django_select2',
 
     # Your Project Apps
     'user_profiles',        # User management, teams, profiles, company structure

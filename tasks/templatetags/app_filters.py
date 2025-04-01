@@ -67,3 +67,4 @@ def add_attr(field, attr_string):
     except Exception as e:
          logger.error(f"Error adding attributes in template tag 'attr': {e}")
          return field
+

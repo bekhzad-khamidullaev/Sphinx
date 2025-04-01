@@ -14,6 +14,9 @@
 
     {# Tailwind CSS #}
     <script src="https://cdn.tailwindcss.com/"></script>
+    <!-- <link href="{% static 'css/tailwind.css' %}" rel="stylesheet"> -->
+    <!-- <link href="{% static 'css/output.css' %}" rel="stylesheet"> -->
+    <!-- <script src="{% static 'js/tailwindcss.js' %}" defer></script> -->
     <script>
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { dark: { 50: '#f9f9f9', 100: '#f2f2f2', 200: '#e5e5e5', 300: '#d1d1d1', 400: '#b3b3b3', 500: '#8e8e93', 600: '#636366', 700: '#48484a', 800: '#3a3a3c', 900: '#2c2c2e', 950: '#1c1c1e', }, ios: { blue: '#0a84ff', green: '#30d158', indigo: '#5e5ce6', orange: '#ff9f0a', pink: '#ff375f', purple: '#bf5af2', red: '#ff453a', teal: '#64d2ff', yellow: '#ffd60a', } } } } }
         // JS для установки темы ДО загрузки контента
@@ -184,6 +187,26 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/js/select2.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll("input, select, textarea").forEach(el => {
+                el.addEventListener("input", function() {
+                    if (this.value.trim() !== "") {
+                        this.classList.remove("border-red-500");
+                    } else {
+                        this.classList.add("border-red-500");
+                    }
+                });
+            });
+      
+            // Добавляем Flatpickr (если нужны даты)
+            flatpickr(".flatpickr", { enableTime: true, dateFormat: "Y-m-d H:i" });
+      
+            // Добавляем Select2 (если нужны dropdowns)
+            $('.select2').select2();
+        });
+      </script>      
     {% block scripts %}{% endblock %}
 </body>
 </html>

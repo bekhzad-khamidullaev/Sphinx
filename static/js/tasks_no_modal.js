@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Get Base URL for AJAX calls ---
     const ajaxTaskBaseUrl = kanbanBoardContainer?.dataset.ajaxBaseUrl
-                           || taskListContainer?.dataset.ajaxBaseUrl
-                           || '/core/ajax/tasks/';
+        || taskListContainer?.dataset.ajaxBaseUrl
+        || '/core/ajax/tasks/';
     if (!kanbanBoardContainer?.dataset.ajaxBaseUrl && !taskListContainer?.dataset.ajaxBaseUrl) {
         console.warn("Could not find data-ajax-base-url on containers. Using fallback:", ajaxTaskBaseUrl);
     } else {
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.showNotification) showNotification('WebSocket отключен. Переподключение...', 'warning');
                 const retryDelay = Math.min(30000, (Math.pow(1.5, window.wsRetryCount || 0) * 2000) + Math.random() * 1000);
                 window.wsRetryCount = (window.wsRetryCount || 0) + 1;
-                console.log(`Retrying WS connection in ${Math.round(retryDelay/1000)}s (Attempt ${window.wsRetryCount})`);
+                console.log(`Retrying WS connection in ${Math.round(retryDelay / 1000)}s (Attempt ${window.wsRetryCount})`);
                 setTimeout(connectWebSocket, retryDelay);
             } else {
                 window.wsRetryCount = 0;
@@ -61,8 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const initiatorUserId = data.message?.updated_by_id;
 
             if (initiatorUserId && currentUserId && initiatorUserId === currentUserId) {
-                 console.log(`Skipping self-initiated WebSocket update for task ${data.message?.task_id}, type: ${data.type}`);
-                 return;
+                console.log(`Skipping self-initiated WebSocket update for task ${data.message?.task_id}, type: ${data.type}`);
+                return;
             }
 
             if (data.type === 'task_update' && data.message?.event === 'status_update') {
@@ -70,10 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.showNotification) showNotification(`Статус задачи #${msg.task_id} обновлен на "${msg.status_display}" ${msg.updated_by || ''}`, 'info');
                 updateTaskUI(msg.task_id, msg.status);
             } else if (data.type === 'list_update' && (data.message?.event === 'task_created' || data.message?.event === 'task_updated')) {
-                 const eventType = data.message?.event === 'task_created' ? 'создана' : 'обновлена';
-                 const byUser = data.message?.created_by || data.message?.updated_by || '';
-                 if (window.showNotification) showNotification(`Задача #${data.message.task_id} ${eventType} ${byUser}. Обновление списка...`, data.message?.event === 'task_created' ? 'success' : 'info');
-                 setTimeout(() => window.location.reload(), 1500); // Перезагрузка
+                const eventType = data.message?.event === 'task_created' ? 'создана' : 'обновлена';
+                const byUser = data.message?.created_by || data.message?.updated_by || '';
+                if (window.showNotification) showNotification(`Задача #${data.message.task_id} ${eventType} ${byUser}. Обновление списка...`, data.message?.event === 'task_created' ? 'success' : 'info');
+                setTimeout(() => window.location.reload(), 1500); // Перезагрузка
             } else if (data.type === 'list_update' && data.message?.event === 'task_deleted') {
                 removeTaskFromUI(data.message.task_id);
                 if (window.showNotification) showNotification(`Задача #${data.message.task_id} удалена ${data.message.deleted_by || ''}`, 'info');
@@ -123,7 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const viewIconMobile = document.getElementById('viewIconMobile');
             const viewTextMobile = document.getElementById('viewTextMobile');
             if (toggleViewBtn) updateButton(toggleViewBtn, viewIcon, viewText, view);
+            // window.location.reload(true);
             if (toggleViewBtnMobile) updateButton(toggleViewBtnMobile, viewIconMobile, viewTextMobile, view);
+            // window.location.reload(true);
 
             if (isKanban) {
                 initializeKanban();
@@ -137,10 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             console.log(`View switched to: ${view}`);
             if (window.history.pushState) {
-                 const newUrl = new URL(window.location);
-                 newUrl.searchParams.set('view', view);
-                 newUrl.searchParams.delete('page');
-                 window.history.pushState({path:newUrl.href}, '', newUrl.href);
+                const newUrl = new URL(window.location);
+                newUrl.searchParams.set('view', view);
+                newUrl.searchParams.delete('page');
+                window.history.pushState({ path: newUrl.href }, '', newUrl.href);
             }
         };
         setView(initialView);
@@ -199,16 +201,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const url = `${ajaxTaskBaseUrl}${taskId}/update-status/`;
                     const loadingIndicator = document.getElementById('loading-indicator');
                     try {
-                        if(loadingIndicator) loadingIndicator.classList.remove('hidden');
+                        if (loadingIndicator) loadingIndicator.classList.remove('hidden');
                         const response = await window.authenticatedFetch(url, { method: 'POST', body: { status: newStatus } });
                         if (response.ok) {
                             const responseData = await response.json();
                             if (responseData.success) { console.log(`Task ${taskId} status updated on server. New: ${responseData.new_status_key}`); taskElement.dataset.status = responseData.new_status_key; if (window.showNotification) showNotification(responseData.message || `Статус задачи #${taskId} обновлен.`, 'success'); }
                             else { console.warn("Server indicated failure:", responseData.message); if (window.showNotification) showNotification(responseData.message || 'Ошибка обновления на сервере.', 'error'); if (sourceTasksContainer && typeof evt.oldDraggableIndex !== 'undefined') { sourceTasksContainer.insertBefore(taskElement, sourceTasksContainer.children[evt.oldDraggableIndex]); updateKanbanColumnUI(sourceColumnElement); updateKanbanColumnUI(targetColumnElement); } }
                         } else { console.error(`Server error: ${response.status}`); if (sourceTasksContainer && typeof evt.oldDraggableIndex !== 'undefined') { sourceTasksContainer.insertBefore(taskElement, sourceTasksContainer.children[evt.oldDraggableIndex]); updateKanbanColumnUI(sourceColumnElement); updateKanbanColumnUI(targetColumnElement); } }
-                    } catch (error) { console.error(`Fetch/JS error during status update for task ${taskId}:`, error); if (sourceTasksContainer && typeof evt.oldDraggableIndex !== 'undefined') { sourceTasksContainer.insertBefore(taskElement, sourceTasksContainer.children[evt.oldDraggableIndex]); updateKanbanColumnUI(sourceColumnElement); updateKanbanColumnUI(targetColumnElement); }
-                    } finally { if(loadingIndicator) loadingIndicator.classList.add('hidden'); }
-                 } // End onEnd
+                    } catch (error) {
+                        console.error(`Fetch/JS error during status update for task ${taskId}:`, error); if (sourceTasksContainer && typeof evt.oldDraggableIndex !== 'undefined') { sourceTasksContainer.insertBefore(taskElement, sourceTasksContainer.children[evt.oldDraggableIndex]); updateKanbanColumnUI(sourceColumnElement); updateKanbanColumnUI(targetColumnElement); }
+                    } finally { if (loadingIndicator) loadingIndicator.classList.add('hidden'); }
+                } // End onEnd
             });
             sortableInstances.push(instance);
         });
@@ -240,8 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!columnToggleDropdown || !resetHiddenColumnsBtn || !columnCheckboxes.length) return;
         const saveHiddenColumns = () => {
             const hiddenStatuses = Array.from(columnCheckboxes)
-                                       .filter(cb => !cb.checked)
-                                       .map(cb => cb.dataset.status);
+                .filter(cb => !cb.checked)
+                .map(cb => cb.dataset.status);
             localStorage.setItem('hiddenKanbanColumns', JSON.stringify(hiddenStatuses));
             console.log('Saved hidden columns:', hiddenStatuses);
         };
@@ -263,10 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Скрываем dropdown меню (если используется Flowbite)
             const dropdownMenuId = dropdownHoverButton?.getAttribute('data-dropdown-toggle');
             if (dropdownMenuId && typeof Flowbite !== 'undefined') {
-                 try {
+                try {
                     const dropdownInstance = Flowbite.getInstance('Dropdown', dropdownMenuId);
                     if (dropdownInstance) dropdownInstance.hide();
-                 } catch(e) { console.warn("Could not hide Flowbite dropdown:", e); }
+                } catch (e) { console.warn("Could not hide Flowbite dropdown:", e); }
             }
         });
     } // End initializeColumnToggler
@@ -292,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } // End restoreHiddenColumns
 
     function adjustKanbanLayout() {
-         if (!kanbanBoardContainer || kanbanBoardContainer.classList.contains('hidden')) return;
+        if (!kanbanBoardContainer || kanbanBoardContainer.classList.contains('hidden')) return;
         requestAnimationFrame(() => {
             const visibleCols = kanbanBoardContainer.querySelectorAll('.kanban-column-wrapper:not(.hidden)');
             const containerWidth = kanbanBoardContainer.offsetWidth;
@@ -354,12 +357,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dataType === 'number') {
                     comparison = (parseFloat(cellA) || 0) - (parseFloat(cellB) || 0);
                 } else if (dataType === 'date') {
-                     // Нужен парсинг даты (например, из dd.mm.yyyy)
-                     // const dateA = parseDate(cellA); const dateB = parseDate(cellB);
-                     // comparison = dateA - dateB;
-                     comparison = cellA.localeCompare(cellB); // Пока простая строковая
+                    // Нужен парсинг даты (например, из dd.mm.yyyy)
+                    // const dateA = parseDate(cellA); const dateB = parseDate(cellB);
+                    // comparison = dateA - dateB;
+                    comparison = cellA.localeCompare(cellB); // Пока простая строковая
                 } else { // string
-                    comparison = cellA.localeCompare(cellB, undefined, {numeric: true, sensitivity: 'base'});
+                    comparison = cellA.localeCompare(cellB, undefined, { numeric: true, sensitivity: 'base' });
                 }
                 return order === 'asc' ? comparison : -comparison;
             });
@@ -392,17 +395,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 applySort(currentColumn, newOrder);
             });
             // Устанавливаем начальную иконку для сохраненной колонки
-             if (header.dataset.column === savedCol) {
-                 header.setAttribute('aria-sort', savedOrder === 'asc' ? 'ascending' : 'descending');
-                 header.querySelector('.fa-sort').className = `fas ${savedOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down'} ml-1`;
-             }
+            if (header.dataset.column === savedCol) {
+                header.setAttribute('aria-sort', savedOrder === 'asc' ? 'ascending' : 'descending');
+                header.querySelector('.fa-sort').className = `fas ${savedOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down'} ml-1`;
+            }
         });
 
         // Применяем начальную сортировку, если она была сохранена
         if (savedCol) {
-             console.log(`Applying initial sort: ${savedCol} (${savedOrder})`);
-             // Задержка нужна, чтобы браузер успел отрисовать таблицу перед сортировкой
-             setTimeout(() => applySort(savedCol, savedOrder), 100);
+            console.log(`Applying initial sort: ${savedCol} (${savedOrder})`);
+            // Задержка нужна, чтобы браузер успел отрисовать таблицу перед сортировкой
+            setTimeout(() => applySort(savedCol, savedOrder), 100);
         }
         console.log("List sort initialized.");
 
@@ -420,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const previousStatus = selectElement.dataset.previousValue || '';
 
                 if (!taskId || newStatus === previousStatus) {
-                     if (newStatus !== previousStatus) selectElement.value = previousStatus;
+                    if (newStatus !== previousStatus) selectElement.value = previousStatus;
                     return;
                 }
 
@@ -431,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const loadingIndicator = document.getElementById('loading-indicator');
 
                 try {
-                    if(loadingIndicator) loadingIndicator.classList.remove('hidden');
+                    if (loadingIndicator) loadingIndicator.classList.remove('hidden');
                     const response = await window.authenticatedFetch(url, { method: 'POST', body: { status: newStatus } });
                     if (response.ok) {
                         const responseData = await response.json();
@@ -454,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectElement.value = previousStatus;
                 } finally {
                     selectElement.disabled = false;
-                    if(loadingIndicator) loadingIndicator.classList.add('hidden');
+                    if (loadingIndicator) loadingIndicator.classList.add('hidden');
                 }
             }
         });
@@ -502,19 +505,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`Attempting to delete task ${taskId} via ${deleteUrl}`);
                 const loadingIndicator = document.getElementById('loading-indicator');
                 try {
-                    if(loadingIndicator) loadingIndicator.classList.remove('hidden');
+                    if (loadingIndicator) loadingIndicator.classList.remove('hidden');
                     // Используем POST для удаления, как требует Django CSRF по умолчанию
                     const response = await window.authenticatedFetch(deleteUrl, { method: 'POST' });
 
                     if (response.ok) {
                         const responseData = await response.json();
                         if (responseData.success !== false) {
-                             console.log(`Task ${taskId} deleted successfully.`);
-                             removeTaskFromUI(taskId);
-                             if (window.showNotification) showNotification(responseData.message || `Задача "${escapeHtml(taskName)}" удалена.`, 'success');
+                            console.log(`Task ${taskId} deleted successfully.`);
+                            removeTaskFromUI(taskId);
+                            if (window.showNotification) showNotification(responseData.message || `Задача "${escapeHtml(taskName)}" удалена.`, 'success');
                         } else {
                             console.warn(`Server indicated delete failure for task ${taskId}:`, responseData.message);
-                             if (window.showNotification) showNotification(responseData.message || 'Не удалось удалить задачу на сервере.', 'error');
+                            if (window.showNotification) showNotification(responseData.message || 'Не удалось удалить задачу на сервере.', 'error');
                         }
                     } else {
                         console.error(`Server error during delete for task ${taskId}: ${response.status}`);
@@ -522,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) {
                     console.error(`Fetch/JS error during delete for task ${taskId}:`, error);
                 } finally {
-                     if(loadingIndicator) loadingIndicator.classList.add('hidden');
+                    if (loadingIndicator) loadingIndicator.classList.add('hidden');
                 }
             }
         });
@@ -550,13 +553,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 taskElementKanban.dataset.status = newStatus; // Обновляем data-атрибут
                 updateKanbanColumnUI(currentColumn); updateKanbanColumnUI(targetColumn);
             } else if (!targetTasksContainer) {
-                 console.warn(`Target column container for status ${newStatus} not found.`);
-                 // Если колонки нет (скрыта?), оставляем задачу где была или удаляем?
-                 // Пока оставляем, но обновляем data-атрибут
-                 if(currentColumn) taskElementKanban.dataset.status = newStatus;
+                console.warn(`Target column container for status ${newStatus} not found.`);
+                // Если колонки нет (скрыта?), оставляем задачу где была или удаляем?
+                // Пока оставляем, но обновляем data-атрибут
+                if (currentColumn) taskElementKanban.dataset.status = newStatus;
             } else { // Уже в правильной колонке
-                 taskElementKanban.dataset.status = newStatus;
-                 updateKanbanColumnUI(targetColumn);
+                taskElementKanban.dataset.status = newStatus;
+                updateKanbanColumnUI(targetColumn);
             }
         }
 
@@ -579,23 +582,23 @@ document.addEventListener('DOMContentLoaded', () => {
         let sourceColumn = null;
 
         if (taskElementKanban) {
-             sourceColumn = taskElementKanban.closest('.kanban-column');
-             taskElementKanban.remove();
-             if (sourceColumn) updateKanbanColumnUI(sourceColumn);
+            sourceColumn = taskElementKanban.closest('.kanban-column');
+            taskElementKanban.remove();
+            if (sourceColumn) updateKanbanColumnUI(sourceColumn);
         }
         if (taskElementRow) {
             taskElementRow.remove();
         }
-         // Обновление счетчика пагинации (если возможно)
-         const paginationInfo = document.querySelector('#pagination span:first-child'); // Пример селектора
-         if (paginationInfo && paginationInfo.textContent.includes('Всего:')) {
-             try {
-                 let currentTotal = parseInt(paginationInfo.textContent.match(/Всего: (\d+)/)[1], 10);
-                 if (!isNaN(currentTotal) && currentTotal > 0) {
-                     paginationInfo.textContent = paginationInfo.textContent.replace(/Всего: \d+/, `Всего: ${currentTotal - 1}`);
-                 }
-             } catch (e) { console.warn("Could not update pagination total count after delete."); }
-         }
+        // Обновление счетчика пагинации (если возможно)
+        const paginationInfo = document.querySelector('#pagination span:first-child'); // Пример селектора
+        if (paginationInfo && paginationInfo.textContent.includes('Всего:')) {
+            try {
+                let currentTotal = parseInt(paginationInfo.textContent.match(/Всего: (\d+)/)[1], 10);
+                if (!isNaN(currentTotal) && currentTotal > 0) {
+                    paginationInfo.textContent = paginationInfo.textContent.replace(/Всего: \d+/, `Всего: ${currentTotal - 1}`);
+                }
+            } catch (e) { console.warn("Could not update pagination total count after delete."); }
+        }
     } // End removeTaskFromUI
 
     function updateStatusBadge(tableRow, newStatusKey) {
@@ -623,13 +626,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- ---
             console.log(`Updated badge for task ${tableRow.id.split('-')[2]} to status ${newStatusKey}`);
         }
-         // --- Обновление стиля строки для просроченных ---
-         const deadlineCell = tableRow.cells[5]; // Предполагаем, что Срок - 6-я колонка (индекс 5)
-         if (deadlineCell) {
-             deadlineCell.classList.toggle('error', newStatusKey === 'overdue'); // Добавляем/удаляем класс error админки
-             deadlineCell.classList.toggle('text-red-600', newStatusKey === 'overdue'); // Добавляем/удаляем класс Tailwind
-             deadlineCell.classList.toggle('dark:text-red-400', newStatusKey === 'overdue');
-         }
+        // --- Обновление стиля строки для просроченных ---
+        const deadlineCell = tableRow.cells[5]; // Предполагаем, что Срок - 6-я колонка (индекс 5)
+        if (deadlineCell) {
+            deadlineCell.classList.toggle('error', newStatusKey === 'overdue'); // Добавляем/удаляем класс error админки
+            deadlineCell.classList.toggle('text-red-600', newStatusKey === 'overdue'); // Добавляем/удаляем класс Tailwind
+            deadlineCell.classList.toggle('dark:text-red-400', newStatusKey === 'overdue');
+        }
     } // End updateStatusBadge
     // ---
 
@@ -661,10 +664,10 @@ document.addEventListener('DOMContentLoaded', () => {
         else {
             // Fallback: пытаемся получить из первого status-dropdown
             const firstDropdown = document.querySelector('.status-dropdown');
-            if(firstDropdown) { window.taskStatusChoices = Array.from(firstDropdown.options).map(opt => [opt.value, opt.text]); }
+            if (firstDropdown) { window.taskStatusChoices = Array.from(firstDropdown.options).map(opt => [opt.value, opt.text]); }
             else { console.warn("Could not retrieve status choices for JS UI updates."); }
         }
-    } catch(e) { console.error("Error parsing status choices data:", e); }
+    } catch (e) { console.error("Error parsing status choices data:", e); }
 
     initializeViewSwitcher();
     initializeColumnToggler();
