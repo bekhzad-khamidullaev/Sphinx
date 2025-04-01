@@ -50771,3 +50771,4 @@ INFO 2025-04-01 08:01:46,800 server 20392 19764 Listening on TCP address 0.0.0.0
 DEBUG 2025-04-01 08:01:48,521 task 20392 10780 Context prepared. View: 'list'. Page: 1/1. Tasks on page: 2. Total filtered: 2
 DEBUG 2025-04-01 08:01:52,935 task 20392 19864 Context prepared. View: 'list'. Page: 1/1. Tasks on page: 2. Total filtered: 2
 DEBUG 2025-04-01 09:01:45,435 task 20392 15712 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
+ERROR 2025-04-01 09:01:52,604 app_filters 20392 20888 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
