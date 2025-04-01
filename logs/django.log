@@ -50792,3 +50792,4 @@ INFO 2025-04-01 09:11:56,094 ajax 20392 17900 Task 1 status updated from 'comple
 ERROR 2025-04-01 09:12:04,690 app_filters 20392 11628 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
 ERROR 2025-04-01 09:18:13,145 app_filters 20392 4352 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
 DEBUG 2025-04-01 09:18:20,665 task 20392 7092 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
+DEBUG 2025-04-01 09:19:15,932 task 20392 17524 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
