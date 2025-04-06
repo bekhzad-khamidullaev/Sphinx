@@ -54750,3 +54750,11 @@ ERROR 2025-04-06 04:51:05,341 app_filters 19224 14012 Error adding attributes in
 ERROR 2025-04-06 09:48:06,965 app_filters 19224 11840 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
 ERROR 2025-04-06 10:00:54,033 app_filters 19224 2216 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
 ERROR 2025-04-06 12:44:56,277 app_filters 19224 16860 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
+INFO 2025-04-06 14:42:09,259 server 19224 2168 Killed 0 pending application instances
+INFO 2025-04-06 14:42:15,392 apps 10432 14876 Tasks signals imported successfully.
+INFO 2025-04-06 14:42:15,513 cli 10432 14876 Starting server at tcp:port=8080:interface=0.0.0.0
+INFO 2025-04-06 14:42:15,513 server 10432 14876 HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-04-06 14:42:15,513 server 10432 14876 Configuring endpoint tcp:port=8080:interface=0.0.0.0
+INFO 2025-04-06 14:42:15,514 server 10432 14876 Listening on TCP address 0.0.0.0:8080
+DEBUG 2025-04-06 14:42:23,813 task 10432 15796 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
+INFO 2025-04-06 14:44:08,954 server 10432 14876 Killed 1 pending application instances
