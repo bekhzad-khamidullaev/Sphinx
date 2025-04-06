@@ -52543,3 +52543,12 @@ INFO 2025-04-06 08:46:47,153 server 6373 139946181902336 HTTP/2 support not enab
 INFO 2025-04-06 08:46:47,153 server 6373 139946181902336 Configuring endpoint tcp:port=8000:interface=0.0.0.0
 INFO 2025-04-06 08:46:47,154 server 6373 139946181902336 Listening on TCP address 0.0.0.0:8000
 ERROR 2025-04-06 08:46:49,603 app_filters 6373 139945849124416 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
+DEBUG 2025-04-06 09:28:23,354 task 6373 139945603757632 Context prepared. View: 'kanban'. Page: 1/1. Tasks on page: 2. Total filtered: 2
+ERROR 2025-04-06 09:47:59,663 app_filters 6373 139945586972224 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
+INFO 2025-04-06 09:48:03,480 server 6373 139946181902336 Killed 1 pending application instances
+ERROR 2025-04-06 09:48:06,306 apps 33600 140309382017024 Error importing signals in TasksConfig: name 'post_save' is not defined
+INFO 2025-04-06 09:48:06,322 cli 33600 140309382017024 Starting server at tcp:port=8000:interface=0.0.0.0
+INFO 2025-04-06 09:48:06,323 server 33600 140309382017024 HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+INFO 2025-04-06 09:48:06,323 server 33600 140309382017024 Configuring endpoint tcp:port=8000:interface=0.0.0.0
+INFO 2025-04-06 09:48:06,324 server 33600 140309382017024 Listening on TCP address 0.0.0.0:8000
+ERROR 2025-04-06 09:48:08,089 app_filters 33600 140309025707584 Error adding attributes in template tag 'attr': 'SafeString' object has no attribute 'as_widget'
