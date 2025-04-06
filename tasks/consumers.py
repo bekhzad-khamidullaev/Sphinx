@@ -3,6 +3,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from .models import Task
 from django.core.exceptions import ValidationError
+from django.db.models.signals import post_save
+
 
 class GenericConsumer(AsyncWebsocketConsumer):
     async def connect(self):

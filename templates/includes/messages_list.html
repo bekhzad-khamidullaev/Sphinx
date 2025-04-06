@@ -1,0 +1,81 @@
+<!-- filename: templates/room/partials/messages_list.html -->
+{% load tz %} {# Load timezone filters if needed #}
+
+{% for message in messages %}
+<div id="message-{{ message.id }}" class="flex message-container {% if message.user == request.user %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ message.id }}" data-username="{{ message.user.username }}">
+    <div class="max-w-[80%] p-3 rounded-lg message-bubble {% if message.user == request.user %}bg-blue-500 text-white{% else %}bg-white shadow-md{% endif %}">
+
+        <!-- Reply Block -->
+        {% if message.reply_to %}
+        <div class="reply-block border-l-2 {% if message.user == request.user %}border-blue-300{% else %}border-gray-400{% endif %} pl-2 mb-1 text-sm opacity-80 cursor-pointer" onclick="document.getElementById('message-{{ message.reply_to.id }}')?.scrollIntoView({ behavior: 'smooth' })">
+            <strong class="reply-user">{{ message.reply_to.user.username }}</strong>
+            <div class="reply-content text-xs italic">
+                {% if message.reply_to.is_deleted %}
+                    Original message deleted
+                {% elif message.reply_to.file %}
+                     📎 File: {{ message.reply_to.file.name|cut:"chat_files/"|cut:"/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"|truncatechars:30 }} {# Basic file indication #}
+                {% else %}
+                    {{ message.reply_to.content|truncatechars:50 }}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- File Block -->
+        {% if message.file and not message.is_deleted %}
+        <div class="file-block mb-1">
+             <a href="{{ message.file.url }}" target="_blank" class="file-link {% if message.user == request.user %}text-blue-200 hover:text-white{% else %}text-blue-600 hover:text-blue-800{% endif %} underline break-all" download>
+                📎 <span class="file-name">{{ message.file.name|cut:"chat_files/"|cut:"/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" }}</span> {# Display filename #}
+            </a>
+            {# Basic Image Preview #}
+            {% with message.file.name|lower as lower_name %}
+                {% if lower_name|slice:"-4:" == ".png" or lower_name|slice:"-4:" == ".jpg" or lower_name|slice:"-5:" == ".jpeg" or lower_name|slice:"-4:" == ".gif" %}
+                <img src="{{ message.file.url }}" alt="User uploaded image" class="max-w-xs max-h-48 mt-1 rounded object-contain">
+                {% endif %}
+            {% endwith %}
+             {# Add video/audio previews if needed #}
+        </div>
+        {% endif %}
+
+        <!-- Content Block -->
+        <div class="message-content text-sm break-words">
+             {% if message.is_deleted %}
+                <span class="italic text-gray-500">Message deleted</span>
+             {% else %}
+                {{ message.content|linebreaksbr }} {# Render newlines #}
+             {% endif %}
+        </div>
+
+        <!-- Meta Block -->
+        <div class="flex items-center justify-between mt-1 text-xs message-meta {% if message.user == request.user %}text-blue-200{% else %}text-gray-500{% endif %}">
+            <span class="timestamp">{{ message.date_added|date:"H:i" }}</span>
+            {% if message.edited_at and not message.is_deleted %}
+                <span class="edited-indicator text-gray-400 ml-1">(edited)</span>
+            {% endif %}
+            <!-- Message Actions (Reply, Edit, Delete, React) - Shown on Hover via JS/CSS -->
+            {% if not message.is_deleted %}
+             <div class="message-actions opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-2 space-x-1">
+                 <button class="action-reply p-0.5 rounded hover:bg-gray-200" title="Reply">↩️</button>
+                 {% if message.user == request.user %} {# Only show edit/delete for own messages #}
+                 <button class="action-edit p-0.5 rounded hover:bg-gray-200" title="Edit">✏️</button>
+                 <button class="action-delete p-0.5 rounded hover:bg-gray-200" title="Delete">🗑️</button>
+                 {% endif %}
+                 <button class="action-react p-0.5 rounded hover:bg-gray-200" title="React">😊</button>
+             </div>
+            {% endif %}
+        </div>
+
+         <!-- Reactions Block -->
+         <div class="reactions-block flex flex-wrap gap-1 mt-1 {% if not message.reactions.exists %}hidden{% endif %}">
+             {% for reaction in message.reactions.all %}
+                {# This initial render can be simplified; JS will take over updates #}
+                {# Aggregate reactions in the view or use JS to build this initially #}
+             {% endfor %}
+             {# Reactions will be fully populated/updated by JavaScript #}
+         </div>
+
+    </div>
+</div>
+{% empty %}
+<div class="text-gray-500 text-center py-4 text-sm">No messages yet. Start the conversation!</div>
+{% endfor %}

@@ -16,10 +16,9 @@ from user_profiles.models import User, TaskUserRole
 
 logger = logging.getLogger(__name__)
 
-
 # --- Utility function ---
 def add_common_attrs(field, placeholder=None, input_class="form-control"):
-    """Добавляет классы и placeholder к полям формы."""
+    """Adds classes and placeholder to form fields."""
     attrs = field.widget.attrs
     current_classes = attrs.get('class', '')
     if input_class not in current_classes.split():
@@ -126,7 +125,12 @@ class TaskForm(forms.ModelForm):
             'placeholder': 'Выберите дату'
         })
     )
-    deadline = forms.DateTimeField(widget=forms.TextInput(attrs={'class': 'flatpickr'}))
+    deadline = forms.DateTimeField(
+        widget=forms.TextInput(attrs={
+            'class': 'flatpickr block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring focus:ring-blue-500 focus:outline-none',
+            'placeholder': 'Выберите дату и время'
+        })
+    )
     project = forms.ModelChoiceField(queryset=Project.objects.all().order_by("name"), widget=Select2Widget())
     category = forms.ModelChoiceField(
         queryset=TaskCategory.objects.all().order_by("name"),
@@ -158,8 +162,6 @@ class TaskForm(forms.ModelForm):
         fields = ["title", "description", "deadline", "start_date", "estimated_time"]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
-            "deadline": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "start_date": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "estimated_time": forms.TextInput(attrs={'placeholder': _('Напр., 1d 2h 30m или 45m')}),
         }
 
@@ -184,7 +186,7 @@ class TaskForm(forms.ModelForm):
             add_common_attrs(field)
 
     def clean_estimated_time(self):
-        """Обрабатывает и валидирует ввод пользователем времени."""
+        """Handles and validates the time input by the user."""
         duration_str = self.cleaned_data.get("estimated_time")
 
         if not duration_str:

@@ -1,133 +1,147 @@
+<!-- filename: templates/room/room.html -->
 {% extends 'base.html' %}
+{% load static %} {# Load static for potential CSS/JS assets #}
 
 {% block title %}{{ room.name }} | {% endblock %}
 
 {% block content %}
-<div class="pt-16 flex h-screen bg-gray-100">
+<div class="flex h-screen bg-gray-100">
 
     <!-- Sidebar with Chat List -->
-    <div class="w-1/4 bg-white p-4 border-r hidden md:block">
-        <ul id="chat-list" class="space-y-4">
-            {% for room in rooms %}
-            <li id="chat-{{ room.name }}" class="rounded-lg border-1 border-gray-200 shadow-lg hover:shadow-md transition-shadow">
-                <a href="{% url 'room:room' room.slug %}" class="block p-3 text-lg font-semibold rounded-md hover:bg-gray-100">
-                    {{ room.name|default:room.slug }}
+    <div class="w-1/4 bg-white p-4 border-r hidden md:block overflow-y-auto">
+         <div class="mb-4">
+             <a href="{% url 'room:create_room' %}" class="block w-full text-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Create Room</a>
+         </div>
+        <h3 class="text-lg font-semibold mb-2">Chats</h3>
+        <ul id="chat-list" class="space-y-2">
+            {% for r in rooms_for_sidebar %}
+            <li id="sidebar-room-{{ r.slug }}" class="rounded-lg border border-gray-200 hover:shadow-md transition-shadow {% if r.slug == room.slug %}bg-gray-100{% endif %}">
+                <a href="{{ r.get_absolute_url }}" class="block p-3 font-semibold rounded-md">
+                    {{ r.name }}
+                    {# Add unread indicator here later #}
+                    <span id="unread-{{ r.slug }}" class="ml-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden"></span>
                 </a>
             </li>
+            {% empty %}
+            <li>No rooms found.</li>
             {% endfor %}
         </ul>
+         <div class="mt-4 pt-4 border-t">
+            <h3 class="text-lg font-semibold mb-2">Online Users</h3>
+            <ul id="online-users-list" class="space-y-1 text-sm text-gray-600">
+                <!-- Online users will be populated by JS -->
+                 <li id="no-online-users" class="text-gray-400">Loading...</li>
+            </ul>
+        </div>
     </div>
-
 
     <!-- Chat Window -->
-    <div class="flex-1 flex flex-col bg-white">
-        <div class="flex-none bg-white p-4 border-b">
-            <h2 class="text-xl font-medium">{{ room.name }}</h2>
+    <div class="flex-1 flex flex-col bg-gray-50">
+        <div class="flex-none bg-white p-4 border-b flex justify-between items-center">
+            <h2 class="text-xl font-semibold">{{ room.name }}</h2>
+            <div>
+                 <!-- Search Button Placeholder -->
+                 <button id="search-button" class="p-2 rounded hover:bg-gray-100" title="Search Messages">
+                     <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
+                 </button>
+                 <!-- Archive Button Placeholder -->
+                 <button id="archive-button" data-room-slug="{{ room.slug }}" class="p-2 rounded hover:bg-gray-100 ml-2" title="Archive Chat">
+                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                 </button>
+            </div>
         </div>
+
+         <!-- Search Input Area (Initially Hidden) -->
+         <div id="search-area" class="p-2 bg-white border-b hidden">
+             <input type="text" id="search-input" placeholder="Search messages in this room..." class="w-full p-2 border rounded">
+             <div id="search-results" class="mt-2 max-h-40 overflow-y-auto"></div>
+         </div>
 
         <!-- Messages List -->
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-            {% for message in messages %}
-            <div id="message-{{ message.id }}" class="flex {% if message.user.username == request.user.username %}justify-end{% else %}justify-start{% endif %}">
-                <div class="max-w-[80%] p-3 rounded-lg 
-                            {% if message.user.username == request.user.username %}bg-blue-500 text-white{% else %}bg-white shadow-md{% endif %}">
-                    <div class="text-sm break-words">{{ message.content }}</div>
-                    <div class="flex items-center justify-end mt-2">
-                        <span class="text-xs {% if message.user.username == request.user.username %}text-blue-200{% else %}text-gray-500{% endif %}">
-                            {{ message.date_added|date:"H:i" }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-            <div class="text-gray-500 text-center py-4 text-sm">No messages yet.</div>
-            {% endfor %}
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
+            {% include 'room/partials/messages_list.html' with messages=messages %}
         </div>
+
+         <!-- Reply Preview Area -->
+         <div id="reply-preview-area" class="p-2 bg-gray-200 border-t hidden">
+             <div class="flex justify-between items-center text-sm">
+                 <div>
+                     Replying to <strong id="reply-preview-user"></strong>:
+                     <span id="reply-preview-content" class="text-gray-600 italic ml-1"></span>
+                 </div>
+                 <button id="cancel-reply-button" class="text-red-500 hover:text-red-700">×</button>
+             </div>
+         </div>
 
         <!-- Message Input -->
-        <div class="p-4 bg-white border-t">
-            <form method="post" action="." class="flex gap-3" id="message-form">
-                {% csrf_token %}
-                <input type="text" name="content" aria-label="Message input" class="w-full p-3 rounded-full text-sm border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400" placeholder="Type your message..." id="chat-message-input">
-                <button type="submit" id="chat-message-submit" class="p-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-                    </svg>
-                </button>
-            </form>
+        <div class="p-4 bg-white border-t flex items-center gap-3">
+             <!-- File Upload Button -->
+            <label for="file-input" class="cursor-pointer p-3 rounded-full hover:bg-gray-100" title="Attach File">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+            </label>
+            <input type="file" id="file-input" class="hidden">
+
+            <input type="text" name="content" aria-label="Message input" class="flex-grow p-3 rounded-full text-sm border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400" placeholder="Type your message..." id="chat-message-input">
+            <button type="button" id="chat-message-submit" class="p-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                </svg>
+            </button>
         </div>
     </div>
-
 </div>
 {% endblock %}
+
 
 {% block scripts %}
 {{ room.slug|json_script:"json-roomname" }}
 {{ request.user.username|json_script:"json-username" }}
+{{ request.user.id|json_script:"json-userid" }}
 
+{# Include CSRF token for AJAX requests #}
 <script>
-    const roomName = JSON.parse(document.getElementById('json-roomname').textContent);
-    const userName = JSON.parse(document.getElementById('json-username').textContent);
-    const chatSocket = new WebSocket(
-        'ws://' + window.location.host + '/ws/' + roomName + '/'
-    );
-
-    chatSocket.onclose = function(e) {
-        console.log('WebSocket closed:', e);
-    };
-
-    chatSocket.onmessage = function(e) {
-        const data = JSON.parse(e.data);
-        
-        if (data.message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('flex', data.username === userName ? 'justify-end' : 'justify-start');
-            messageDiv.innerHTML = `
-                <div class="max-w-[80%] p-3 rounded-lg ${data.username === userName ? 'bg-blue-500 text-white' : 'bg-white shadow-md'}">
-                    <div class="text-sm break-words">${data.message}</div>
-                    <div class="flex items-center justify-end mt-2">
-                        <span class="text-xs ${data.username === userName ? 'text-blue-200' : 'text-gray-500'}">${new Date().toLocaleTimeString().slice(0, 5)}</span>
-                    </div>
-                </div>
-            `;
-            document.querySelector('#chat-messages').appendChild(messageDiv);
-        } else {
-            alert('The message was empty!');
-        }
-
-        scrollToBottom();
-    };
-
-    document.querySelector('#chat-message-input').focus();
-    document.querySelector('#chat-message-input').onkeydown = function(e) {
-        if (e.keyCode === 13) {
-            document.querySelector('#chat-message-submit').click();
-        }
-    };
-
-    document.querySelector('#chat-message-submit').onclick = function(e) {
-        e.preventDefault();
-
-        const messageInputDom = document.querySelector('#chat-message-input');
-        const message = messageInputDom.value;
-
-        if (!message.trim()) return;
-
-        chatSocket.send(JSON.stringify({
-            'message': message,
-            'username': userName,
-            'room': roomName
-        }));
-
-        messageInputDom.value = '';
-        return false;
-    };
-
-    function scrollToBottom() {
-        let objDiv = document.getElementById("chat-messages");
-        objDiv.scrollTop = objDiv.scrollHeight;
-    }
-
-    scrollToBottom();
+    const csrfToken = '{{ csrf_token }}';
 </script>
+
+{# Include the updated JavaScript logic #}
+<script src="{% static 'js/chat_room.js' %}"></script>
+
+{# Add a template for new messages #}
+<template id="message-template">
+    <div id="message-{message_id}" class="flex message-container" data-message-id="{message_id}" data-username="{username}">
+        <div class="max-w-[80%] p-3 rounded-lg message-bubble">
+            <!-- Reply Block -->
+            <div class="reply-block hidden border-l-2 border-blue-300 pl-2 mb-1 text-sm opacity-80">
+                <strong class="reply-user"></strong>
+                <div class="reply-content text-xs italic"></div>
+            </div>
+            <!-- File Block -->
+            <div class="file-block hidden mb-1">
+                <a href="#" target="_blank" class="file-link text-blue-700 underline">
+                    <span class="file-name"></span>
+                </a>
+                <!-- Add image/video preview logic here if needed -->
+            </div>
+             <!-- Content Block -->
+            <div class="message-content text-sm break-words"></div>
+             <!-- Meta Block -->
+            <div class="flex items-center justify-between mt-1 text-xs message-meta">
+                <span class="timestamp"></span>
+                <span class="edited-indicator text-gray-400 ml-1 hidden">(edited)</span>
+                <!-- Message Actions (Reply, Edit, Delete, React) -->
+                 <div class="message-actions opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-2 space-x-1">
+                    <button class="action-reply p-0.5 rounded hover:bg-gray-200" title="Reply">↩️</button>
+                    <button class="action-edit p-0.5 rounded hover:bg-gray-200" title="Edit">✏️</button>
+                    <button class="action-delete p-0.5 rounded hover:bg-gray-200" title="Delete">🗑️</button>
+                    <button class="action-react p-0.5 rounded hover:bg-gray-200" title="React">😊</button>
+                 </div>
+            </div>
+             <!-- Reactions Block -->
+             <div class="reactions-block flex flex-wrap gap-1 mt-1">
+                <!-- Reactions populated by JS -->
+             </div>
+        </div>
+    </div>
+</template>
+
 {% endblock %}
