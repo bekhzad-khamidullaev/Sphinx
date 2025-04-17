@@ -46,12 +46,16 @@ INSTALLED_APPS = [
     'user_profiles',        # User management, teams, profiles, company structure
     'tasks',                # Core task management functionality
     'room',                 # Chat/room functionality (assuming it exists)
-
+    'hrbot',
     # Celery (if used for background tasks) - Uncomment if needed
     # 'celery',
     # 'django_celery_beat', # For scheduled tasks
     # 'django_celery_results', # To store task results
 ]
+
+
+TELEGRAM_BOT_TOKEN = "7822648522:AAGegzZBgQpSNm06aN-ycWH1-Dncuyd0xn4"
+BITRIX24_WEBHOOK = 'https://yourdomain.bitrix24.ru/rest/ВАШ_WEBHOOK'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -359,7 +363,7 @@ MESSAGE_TAGS = {
 }
 
 # --- Telegram Bot Settings (Optional) ---
-TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default=None)
+# TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default=None)
 
 # --- Other Custom Settings ---
 SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000') # Used for generating absolute URLs in emails/notifications

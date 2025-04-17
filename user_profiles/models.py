@@ -85,6 +85,7 @@ class User(AbstractUser):
         related_name='employees',
         verbose_name=_("Отдел")
     )
+    roles = models.ManyToManyField("user_profiles.Role", blank=True, related_name="users", verbose_name=_("Роли"))
 
     # Override groups and user_permissions for custom related names if desired
     # groups = models.ManyToManyField(
@@ -212,6 +213,17 @@ class Team(BaseModel):
 #         return self.name
 
 
+# ------------------------ User Roles ------------------------
+class Role(models.Model):
+    name = models.CharField(max_length=50, unique=True, verbose_name=_("Название роли"))
+
+    class Meta:
+        verbose_name = _("Роль")
+        verbose_name_plural = _("Роли")
+
+    def __str__(self):
+        return self.name
+
 # ------------------------ User Roles within Tasks ------------------------
 class TaskUserRole(BaseModel):
     """Defines a user's specific role within a particular task."""
@@ -244,7 +256,13 @@ class TaskUserRole(BaseModel):
         db_index=True
     )
     # created_at/updated_at inherited from BaseModel
-
+    # role = models.ForeignKey(
+    #     "Role",
+    #     on_delete=models.CASCADE,
+    #     verbose_name=_("Роль"),
+    #     db_index=True
+    # )
+    # Consider using a ManyToManyField if users can have multiple roles in a task
     class Meta:
         verbose_name = _("Роль пользователя в задаче")
         verbose_name_plural = _("Роли пользователей в задачах")
