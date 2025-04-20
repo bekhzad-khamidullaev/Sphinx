@@ -72,7 +72,7 @@ def notify_user_on_approval(sender, instance, created, **kwargs):
     logger.info(f"TelegramUser {instance.telegram_id} approved. Sending notification.")
 
     # 1) Сообщаем об одобрении
-    approval_text = _("✅ Ваш аккаунт подтвержден! Теперь доступны все функции бота.")
+    approval_text = _("✅ Ваш аккаунт подтвержден! Теперь доступны все функции бота. Нажмите для продолжения /start")
     if not send_telegram_message_sync(
         chat_id=instance.telegram_id,
         text=approval_text
@@ -83,17 +83,6 @@ def notify_user_on_approval(sender, instance, created, **kwargs):
     # 2) Отправляем главное меню
     kb_data = [
         [InlineKeyboardButton(_("Начать"), callback_data="/start")],
-        [InlineKeyboardButton(_("📝 Новая оценка"), callback_data="main:new_eval")],
-        [
-            InlineKeyboardButton(_("🏢 Список отделов"), callback_data="main:show_depts"),
-            InlineKeyboardButton(_("👥 Список сотрудников"), callback_data="main:show_all_users"),
-        ],
-        [
-            InlineKeyboardButton(_("⚙️ Настройки профиля"), callback_data="main:profile_settings"),
-            InlineKeyboardButton(_("🌐 Выбор языка"), callback_data="main:choose_lang"),
-        ],
-        [InlineKeyboardButton(_("🔍 Поиск сотрудника"), callback_data="main:search_emp")],
-        [InlineKeyboardButton(_("⏹️ Завершить /stop"), callback_data="main:stop")],
     ]
 
     # Собираем InlineKeyboardButton

@@ -1,59 +1,75 @@
-import sys
-
-if sys.platform == "win32":
-    # switch both input and output to UTF-8
-    import ctypes
-    ctypes.windll.kernel32.SetConsoleCP(65001)
-    ctypes.windll.kernel32.SetConsoleOutputCP(65001)
-
-# Now reconfigure Python’s stdout to UTF‑8 as well:
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
-
-
-import os
-import django
+# hrbot/management/commands/runbot.py
 import logging
 import asyncio
-import sys
-import io
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from telegram import Bot
-from telegram.ext import ApplicationBuilder
 
-# UTF-8 for console output
-if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", line_buffering=True)
+# Используем Application из python-telegram-bot v20+
+from telegram.ext import Application, ApplicationBuilder, Defaults
+from telegram import Update
+from telegram.constants import ParseMode
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
+# Импортируем функцию настройки обработчиков
+# Используем относительный импорт, т.к. registration в подпапке bot
+from hrbot.bot.registration import setup_handlers
 
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setFormatter(logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-))
-root = logging.getLogger()
-root.setLevel(logging.INFO)
-root.addHandler(console_handler)
+# Настраиваем логирование для команды
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    # encoding='utf-8' # Указывайте, если выводите в файл или для Windows консоли
+)
+# Понижаем уровень логирования для httpx и httpcore, чтобы не засорять вывод
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from hrbot.bot.handlers import setup_handlers
+logger = logging.getLogger(__name__) # Логгер для этой команды
 
 class Command(BaseCommand):
-    help = "Запускает HR-бота"
+    help = 'Запускает Telegram бота HR Bot'
 
     def handle(self, *args, **options):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        """Основная логика команды."""
+        logger.info("Starting runbot command...")
 
-        bot = Bot(settings.TELEGRAM_BOT_TOKEN)
-        loop.run_until_complete(bot.delete_webhook(drop_pending_updates=True))
+        token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
+        if not token:
+            logger.critical("TELEGRAM_BOT_TOKEN не найден в настройках Django!")
+            self.stderr.write(self.style.ERROR("TELEGRAM_BOT_TOKEN не найден в настройках Django!"))
+            return
 
-        app = ApplicationBuilder().token(settings.TELEGRAM_BOT_TOKEN).build()
-        setup_handlers(app)
+        try:
+            # Устанавливаем настройки по умолчанию для всех запросов бота
+            defaults = Defaults(parse_mode=ParseMode.MARKDOWN) # По умолчанию используем Markdown
 
-        root.info("🚀 HR-бот запущен")
-        loop.run_until_complete(app.run_polling())
-        root.info("🛑 HR-бот остановлен")
-        loop.close()
-        sys.exit(0)
+            # Собираем приложение
+            application = (
+                ApplicationBuilder()
+                .token(token)
+                .defaults(defaults) # Применяем настройки по умолчанию
+                # .persistence(...) # Добавьте persistence, если нужно сохранять состояние
+                # .concurrent_updates(True) # Можно включить для параллельной обработки
+                .build()
+            )
+
+            # Настраиваем обработчики
+            setup_handlers(application)
+
+            logger.info("HR Bot application configured. Starting polling...")
+            self.stdout.write(self.style.SUCCESS("🚀 HR-бот запускается..."))
+
+            # Запускаем бота в режиме опроса (polling)
+            application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+            logger.info("HR Bot polling stopped.")
+            self.stdout.write(self.style.SUCCESS("HR-бот остановлен."))
+
+        except ValueError as e: # Например, если токен не валиден
+             logger.critical(f"Configuration error: {e}")
+             self.stderr.write(self.style.ERROR(f"Ошибка конфигурации: {e}"))
+        except ImportError as e:
+             logger.critical(f"Import error during setup: {e}")
+             self.stderr.write(self.style.ERROR(f"Ошибка импорта при настройке: {e}"))
+        except Exception as e:
+            logger.exception("An unexpected error occurred while running the bot.")
+            self.stderr.write(self.style.ERROR(f"Непредвиденная ошибка при работе бота: {e}"))

@@ -252,57 +252,35 @@ CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=DEBUG, cast=bo
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-    },
     'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
         'file': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler', # Use rotating file handler
-            'filename': BASE_DIR / 'logs/django.log', # Log file location
-            'maxBytes': 1024 * 1024 * 5, # 5 MB
-            'backupCount': 5, # Keep 5 backup files
-            'formatter': 'verbose',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'debug.log', # Путь к лог-файлу
+            'encoding': 'utf-8', # <--- ВАЖНО
         },
-    },
-    'root': { # Root logger configuration
-        'handlers': ['console', 'file'],
-        'level': config('LOG_LEVEL', default='INFO'), # Default log level
+        'console': { # Настройка для консоли (может не помочь с кодировкой самой консоли)
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
     },
     'loggers': {
         'django': {
             'handlers': ['console', 'file'],
-            'level': config('DJANGO_LOG_LEVEL', default='INFO'),
+            'level': 'INFO',
             'propagate': False,
         },
-        'django.request': {
-            'handlers': ['file'], # Log requests to file
-            'level': 'WARNING', # Log only errors/warnings for requests by default
-            'propagate': False,
-        },
-        'tasks': { # Logger for your 'tasks' app
+        'hrbot': { # Логгер вашего приложения
             'handlers': ['console', 'file'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
+            'level': 'DEBUG', # Уровень DEBUG для подробных логов
             'propagate': False,
         },
-        'user_profiles': { # Logger for your 'user_profiles' app
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
-        },
-         # Add loggers for other apps as needed
+         # Добавьте другие логгеры по необходимости
     },
+    'root': { # Корневой логгер
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    }
 }
 
 # Ensure logs directory exists
