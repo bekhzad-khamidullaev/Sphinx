@@ -1,13 +1,22 @@
 from django.db import models
 from user_profiles.models import User, Role
+from django.utils.translation import gettext as _
 
 class TelegramUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='telegram_profile')
     telegram_id = models.CharField(max_length=20, unique=True)
     approved = models.BooleanField(default=False)
+    notified_on_approval = models.BooleanField(default=False, verbose_name=_("Уведомлен о подтверждении"))
+
+    class Meta:
+        verbose_name = _("Telegram Пользователь")
+        verbose_name_plural = _("Telegram Пользователи")
 
     def __str__(self):
-        return f"{self.user.username} ({self.telegram_id})"
+        approved_status = "✅" if self.approved else "⏳"
+        notified_status = "📨" if self.notified_on_approval else ""
+        username = getattr(self.user, 'username', 'N/A')
+        return f"{username} ({self.telegram_id}) {approved_status}{notified_status}"
 
 # class Role(models.Model):
 #     name = models.CharField(max_length=50, unique=True)

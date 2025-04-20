@@ -475,8 +475,8 @@ def task_post_save_handler(sender, instance: Task, created: bool, update_fields=
                  if was_just_completed:
                       logger.info(f"Task {instance.task_number} was just completed. Triggering specific completion actions (e.g., email).")
                       # Здесь можно вызвать функцию отправки email и т.д.
-                      # from .notifications import send_task_completion_email
-                      # send_task_completion_email(instance)
+                    #   from .notifications import send_task_completion_email
+                    #   send_task_completion_email(instance)
 
 
         except Exception as e:
