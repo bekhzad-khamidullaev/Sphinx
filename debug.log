@@ -49,3 +49,62 @@ Watching for file changes with StatReloader
 "GET /static/admin/js/change_form.js HTTP/1.1" 304 0
 "GET /static/django-browser-reload/reload-listener.js HTTP/1.1" 304 0
 "GET /static/django-browser-reload/reload-worker.js HTTP/1.1" 304 0
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting runbot command...
+All handlers set up successfully for the application.
+HR Bot application configured. Starting polling...
+Application started
+Processing /start command for user_id: 1220674395
+Successfully got/created TelegramUser 1 linked to User 23 for tg_id 1220674395. User preloaded: False
+User data cleared for user 1220674395
+MAIN_MENU callback 'main:new_eval' from user 1220674395
+EVAL_SELECT_QSET callback 'eval_qset:2' from user 1220674395
+User 1220674395 selected questionnaire 2 ('Общая оценка сотрудника (ежеквартальная)') for evaluation.
+EVAL_SELECT_DEPT callback 'eval_dept:5' from user 1220674395
+User 1220674395 selected department 5 ('IT-отдел') for evaluation using qset 2.
+EVAL_SELECT_QSET callback 'eval_qset:2' from user 1220674395
+User 1220674395 selected questionnaire 2 ('Общая оценка сотрудника (ежеквартальная)') for evaluation.
+MAIN_MENU callback 'main:new_eval' from user 1220674395
+EVAL_SELECT_QSET callback 'eval_qset:8' from user 1220674395
+User 1220674395 selected questionnaire 8 ('Оценка на испытательном сроке (1-й месяц)') for evaluation.
+EVAL_SELECT_DEPT callback 'eval_dept:5' from user 1220674395
+User 1220674395 selected department 5 ('IT-отдел') for evaluation using qset 8.
+EVAL_SELECT_EMP callback 'eval_emp:9' from user 1220674395
+Found role ID 8 for evaluated employee 9
+User 1220674395 selected employee 9 ('Галактион Сафонова') for evaluation using qset 8.
+Starting evaluation with 6 questions for user 1220674395.
+EVAL_Q callback 'eval_answer:52:2' from user 1220674395
+User 1220674395 answered question 1 (PK: 52) with option 2: 'Быстро'
+EVAL_Q callback 'eval_answer:53:2' from user 1220674395
+User 1220674395 answered question 2 (PK: 53) with option 2: 'Да'
+EVAL_Q callback 'eval_answer:54:2' from user 1220674395
+User 1220674395 answered question 3 (PK: 54) with option 2: 'Хорошо'
+EVAL_Q callback 'eval_answer:55:2' from user 1220674395
+User 1220674395 answered question 4 (PK: 55) with option 2: 'Да'
+EVAL_Q callback 'eval_answer:56:2' from user 1220674395
+User 1220674395 answered question 5 (PK: 56) with option 2: 'Да'
+Question 57 has no valid answer options list! Offering skip.
+EVAL_Q callback 'eval_answer:57:-1' from user 1220674395
+User 1220674395 skipped question 6 (PK: 57)
+Evaluation finished by user 1220674395 for employee 'Галактион Сафонова' (ID: 9) using qset 8.
+Successfully got/created TelegramUser 1 linked to User 23 for tg_id 1220674395. User preloaded: False
+Attempting to save evaluation with data: {'evaluator_id': 1, 'employee_name': 'Галактион Сафонова', 'employee_id': 9, 'questionnaire_id': 8, 'role_id': 8, 'responses': {'52': 'Быстро', '53': 'Да', '54': 'Хорошо', '55': 'Да', '56': 'Да', '57': None}}
+Checking existence before create: TGUser ID 1 exists: True, QSet ID 8 exists: True, Employee ID 9 exists: True, Role ID 8 exists: True
+Evaluation 7 created successfully for employee 'Галактион Сафонова'.
+Error sending evaluation 7 to Bitrix: name 'send_evaluation_to_bitrix' is not defined
+Traceback (most recent call last):
+  File "C:\Users\sysadmin\Git\Sphinx\hrbot\bot\db.py", line 180, in save_eval
+    try: send_evaluation_to_bitrix(evaluation); logger.info(f"Evaluation {evaluation.id} sent to Bitrix.")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'send_evaluation_to_bitrix' is not defined
+HR_TELEGRAM_CHAT_ID is not set in settings. Cannot send summary.
+Evaluation context data cleared for user 1220674395.
+Processing /start command for user_id: 1220674395
+Successfully got/created TelegramUser 1 linked to User 23 for tg_id 1220674395. User preloaded: False
+User data cleared for user 1220674395
+MAIN_MENU callback 'main:profile_settings' from user 1220674395
+Processing /start command for user_id: 1220674395
+Successfully got/created TelegramUser 1 linked to User 23 for tg_id 1220674395. User preloaded: False
+User data cleared for user 1220674395
+MAIN_MENU callback 'main:show_depts' from user 1220674395
