@@ -4,6 +4,7 @@ import os
 from django.utils.translation import gettext_lazy as _
 from decouple import config
 from datetime import timedelta
+from dotenv import load_dotenv
 
 
 # --- Logging Setup ---
@@ -11,12 +12,16 @@ logger = logging.getLogger(__name__)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 # --- Basic Django Settings ---
-SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-t)onh@=0&bs0eghf!lv8w8==&(4^atr-44z!=xsac_4a6$^^+8') # Use environment variable or default
-DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
+# SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-t)onh@=0&bs0eghf!lv8w8==&(4^atr-44z!=xsac_4a6$^^+8') # Use environment variable or default
+# DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = os.environ.get('DEBUG', '0') == '1' # Читаем из .env (0 или 1)
 
+# ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-key-for-dev')
 # --- Application Definition ---
 INSTALLED_APPS = [
     # Django Core Apps
@@ -53,8 +58,14 @@ INSTALLED_APPS = [
     # 'django_celery_results', # To store task results
 ]
 
+# Telegram Bot Token
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
-TELEGRAM_BOT_TOKEN = "7822648522:AAGegzZBgQpSNm06aN-ycWH1-Dncuyd0xn4"
+# HR Chat ID
+HR_TELEGRAM_CHAT_ID = os.environ.get('HR_TELEGRAM_CHAT_ID')
+
+# TELEGRAM_BOT_TOKEN = "7822648522:AAGegzZBgQpSNm06aN-ycWH1-Dncuyd0xn4"
+
 BITRIX24_WEBHOOK = 'https://yourdomain.bitrix24.ru/rest/ВАШ_WEBHOOK'
 
 MIDDLEWARE = [
@@ -97,15 +108,27 @@ TEMPLATES = [
 # Default to SQLite for simplicity, override with environment variables for production
 DATABASES = {
     'default': {
-        'ENGINE': config('DATABASE_ENGINE', default='django.db.backends.sqlite3'),
-        'NAME': config('DATABASE_NAME', default=BASE_DIR / 'db.sqlite3'),
-        # Add other connection parameters (USER, PASSWORD, HOST, PORT) if using PostgreSQL/MySQL
-        # 'USER': config('DATABASE_USER', default=''),
-        # 'PASSWORD': config('DATABASE_PASSWORD', default=''),
-        # 'HOST': config('DATABASE_HOST', default=''),
-        # 'PORT': config('DATABASE_PORT', default=''),
+        'ENGINE': os.environ.get('SQL_ENGINE', 'django.db.backends.sqlite3'),
+        'NAME': os.environ.get('SQL_DATABASE', BASE_DIR / 'db.sqlite3'),
+        # Следующие параметры используются только если ENGINE не sqlite3
+        'USER': os.environ.get('SQL_USER'),
+        'PASSWORD': os.environ.get('SQL_PASSWORD'),
+        'HOST': os.environ.get('SQL_HOST'),
+        'PORT': os.environ.get('SQL_PORT', ''),
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': config('DATABASE_ENGINE', default='django.db.backends.sqlite3'),
+#         'NAME': config('DATABASE_NAME', default=BASE_DIR / 'db.sqlite3'),
+#         # Add other connection parameters (USER, PASSWORD, HOST, PORT) if using PostgreSQL/MySQL
+#         # 'USER': config('DATABASE_USER', default=''),
+#         # 'PASSWORD': config('DATABASE_PASSWORD', default=''),
+#         # 'HOST': config('DATABASE_HOST', default=''),
+#         # 'PORT': config('DATABASE_PORT', default=''),
+#     }
+# }
 
 # --- Password Validation ---
 AUTH_PASSWORD_VALIDATORS = [
