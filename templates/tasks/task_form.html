@@ -1,22 +1,24 @@
 {% extends 'base.html' %}
-{% load i18n app_filters crispy_forms_tags %}
-{% load static %}
+{% load i18n crispy_forms_tags static %} {# Убран app_filters, если не используется #}
 
 {% block title %}{{ page_title|default:_("Форма задачи") }}{% endblock %}
 
 {% block list_title %}
 <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
-    {{ page_title }}
+    {{ page_title|default:_("Создание/Редактирование задачи") }}
 </h1>
 {% endblock %}
 
 {% block list_content %}
 <div class="bg-white dark:bg-dark-800 shadow-xl rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
+    {# Убедимся, что action правильный, если форма используется для создания и редактирования #}
     <form method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
 
+        {# Используем Crispy Forms для рендеринга основной формы #}
         {% crispy form %}
 
+        {# Отображение ошибок формы, не связанных с полями #}
         {% if form.non_field_errors %}
         <div role="alert" class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
             <h4 class="font-bold">{% trans "Ошибка формы:" %}</h4>
@@ -28,51 +30,76 @@
 
         <hr class="my-6 border-gray-200 dark:border-dark-600">
 
+        {# --- Формсет для фотографий --- #}
         <fieldset>
             <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 <i class="fas fa-images mr-2 text-gray-500"></i>{% trans 'Фотографии' %}
             </legend>
 
+            {# Управление формсетом обязательно! #}
             {{ photo_formset.management_form }}
+            {% if photo_formset.non_form_errors %}
+            <div role="alert" class="mb-4 p-3 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
+                <h4 class="font-bold">{% trans "Ошибка фотографий:" %}</h4>
+                {% for error in photo_formset.non_form_errors %}
+                    <p class="text-sm">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
 
             <div id="photo-formset-container" class="space-y-4">
                 {% for photo_form in photo_formset %}
+                {# ID нужен для управления формсетом JS (если будет) #}
                 <div class="photo-form p-4 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 relative transition-all duration-150 ease-in-out {% if photo_form.errors %}border-red-500 dark:border-red-700{% endif %}">
+                    {# Скрытое поле ID формы #}
                     {{ photo_form.id }}
 
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
+                        {# Поле для загрузки фото #}
                         <div class="sm:col-span-4">
+                            {# Явно связываем label и input #}
                             <label for="{{ photo_form.photo.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 {{ photo_form.photo.label }} {% if photo_form.photo.field.required %}<span class="text-red-500">*</span>{% endif %}
                             </label>
+                            {# Отображение текущего фото, если есть #}
                             {% if photo_form.instance.pk and photo_form.instance.photo %}
                             <div class="mb-2 group relative w-24 h-24">
                                 <a href="{{ photo_form.instance.photo.url }}" target="_blank" class="block">
-                                    <img src="{{ photo_form.instance.photo.url }}" alt="{% trans 'Current photo' %}" class="w-full h-full object-cover rounded shadow-md">
+                                    <img src="{{ photo_form.instance.photo.url }}" alt="{% trans 'Текущее фото' %}" class="w-full h-full object-cover rounded shadow-md">
                                 </a>
+                                {# Чекбокс удаления поверх фото #}
                                 {% if photo_formset.can_delete %}
-                                <div class="absolute -top-2 -right-2 bg-white dark:bg-dark-800 rounded-full p-0.5 shadow">
+                                <div class="absolute -top-2 -right-2 bg-white dark:bg-dark-800 rounded-full p-0.5 shadow cursor-pointer">
+                                    {# Обертка для удобства клика #}
                                     <label for="{{ photo_form.DELETE.id_for_label }}" class="flex items-center text-xs text-red-600 dark:text-red-400 cursor-pointer" title="{% trans 'Отметить для удаления' %}">
-                                        {{ photo_form.DELETE|add_css_class:"form-checkbox h-4 w-4 text-red-600 border-gray-300 dark:border-dark-500 rounded-full focus:ring-red-500 bg-white dark:bg-dark-700" }}
+                                        {# Используем классы для чекбокса, включая темный режим #}
+                                        {{ photo_form.DELETE }}
+                                        {# <i class="fas fa-trash-alt ml-1"></i> можно добавить иконку #}
                                     </label>
                                 </div>
                                 {% endif %}
                             </div>
+                             <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{% trans "Загрузите новый файл, чтобы заменить текущий." %}</p>
                             {% endif %}
-                            {{ photo_form.photo|add_css_class:"form-control block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-dark-600 dark:border-dark-500 dark:placeholder-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-dark-500 dark:file:text-gray-300 dark:hover:file:bg-dark-400" }}
-                             {% if photo_form.photo.errors %}
+                            {# Сам input файла. Классы уже должны быть применены из forms.py #}
+                            {{ photo_form.photo }}
+                            {# Ошибки поля фото #}
+                            {% if photo_form.photo.errors %}
                             <div class="mt-1 text-sm text-red-600 dark:text-red-400">
                                 {% for error in photo_form.photo.errors %}<p>{{ error }}</p>{% endfor %}
                             </div>
                             {% endif %}
                         </div>
 
+                        {# Поле описания фото #}
                         <div class="sm:col-span-8">
                             <label for="{{ photo_form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 {{ photo_form.description.label }} {% if photo_form.description.field.required %}<span class="text-red-500">*</span>{% endif %}
                             </label>
-                            {{ photo_form.description|add_css_class:"form-textarea mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-dark-600 dark:border-dark-500 dark:text-gray-200 sm:text-sm"|attr:"rows:3" }}
-                             {% if photo_form.description.errors %}
+                             {# Textarea. Классы уже должны быть применены из forms.py #}
+                            {{ photo_form.description }}
+                             {# Ошибки поля описания #}
+                            {% if photo_form.description.errors %}
                             <div class="mt-1 text-sm text-red-600 dark:text-red-400">
                                 {% for error in photo_form.description.errors %}<p>{{ error }}</p>{% endfor %}
                             </div>
@@ -83,22 +110,20 @@
                 {% endfor %}
             </div>
 
-            {% if photo_formset.non_form_errors %}
-            <div role="alert" class="mt-4 p-3 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
-                <h4 class="font-bold">{% trans "Ошибка фотографий:" %}</h4>
-                {% for error in photo_formset.non_form_errors %}
-                    <p class="text-sm">{{ error }}</p>
-                {% endfor %}
-            </div>
-            {% endif %}
         </fieldset>
 
-        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-dark-600">
-            <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'tasks:task_list' %}{% endif %}" class="px-5 py-2.5 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-dark-600 transition-all shadow-sm">
+        {# Кнопки сохранения и отмены #}
+        <div class="flex justify-end space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
+            {# Кнопка Отмена (ссылка) #}
+            <a href="{% if object and object.get_absolute_url %}{{ object.get_absolute_url }}{% else %}{% url 'tasks:task_list' %}{% endif %}"
+               class="px-5 py-2.5 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-dark-600 transition-all shadow-sm">
                 {% trans 'Отмена' %}
             </a>
-            <button type="submit" class="px-5 py-2.5 rounded-full text-sm font-medium bg-blue-600 dark:bg-ios-blue text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-all shadow-md">
-                <i class="fas fa-save mr-2"></i> {{ form_action|default:_("Сохранить") }}
+            {# Кнопка Сохранить #}
+            <button type="submit"
+                    class="px-5 py-2.5 rounded-full text-sm font-medium bg-blue-600 dark:bg-ios-blue text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-all shadow-md">
+                {# <i class="fas fa-save mr-2"></i> #} {# Раскомментируйте, если используете FontAwesome #}
+                {{ form_action|default:_("Сохранить") }}
             </button>
         </div>
     </form>
@@ -106,69 +131,114 @@
 {% endblock %}
 
 {% block scripts %}
+{# Используем defer для немного лучшей загрузки #}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
-    $(document).ready(function() {
-        function initSelect2(selector, options = {}) {
-            const defaultOptions = {
-                theme: "bootstrap-5",
-                width: '100%',
-                allowClear: true,
-                language: "{{ LANGUAGE_CODE }}"
-            };
-            try {
-                $(selector).select2({...defaultOptions, ...options});
-            } catch (e) {
-                console.error("Error initializing Select2 for selector:", selector, e);
+{# Подключаем jQuery ПЕРЕД Select2 #}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+{# Скрипт инициализации Select2 и зависимых полей #}
+<script defer>
+    // Ждем полной загрузки DOM перед выполнением скрипта
+    document.addEventListener('DOMContentLoaded', function() {
+        // Оборачиваем в try...catch для устойчивости
+        try {
+            // Функция инициализации Select2
+            function initSelect2(selector, options = {}) {
+                const defaultOptions = {
+                    // theme: "bootstrap-5", // Используйте тему, соответствующую вашей CSS-библиотеке или стандартную
+                    width: '100%',
+                    allowClear: true,
+                    language: "{{ LANGUAGE_CODE|default:'en' }}" // Язык для Select2
+                };
+                // Добавляем data-атрибуты для темного режима Select2, если нужно
+                // $(selector).attr('data-theme', 'dark'); // или своя тема
+                try {
+                    $(selector).select2({...defaultOptions, ...options});
+                } catch (e) {
+                    console.error("Error initializing Select2 for selector:", selector, e);
+                }
             }
-        }
 
-        initSelect2('.select2-single');
-        initSelect2('.select2-multiple', { closeOnSelect: false });
+            // Инициализация всех Select2 на странице
+            initSelect2('.select2-single');
+            initSelect2('.select2-multiple', { closeOnSelect: false });
 
-        const categorySelect = $('#id_category');
-        const subcategorySelect = $('#id_subcategory');
+            // Логика зависимых полей Категория -> Подкатегория
+            const categorySelect = $('#id_category'); // Используем ID из формы
+            const subcategorySelect = $('#id_subcategory'); // Используем ID из формы
 
-        if (categorySelect.length && subcategorySelect.length) {
-            const initialSubcategoryValue = "{{ form.subcategory.value|default:'' }}";
-            categorySelect.on('change', function() {
-                const categoryId = $(this).val();
-                subcategorySelect.val(null).empty().trigger('change').prop('disabled', true);
-                subcategorySelect.select2({
-                    placeholder: '{% trans "Загрузка..." %}',
-                    language: "{{ LANGUAGE_CODE }}"
+            if (categorySelect.length && subcategorySelect.length) {
+                // Сохраняем начальное значение подкатегории (если есть)
+                const initialSubcategoryValue = subcategorySelect.val(); // Получаем текущее значение
+
+                categorySelect.on('change', function() {
+                    const categoryId = $(this).val();
+                    console.log("Category changed to:", categoryId); // Отладка
+
+                    // Очищаем и блокируем подкатегорию перед загрузкой
+                    subcategorySelect.val(null).empty().trigger('change').prop('disabled', true);
+                    subcategorySelect.select2({ // Показываем статус загрузки
+                        placeholder: '{% trans "Загрузка..." %}',
+                        language: "{{ LANGUAGE_CODE|default:'en' }}"
+                    });
+
+                    if (categoryId) {
+                        const apiUrl = `/api/subcategories/?category=${categoryId}`; // Убедитесь, что URL правильный
+                        console.log("Fetching subcategories from:", apiUrl); // Отладка
+
+                        $.getJSON(apiUrl)
+                            .done(function(data) {
+                                console.log("Subcategories loaded:", data); // Отладка
+                                // Заполняем подкатегорию новыми данными
+                                subcategorySelect.select2({
+                                    placeholder: '{% trans "Выберите подкатегорию..." %}',
+                                    language: "{{ LANGUAGE_CODE|default:'en' }}",
+                                    data: $.map(data, function (item) {
+                                        return { id: item.id, text: item.name };
+                                    })
+                                }).prop('disabled', false); // Разблокируем поле
+
+                                // Пытаемся восстановить начальное значение, если оно было и есть в новых данных
+                                if (initialSubcategoryValue && data.some(item => item.id == initialSubcategoryValue)) {
+                                     // Задержка может помочь Select2 обработать новые опции перед установкой значения
+                                     setTimeout(function() {
+                                          subcategorySelect.val(initialSubcategoryValue).trigger('change');
+                                          console.log("Restored initial subcategory value:", initialSubcategoryValue); // Отладка
+                                     }, 100);
+                                }
+                            })
+                            .fail(function(jqXHR, textStatus, errorThrown) {
+                                console.error("Error loading subcategories:", textStatus, errorThrown, jqXHR.responseText); // Отладка
+                                subcategorySelect.select2({
+                                    placeholder: '{% trans "Ошибка загрузки подкатегорий" %}',
+                                    language: "{{ LANGUAGE_CODE|default:'en' }}"
+                                }).prop('disabled', true); // Оставляем заблокированным при ошибке
+                            });
+                    } else {
+                        // Если категория не выбрана
+                        subcategorySelect.select2({
+                            placeholder: '{% trans "Сначала выберите категорию" %}',
+                            language: "{{ LANGUAGE_CODE|default:'en' }}"
+                        }).prop('disabled', true);
+                    }
                 });
 
-                if (categoryId) {
-                    const apiUrl = `/api/subcategories/?category=${categoryId}`;
-                    $.getJSON(apiUrl)
-                        .done(function(data) {
-                            subcategorySelect.select2({
-                                placeholder: '{% trans "Выберите подкатегорию..." %}',
-                                language: "{{ LANGUAGE_CODE }}",
-                                data: $.map(data, function (item) {
-                                    return { id: item.id, text: item.name };
-                                })
-                            }).prop('disabled', false);
-                            if (initialSubcategoryValue && data.some(item => item.id == initialSubcategoryValue)) {
-                                subcategorySelect.val(initialSubcategoryValue).trigger('change');
-                            }
-                        })
-                        .fail(function(jqXHR, textStatus, errorThrown) {
-                            subcategorySelect.select2({
-                                placeholder: '{% trans "Ошибка загрузки" %}',
-                                language: "{{ LANGUAGE_CODE }}"
-                            });
-                        });
-                } else {
-                    subcategorySelect.select2({
-                        placeholder: '{% trans "Сначала выберите категорию" %}',
-                        language: "{{ LANGUAGE_CODE }}"
-                    }).prop('disabled', true);
-                }
-            }).trigger('change');
+                // Вызываем change при загрузке, чтобы загрузить подкатегории, если категория уже выбрана (при редактировании)
+                 // Убедимся, что Select2 инициализирован перед вызовом trigger
+                 setTimeout(function() {
+                      if (categorySelect.val()) { // Вызываем только если категория выбрана
+                           categorySelect.trigger('change');
+                           console.log("Triggering change on category load"); // Отладка
+                      }
+                 }, 200); // Небольшая задержка для гарантии инициализации
+
+
+            } else {
+                 console.warn("Category or Subcategory select not found."); // Предупреждение, если селекты не найдены
+            }
+
+        } catch (e) {
+             console.error("General JavaScript error on task form:", e);
         }
     });
 </script>

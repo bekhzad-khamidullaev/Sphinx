@@ -147,39 +147,92 @@ class Task(BaseModel):
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default=StatusChoices.NEW, verbose_name=_("Статус"), db_index=True)
     priority = models.IntegerField(default=TaskPriority.MEDIUM, choices=TaskPriority.choices, verbose_name=_("Приоритет"), db_index=True)
     deadline = models.DateTimeField(null=True, blank=True, verbose_name=_("Срок выполнения"), db_index=True)
-    start_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата начала"))
+    start_date = models.DateField(
+        verbose_name=_('Дата начала'),
+        default=timezone.now, # Устанавливает текущую дату при создании
+        # editable=False, # Можно сделать нередактируемым в админке/формах
+        # blank=True # Можно разрешить быть пустым, если default не всегда нужен
+    )
     completion_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата завершения"))
     estimated_time = models.DurationField(null=True, blank=True, verbose_name=_("Оценка времени"))
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_tasks", verbose_name=_("Создатель"), db_index=True)
 
     def clean(self):
-        if self.deadline and self.start_date and self.deadline < self.start_date:
-            raise ValidationError(_("Срок выполнения не может быть раньше даты начала."))
-        if self.completion_date and self.start_date and self.completion_date < self.start_date:
-             raise ValidationError(_("Дата завершения не может быть раньше даты начала."))
+        super().clean()
 
+        # deadline не может быть раньше start_date
+        if self.deadline and self.start_date:
+            if self.deadline.date() < self.start_date:
+                raise ValidationError({
+                    'deadline': _("Срок выполнения не может быть раньше даты начала.")
+                })
+
+        # completion_date не может быть раньше start_date
+        if self.completion_date and self.start_date:
+            if self.completion_date.date() < self.start_date:
+                raise ValidationError({
+                    'completion_date': _("Дата завершения не может быть раньше даты начала.")
+                })
+
+        # Валидация соответствия категории и подкатегории
         if self.category and self.subcategory and self.category != self.subcategory.category:
             raise ValidationError(_("Подкатегория не принадлежит выбранной категории."))
+
+        # Если выбрали подкатегорию без категории, подтягиваем категорию автоматически
         if not self.category and self.subcategory:
             self.category = self.subcategory.category
 
-        is_being_completed = self.status == self.StatusChoices.COMPLETED
+        # Авто‑установка/сброс completion_date при смене статуса
+        is_being_completed = (self.status == self.StatusChoices.COMPLETED)
         original_status = None
         if not self._state.adding and self.pk:
             try:
-                original_status = Task.objects.values('status').get(pk=self.pk)['status'] # Оптимизация
-            except Task.DoesNotExist: pass
+                original_status = Task.objects.values('status').get(pk=self.pk)['status']
+            except Task.DoesNotExist:
+                pass
 
         if is_being_completed and not self.completion_date:
             self.completion_date = timezone.now()
-            logger.debug(f"Task {self.pk or 'new'}: Setting completion_date due to status COMPLETED.")
         elif not is_being_completed and original_status == self.StatusChoices.COMPLETED:
             self.completion_date = None
-            logger.debug(f"Task {self.pk}: Clearing completion_date because status changed from COMPLETED.")
 
-        if self.is_overdue and self.status not in [self.StatusChoices.COMPLETED, self.StatusChoices.CANCELLED, self.StatusChoices.OVERDUE]:
-            logger.debug(f"Task {self.pk or 'new'}: Setting status to OVERDUE because deadline passed.")
+        # Авто‑пометка OVERDUE
+        if self.is_overdue and self.status not in (
+            self.StatusChoices.COMPLETED,
+            self.StatusChoices.CANCELLED,
+            self.StatusChoices.OVERDUE
+        ):
             self.status = self.StatusChoices.OVERDUE
+
+
+    # def clean(self):
+    #     if self.deadline and self.start_date and self.deadline < self.start_date:
+    #         raise ValidationError(_("Срок выполнения не может быть раньше даты начала."))
+    #     if self.completion_date and self.start_date and self.completion_date < self.start_date:
+    #          raise ValidationError(_("Дата завершения не может быть раньше даты начала."))
+
+    #     if self.category and self.subcategory and self.category != self.subcategory.category:
+    #         raise ValidationError(_("Подкатегория не принадлежит выбранной категории."))
+    #     if not self.category and self.subcategory:
+    #         self.category = self.subcategory.category
+
+    #     is_being_completed = self.status == self.StatusChoices.COMPLETED
+    #     original_status = None
+    #     if not self._state.adding and self.pk:
+    #         try:
+    #             original_status = Task.objects.values('status').get(pk=self.pk)['status'] # Оптимизация
+    #         except Task.DoesNotExist: pass
+
+    #     if is_being_completed and not self.completion_date:
+    #         self.completion_date = timezone.now()
+    #         logger.debug(f"Task {self.pk or 'new'}: Setting completion_date due to status COMPLETED.")
+    #     elif not is_being_completed and original_status == self.StatusChoices.COMPLETED:
+    #         self.completion_date = None
+    #         logger.debug(f"Task {self.pk}: Clearing completion_date because status changed from COMPLETED.")
+
+    #     if self.is_overdue and self.status not in [self.StatusChoices.COMPLETED, self.StatusChoices.CANCELLED, self.StatusChoices.OVERDUE]:
+    #         logger.debug(f"Task {self.pk or 'new'}: Setting status to OVERDUE because deadline passed.")
+    #         self.status = self.StatusChoices.OVERDUE
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding

@@ -68,12 +68,12 @@ class User(AbstractUser):
     # REQUIRED_FIELDS = ['username'] # Keep username required if not using email
 
     settings = JSONField(_("Настройки пользователя"), default=dict, blank=True)
-    email = models.EmailField(_('email address'), unique=True) # Ensure email is unique
+    email = models.EmailField(_('email address'), unique=True, null=True, blank=True)
     phone_number = models.CharField(_("Номер телефона"), max_length=20, blank=True, null=True)
     job_title = models.CharField(_("Должность"), max_length=100, blank=True, null=True)
     image = models.ImageField(
         _("Аватар"),
-        default='profile_pics/user.svg', # Use a default SVG or image
+        default='profile_pics/user.svg',
         upload_to='profile_pics/',
         blank=True
     )

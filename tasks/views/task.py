@@ -4,14 +4,14 @@ import logging
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.forms.models import inlineformset_factory
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django_filters.views import FilterView
 from django.contrib import messages
-# Paginator импортируется базовым классом, но ошибки можно импортировать
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Локальные импорты

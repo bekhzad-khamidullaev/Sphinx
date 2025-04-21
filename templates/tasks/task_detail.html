@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load i18n static %} {# Убран crispy_forms_tags #}
+{% load i18n app_filters static %} {# Убедитесь, что app_filters загружен #}
 
 {% block title %}{{ page_title|default:_("Детали задачи") }}{% endblock %}
 
@@ -14,21 +14,18 @@
             {% blocktrans with project_name=task.project.name %}Проект: {{ project_name }}{% endblocktrans %}
         </p>
     </div>
-    {# Кнопки действий с фиксированным размером (пример: px-4 py-2) #}
-    <div class="flex space-x-2 flex-shrink-0"> {# Уменьшен space-x #}
+    {# Кнопки действий #}
+    <div class="flex space-x-3 flex-shrink-0">
         {% if can_change_task %}
-        {# Стандартный размер кнопки #}
         <a href="{% url 'tasks:task_update' pk=task.pk %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-gray-900 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 dark:bg-ios-yellow dark:text-black dark:hover:bg-yellow-300 dark:focus:ring-offset-dark-800 transition-all">
             <i class="fas fa-edit mr-2"></i> {% trans 'Редактировать' %}
         </a>
         {% endif %}
         {% if can_delete_task %}
-         {# Стандартный размер кнопки #}
         <a href="{% url 'tasks:task_delete' pk=task.pk %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-ios-red dark:hover:bg-red-400 dark:focus:ring-offset-dark-800 transition-all">
             <i class="fas fa-trash mr-2"></i> {% trans 'Удалить' %}
         </a>
         {% endif %}
-         {# Стандартный размер кнопки #}
          <a href="{% url 'tasks:task_list' %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-dark-600 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600 dark:focus:ring-offset-dark-800 transition-all">
              <i class="fas fa-arrow-left mr-2"></i> {% trans 'К списку' %}
         </a>
@@ -38,33 +35,35 @@
 
 {% block list_content %}
 {# Основной контейнер контента #}
-<div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 mt-6">
+<div id="task-detail-container"
+     class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 mt-6"
+     data-task-id="{{ task.pk }}"> {# ID задачи для JS #}
 
     {# Сетка для основного контента и боковой панели #}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
 
         {# Левая колонка: Основная информация о задаче #}
-        <div class="md:col-span-2 space-y-6"> {# Увеличен space-y для большего расстояния #}
+        <div class="md:col-span-2 space-y-6">
              {# Статус и Приоритет #}
              <div class="flex flex-wrap gap-4 items-center">
                 <div>
                     <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Статус' %}</span>
                      <span class="status-badge px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
                         {% if task.status == 'new' %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200{% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200{% elif task.status == 'canceled' %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through{% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200{% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200{% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
-                        {{ task.status_display|default:task.status }}
+                        {{ task.get_status_display|default:task.status }}
                     </span>
                 </div>
                  <div>
                     <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Приоритет' %}</span>
-                    <p class="text-gray-800 dark:text-gray-100 font-medium text-sm">{{ task.priority_display }}</p>
+                    <p class="text-gray-800 dark:text-gray-100 font-medium text-sm">{{ task.get_priority_display }}</p>
                 </div>
             </div>
 
              {# Описание #}
             {% if task.description %}
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-1">{% trans 'Описание' %}</h3>
-                <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 mt-2"> {# prose-sm для меньшего шрифта #}
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">{% trans 'Описание' %}</h3>
+                <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 mt-3">
                     {{ task.description|linebreaksbr }}
                 </div>
             </div>
@@ -73,8 +72,8 @@
             {# Категория/Подкатегория #}
              {% if task.category or task.subcategory %}
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-1">{% trans 'Категоризация' %}</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">{% trans 'Категоризация' %}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-3">
                     {% if task.category %}{% trans 'Категория:' %} <span class="font-medium">{{ task.category.name }}</span>{% if task.subcategory %} / {% endif %}{% endif %}
                     {% if task.subcategory %}{% trans 'Подкатегория:' %} <span class="font-medium">{{ task.subcategory.name }}</span>{% endif %}
                 </p>
@@ -84,17 +83,17 @@
         </div> {# Конец левой колонки #}
 
         {# Правая колонка: Боковая панель #}
-        <div class="space-y-6 border-t md:border-t-0 md:border-l border-gray-200 dark:border-dark-700 pt-6 md:pt-0 md:pl-6">
+        <div class="space-y-6 border-t md:border-t-0 md:border-l border-gray-200 dark:border-dark-700 pt-6 md:pt-0 md:pl-8">
              {# Участники #}
             <div>
                 <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">
                    <i class="fas fa-users mr-2 text-gray-500 dark:text-gray-400"></i>{% trans 'Участники' %}
                 </h3>
-                <ul class="space-y-3"> {# Увеличен space-y #}
-                    {% if responsible_users %}<li> <span class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">{% trans 'Ответственный' %}</span> {% for user in responsible_users %}<div class="flex items-center mt-1"> <img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"> <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span></div>{% endfor %}</li>{% endif %}
-                    {% if executors %}<li><span class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">{% trans 'Исполнители' %}</span> {% for user in executors %}<div class="flex items-center mt-1"> <img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span></div> {% empty %} <span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span> {% endfor %}</li>{% endif %}
-                     <li><span class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">{% trans 'Создатель' %}</span><div class="flex items-center mt-1"> {% if task.created_by %}<img src="{% if task.created_by.image %}{{ task.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ task.created_by.display_name }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ task.created_by.display_name }}</span> {% else %} <span class="text-sm text-gray-400 italic">{% trans 'Неизвестен' %}</span> {% endif %}</div></li>
-                     {% if watchers %}<li><span class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">{% trans 'Наблюдатели' %}</span> {% for user in watchers %}<div class="flex items-center mt-1"> <img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span></div>{% endfor %}</li>{% endif %}
+                <ul class="space-y-4">
+                    {% if responsible_users %}<li> <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span> {% for user in responsible_users %}<div class="flex items-center mt-1"> <img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"> <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span></div>{% endfor %}</li>{% endif %}
+                    {% if executors %}<li><span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span> {% for user in executors %}<div class="flex items-center mt-1"> <img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span></div> {% empty %} <span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span> {% endfor %}</li>{% endif %}
+                    <li><span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Создатель' %}</span><div class="flex items-center mt-1"> {% if task.created_by %}<img src="{% if task.created_by.image %}{{ task.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ task.created_by.display_name }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ task.created_by.display_name }}</span> {% else %} <span class="text-sm text-gray-400 italic">{% trans 'Неизвестен' %}</span> {% endif %}</div></li>
+                    {% if watchers %}<li><span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span> {% for user in watchers %}<div class="flex items-center mt-1"> <img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span></div>{% endfor %}</li>{% endif %}
                 </ul>
             </div>
 
@@ -103,12 +102,12 @@
                 <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">
                     <i class="far fa-calendar-alt mr-2 text-gray-500 dark:text-gray-400"></i>{% trans 'Сроки' %}
                 </h3>
-                <dl class="space-y-1.5 text-sm"> {# Уменьшен space-y #}
+                <dl class="space-y-2 text-sm">
                     <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Создана' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.created_at|date:"d.m.Y H:i" }}</dd></div>
-                     {% if task.start_date %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Начало' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.start_date|date:"d.m.Y H:i" }}</dd></div>{% endif %}
+                    {% if task.start_date %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Начало' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.start_date|date:"d.m.Y" }}</dd></div>{% endif %}
                     {% if task.deadline %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400 {% if task.is_overdue %}text-red-500 dark:text-red-400{% endif %}">{% trans 'Срок' %}:</dt><dd class="font-medium {% if task.is_overdue %}text-red-600 dark:text-red-400{% else %}text-gray-700 dark:text-gray-300{% endif %}">{{ task.deadline|date:"d.m.Y H:i" }}</dd></div>{% endif %}
                     {% if task.completion_date %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400 {% if task.status == task.StatusChoices.COMPLETED %}text-green-600 dark:text-green-400{% endif %}">{% trans 'Завершена' %}:</dt><dd class="font-medium {% if task.status == task.StatusChoices.COMPLETED %}text-green-700 dark:text-green-300{% else %}text-gray-700 dark:text-gray-300{% endif %}">{{ task.completion_date|date:"d.m.Y H:i" }}</dd></div>{% endif %}
-                     {% if task.estimated_time %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Оценка' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.estimated_time }}</dd></div>{% endif %}
+                    {% if task.estimated_time %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Оценка' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.estimated_time }}</dd></div>{% endif %}
                     <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Обновлена' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.updated_at|date:"d.m.Y H:i" }}</dd></div>
                 </dl>
             </div>
@@ -117,37 +116,39 @@
     </div> {# Конец основной сетки #}
 
     {# --- Карусель фотографий (если есть фото) --- #}
-    {% with photos=photo_formset.queryset %}
+    {% with photos=task.photos.all %} {# Убедитесь, что related_name='photos' или передайте photos в контексте #}
     {% if photos %}
-    <div class="mt-8 border-t border-gray-200 dark:border-dark-700 pt-6">
+    <div class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
             <i class="fas fa-images mr-2 text-gray-500"></i>{% trans 'Фотографии' %} ({{ photos.count }})
         </h3>
-        <div id="task-photo-carousel" class="relative w-full max-w-xl mx-auto" data-carousel="slide"> {# Уменьшена max-w, оставлено mx-auto #}
-            <div class="relative overflow-hidden rounded-lg h-56 md:h-72 bg-gray-200 dark:bg-dark-700 flex items-center justify-center shadow-inner"> {# Уменьшена высота h-*, md:h-* #}
+        <div id="task-photo-carousel" class="relative w-full max-w-2xl mx-auto" data-carousel="slide">
+            <div class="relative overflow-hidden rounded-lg h-64 md:h-96 bg-gray-200 dark:bg-dark-700 flex items-center justify-center shadow-inner">
                  {% for photo in photos %}
                  <div class="hidden duration-700 ease-in-out" data-carousel-item {% if forloop.first %}data-active{% endif %}>
                      <img src="{{ photo.photo.url }}"
-                          class="block max-w-full max-h-full object-contain mx-auto p-1" {# Добавлен padding #}
+                          class="block max-w-full max-h-full object-contain mx-auto p-2"
                           alt="{{ photo.description|default:_('Фото к задаче') }}">
                  </div>
                  {% endfor %}
             </div>
             {% if photos.count > 1 %}
-             <div class="absolute z-30 flex space-x-3 -translate-x-1/2 bottom-3 left-1/2"> {# Подняты индикаторы bottom-3 #}
+             {# Индикаторы #}
+             <div class="absolute z-30 flex space-x-3 -translate-x-1/2 bottom-5 left-1/2">
                 {% for photo in photos %}
-                 <button type="button" class="w-2.5 h-2.5 rounded-full bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-400 aria-[current=true]:bg-gray-900 dark:aria-[current=true]:bg-white" aria-current="{% if forloop.first %}true{% else %}false{% endif %}" aria-label="Slide {{ forloop.counter }}" data-carousel-slide-to="{{ forloop.counter0 }}"></button>
+                 <button type="button" class="w-3 h-3 rounded-full bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-400 aria-[current=true]:bg-gray-900 dark:aria-[current=true]:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-dark-800" aria-current="{% if forloop.first %}true{% else %}false{% endif %}" aria-label="Slide {{ forloop.counter }}" data-carousel-slide-to="{{ forloop.counter0 }}"></button>
                  {% endfor %}
              </div>
+             {# Кнопки Назад/Вперед #}
             <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/20 dark:bg-white/20 group-hover:bg-black/40 dark:group-hover:bg-white/40 group-focus:ring-2 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"> {# Уменьшены кнопки w-8 h-8 #}
-                    <svg class="w-3 h-3 text-white dark:text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/></svg>
+                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/30 dark:bg-white/30 group-hover:bg-black/50 dark:group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
+                    <svg class="w-5 h-5 text-white dark:text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/></svg>
                     <span class="sr-only">{% trans "Previous" %}</span>
                 </span>
             </button>
             <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/20 dark:bg-white/20 group-hover:bg-black/40 dark:group-hover:bg-white/40 group-focus:ring-2 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none"> {# Уменьшены кнопки w-8 h-8 #}
-                    <svg class="w-3 h-3 text-white dark:text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/></svg>
+                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/30 dark:bg-white/30 group-hover:bg-black/50 dark:group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
+                    <svg class="w-5 h-5 text-white dark:text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/></svg>
                     <span class="sr-only">{% trans "Next" %}</span>
                 </span>
             </button>
@@ -155,7 +156,7 @@
         </div>
     </div>
     {% else %}
-         <div class="mt-8 border-t border-gray-200 dark:border-dark-700 pt-6">
+         <div class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
              <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                  <i class="fas fa-images mr-2 text-gray-500"></i>{% trans 'Фотографии' %}
              </h3>
@@ -166,7 +167,7 @@
     {# --- Конец секции фотографий --- #}
 
     {# --- СЕКЦИЯ КОММЕНТАРИЕВ --- #}
-    <div id="comments" class="mt-8 border-t border-gray-200 dark:border-dark-700 pt-6">
+    <div id="comments" class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
             <i class="fas fa-comments mr-2 text-gray-500"></i>{% trans 'Комментарии' %}
             <span id="comment-count" class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ comments.count }})</span>
@@ -192,15 +193,16 @@
 
         {# Форма добавления нового комментария #}
         {% if can_add_comment %}
-        {# Форма теперь отправляется через JS, action не обязателен, но может быть полезен как fallback #}
         <form id="comment-form" method="post" action="{% url 'tasks:task_detail' pk=task.pk %}#comments" class="mt-4">
             {% csrf_token %}
             <div class="flex space-x-3 items-start">
                  <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" src="{% if request.user.image %}{{ request.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ request.user.display_name }}">
                  <div class="flex-1">
-                    {# Используем comment_form из контекста #}
-                    {{ comment_form.text }}
-                    {# Отображение ошибок поля text #}
+                     {# --- ИСПРАВЛЕННАЯ СТРОКА --- #}
+                     {{ comment_form.text|add_css_class:"form-textarea mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-dark-600 dark:border-dark-500 dark:text-gray-200 sm:text-sm"|attr:"rows=3, placeholder='Введите ваш комментарий...'" }}
+                     {# --- КОНЕЦ ИСПРАВЛЕННОЙ СТРОКИ --- #}
+
+                     {# Отображение ошибок поля text #}
                     <div id="comment-text-errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
                          {% if comment_form.text.errors %}
                              {% for error in comment_form.text.errors %} {{ error }} {% endfor %}
@@ -215,7 +217,6 @@
                  </div>
             </div>
              <div class="flex justify-end mt-2">
-                {# Кнопка с фиксированным размером #}
                 <button type="submit" class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition duration-150 ease-in-out disabled:opacity-50">
                      <i class="fas fa-paper-plane mr-2"></i> {% trans 'Отправить' %}
                 </button>
@@ -232,7 +233,8 @@
 
 {% block scripts %}
     {{ block.super }}
-    {# Flowbite JS для карусели #}
+    {# Flowbite JS для карусели (если вы его используете) #}
+    {# Убедитесь, что Flowbite инициализирован где-то (например, в base.html) #}
     {# <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script> #}
 
     {# --- JavaScript для WebSocket и AJAX комментариев --- #}
@@ -249,141 +251,231 @@
             const commentNonFieldErrors = document.getElementById('comment-non-field-errors');
             const commentCountSpan = document.getElementById('comment-count');
             const defaultAvatarUrl = "{% static 'img/user.svg' %}";
-            const currentUsername = "{{ request.user.display_name|escapejs }}"; // Имя текущего пользователя
+            const currentUsername = "{{ request.user.display_name|escapejs }}";
+            // const currentUserId = {{ request.user.pk|default:0 }}; // Раскомментируйте, если нужно сравнивать по ID
 
-            if (!taskId || !commentList) {
-                console.warn('Task ID or comment list container not found. Comments WS/AJAX not initialized.');
+            // Проверяем наличие основных элементов
+            if (!taskId || !commentList || !commentForm || !commentTextArea || !commentSubmitButton) {
+                console.warn('Essential elements for comments (task ID, list, form, textarea, button) not found. Comments WS/AJAX not fully initialized.');
                 return;
             }
 
-            // --- Функция для форматирования даты ---
-             function formatRelativeTime(isoDateString) { /* ... (без изменений) ... */ }
+            // --- Функция форматирования относительного времени ---
+            function formatRelativeTime(isoDateString) {
+                try {
+                    const date = new Date(isoDateString);
+                    const now = new Date();
+                    const seconds = Math.round((now - date) / 1000);
+                    const minutes = Math.round(seconds / 60);
+                    const hours = Math.round(minutes / 60);
+                    const days = Math.round(hours / 24);
 
-             // --- Функция escapeHtml ---
-             function escapeHtml(unsafe) { /* ... (без изменений) ... */ }
+                    if (seconds < 5) return `{% trans "только что" %}`; // Используем Django переводы
+                    if (seconds < 60) return `{% blocktrans %}{{ seconds }} сек. назад{% endblocktrans %}`;
+                    if (minutes < 60) return `{% blocktrans %}{{ minutes }} мин. назад{% endblocktrans %}`;
+                    if (hours < 24) return `{% blocktrans %}{{ hours }} ч. назад{% endblocktrans %}`;
+                    if (days === 1) return `{% trans "вчера" %}`;
+                    if (days < 7) return `{% blocktrans %}{{ days }} д. назад{% endblocktrans %}`;
+                    // Для более старых дат возвращаем локализованную дату
+                    return date.toLocaleDateString(document.documentElement.lang || 'ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                } catch (e) {
+                    console.error("Error formatting date:", isoDateString, e);
+                    return isoDateString;
+                }
+            }
 
-            // --- Функция для добавления комментария в DOM ---
+             // --- ИСПРАВЛЕННАЯ Функция для экранирования HTML ---
+             function escapeHtml(unsafe) {
+                 if (typeof unsafe !== 'string') return '';
+                 return unsafe
+                      .replace(/&/g, "&") // & должен идти первым
+                      .replace(/</g, "<")
+                      .replace(/>/g, ">")
+                      .replace(/"/g, """)
+                      .replace(/'/g, "'"); // или '
+             }
+
+            // --- Функция добавления комментария в DOM ---
             function addCommentToDOM(comment) {
                  console.log("Adding comment to DOM:", comment);
-                 if (!comment || !comment.author || typeof comment.text === 'undefined') { console.error("Invalid comment data:", comment); return; }
+                 if (!comment || !comment.author || typeof comment.text !== 'string' || !comment.id || !comment.created_at_iso) {
+                    console.error("Invalid comment data received for DOM:", comment);
+                    return;
+                 }
                  if (noCommentsMessage) { noCommentsMessage.classList.add('hidden'); }
+
                  const commentElement = document.createElement('div');
-                 commentElement.className = 'flex space-x-3 comment-item animate-fade-in';
+                 commentElement.className = 'flex space-x-3 comment-item animate-fade-in'; // Добавляем анимацию появления
                  commentElement.id = `comment-${comment.id}`;
+
                  const avatarUrl = comment.author.avatar_url || defaultAvatarUrl;
-                 const authorName = escapeHtml(comment.author.name || 'Неизвестный');
-                 const commentText = escapeHtml(comment.text).replace(/\n/g, '<br>');
+                 const authorName = escapeHtml(comment.author.name || '{% trans "Неизвестный" %}'); // Используем перевод
+                 const commentTextHtml = escapeHtml(comment.text).replace(/\n/g, '<br>'); // Экранируем и заменяем переносы
                  const timeAgo = formatRelativeTime(comment.created_at_iso);
                  const fullTime = new Date(comment.created_at_iso).toLocaleString();
+
                  commentElement.innerHTML = `
                     <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" src="${avatarUrl}" alt="${authorName}">
                     <div class="flex-1 bg-gray-50 dark:bg-dark-700 p-3 rounded-lg border border-gray-100 dark:border-dark-600">
-                        <div class="flex justify-between items-center mb-1"> <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">${authorName}</span> <span class="text-xs text-gray-400 dark:text-gray-500" title="${fullTime}">${timeAgo}</span> </div>
-                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${commentText}</p>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">${authorName}</span>
+                            <span class="text-xs text-gray-400 dark:text-gray-500" title="${fullTime}">${timeAgo}</span>
+                        </div>
+                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">${commentTextHtml}</p>
                     </div>`;
+
                  commentList.appendChild(commentElement);
-                 commentList.scrollTop = commentList.scrollHeight;
-                 if (commentCountSpan) { try { let count = parseInt(commentCountSpan.textContent.match(/\d+/)?.[0] || '0', 10); commentCountSpan.textContent = `(${(count || 0) + 1})`; } catch (e) { console.warn("Could not update comment count."); } }
+                 commentList.scrollTop = commentList.scrollHeight; // Прокрутка к новому комментарию
+
+                 // Обновляем счетчик
+                 if (commentCountSpan) {
+                    try {
+                        let count = parseInt(commentCountSpan.textContent.match(/\d+/)?.[0] || '0', 10);
+                        commentCountSpan.textContent = `(${(count || 0) + 1})`;
+                    } catch (e) { console.warn("Could not update comment count.", e); }
+                 }
             }
 
             // --- WebSocket соединение ---
             const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
             const wsUrl = `${protocol}${window.location.host}/ws/tasks/${taskId}/comments/`;
             console.log(`Connecting to Task Comments WebSocket: ${wsUrl}`);
-            const commentSocket = new WebSocket(wsUrl);
-            commentSocket.onopen = () => console.log('Task Comments WS connected.');
-            commentSocket.onerror = (error) => console.error('Task Comments WS error:', error);
-            commentSocket.onclose = (event) => console.log('Task Comments WS closed.', event.code);
-            commentSocket.onmessage = function(event) {
+            let commentSocket;
+
+            function connectWebSocket() {
                 try {
-                    const data = JSON.parse(event.data);
-                    console.log('Comment WS message:', data);
-                    if (data.type === 'new_comment' && data.comment) {
-                        // Отображаем коммент, ТОЛЬКО если он не от текущего пользователя
-                        // (свой коммент добавим сразу после AJAX)
-                        if (!data.comment.author || data.comment.author.name !== currentUsername) {
-                             addCommentToDOM(data.comment);
-                             if (window.showNotification) showNotification(`Новый комментарий от ${data.comment.author.name}`, 'info');
-                        } else {
-                              console.log("Skipping own comment received via WS.");
+                    commentSocket = new WebSocket(wsUrl);
+
+                    commentSocket.onopen = () => console.log('Task Comments WS connected.');
+                    commentSocket.onerror = (error) => console.error('Task Comments WS error:', error);
+
+                    commentSocket.onclose = (event) => {
+                        console.log('Task Comments WS closed. Code:', event.code, 'Reason:', event.reason);
+                        // Попытка переподключения через некоторое время (например, 5 секунд)
+                        // setTimeout(connectWebSocket, 5000); // Осторожно с бесконечными реконнектами
+                    };
+
+                    commentSocket.onmessage = function(event) {
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log('Comment WS message received:', data);
+
+                            if (data.type === 'new_comment' && data.comment) {
+                                // Отображаем комментарий, если он НЕ от текущего пользователя
+                                if (!data.comment.author || data.comment.author.name !== currentUsername) {
+                                // if (!data.comment.author || data.comment.author.id !== currentUserId) { // Если используете ID
+                                    addCommentToDOM(data.comment);
+                                    if (window.showNotification) {
+                                         showNotification(`{% trans "Новый комментарий от" %} ${escapeHtml(data.comment.author.name || '{% trans "Неизвестный" %}')}`, 'info');
+                                    }
+                                } else {
+                                    console.log("Skipping own comment received via WS (already added via AJAX).");
+                                }
+                            } else if (data.type === 'error') {
+                                 console.error("Error message received via WS:", data.message);
+                                 if (window.showNotification) showNotification(`{% trans "Ошибка WebSocket:" %} ${escapeHtml(data.message)}`, 'error');
+                            }
+                        } catch (e) {
+                            console.error('Error processing comment WS message:', e, 'Data:', event.data);
                         }
-                    }
-                } catch (e) { console.error('Error processing comment WS message:', e); }
-            };
+                    };
+                } catch (e) {
+                    console.error("Failed to create WebSocket:", e);
+                }
+            }
+
+            connectWebSocket(); // Инициируем первое подключение
 
             // --- AJAX Обработка отправки формы ---
-            if (commentForm) {
-                commentForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    if (!commentTextArea || !commentSubmitButton) return;
-                    const commentText = commentTextArea.value.trim();
-                    if (!commentText) {
-                        if(commentTextErrors) commentTextErrors.textContent = '{% trans "Комментарий не может быть пустым." %}';
-                        commentTextArea.classList.add('border-red-500');
-                        return;
+            commentForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const commentText = commentTextArea.value.trim();
+                if (!commentText) {
+                    if(commentTextErrors) commentTextErrors.textContent = '{% trans "Комментарий не может быть пустым." %}';
+                    commentTextArea.classList.add('border-red-500', 'dark:border-red-500');
+                    commentTextArea.focus();
+                    return;
+                }
+
+                // Очистка старых ошибок
+                if(commentTextErrors) commentTextErrors.textContent = '';
+                if(commentNonFieldErrors) commentNonFieldErrors.textContent = '';
+                commentTextArea.classList.remove('border-red-500', 'dark:border-red-500');
+
+                // Блокировка формы
+                commentTextArea.disabled = true;
+                commentSubmitButton.disabled = true;
+                const originalButtonHtml = commentSubmitButton.innerHTML; // Сохраняем HTML кнопки
+                commentSubmitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> {% trans 'Отправка...' %}`;
+
+                try {
+                    const formData = new FormData(commentForm);
+                    const csrfTokenInput = commentForm.querySelector('[name=csrfmiddlewaretoken]');
+                    if (!csrfTokenInput) { throw new Error("CSRF token not found!"); }
+                    const csrfToken = csrfTokenInput.value;
+
+                    const response = await fetch(commentForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    let responseData;
+                    try {
+                         responseData = await response.json();
+                    } catch (jsonError) {
+                         console.error("Failed to parse JSON response:", jsonError);
+                         const responseText = await response.text();
+                         console.error("Response text:", responseText);
+                         responseData = { error: `{% trans "Ошибка сервера" %} (${response.status}). {% trans "Некорректный формат ответа." %}` };
                     }
 
-                    // Очистка старых ошибок
-                    if(commentTextErrors) commentTextErrors.textContent = '';
-                    if(commentNonFieldErrors) commentNonFieldErrors.textContent = '';
-                    commentTextArea.classList.remove('border-red-500');
+                    if (response.ok && responseData.success && responseData.comment) {
+                        console.log("AJAX comment submission successful:", responseData.comment);
+                        addCommentToDOM(responseData.comment); // Добавляем свой комментарий сразу
+                        commentTextArea.value = ''; // Очищаем поле
+                        if (window.showNotification) showNotification('{% trans "Комментарий добавлен." %}', 'success');
+                        // Бэкенд должен сам отправить сообщение через WS при успешном AJAX запросе
+                    } else {
+                        console.error(`Error submitting comment (status ${response.status}):`, responseData);
+                        let errorMessage = responseData.error || '{% trans "Произошла ошибка при добавлении комментария." %}';
 
-                    // Блокировка формы
-                    commentTextArea.disabled = true;
-                    commentSubmitButton.disabled = true;
-                    commentSubmitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> {% trans 'Отправка...' %}`;
-
-                    try {
-                        const formData = new FormData(commentForm);
-                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                        const response = await fetch(commentForm.action, {
-                            method: 'POST', body: formData,
-                            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-
-                        const responseData = await response.json(); // Ожидаем JSON от view
-
-                        if (response.ok && responseData.success && responseData.comment) {
-                            console.log("AJAX comment submission successful:", responseData.comment);
-                            // Добавляем свой комментарий в DOM СРАЗУ
-                            addCommentToDOM(responseData.comment);
-                            commentTextArea.value = ''; // Очищаем поле
-                            if (window.showNotification) showNotification('Комментарий добавлен.', 'success');
-                        } else {
-                            // Обработка ошибок валидации или серверных ошибок
-                            console.error(`Error submitting comment (status ${response.status}):`, responseData);
-                            if (responseData.errors) {
-                                // Отображение ошибок полей (вероятно, только для 'text')
-                                if (responseData.errors.text && commentTextErrors) {
-                                    commentTextErrors.textContent = responseData.errors.text.join(' ');
-                                    commentTextArea.classList.add('border-red-500');
-                                }
-                                // Отображение не-полевых ошибок
-                                if (responseData.errors.__all__ && commentNonFieldErrors) {
-                                     commentNonFieldErrors.textContent = responseData.errors.__all__.join(' ');
-                                }
-                            } else {
-                                // Общая ошибка
-                                if(commentNonFieldErrors) commentNonFieldErrors.textContent = responseData.error || 'Неизвестная ошибка сервера.';
+                        if (responseData.errors) {
+                            if (responseData.errors.text && commentTextErrors) {
+                                commentTextErrors.textContent = responseData.errors.text.join(' ');
+                                commentTextArea.classList.add('border-red-500', 'dark:border-red-500');
                             }
-                             if (window.showNotification) showNotification('Ошибка отправки комментария.', 'error');
+                            if (responseData.errors.__all__ && commentNonFieldErrors) {
+                                 const nonFieldErrText = responseData.errors.__all__.join(' ');
+                                 commentNonFieldErrors.textContent = nonFieldErrText;
+                                 errorMessage = nonFieldErrText; // Обновляем общее сообщение
+                            }
                         }
 
-                    } catch (error) {
-                         console.error('Network error submitting comment:', error);
-                         if(commentNonFieldErrors) commentNonFieldErrors.textContent = 'Ошибка сети.';
-                         if (window.showNotification) showNotification('Ошибка сети при отправке комментария.', 'error');
-                    } finally {
-                        // Разблокируем форму
-                         commentTextArea.disabled = false;
-                         submitButton.disabled = false;
-                         submitButton.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> {% trans 'Отправить' %}`;
+                        if (window.showNotification) showNotification(errorMessage, 'error');
+                         if (commentNonFieldErrors && !commentNonFieldErrors.textContent && errorMessage) {
+                             commentNonFieldErrors.textContent = errorMessage;
+                         }
                     }
-                });
-            } // end if commentForm
 
-        }); // end DOMContentLoaded
+                } catch (networkError) {
+                     console.error('Network or fetch error submitting comment:', networkError);
+                     const networkErrMsg = '{% trans "Ошибка сети при отправке комментария." %}';
+                     if(commentNonFieldErrors) commentNonFieldErrors.textContent = networkErrMsg;
+                     if (window.showNotification) showNotification(networkErrMsg, 'error');
+                } finally {
+                    // ВСЕГДА разблокируем форму и восстанавливаем кнопку
+                     commentTextArea.disabled = false;
+                     commentSubmitButton.disabled = false;
+                     commentSubmitButton.innerHTML = originalButtonHtml; // Восстанавливаем HTML кнопки
+                }
+            }); // end commentForm submit listener
 
+        }); // end DOMContentLoaded listener
     </script>
     {# --- КОНЕЦ СКРИПТА КОММЕНТАРИЕВ --- #}
 {% endblock %}

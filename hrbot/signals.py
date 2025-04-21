@@ -7,14 +7,18 @@ import json
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils.translation import gettext as _  # уже возвращает str
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from django.utils.translation import gettext as _
+# Убираем импорты клавиатур, они больше не нужны в этом файле
+# from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 
+# Импортируем ТОЛЬКО модель, чтобы избежать циклических зависимостей
 from .models import TelegramUser
 
 logger = logging.getLogger(__name__)
 
+# --- Константа для URL API Telegram ---
+TELEGRAM_API_BASE_URL = "https://api.telegram.org/bot"
 
 def send_telegram_message_sync(chat_id, text, reply_markup=None, parse_mode=None):
     """
@@ -25,84 +29,96 @@ def send_telegram_message_sync(chat_id, text, reply_markup=None, parse_mode=None
         logger.error("TELEGRAM_BOT_TOKEN not found in settings. Cannot send message.")
         return False
 
-    api_url = f"https://api.telegram.org/bot{token}/sendMessage"
+    api_url = f"{TELEGRAM_API_BASE_URL}{token}/sendMessage"
     payload = {
         'chat_id': chat_id,
         'text': text,
     }
-    if reply_markup:
-        # Здесь передаем уже готовый словарь, requests сам сделает JSON-encode
-        payload['reply_markup'] = reply_markup.to_dict()
+    # --- УДАЛЕНО: обработка reply_markup, т.к. мы его не передаем ---
+    # if reply_markup:
+    #     try:
+    #         payload['reply_markup'] = reply_markup.to_dict()
+    #     except Exception as e:
+    #         logger.exception(f"Error converting reply_markup to dict for chat_id {chat_id}: {e}")
+    # -----------------------------------------------------------------
     if parse_mode:
         payload['parse_mode'] = parse_mode
 
-    headers = {'Content-Type': 'application/json; charset=utf-8'}
+    headers = {'Content-Type': 'application/json'}
     try:
-        # Преобразуем в JSON-строку, чтобы гарантировать utf-8
-        data = json.dumps(payload, ensure_ascii=False).encode('utf-8')
-        response = requests.post(api_url, data=data, headers=headers, timeout=10)
+        response = requests.post(api_url, json=payload, headers=headers, timeout=15)
         response.raise_for_status()
         result = response.json()
         if result.get('ok'):
             logger.info(f"Successfully sent message to chat_id {chat_id}")
             return True
         else:
-            logger.error(f"Telegram API error sending to {chat_id}: {result.get('description')}")
+            error_code = result.get('error_code')
+            description = result.get('description')
+            logger.error(f"Telegram API error sending to {chat_id}: Code {error_code} - {description}")
+            if error_code == 403 and 'bot was blocked by the user' in description:
+                 logger.warning(f"Bot was blocked by user with chat_id {chat_id}.")
             return False
-    except requests.Timeout:
-        logger.warning(f"Timeout sending Telegram message to {chat_id}")
+    except requests.exceptions.Timeout:
+        logger.warning(f"Timeout sending Telegram message to {chat_id} after 15 seconds.")
         return False
-    except requests.RequestException as e:
+    except requests.exceptions.RequestException as e:
         logger.error(f"HTTP request error sending message to {chat_id}: {e}")
         return False
+    except json.JSONDecodeError as e:
+         logger.error(f"Error decoding JSON response from Telegram API for chat_id {chat_id}: {e}")
+         return False
     except Exception as e:
         logger.exception(f"Unexpected error sending message to {chat_id}: {e}")
         return False
 
 
 @receiver(post_save, sender=TelegramUser)
-def notify_user_on_approval(sender, instance, created, **kwargs):
+def notify_user_on_approval(sender, instance: TelegramUser, created, **kwargs):
     """
     Отправляет уведомление пользователю при первом подтверждении его аккаунта.
     """
-    # Если только создан, или не approved, или уже уведомляли — пропускаем
+    logger.info(f"[SIGNAL] post_save received for TGUser {instance.pk} (ID: {instance.telegram_id}), created={created}, approved={instance.approved}, notified={instance.notified_on_approval}")
+
     if created or not instance.approved or instance.notified_on_approval:
+        logger.debug(f"[SIGNAL] Skipping notification for TGUser {instance.pk}. Conditions not met: created={created}, approved={instance.approved}, notified={instance.notified_on_approval}")
         return
 
     logger.info(f"TelegramUser {instance.telegram_id} approved. Sending notification.")
 
     # 1) Сообщаем об одобрении
-    approval_text = _("✅ Ваш аккаунт подтвержден! Теперь доступны все функции бота. Нажмите для продолжения /start")
-    if not send_telegram_message_sync(
+    approval_message = _("✅ Ваш аккаунт подтвержден! Теперь вам доступны все функции бота.")
+    sent_approval = send_telegram_message_sync(
         chat_id=instance.telegram_id,
-        text=approval_text
-    ):
-        logger.error(f"Failed to send approval notification to {instance.telegram_id}.")
+        text=approval_message
+    )
+
+    if not sent_approval:
+        logger.error(f"Failed to send approval notification to {instance.telegram_id}. Will not update flag or send prompt.")
         return
 
-    # 2) Отправляем главное меню
-    kb_data = [
-        [InlineKeyboardButton(_("Начать"), callback_data="/start")],
-    ]
-
-    # Собираем InlineKeyboardButton
-    buttons = [
-        [InlineKeyboardButton(item["text"], callback_data=item["callback_data"]) for item in row]
-        for row in kb_data
-    ]
-    menu_text = _("👋 *Главное меню*\nВыберите действие:")
-
-    if not send_telegram_message_sync(
+    # 2) Отправляем ПРИГЛАШЕНИЕ нажать /start (без кнопок)
+    start_prompt_text = _("Пожалуйста, отправьте команду /start, чтобы начать работу или увидеть главное меню.")
+    sent_prompt = send_telegram_message_sync(
         chat_id=instance.telegram_id,
-        text=menu_text,
-        reply_markup=InlineKeyboardMarkup(buttons),
-        parse_mode=ParseMode.MARKDOWN
-    ):
-        logger.warning(f"Failed to send main menu to {instance.telegram_id} after approval.")
+        text=start_prompt_text
+        # reply_markup и parse_mode убраны
+    )
 
-    # 3) Отмечаем, что уведомление отправлено
+    if not sent_prompt:
+         logger.warning(f"Successfully sent approval message, but failed to send start prompt to {instance.telegram_id}.")
+         # Все равно обновляем флаг
+
+    # 3) Обновляем флаг
     try:
-        TelegramUser.objects.filter(pk=instance.pk).update(notified_on_approval=True)
-        logger.info(f"Marked TelegramUser {instance.telegram_id} as notified.")
+        updated_count = TelegramUser.objects.filter(
+            pk=instance.pk,
+            notified_on_approval=False
+        ).update(notified_on_approval=True)
+
+        if updated_count > 0:
+            logger.info(f"Marked TelegramUser {instance.telegram_id} as notified.")
+        else:
+            logger.warning(f"TelegramUser {instance.telegram_id} was already marked as notified before update.")
     except Exception as e:
-        logger.exception(f"Failed to update notified_on_approval for {instance.telegram_id}: {e}")
+        logger.exception(f"Failed to update notified_on_approval flag for {instance.telegram_id}: {e}")
