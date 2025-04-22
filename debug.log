@@ -35609,3 +35609,244 @@ Traceback (most recent call last):
 telegram.error.NetworkError: httpx.ConnectError: [Errno 11001] getaddrinfo failed
 Telegram API Error: httpx.ConnectError: [Errno 11001] getaddrinfo failed
 Cannot send error message to user for update of type <class 'NoneType'>
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting server at tcp:port=8080:interface=0.0.0.0
+HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+Configuring endpoint tcp:port=8080:interface=0.0.0.0
+Listening on TCP address 0.0.0.0:8080
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting runbot command...
+Using persistence file: C:\Users\sysadmin\Git\Sphinx\bot_persistence.pickle
+All handlers set up successfully for the application.
+HR Bot application configured. Starting polling...
+An unexpected error occurred while running the bot.
+Traceback (most recent call last):
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 768, in initialize
+    await self.get_me()
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 1873, in get_me
+    return await super().get_me(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 542, in decorator
+    result = await func(self, *args, **kwargs)
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 903, in get_me
+    result = await self._post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 630, in _post
+    return await self._do_post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 347, in _do_post
+    return await super()._do_post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 658, in _do_post
+    return await request.post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\request\_baserequest.py", line 200, in post
+    result = await self._request_wrapper(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\request\_baserequest.py", line 377, in _request_wrapper
+    raise InvalidToken(message)
+telegram.error.InvalidToken: Not Found
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sysadmin\Git\Sphinx\hrbot\management\commands\runbot.py", line 81, in handle
+    application.run_polling(allowed_updates=allowed_updates)
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_application.py", line 836, in run_polling
+    return self.__run(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_application.py", line 1036, in __run
+    raise exc
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_application.py", line 1025, in __run
+    loop.run_until_complete(self.initialize())
+  File "C:\Users\sysadmin\AppData\Local\Programs\Python\Python310\lib\asyncio\base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_application.py", line 495, in initialize
+    await self.bot.initialize()
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 293, in initialize
+    await super().initialize()
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 770, in initialize
+    raise InvalidToken(f"The token `{self._token}` was rejected by the server.") from exc
+telegram.error.InvalidToken: The token `7822648522:AAGegzZBgQpSNm06aN-ycWH1-Dncuyd0xn4 # Ваш токен` was rejected by the server.
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting runbot command...
+Using persistence file: C:\Users\sysadmin\Git\Sphinx\bot_persistence.pickle
+All handlers set up successfully for the application.
+HR Bot application configured. Starting polling...
+Application started
+Processing /start command for user_id: 2103574842
+get_or_create_tguser called for tg_id: 2103574842
+TelegramUser for tg_id 2103574842 not found. Getting/creating Django User.
+Created Django User 25 for tg_id 2103574842
+Attempting to create TelegramUser for telegram_id 2103574842 linked to User 25
+[SIGNAL] post_save received for TGUser 11 (ID: 2103574842), created=True, approved=False, notified=False
+[SIGNAL] Skipping notification for TGUser 11. Conditions not met: created=True, approved=False, notified=False
+Successfully created TelegramUser 11 for tg_id 2103574842
+User 2103574842 is not approved.
+Processing /start command for user_id: 1090899362
+get_or_create_tguser called for tg_id: 1090899362
+TelegramUser for tg_id 1090899362 not found. Getting/creating Django User.
+Created Django User 26 for tg_id 1090899362
+Attempting to create TelegramUser for telegram_id 1090899362 linked to User 26
+[SIGNAL] post_save received for TGUser 12 (ID: 1090899362), created=True, approved=False, notified=False
+[SIGNAL] Skipping notification for TGUser 12. Conditions not met: created=True, approved=False, notified=False
+Successfully created TelegramUser 12 for tg_id 1090899362
+User 1090899362 is not approved.
+Exception while handling an update:
+Traceback (most recent call last):
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_application.py", line 1264, in process_update
+    await coroutine
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_handlers\conversationhandler.py", line 857, in handle_update
+    new_state: object = await handler.handle_update(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_handlers\basehandler.py", line 157, in handle_update
+    return await self.callback(update, context)
+  File "C:\Users\sysadmin\Git\Sphinx\hrbot\bot\handlers\common.py", line 45, in start
+    await target_message.reply_text(_("⏳ Ваш аккаунт еще не подтвержден HR-отделом. Пожалуйста, ожидайте."))
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_message.py", line 1809, in reply_text
+    return await self.get_bot().send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 2820, in send_message
+    return await super().send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 542, in decorator
+    result = await func(self, *args, **kwargs)
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 1018, in send_message
+    return await self._send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 581, in _send_message
+    result = await super()._send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 736, in _send_message
+    result = await self._post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 630, in _post
+    return await self._do_post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 347, in _do_post
+    return await super()._do_post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 658, in _do_post
+    return await request.post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\request\_baserequest.py", line 200, in post
+    result = await self._request_wrapper(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\request\_baserequest.py", line 370, in _request_wrapper
+    raise Forbidden(message)
+telegram.error.Forbidden: Forbidden: bot was blocked by the user
+Telegram API Error: Forbidden: bot was blocked by the user
+Telegram error replying to message 843: Forbidden: bot was blocked by the user
+Traceback (most recent call last):
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_application.py", line 1264, in process_update
+    await coroutine
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_handlers\conversationhandler.py", line 857, in handle_update
+    new_state: object = await handler.handle_update(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_handlers\basehandler.py", line 157, in handle_update
+    return await self.callback(update, context)
+  File "C:\Users\sysadmin\Git\Sphinx\hrbot\bot\handlers\common.py", line 45, in start
+    await target_message.reply_text(_("⏳ Ваш аккаунт еще не подтвержден HR-отделом. Пожалуйста, ожидайте."))
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_message.py", line 1809, in reply_text
+    return await self.get_bot().send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 2820, in send_message
+    return await super().send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 542, in decorator
+    result = await func(self, *args, **kwargs)
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 1018, in send_message
+    return await self._send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 581, in _send_message
+    result = await super()._send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 736, in _send_message
+    result = await self._post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 630, in _post
+    return await self._do_post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 347, in _do_post
+    return await super()._do_post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 658, in _do_post
+    return await request.post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\request\_baserequest.py", line 200, in post
+    result = await self._request_wrapper(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\request\_baserequest.py", line 370, in _request_wrapper
+    raise Forbidden(message)
+telegram.error.Forbidden: Forbidden: bot was blocked by the user
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\sysadmin\Git\Sphinx\hrbot\bot\utils.py", line 60, in reply_text
+    await target_message.reply_text(text=text, **kwargs); return True
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_message.py", line 1809, in reply_text
+    return await self.get_bot().send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 2820, in send_message
+    return await super().send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 542, in decorator
+    result = await func(self, *args, **kwargs)
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 1018, in send_message
+    return await self._send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 581, in _send_message
+    result = await super()._send_message(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 736, in _send_message
+    result = await self._post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 630, in _post
+    return await self._do_post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\ext\_extbot.py", line 347, in _do_post
+    return await super()._do_post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\_bot.py", line 658, in _do_post
+    return await request.post(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\request\_baserequest.py", line 200, in post
+    result = await self._request_wrapper(
+  File "C:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\telegram\request\_baserequest.py", line 370, in _request_wrapper
+    raise Forbidden(message)
+telegram.error.Forbidden: Forbidden: bot was blocked by the user
+Processing /start command for user_id: 1220674395
+get_or_create_tguser called for tg_id: 1220674395
+Found existing TelegramUser 10 by telegram_id 1220674395.
+User data cleared for user 1220674395
+Processing /start command for user_id: 1220674395
+get_or_create_tguser called for tg_id: 1220674395
+Found existing TelegramUser 10 by telegram_id 1220674395.
+User data cleared for user 1220674395
+MAIN_MENU callback 'main:new_eval' from user 1220674395
+EVAL_SELECT_QSET callback 'eval_qset:2' from user 1220674395
+User 1220674395 selected questionnaire 2 ('Общая оценка сотрудника (ежеквартальная)') for evaluation.
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Failed to import setup_handlers from hrbot.bot.registration: cannot import name 'reply_text' from 'hrbot.bot.utils' (C:\Users\sysadmin\Git\Sphinx\hrbot\bot\utils.py)
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting runbot command...
+Using persistence file: C:\Users\sysadmin\Git\Sphinx\bot_persistence.pickle
+An unexpected error occurred while running the bot.
+Traceback (most recent call last):
+  File "C:\Users\sysadmin\Git\Sphinx\hrbot\management\commands\runbot.py", line 69, in handle
+    setup_handlers(application) # Передаем application в функцию настройки
+  File "C:\Users\sysadmin\Git\Sphinx\hrbot\bot\registration.py", line 16, in setup_handlers
+    MAIN_MENU: [CallbackQueryHandler(main_menu_cb, pattern=MAIN_CB)],
+NameError: name 'MAIN_MENU' is not defined
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Failed to import setup_handlers from hrbot.bot.registration: cannot import name 'CB_DEPT_EMP' from 'hrbot.bot.constants' (C:\Users\sysadmin\Git\Sphinx\hrbot\bot\constants.py)
+Killed 0 pending application instances
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting server at tcp:port=8000:interface=0.0.0.0
+HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+Configuring endpoint tcp:port=8000:interface=0.0.0.0
+Listening on TCP address 0.0.0.0:8000
+Killed 0 pending application instances
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting server at tcp:port=8000:interface=0.0.0.0
+HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+Configuring endpoint tcp:port=8000:interface=0.0.0.0
+Listening on TCP address 0.0.0.0:8000
+Invalid HTTP_HOST header: '192.168.151.11:8000'. You may need to add '192.168.151.11' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\django\utils\deprecation.py", line 128, in __call__
+    response = self.process_request(request)
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\django\middleware\security.py", line 28, in process_request
+    host = self.redirect_host or request.get_host()
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\django\http\request.py", line 151, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '192.168.151.11:8000'. You may need to add '192.168.151.11' to ALLOWED_HOSTS.
+Bad Request: /
+Invalid HTTP_HOST header: '192.168.151.11:8000'. You may need to add '192.168.151.11' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\django\utils\deprecation.py", line 128, in __call__
+    response = self.process_request(request)
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\django\middleware\security.py", line 28, in process_request
+    host = self.redirect_host or request.get_host()
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\lib\site-packages\django\http\request.py", line 151, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '192.168.151.11:8000'. You may need to add '192.168.151.11' to ALLOWED_HOSTS.
+Bad Request: /favicon.ico
