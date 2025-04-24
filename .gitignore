@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+*.pot
+*.mo
+
+# Django
+*.sqlite3
+*.db
+*.bak
+*.tmp
+*.log
+*.pid
+.env
+.env.*
+.venv/
+local_settings.py
+media/
+staticfiles/
+django-debug-toolbar/
+
+# Coverage and testing
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.cache/
+*.pytest_cache/
+
+# VS Code
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# Node/NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Webpack / Tailwind / Vite
+static/dist/
+static/js/
+static/css/
+static/assets/
+*.map
+
+# Select2
+select2/
+
+# System files
+.DS_Store
+Thumbs.db
