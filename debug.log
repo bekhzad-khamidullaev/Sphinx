@@ -35850,3 +35850,55 @@ Traceback (most recent call last):
     raise DisallowedHost(msg)
 django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '192.168.151.11:8000'. You may need to add '192.168.151.11' to ALLOWED_HOSTS.
 Bad Request: /favicon.ico
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting server at tcp:port=8000:interface=0.0.0.0
+HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+Configuring endpoint tcp:port=8000:interface=0.0.0.0
+Listening on TCP address 0.0.0.0:8000
+Killed 0 pending application instances
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting server at tcp:port=8000:interface=0.0.0.0
+HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+Configuring endpoint tcp:port=8000:interface=0.0.0.0
+Listening on TCP address 0.0.0.0:8000
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting server at tcp:port=8000:interface=0.0.0.0
+HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+Configuring endpoint tcp:port=8000:interface=0.0.0.0
+Listening on TCP address 0.0.0.0:8000
+Killed 0 pending application instances
+Tasks signals imported successfully.
+HR Bot signals imported successfully.
+Starting server at tcp:port=8080:interface=0.0.0.0
+HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+Configuring endpoint tcp:port=8080:interface=0.0.0.0
+Listening on TCP address 0.0.0.0:8080
+AJAX update_task_status called for task 2 by user admin
+Task 2 status updated from 'in_progress' to 'overdue' by admin.
+AJAX update_task_status called for task 2 by user admin
+Task 2 status updated from 'overdue' to 'completed' by admin.
+AJAX update_task_status called for task 2 by user admin
+Task 2 status updated from 'completed' to 'overdue' by admin.
+AJAX update_task_status called for task 1 by user admin
+Task 1 status updated from 'cancelled' to 'completed' by admin.
+AJAX update_task_status called for task 2 by user admin
+Task 2 status updated from 'overdue' to 'overdue' by admin.
+Could not resolve form field 'start_date'.
+Traceback (most recent call last):
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\Lib\site-packages\django\forms\forms.py", line 174, in __getitem__
+    field = self.fields[name]
+            ~~~~~~~~~~~^^^^^^
+KeyError: 'start_date'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\Lib\site-packages\crispy_forms\utils.py", line 69, in render_field
+    bound_field = form[field]
+                  ~~~~^^^^^^^
+  File "c:\Users\sysadmin\Git\Sphinx\.venv\Lib\site-packages\django\forms\forms.py", line 176, in __getitem__
+    raise KeyError(
+KeyError: "Key 'start_date' not found in 'TaskForm'. Choices are: category, deadline, description, estimated_time, executors, priority, project, responsible_user, subcategory, title, watchers."
