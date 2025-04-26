@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 # --- Basic Django Settings ---
-# SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-t)onh@=0&bs0eghf!lv8w8==&(4^atr-44z!=xsac_4a6$^^+8') # Use environment variable or default
-# DEBUG = config('DEBUG', default=True, cast=bool)
-DEBUG = os.environ.get('DEBUG', '0') == '1' # Читаем из .env (0 или 1)
+SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-t)onh@=0&bs0eghf!lv8w8==&(4^atr-44z!=xsac_4a6$^^+8') # Use environment variable or default
+DEBUG = config('DEBUG', default=True, cast=bool)
+# DEBUG = os.environ.get('DEBUG', '0') == '1' # Читаем из .env (0 или 1)
 
-# ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
+# ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,10.10.137.120').split(',')
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-key-for-dev')
+# SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-key-for-dev')
 # --- Application Definition ---
 INSTALLED_APPS = [
     # Django Core Apps
@@ -111,10 +111,10 @@ DATABASES = {
         'ENGINE': os.environ.get('SQL_ENGINE', 'django.db.backends.sqlite3'),
         'NAME': os.environ.get('SQL_DATABASE', BASE_DIR / 'db.sqlite3'),
         # Следующие параметры используются только если ENGINE не sqlite3
-        'USER': os.environ.get('SQL_USER'),
-        'PASSWORD': os.environ.get('SQL_PASSWORD'),
-        'HOST': os.environ.get('SQL_HOST'),
-        'PORT': os.environ.get('SQL_PORT', ''),
+        # 'USER': os.environ.get('SQL_USER'),
+        # 'PASSWORD': os.environ.get('SQL_PASSWORD'),
+        # 'HOST': os.environ.get('SQL_HOST'),
+        # 'PORT': os.environ.get('SQL_PORT', ''),
     }
 }
 

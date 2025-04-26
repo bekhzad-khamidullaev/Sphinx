@@ -13,36 +13,48 @@
 {% block list_actions %}
 {# Desktop Actions #}
 <div class="flex space-x-3 items-center ml-4">
-    <a href="{% url 'tasks:task_create' %}" class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-800 transition-all shadow">
+    <a href="{% url 'tasks:task_create' %}"
+        class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-800 transition-all shadow">
         <i class="fas fa-plus mr-2"></i> {% trans 'Создать задачу' %}
     </a>
     <button type="button" id="toggleViewBtn"
-        class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-800 transition-all shadow" aria-pressed="false"
-        aria-pressed="false"
-        data-kanban-text="{% trans 'Вид: Канбан' %}"
-        data-list-text="{% trans 'Вид: Список' %}"
-        >
-    <i id="viewIcon" class="fas fa-columns mr-2"></i>
-    <span id="viewText">{% trans 'Вид: Канбан' %}</span> {# Начальный текст #}
+        class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-800 transition-all shadow"
+        aria-pressed="false" aria-pressed="false" data-kanban-text="{% trans 'Вид: Канбан' %}"
+        data-list-text="{% trans 'Вид: Список' %}">
+        <i id="viewIcon" class="fas fa-columns mr-2"></i>
+        <span id="viewText">{% trans 'Вид: Канбан' %}</span> {# Начальный текст #}
     </button>
 
     <div id="column-toggle-dropdown" class="relative hidden">
-        <button id="dropdownHoverButton" data-dropdown-toggle="dropdownHover" data-dropdown-trigger="hover" class="flex items-center text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-gray-300 dark:focus:ring-offset-dark-800 font-medium rounded-full text-sm px-4 py-2 text-center inline-flex items-center transition-all shadow" type="button">
-            <i class="fas fa-columns mr-2"></i> {% trans 'Колонки' %} <svg class="w-2.5 h-2.5 ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/></svg>
+        <button id="dropdownHoverButton" data-dropdown-toggle="dropdownHover" data-dropdown-trigger="hover"
+            class="flex items-center text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-gray-300 dark:focus:ring-offset-dark-800 font-medium rounded-full text-sm px-4 py-2 text-center inline-flex items-center transition-all shadow"
+            type="button">
+            <i class="fas fa-columns mr-2"></i> {% trans 'Колонки' %} <svg class="w-2.5 h-2.5 ml-2" aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="m1 1 4 4 4-4" />
+            </svg>
         </button>
-        <div id="dropdownHover" class="z-50 hidden bg-white dark:bg-dark-800 divide-y divide-gray-100 dark:divide-dark-600 rounded-lg shadow-lg w-52 border border-gray-200 dark:border-dark-700">
+        <div id="dropdownHover"
+            class="z-50 hidden bg-white dark:bg-dark-800 divide-y divide-gray-100 dark:divide-dark-600 rounded-lg shadow-lg w-52 border border-gray-200 dark:border-dark-700">
             <ul class="py-2 text-sm text-gray-700 dark:text-gray-300" aria-labelledby="dropdownHoverButton">
-                <li><button type="button" id="resetHiddenColumnsBtn" class="flex items-center px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-dark-700 focus:outline-none text-blue-600 dark:text-blue-400"><i class="fas fa-eye mr-2"></i> {% trans 'Показать все' %}</button></li>
+                <li><button type="button" id="resetHiddenColumnsBtn"
+                        class="flex items-center px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-dark-700 focus:outline-none text-blue-600 dark:text-blue-400"><i
+                            class="fas fa-eye mr-2"></i> {% trans 'Показать все' %}</button></li>
                 <hr class="border-gray-200 dark:border-dark-600 my-1">
                 {% for status, _ in status_mapping.items %} {# Используем status_mapping для списка колонок #}
-                 {% with status_display_name=status_mapping|getkey:status %}
-                    <li>
-                        <label class="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-700 w-full">
-                            <input type="checkbox" class="toggle-column-checkbox form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" data-status="{{ status }}" checked>
-                            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300" data-status="{{ status }}">{{ status_display_name|default:status }}</span>
-                        </label>
-                    </li>
-                 {% endwith %}
+                {% with status_display_name=status_mapping|getkey:status %}
+                <li>
+                    <label
+                        class="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-700 w-full">
+                        <input type="checkbox"
+                            class="toggle-column-checkbox form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            data-status="{{ status }}" checked>
+                        <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300"
+                            data-status="{{ status }}">{{ status_display_name|default:status }}</span>
+                    </label>
+                </li>
+                {% endwith %}
                 {% endfor %}
             </ul>
         </div>
@@ -52,17 +64,16 @@
 
 {% block list_actions_mobile %}
 {# Mobile Actions #}
-<a href="{% url 'tasks:task_create' %}" class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-950 transition-all shadow">
+<a href="{% url 'tasks:task_create' %}"
+    class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-950 transition-all shadow">
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать задачу' %}
 </a>
 <button type="button" id="toggleViewBtnMobile"
-    class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-950 transition-all shadow" aria-pressed="false"
-        aria-pressed="false"
-        data-kanban-text="{% trans 'Канбан' %}"
-        data-list-text="{% trans 'Список' %}"
-        >
-     <i id="viewIconMobile" class="fas fa-columns mr-2"></i>
-     <span id="viewTextMobile">{% trans 'Канбан' %}</span>
+    class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-950 transition-all shadow"
+    aria-pressed="false" aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}"
+    data-list-text="{% trans 'Список' %}">
+    <i id="viewIconMobile" class="fas fa-columns mr-2"></i>
+    <span id="viewTextMobile">{% trans 'Канбан' %}</span>
 </button>
 {% endblock %}
 
@@ -73,103 +84,180 @@
 
 <!-- Канбан-доска (рендерится всегда, но может быть скрыта JS) -->
 <div id="kanban-board"
-     class="mt-6 flex flex-nowrap overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-dark-600 scrollbar-track-transparent hidden" {# JS уберет hidden если view=kanban #}
-     data-ajax-base-url="{{ ajax_base_url }}"
-     >
-    {% for status, task_list in tasks_by_status.items %} {# Используем tasks_by_status #}
-     {% with status_display_name=status_mapping|getkey:status %}
-        <div class="kanban-column-wrapper flex-shrink-0 w-72 md:w-80" data-status="{{ status }}">
-            <div class="kanban-column bg-gray-100 dark:bg-dark-800 w-full h-full rounded-xl shadow-md flex flex-col max-h-[calc(100vh-200px)]" data-status="{{ status }}">
-                <h3 class="text-md font-semibold text-gray-800 dark:text-gray-200 p-3 sticky top-0 z-10 bg-opacity-90 backdrop-blur-sm rounded-t-xl flex justify-between items-center border-b border-gray-200 dark:border-dark-700
-                    {% if status == 'new' %}bg-gray-200 dark:bg-dark-700{% elif status == 'in_progress' %}bg-yellow-100 dark:bg-yellow-900/50 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200{% elif status == 'on_hold' %}bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200{% elif status == 'canceled' %}bg-gray-200 dark:bg-dark-600 text-gray-600 dark:text-gray-400{% elif status == 'completed' %}bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200{% elif status == 'overdue' %}bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200{% else %}bg-gray-200 dark:bg-dark-700{% endif %}">
-                    <span>{{ status_display_name|default:status }}</span>
-                    <span class="task-count bg-gray-300 dark:bg-dark-600 text-gray-700 dark:text-gray-300 rounded-full px-2 py-0.5 text-xs font-mono">{{ task_list|length }}</span>
-                </h3>
-                <div class="kanban-tasks space-y-3 p-3 overflow-y-auto flex-1 min-h-[500px] max-h-[550px] overflow-x-auto">
-                    {% for task in task_list %}
-                    <div id="task-{{ task.pk }}"
-                            class="kanban-task bg-white dark:bg-dark-700 rounded-lg shadow p-3 cursor-grab transition-shadow duration-200 hover:shadow-lg border border-transparent hover:border-blue-300 dark:hover:border-blue-600"
-                            draggable="true"
-                            data-task-id="{{ task.pk }}"
-                            data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" {# Оставляем для JS #}
-                            data-status="{{ task.status }}"
-                            >
-                        <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-sm mb-1">{{ task.task_number }}</h4>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ task.project.name }}</p>
-                        {# Добавим название задачи #}
-                        <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ task.title|truncatechars:50 }}</p>
-                        <div class="mt-2 pt-2 border-t border-gray-100 dark:border-dark-600 flex justify-end space-x-2">
-                            <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Подробнее' %}" class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"><i class="fas fa-eye"></i></a>
-                            <a href="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}" class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none"><i class="fas fa-edit"></i></a>
-                            <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}" data-task-name="{{ task.task_number|escapejs }}" data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" title="{% trans 'Удалить' %}" class="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 focus:outline-none"><i class="fas fa-trash"></i></button>
-                        </div>
+    class="mt-6 flex flex-nowrap overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-dark-600 scrollbar-track-transparent hidden"
+    data-ajax-base-url="{{ ajax_base_url }}">
+
+    {% for status, task_list in tasks_by_status.items %}
+    {% with status_display_name=status_mapping|getkey:status %}
+    <div class="kanban-column-wrapper flex-shrink-0 w-72 md:w-80" data-status="{{ status }}">
+        <div class="kanban-column bg-gray-100 dark:bg-dark-800 w-full h-full rounded-xl shadow-md flex flex-col max-h-[calc(100vh-200px)]"
+            data-status="{{ status }}">
+            <h3 class="text-md font-semibold text-gray-800 dark:text-gray-200 p-3 sticky top-0 z-10 bg-opacity-90 backdrop-blur-sm rounded-t-xl flex justify-between items-center border-b border-gray-200 dark:border-dark-700
+                    {% if status == 'new' %}bg-gray-200 dark:bg-dark-700
+                    {% elif status == 'in_progress' %}bg-yellow-100 dark:bg-yellow-900/50 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200
+                    {% elif status == 'on_hold' %}bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200
+                    {% elif status == 'canceled' %}bg-gray-200 dark:bg-dark-600 text-gray-600 dark:text-gray-400
+                    {% elif status == 'completed' %}bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200
+                    {% elif status == 'overdue' %}bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200
+                    {% else %}bg-gray-200 dark:bg-dark-700{% endif %}">
+                <span>{{ status_display_name|default:status }}</span>
+                <span
+                    class="task-count bg-gray-300 dark:bg-dark-600 text-gray-700 dark:text-gray-300 rounded-full px-2 py-0.5 text-xs font-mono">{{
+                    task_list|length }}</span>
+            </h3>
+            <div class="kanban-tasks space-y-3 p-3 overflow-y-auto flex-1 min-h-[600px] max-h-[calc(100vh-160px)] overflow-x-auto">
+                {% for task in task_list %}
+                <div id="task-{{ task.pk }}"
+                class="kanban-task bg-white dark:bg-dark-700 rounded-xl shadow-sm p-3 cursor-grab hover:shadow-lg border-l-4 border-transparent hover:border-blue-400 dark:hover:border-blue-500 transition-transform duration-200 hover:scale-[1.02]"
+                draggable="true"
+                data-task-id="{{ task.pk }}"
+                data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/"
+                data-status="{{ task.status }}">
+           
+
+                    <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-sm mb-1">{{ task.task_number }}</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ task.project.name }}</p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ task.title|truncatechars:50 }}</p>
+
+                    <div class="flex items-center justify-between mt-3 text-xs text-gray-500 dark:text-gray-400">
+                        <span class="inline-flex items-center gap-1">
+                            <i class="fas fa-exclamation-circle text-yellow-400"></i> {{ task.priority_display }}
+                        </span>
+                        {% if task.deadline %}
+                        <span class="{% if task.is_overdue %}text-red-600 dark:text-red-400{% endif %}">
+                            <i class="fas fa-clock mr-1"></i> {{ task.deadline|date:"d.m" }}
+                        </span>
+                        {% endif %}
                     </div>
-                    {% endfor %}
-                    <p class="no-tasks-message text-center text-gray-500 dark:text-gray-400 text-sm py-4 italic {% if task_list %}hidden{% endif %}">{% trans 'Нет задач' %}</p>
+
+                    <div class="mt-2 pt-2 border-t border-gray-100 dark:border-dark-600 flex justify-end space-x-2">
+                        <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Подробнее' %}"
+                            class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"><i
+                                class="fas fa-eye"></i></a>
+                        <a href="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}"
+                            class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"><i
+                                class="fas fa-edit"></i></a>
+                        <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}"
+                            data-task-name="{{ task.task_number|escapejs }}"
+                            data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" title="{% trans 'Удалить' %}"
+                            class="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"><i
+                                class="fas fa-trash"></i></button>
+                    </div>
                 </div>
+                {% endfor %}
+                <p
+                    class="no-tasks-message text-center text-gray-500 dark:text-gray-400 text-sm py-4 italic {% if task_list %}hidden{% endif %}">
+                    {% trans 'Нет задач' %}</p>
             </div>
         </div>
-     {% endwith %}
+    </div>
+    {% endwith %}
     {% empty %}
-         <p class="text-center text-gray-500 dark:text-gray-400 text-lg py-8 italic w-full">{% trans 'Задачи для отображения не найдены.' %}</p>
+    <p class="text-center text-gray-500 dark:text-gray-400 text-lg py-8 italic w-full">{% trans 'Задачи для отображения
+        не найдены.' %}</p>
     {% endfor %}
 </div>
 
+
 <!-- Горизонтальный список (рендерится всегда, но может быть скрыт JS) -->
 <div id="task-list"
-     class="mt-6 overflow-x-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 hidden" {# JS уберет hidden если view=list #}
-     data-ajax-base-url="{{ ajax_base_url }}"
-     >
+    class="mt-6 overflow-x-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 hidden"
+    {# JS уберет hidden если view=list #} data-ajax-base-url="{{ ajax_base_url }}">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
         <thead class="bg-gray-50 dark:bg-dark-700">
-        <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="task_number" aria-sort="none"><i class="fas fa-hashtag fa-fw mr-1"></i>{% trans 'Задача' %} <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
-             <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="title" aria-sort="none"><i class="fas fa-heading fa-fw mr-1"></i>{% trans 'Название' %} <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th> {# Добавлена колонка Название #}
-            <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="project" aria-sort="none"><i class="fas fa-project-diagram fa-fw mr-1"></i>{% trans 'Проект' %} <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
-            <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="status" aria-sort="none"><i class="fas fa-circle-notch fa-fw mr-1"></i>{% trans 'Статус' %} <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
-            <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="priority" aria-sort="none"><i class="fas fa-exclamation-triangle fa-fw mr-1"></i>{% trans 'Приоритет' %} <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
-            <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="deadline" aria-sort="none"><i class="fas fa-calendar-alt fa-fw mr-1"></i>{% trans 'Срок' %} <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
-             <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="created_by" aria-sort="none"><i class="fas fa-user fa-fw mr-1"></i>{% trans 'Инициатор' %} <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
-            <th scope="col" class="px-4 py-3 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия' %}</th>
-        </tr>
+            <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="task_number" aria-sort="none">
+                    <i class="fas fa-hashtag fa-fw mr-1"></i>{% trans 'Задача' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="title" aria-sort="none"><i
+                        class="fas fa-heading fa-fw mr-1"></i>{% trans 'Название' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th> {# Добавлена колонка
+                Название #}
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="project" aria-sort="none"><i
+                        class="fas fa-project-diagram fa-fw mr-1"></i>{% trans 'Проект' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="status" aria-sort="none"><i
+                        class="fas fa-circle-notch fa-fw mr-1"></i>{% trans 'Статус' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="priority" aria-sort="none"><i
+                        class="fas fa-exclamation-triangle fa-fw mr-1"></i>{% trans 'Приоритет' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="deadline" aria-sort="none"><i
+                        class="fas fa-calendar-alt fa-fw mr-1"></i>{% trans 'Срок' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="created_by" aria-sort="none">
+                    <i class="fas fa-user fa-fw mr-1"></i>{% trans 'Инициатор' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия'
+                    %}</th>
+            </tr>
         </thead>
         <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-            {# ИЗМЕНЕНО: Итерация по page_obj.object_list #}
             {% for task in page_obj.object_list %}
             <tr id="task-row-{{ task.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300">
-                <td class="px-4 py-3 whitespace-nowrap"><a href="{% url 'tasks:task_detail' pk=task.pk %}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">{{ task.task_number }}</a></td>
-                 <td class="px-4 py-3 whitespace-nowrap">{{ task.title|truncatechars:40 }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                        {{ task.task_number }}
+                    </a>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ task.title|truncatechars:40 }}</td>
                 <td class="px-4 py-3 whitespace-nowrap">{{ task.project.name }}</td>
                 <td class="px-4 py-3 whitespace-nowrap">
-                    {# Блок статуса с выпадающим списком #}
                     <div class="flex items-center space-x-1">
-                         <span class="status-badge px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full
-                            {% if task.status == 'new' %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200{% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200{% elif task.status == 'canceled' %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through{% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200{% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200{% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
+                        <span class="status-badge px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full
+                            {% if task.status == 'new' %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200
+                            {% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200
+                            {% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200
+                            {% elif task.status == 'canceled' %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through
+                            {% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200
+                            {% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200
+                            {% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
                             {{ task.status_display|default:task.status }}
                         </span>
-                        {# Выпадающий список для смены статуса #}
+                        {% if not task.is_overdue %}
                         <select class="status-dropdown appearance-none px-1.5 py-0.5 rounded text-xs font-medium bg-transparent dark:bg-transparent text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all border border-transparent hover:border-gray-300 dark:hover:border-dark-600 focus:border-blue-400 cursor-pointer" name="status" data-task-id="{{ task.pk }}" title="{% trans 'Изменить статус' %}">
-                            {% for status_val, status_name in status_choices %} {# Используем status_choices из контекста #}
-                                <option value="{{ status_val }}" {% if task.status == status_val %}selected{% endif %}>{{ status_name }}</option>
+                            {% for status_val, status_name in status_choices %}
+                                <option value="{{ status_val }}"{% if task.status == status_val %} selected{% endif %}>{{ status_name }}</option>
                             {% endfor %}
                         </select>
+                        {% else %}
+                        <span class="text-xs italic text-red-500 dark:text-red-400">{% trans "Сначала продлите срок" %}</span>
+                        {% endif %}
+                        
                     </div>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap">{{ task.priority_display }}</td>
-                <td class="px-4 py-3 whitespace-nowrap {% if task.is_overdue %}text-red-600 dark:text-red-400{% endif %}">{{ task.deadline|date:"d.m.Y H:i"|default:"-" }}</td>
-                 <td class="px-4 py-3 whitespace-nowrap">{{ task.created_by.display_name|default:"-" }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-yellow-600 dark:text-yellow-300">
+                        <i class="fas fa-bolt"></i> {{ task.priority_display }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    {% if task.deadline %}
+                        <span class="inline-flex items-center gap-1 text-xs {% if task.is_overdue %}text-red-600 dark:text-red-400{% else %}text-gray-500 dark:text-gray-300{% endif %}">
+                            <i class="fas fa-calendar-alt"></i> {{ task.deadline|date:"d.m.Y" }}
+                        </span>
+                    {% else %}
+                        <span class="text-gray-400 dark:text-gray-500">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ task.created_by.display_name|default:"-" }}</td>
                 <td class="px-4 py-3 text-center whitespace-nowrap">
                     <div class="flex items-center justify-center space-x-2">
                         <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Подробнее' %}" class="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-full transition-colors"><i class="fas fa-eye fa-fw"></i></a>
-                        <button type="button" data-action="edit-task" data-edit-url="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-600 rounded-full transition-colors focus:outline-none"><i class="fas fa-edit fa-fw"></i></button>
-                        <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}" data-task-name="{{ task.task_number|escapejs }}" data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" title="{% trans 'Удалить' %}" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-full transition-colors focus:outline-none"><i class="fas fa-trash fa-fw"></i></button>
+                        <button type="button" data-action="edit-task" data-edit-url="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-600 rounded-full transition-colors"><i class="fas fa-edit fa-fw"></i></button>
+                        <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}" data-task-name="{{ task.task_number|escapejs }}" data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" title="{% trans 'Удалить' %}" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-full transition-colors"><i class="fas fa-trash fa-fw"></i></button>
                     </div>
                 </td>
             </tr>
             {% empty %}
-                <tr><td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400 italic"><i class="fas fa-folder-open fa-2x mb-2 text-gray-400 dark:text-gray-500"></i><br>{% trans 'Задачи не найдены.' %}</td></tr> {# Обновлен colspan #}
+            <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400 italic">
+                    <i class="fas fa-folder-open fa-2x mb-2 text-gray-400 dark:text-gray-500"></i><br>
+                    {% trans 'Задачи не найдены.' %}
+                </td>
+            </tr>
             {% endfor %}
-        </tbody>
+        </tbody>        
     </table>
 </div>
 
@@ -178,33 +266,54 @@
 <!-- Пагинация (рендерится всегда, но может быть скрыта JS) -->
 {# Проверяем page_obj, который теперь всегда должен быть в контексте #}
 {% if page_obj and page_obj.paginator.num_pages > 1 %}
-<div id="pagination" class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm hidden"> {# JS уберет hidden если view=list #}
+<div id="pagination"
+    class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm hidden"> {# JS
+    уберет hidden если view=list #}
     <span class="text-gray-600 dark:text-gray-400">
-        {% blocktrans with page_num=page_obj.number total_pages=page_obj.paginator.num_pages %}Страница {{ page_num }} из {{ total_pages }}{% endblocktrans %}
+        {% blocktrans with page_num=page_obj.number total_pages=page_obj.paginator.num_pages %}Страница {{ page_num }}
+        из {{ total_pages }}{% endblocktrans %}
         <span class="ml-2">({% trans "Всего задач:" %} {{ page_obj.paginator.count }})</span>
     </span>
     <nav aria-label="Pagination">
         <ul class="inline-flex items-center -space-x-px">
             {# Логика ссылок пагинации без изменений #}
             {% if page_obj.has_previous %}
-            <li><a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white transition-colors"><span class="sr-only">{% trans "First" %}</span><i class="fas fa-angle-double-left"></i></a></li>
-            <li><a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white transition-colors"><span class="sr-only">{% trans "Previous" %}</span><i class="fas fa-angle-left"></i></a></li>
+            <li><a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white transition-colors"><span
+                        class="sr-only">{% trans "First" %}</span><i class="fas fa-angle-double-left"></i></a></li>
+            <li><a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white transition-colors"><span
+                        class="sr-only">{% trans "Previous" %}</span><i class="fas fa-angle-left"></i></a></li>
             {% else %}
-             {# Неактивные кнопки для консистентности #}
-              <li><span class="px-3 py-2 ml-0 leading-tight text-gray-300 bg-white border border-gray-300 rounded-l-lg dark:bg-dark-800 dark:border-dark-700 dark:text-gray-500"><span class="sr-only">{% trans "First" %}</span><i class="fas fa-angle-double-left"></i></span></li>
-              <li><span class="px-3 py-2 leading-tight text-gray-300 bg-white border border-gray-300 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-500"><span class="sr-only">{% trans "Previous" %}</span><i class="fas fa-angle-left"></i></span></li>
+            {# Неактивные кнопки для консистентности #}
+            <li><span
+                    class="px-3 py-2 ml-0 leading-tight text-gray-300 bg-white border border-gray-300 rounded-l-lg dark:bg-dark-800 dark:border-dark-700 dark:text-gray-500"><span
+                        class="sr-only">{% trans "First" %}</span><i class="fas fa-angle-double-left"></i></span></li>
+            <li><span
+                    class="px-3 py-2 leading-tight text-gray-300 bg-white border border-gray-300 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-500"><span
+                        class="sr-only">{% trans "Previous" %}</span><i class="fas fa-angle-left"></i></span></li>
             {% endif %}
 
             {# Номера страниц (можно добавить логику для отображения диапазона) #}
-            <li><span aria-current="page" class="z-10 px-3 py-2 leading-tight text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-dark-600 dark:bg-dark-700 dark:text-white">{{ page_obj.number }}</span></li>
+            <li><span aria-current="page"
+                    class="z-10 px-3 py-2 leading-tight text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-dark-600 dark:bg-dark-700 dark:text-white">{{
+                    page_obj.number }}</span></li>
 
             {% if page_obj.has_next %}
-            <li><a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white transition-colors"><span class="sr-only">{% trans "Next" %}</span><i class="fas fa-angle-right"></i></a></li>
-            <li><a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white transition-colors"><span class="sr-only">{% trans "Last" %}</span><i class="fas fa-angle-double-right"></i></a></li>
-             {% else %}
-              {# Неактивные кнопки для консистентности #}
-              <li><span class="px-3 py-2 leading-tight text-gray-300 bg-white border border-gray-300 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-500"><span class="sr-only">{% trans "Next" %}</span><i class="fas fa-angle-right"></i></span></li>
-              <li><span class="px-3 py-2 leading-tight text-gray-300 bg-white border border-gray-300 rounded-r-lg dark:bg-dark-800 dark:border-dark-700 dark:text-gray-500"><span class="sr-only">{% trans "Last" %}</span><i class="fas fa-angle-double-right"></i></span></li>
+            <li><a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white transition-colors"><span
+                        class="sr-only">{% trans "Next" %}</span><i class="fas fa-angle-right"></i></a></li>
+            <li><a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-white transition-colors"><span
+                        class="sr-only">{% trans "Last" %}</span><i class="fas fa-angle-double-right"></i></a></li>
+            {% else %}
+            {# Неактивные кнопки для консистентности #}
+            <li><span
+                    class="px-3 py-2 leading-tight text-gray-300 bg-white border border-gray-300 dark:bg-dark-800 dark:border-dark-700 dark:text-gray-500"><span
+                        class="sr-only">{% trans "Next" %}</span><i class="fas fa-angle-right"></i></span></li>
+            <li><span
+                    class="px-3 py-2 leading-tight text-gray-300 bg-white border border-gray-300 rounded-r-lg dark:bg-dark-800 dark:border-dark-700 dark:text-gray-500"><span
+                        class="sr-only">{% trans "Last" %}</span><i class="fas fa-angle-double-right"></i></span></li>
             {% endif %}
         </ul>
     </nav>
