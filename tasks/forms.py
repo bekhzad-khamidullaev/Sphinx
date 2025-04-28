@@ -74,7 +74,7 @@ USER_AUTOCOMPLETE_URL_NAME = 'api:user_autocomplete'
 
 
 # ============================================================================== #
-# Project Form
+# Project Form                                                                 #
 # ============================================================================== #
 class ProjectForm(forms.ModelForm):
     """
@@ -83,7 +83,8 @@ class ProjectForm(forms.ModelForm):
     """
     class Meta:
         model = Project
-        fields = ["name", "description", "start_date", "end_date", "is_active"] # Added is_active if applicable
+        # REMOVED 'is_active' from the fields list
+        fields = ["name", "description", "start_date", "end_date"]
         widgets = {
             "name": forms.TextInput(attrs={
                 'class': TEXT_INPUT_CLASSES,
@@ -104,22 +105,20 @@ class ProjectForm(forms.ModelForm):
                 'class': DATE_INPUT_CLASSES,
                 'placeholder': _('ГГГГ-ММ-ДД')
             }),
-             "is_active": forms.CheckboxInput(attrs={
-                'class': 'form-checkbox h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-dark-600 dark:bg-dark-700 dark:checked:bg-blue-500 dark:focus:ring-offset-dark-800'
-            }),
+             # REMOVED 'is_active' widget definition
         }
         labels = {
             "name": _("Название проекта"),
             "description": _("Описание"),
             "start_date": _("Дата начала"),
             "end_date": _("Дата завершения"),
-            "is_active": _("Активен"),
+            # REMOVED 'is_active' label
         }
         help_texts = {
             "name": _("Укажите уникальное и понятное название для этого проекта."),
             "start_date": _("Дата, когда планируется или фактически начались работы по проекту."),
             "end_date": _("Планируемая или фактическая дата завершения всех работ по проекту."),
-            "is_active": _("Отметьте, если проект активен и должен отображаться в списках."),
+            # REMOVED 'is_active' help text
         }
 
     def __init__(self, *args, **kwargs):
@@ -279,8 +278,8 @@ class TaskForm(forms.ModelForm):
     # --- Relational Fields (Project, Category, Subcategory) ---
     project = forms.ModelChoiceField(
         label=_('Проект'),
-        # Optimize queryset by filtering active projects if applicable
-        queryset=Project.objects.filter(is_active=True).order_by("name") if hasattr(Project, 'is_active') else Project.objects.all().order_by("name"),
+        # NOTE: The original Project model did NOT have 'is_active'. Query adjusted.
+        queryset=Project.objects.all().order_by("name"), # Query all projects
         required=False, # Task may not belong to a project
         widget=Select2Widget(attrs={
             'data-placeholder': _('Выберите проект (необязательно)...'),
@@ -438,6 +437,10 @@ class TaskForm(forms.ModelForm):
             "deadline", "estimated_time",
             # Do not include fields like 'created_by', 'created_at', 'updated_at'
             # unless you intend for the user to edit them directly via the form.
+            # Also do not include 'status' here if it's managed programmatically or via separate actions.
+            # Include 'start_date' if it should be user-editable via the form.
+            # If start_date is not needed on the form, remove it from here too.
+             "start_date", # Assuming start_date might be editable
         ]
 
     def __init__(self, *args, **kwargs):
@@ -523,6 +526,15 @@ class TaskForm(forms.ModelForm):
              self.fields['subcategory'].queryset = TaskSubcategory.objects.none()
              self.fields['subcategory'].widget.attrs['disabled'] = True
 
+        # --- Handle start_date field styling if included ---
+        if 'start_date' in self.fields:
+            self.fields['start_date'].widget = forms.DateInput(
+                 format='%Y-%m-%d',
+                 attrs={'type': 'date', 'class': DATE_INPUT_CLASSES}
+            )
+            self.fields['start_date'].label = _('Дата начала')
+            self.fields['start_date'].help_text = _("Дата, когда планируется начать работу над задачей.")
+            self.fields['start_date'].required = False # Make start_date optional if needed
 
         # --- Configure Crispy Forms Helper for Layout Rendering ---
         self.helper = FormHelper(self)
@@ -564,8 +576,10 @@ class TaskForm(forms.ModelForm):
             Fieldset(
                  _('Сроки и оценка'),
                  Row(
-                    Field('deadline', wrapper_class='w-full md:w-1/2 px-2 mb-4'),
-                    Field('estimated_time', wrapper_class='w-full md:w-1/2 px-2 mb-4'),
+                    # Include start_date in the layout if it's in Meta.fields
+                    Field('start_date', wrapper_class='w-full md:w-1/3 px-2 mb-4'), # Adjust width if needed
+                    Field('deadline', wrapper_class='w-full md:w-1/3 px-2 mb-4'),
+                    Field('estimated_time', wrapper_class='w-full md:w-1/3 px-2 mb-4'),
                     css_class='flex flex-wrap -mx-2'
                  ),
                  # Add a visual separator
@@ -629,6 +643,7 @@ class TaskForm(forms.ModelForm):
         Performs cross-field validation after individual field cleaning.
         - Validates the relationship between Category and Subcategory.
         - Validates User Roles (e.g., Responsible cannot be Executor or Watcher).
+        - Validates dates (deadline vs start_date).
         """
         # Get the dictionary of cleaned data from the parent class's clean method
         cleaned_data = super().clean()
@@ -640,12 +655,19 @@ class TaskForm(forms.ModelForm):
         if subcategory and not category:
             # Raise an error if a subcategory is selected but no parent category is chosen
             self.add_error('subcategory', ValidationError(_("Нельзя выбрать подкатегорию без выбора родительской категории.")))
-            # Optionally add error to category field as well for clarity
-            # self.add_error('category', ValidationError(_("Необходимо выбрать категорию для выбранной подкатегории.")))
         elif subcategory and category and subcategory.category != category:
             # Raise an error if the selected subcategory does not belong to the selected category
-            # This prevents data inconsistency if the JS logic fails or is bypassed
             self.add_error('subcategory', ValidationError(_("Выбранная подкатегория не принадлежит выбранной категории.")))
+
+        # --- Validate Dates ---
+        start_date = cleaned_data.get("start_date")
+        deadline_dt = cleaned_data.get("deadline") # Note: deadline is DateTimeField
+
+        # Compare date part of deadline with start_date if both exist
+        if start_date and deadline_dt and deadline_dt.date() < start_date:
+             self.add_error('deadline', ValidationError(_("Срок выполнения (дата) не может быть раньше даты начала.")))
+             self.add_error('start_date', ValidationError(_("Дата начала не может быть позже срока выполнения (даты).")))
+
 
         # --- Validate User Roles (Only if User Model is Available) ---
         if User:
@@ -657,10 +679,8 @@ class TaskForm(forms.ModelForm):
             # Check if a responsible user was selected
             if responsible:
                 # Check if the responsible user is also listed as an executor
-                # Ensure 'executors' is iterable (it should be a QuerySet here)
                 if hasattr(executors, '__iter__') and responsible in executors:
                     self.add_error('executors', ValidationError(_("Ответственный пользователь не может быть одновременно исполнителем.")))
-                    # Add error to responsible_user field as well for better feedback
                     self.add_error('responsible_user', ValidationError(_("Этот пользователь не может быть одновременно исполнителем.")))
 
                 # Check if the responsible user is also listed as a watcher
@@ -687,8 +707,7 @@ class TaskForm(forms.ModelForm):
              # Check if the task instance has a 'created_by' field
             if hasattr(task_instance, 'created_by'):
                 # Assign the request user as the creator only if 'created_by' is not already set
-                # (e.g., avoids overriding values set by signals or other pre-save logic)
-                if not task_instance.created_by_id: # Check _id field to avoid unnecessary user object fetch
+                if not task_instance.created_by_id: # Check _id field to avoid user fetch
                     task_instance.created_by = self.request_user
             else:
                 logger.warning(f"Task model does not have a 'created_by' attribute. Cannot assign creator.")
@@ -698,7 +717,10 @@ class TaskForm(forms.ModelForm):
         if commit:
             # Save the Task instance itself to the database
             task_instance.save()
-            self.save_m2m() # Important for ModelForms with M2M fields if defined in Meta
+            # Call save_m2m() AFTER the main instance is saved,
+            # necessary for any ManyToManyFields defined directly in the form's Meta.
+            # In this specific form, user roles are handled manually, but it's good practice.
+            self.save_m2m()
 
             # --- Update User Roles (Conditional on Model Availability) ---
             # Proceed only if TaskUserRole and User models were successfully imported
@@ -725,39 +747,30 @@ class TaskForm(forms.ModelForm):
                 if responsible_user_instance:
                     user_id = responsible_user_instance.id
                     processed_user_ids.add(user_id) # Mark this user as processed
-                    # Check if this user already has a role in the task
                     if user_id in current_user_role_map:
-                        # Yes, get the existing role instance and remove it from the map
-                        # (so it won't be deleted later)
                         existing_role = current_user_role_map.pop(user_id)
-                        # If the existing role is not 'RESPONSIBLE', update it
                         if existing_role.role != TaskUserRole.RoleChoices.RESPONSIBLE:
                             existing_role.role = TaskUserRole.RoleChoices.RESPONSIBLE
-                            roles_to_update.append(existing_role) # Add to bulk update list
+                            roles_to_update.append(existing_role)
                     else:
-                        # No existing role, create a new 'RESPONSIBLE' role
                         new_roles_to_create.append(
                             TaskUserRole(task=task_instance, user=responsible_user_instance, role=TaskUserRole.RoleChoices.RESPONSIBLE)
                         )
 
                 # 4. Process selected Executors (excluding the responsible user)
                 executor_ids = set(executor_queryset.values_list('id', flat=True))
-                # Remove the responsible user's ID if they were accidentally included
                 if responsible_user_instance:
                      executor_ids.discard(responsible_user_instance.id)
 
                 for user_id in executor_ids:
-                     # Process only if not already handled (e.g., as responsible)
                      if user_id not in processed_user_ids:
                         processed_user_ids.add(user_id)
                         if user_id in current_user_role_map:
-                            # Existing role found, update if necessary
                             existing_role = current_user_role_map.pop(user_id)
                             if existing_role.role != TaskUserRole.RoleChoices.EXECUTOR:
                                 existing_role.role = TaskUserRole.RoleChoices.EXECUTOR
                                 roles_to_update.append(existing_role)
                         else:
-                            # New executor role needed, fetch User instance safely
                             try:
                                 executor_user_instance = User.objects.get(pk=user_id)
                                 new_roles_to_create.append(
@@ -768,23 +781,19 @@ class TaskForm(forms.ModelForm):
 
                 # 5. Process selected Watchers (excluding Responsible and Executors)
                 watcher_ids = set(watcher_queryset.values_list('id', flat=True))
-                # Remove responsible user and anyone already assigned as an executor
                 if responsible_user_instance:
                     watcher_ids.discard(responsible_user_instance.id)
                 watcher_ids -= executor_ids # Set difference removes executor IDs
 
                 for user_id in watcher_ids:
-                    # Process only if not already handled
                     if user_id not in processed_user_ids:
                         processed_user_ids.add(user_id)
                         if user_id in current_user_role_map:
-                            # Existing role found, update if necessary
                             existing_role = current_user_role_map.pop(user_id)
                             if existing_role.role != TaskUserRole.RoleChoices.WATCHER:
                                 existing_role.role = TaskUserRole.RoleChoices.WATCHER
                                 roles_to_update.append(existing_role)
                         else:
-                            # New watcher role needed, fetch User instance safely
                             try:
                                 watcher_user_instance = User.objects.get(pk=user_id)
                                 new_roles_to_create.append(
@@ -794,28 +803,18 @@ class TaskForm(forms.ModelForm):
                                 logger.warning(f"User ID {user_id} selected as watcher for task '{task_instance.title}' (ID: {task_instance.id}) not found.")
 
                 # --- Perform Bulk Database Operations ---
-                # Bulk Create: Efficiently insert all new roles
                 if new_roles_to_create:
-                    # ignore_conflicts=True prevents errors if a role somehow already exists (unlikely with this logic but safe)
                     TaskUserRole.objects.bulk_create(new_roles_to_create, ignore_conflicts=True)
                     logger.info(f"Bulk created/ignored {len(new_roles_to_create)} roles for Task ID {task_instance.id}")
-
-                # Bulk Update: Efficiently update roles that changed type
                 if roles_to_update:
-                    # Specify the fields to update ('role' in this case)
                     TaskUserRole.objects.bulk_update(roles_to_update, ['role'])
                     logger.info(f"Bulk updated {len(roles_to_update)} roles for Task ID {task_instance.id}")
-
-                # Delete Obsolete Roles: Remove roles for users no longer associated in any capacity
-                # Any roles remaining in 'current_user_role_map' at this point are obsolete
                 roles_to_delete_pks = [role.pk for role in current_user_role_map.values()]
                 if roles_to_delete_pks:
-                    # Delete roles by their primary keys
                     deleted_count, deleted_details = TaskUserRole.objects.filter(pk__in=roles_to_delete_pks).delete()
                     logger.info(f"Deleted {deleted_count} obsolete roles for Task ID {task_instance.id}. Details: {deleted_details}")
 
             else:
-                 # Log a warning if roles couldn't be updated due to missing models
                  logger.warning("TaskUserRole or User model not available. Skipping user role synchronization during task save.")
 
         # Return the saved Task instance
