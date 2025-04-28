@@ -1,7 +1,17 @@
+<!-- tasks/templates/tasks/project_form.html -->
 {% extends 'base.html' %}
-{% load i18n static %}
+{% load i18n static crispy_forms_tags %}
 
-{% block title %}{{ page_title|default:_("Форма категории") }}{% endblock %}
+{% block title %}{{ page_title|default:_("Форма проекта") }}{% endblock %}
+
+{% block head_extra %}
+    {{ block.super }}
+    {# Include form media if needed (e.g., for date pickers) #}
+    {{ form.media.css }}
+     {# Add flatpickr CSS if ProjectForm uses it #}
+    {# <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> #}
+{% endblock %}
+
 
 {% block list_title %}
 <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
@@ -10,49 +20,65 @@
 {% endblock %}
 
 {% block list_content %}
-<div class="bg-white dark:bg-dark-800 shadow-2xl rounded-2xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
-    <form method="post" action="">
-        {% csrf_token %}
+<div class="bg-white dark:bg-dark-800 shadow-xl rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
+    {# The form tag is needed because form_tag=False in ProjectForm's helper #}
+    <form method="post" action="" id="project-form" novalidate>
+         {% csrf_token %}
 
-        <div class="mb-6 relative">
-            <input type="text" name="name" id="id_name" class="peer w-full border border-gray-300 dark:border-dark-600 rounded-xl px-4 pt-5 pb-2 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-dark-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder=" " value="{{ form.name.value|default_if_none:'' }}">
-            <label for="id_name" class="absolute left-4 top-2 text-gray-500 dark:text-gray-400 text-sm peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">{{ form.name.label }}</label>
-            {% if form.name.errors %}
-                <p class="text-red-500 text-xs mt-1">{{ form.name.errors.0 }}</p>
-            {% endif %}
-        </div>
+         {# Render the form fields using Crispy Forms helper and layout #}
+         {% crispy form %}
 
-        <div class="mb-6 relative">
-            <textarea name="description" id="id_description" rows="3" class="peer w-full border border-gray-300 dark:border-dark-600 rounded-xl px-4 pt-5 pb-2 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-dark-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder=" ">{{ form.description.value|default_if_none:'' }}</textarea>
-            <label for="id_description" class="absolute left-4 top-2 text-gray-500 dark:text-gray-400 text-sm peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">{{ form.description.label }}</label>
-            {% if form.description.errors %}
-                <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
-            {% endif %}
-        </div>
-
-        {% if form.non_field_errors %}
-            <div role="alert" class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-xl">
-                <h4 class="font-bold">{% trans "Ошибка формы:" %}</h4>
+         {# Display Non-Field Errors (if any) #}
+         {% if form.non_field_errors %}
+            <div role="alert" class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
+                <h4 class="font-bold">{% trans "Общая ошибка формы:" %}</h4>
+                <ul class="list-disc list-inside text-sm mt-1">
                 {% for error in form.non_field_errors %}
-                    <p class="text-sm">{{ error }}</p>
+                    <li>{{ error }}</li>
                 {% endfor %}
+                </ul>
             </div>
-        {% endif %}
+         {% endif %}
 
-        <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-dark-600 mt-6">
-            <a href="{% url 'tasks:category_list' %}" class="px-6 py-3 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-300 dark:hover:bg-dark-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-dark-600 transition-all shadow-md">
-                {% trans 'Отмена' %}
-            </a>
-            <button type="submit" class="px-6 py-3 rounded-full text-sm font-medium bg-blue-600 dark:bg-ios-blue text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-all shadow-md">
-                <i class="fas fa-save mr-2"></i> {{ form_action|default:_("Сохранить") }}
-            </button>
-        </div>
+         {# --- Action Buttons --- #}
+         <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
+             <a href="{% url 'tasks:project_list' %}"
+                class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-dark-600 transition-colors shadow-sm">
+                 {% trans 'Отмена' %}
+             </a>
+             <button type="submit"
+                     class="px-5 py-2.5 rounded-lg text-sm font-medium bg-purple-600 dark:bg-ios-purple text-white hover:bg-purple-700 dark:hover:bg-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-800 transition-colors shadow-md inline-flex items-center">
+                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
+                 {{ form_action|default:_("Сохранить проект") }}
+             </button>
+         </div>
     </form>
 </div>
 {% endblock %}
 
-
 {% block scripts %}
-    {# Скрипты для виджетов даты, если стандартные input type="date" не подходят #}
     {{ block.super }}
+    {# Include form media if needed (e.g., for date pickers) #}
+    {{ form.media.js }}
+
+    {# Add flatpickr or other date picker initialization if ProjectForm uses it
+       Make sure the input fields have the correct class (e.g., 'flatpickr-date')
+    #}
+    {# Example using flatpickr:
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> // Russian locale
+    <script defer>
+      document.addEventListener('DOMContentLoaded', function() {
+        try {
+          flatpickr(".flatpickr-date", { // Target inputs with class 'flatpickr-date'
+            dateFormat: "Y-m-d",
+            locale: "ru", // Use Russian locale
+            allowInput: true,
+            altInput: true, // Show user-friendly format
+            altFormat: "d.m.Y",
+          });
+        } catch (e) { console.error("Flatpickr init error:", e); }
+      });
+    </script>
+    #}
 {% endblock %}

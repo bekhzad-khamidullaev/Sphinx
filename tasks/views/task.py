@@ -1,450 +1,452 @@
 # tasks/views/task.py
-
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
-from django.forms.models import inlineformset_factory
-from django.http import Http404, HttpResponseRedirect, JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.messages.views import SuccessMessageMixin
+from django.urls import reverse_lazy, reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
-from django_filters.views import FilterView
-from django.contrib import messages
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
+from django.shortcuts import get_object_or_404, redirect, render
+from django.http import Http404, JsonResponse
+from django.db.models import Prefetch, Q
+from django.forms import modelformset_factory # For photo formset
+from django.contrib import messages # For manual messages
 
-# Локальные импорты
-from ..models import Task, TaskPhoto
-from user_profiles.models import TaskUserRole # Импорт из user_profiles
+from ..models import Task, TaskPhoto, TaskComment
 from ..forms import TaskForm, TaskPhotoForm, TaskCommentForm
 from ..filters import TaskFilter
-from .mixins import SuccessMessageMixin
+# Safely import user-related models
+try:
+    from user_profiles.models import TaskUserRole, User
+except ImportError:
+    TaskUserRole = None
+    User = None
 
 logger = logging.getLogger(__name__)
 
-# ==============================================================================
-# Task List View (Kanban & List)
-# ==============================================================================
-class TaskListView(LoginRequiredMixin, FilterView):
-    """
-    Отображает список задач в виде Канбан-доски или таблицы.
-    Поддерживает фильтрацию и пагинацию (для вида списка).
-    """
-    model = Task
-    template_name = "tasks/task_list.html"
-    # context_object_name определяет имя для списка объектов В ТЕКУЩЕЙ странице
-    # page_obj будет содержать сам объект пагинатора
-    context_object_name = "tasks_on_page" # Используем это имя для итерации в шаблоне списка
-    paginate_by = 15
-    filterset_class = TaskFilter
+# --- Helper for Task Photo Formset ---
+TaskPhotoFormSet = modelformset_factory(
+    TaskPhoto,
+    form=TaskPhotoForm,
+    fields=('photo', 'description'), # Fields editable in the formset
+    extra=1, # Start with one extra empty form
+    can_delete=True # Allow deleting existing photos
+)
 
-    def get_base_queryset(self):
-        """
-        Возвращает базовый QuerySet задач с необходимой оптимизацией.
-        """
-        return Task.objects.select_related(
-            "project", "category", "subcategory", "created_by"
-        ).prefetch_related(
-            'photos',
-            'user_roles__user' # Prefetch пользователей через роли для оптимизации
-        ).order_by('priority', 'deadline', '-created_at') # Сортировка: приоритет -> срок -> дата создания
+# --- Task Views ---
+class TaskListView(LoginRequiredMixin, ListView):
+    model = Task
+    template_name = 'tasks/task_list.html'
+    context_object_name = 'tasks_list' # Use this for the paginated list
+    paginate_by = 10
 
     def get_queryset(self):
-        """
-        Фильтрует базовый QuerySet на основе прав текущего пользователя.
-        """
-        user = self.request.user
-        queryset = self.get_base_queryset()
+        # Start with base queryset, optimize with select/prefetch
+        queryset = Task.objects.select_related(
+            'project', 'category', 'subcategory', 'created_by'
+        ).prefetch_related(
+            # Prefetch users through TaskUserRole for participant display
+            Prefetch('user_roles', queryset=TaskUserRole.objects.select_related('user').order_by('role'))
+        ).order_by('-created_at') # Default ordering
 
-        if user.is_superuser or user.has_perm('tasks.view_task'):
-            return queryset # Возвращаем все задачи
+        # --- Permission Filtering (Example: show only tasks user is involved in or created) ---
+        # if not self.request.user.is_staff: # Example condition
+        #     queryset = queryset.filter(
+        #         Q(created_by=self.request.user) |
+        #         Q(user_roles__user=self.request.user)
+        #     ).distinct()
 
-        # Фильтруем для обычных пользователей
-        queryset = queryset.filter(
-            Q(created_by=user) | Q(user_roles__user=user)
-        ).distinct() # distinct обязателен из-за M2M user_roles
+        # Apply filtering from URL parameters
+        self.filterset = TaskFilter(self.request.GET, queryset=queryset, request=self.request)
+        filtered_qs = self.filterset.qs.distinct()
 
-        logger.debug(f"User {user.username} queryset count (filtered): {queryset.count()}")
-        return queryset
+        # --- Sorting Logic ---
+        sort_param = self.request.GET.get('sort', '-created_at') # Default sort by newest
+        allowed_sort_fields = ['task_number', 'title', 'project__name', 'status', 'priority', 'deadline', 'created_at', 'created_by__username']
+
+        # Validate sort_param
+        sort_field = sort_param.lstrip('-')
+        if sort_field in allowed_sort_fields:
+             self.active_queryset = filtered_qs.order_by(sort_param) # Apply requested sorting
+        else:
+            logger.warning(f"Attempted to sort by disallowed field: {sort_param}")
+            self.active_queryset = filtered_qs.order_by('-created_at') # Fallback to default sorting
+
+        return self.active_queryset # Return the final sorted & filtered queryset for pagination
 
     def get_context_data(self, **kwargs):
-        """
-        Подготавливает и добавляет данные в контекст шаблона для ОБОИХ видов.
-        """
-        # 1. Вызываем super() СНАЧАЛА. Он обработает фильтрацию и пагинацию,
-        # установит self.object_list (отфильтрованный) и добавит в контекст:
-        # 'filter' (filterset), 'paginator', 'page_obj', 'is_paginated',
-        # и object_list под именем context_object_name ('tasks_on_page')
-        context = super().get_context_data(**kwargs) # <<< ИСПРАВЛЕНО: убрана передача object_list
+        context = super().get_context_data(**kwargs) # Gets paginated object_list as 'tasks_list'
+        context['filterset'] = self.filterset
+        context['page_title'] = _('Задачи')
+        context['current_sort'] = self.request.GET.get('sort', '-created_at')
 
-        # 2. Получаем отфильтрованные задачи (из context или self.object_list)
-        # self.object_list содержит ВСЕ отфильтрованные задачи, не только текущую страницу
-        # Используем context['filter'].qs, т.к. super() уже установил отфильтрованный queryset в filterset
-        filterset = context.get('filter')
-        if not filterset:
-             logger.error("Filterset not found in context after super().get_context_data(). Check FilterView setup.")
-             filtered_tasks_qs = self.model.objects.none() # Возвращаем пустой queryset в случае ошибки
-        else:
-             filtered_tasks_qs = filterset.qs.distinct() # Получаем отфильтрованный queryset из filterset
+        # --- Kanban/List View specific data ---
+        # Pass the *unpaginated* but filtered/sorted queryset for Kanban
+        all_tasks_for_kanban = self.active_queryset
 
-
-        # 3. Подготовка данных для Канбана
+        # Group tasks by status for Kanban
+        tasks_by_status = {}
         status_mapping = dict(Task.StatusChoices.choices)
-        tasks_by_status = {key: [] for key, _ in Task.StatusChoices.choices}
-        for task in filtered_tasks_qs: # Итерируем по ПОЛНОМУ отфильтрованному списку
-             if task.status in tasks_by_status:
-                 tasks_by_status[task.status].append(task)
-             else:
-                 logger.warning(f"Task {task.id} has unknown status '{task.status}' for Kanban grouping.")
+        context['status_mapping'] = status_mapping # Pass mapping to template
 
-        # 4. Добавляем/обновляем элементы контекста
-        context['filterset'] = filterset # Filterset для формы фильтров
-        context['page_title'] = _("Задачи")
-        # Определяем текущий вид для JS (приоритет: URL -> session -> default)
-        view_type = self.request.GET.get('view', self.request.session.get('task_list_view', 'kanban'))
-        self.request.session['task_list_view'] = view_type # Сохраняем в сессию для следующего раза
-        context['view_type'] = view_type
+        # Initialize all statuses from choices to ensure columns render even if empty
+        for status_code, _status_name in Task.StatusChoices.choices:
+            tasks_by_status[status_code] = []
 
-        # Добавляем данные, нужные для ОБОИХ видов
-        context['status_mapping'] = status_mapping # Для отображения названий статусов
-        context['status_choices'] = Task.StatusChoices.choices # Для select'ов смены статуса
-        context['tasks_by_status'] = tasks_by_status # Данные для рендеринга Канбана
+        for task in all_tasks_for_kanban:
+            tasks_by_status.setdefault(task.status, []).append(task)
 
-        # Данные пагинации ('page_obj', 'paginator', 'is_paginated') уже в контексте от super()
-        # Список задач для ТЕКУЩЕЙ страницы уже в контексте под именем 'tasks_on_page' (context_object_name)
-        # Переименуем page_obj для ясности в шаблоне пагинации
-        context['page_obj'] = context.get('page_obj') # Получаем из контекста, установленного super()
+        context['tasks_by_status'] = tasks_by_status
 
-        # Логирование для отладки
-        page_obj = context.get('page_obj')
-        paginator = context.get('paginator')
-        if page_obj and paginator:
-             logger.debug(f"Context prepared. View: '{view_type}'. Page: {page_obj.number}/{paginator.num_pages}. Tasks on page: {len(context.get(self.context_object_name, []))}. Total filtered: {paginator.count}")
-        else:
-             logger.error("Pagination context ('page_obj', 'paginator') not found after super().get_context_data()")
+        # Add status choices for the dropdown in list view
+        context['status_choices'] = Task.StatusChoices.choices
 
+        # Pass the paginated list under the correct name if different from default 'object_list'
+        context['page_obj'] = context['page_obj'] # Already contains the paginated tasks
 
         return context
 
-# ==============================================================================
-# Task Detail View
-# ==============================================================================
-class TaskDetailView(LoginRequiredMixin, DetailView):
-    """Отображает детальную информацию о конкретной задаче."""
+
+class TaskDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = Task
-    template_name = "tasks/task_detail.html"
-    context_object_name = "task"
+    template_name = 'tasks/task_detail.html'
+    context_object_name = 'task'
+
+    comment_form_class = TaskCommentForm
+
+    def test_func(self):
+        task = self.get_object()
+        return task.has_permission(self.request.user, 'view')
+
+    def handle_no_permission(self):
+        messages.error(self.request, _("У вас нет прав для просмотра этой задачи."))
+        # Redirect to task list or dashboard
+        return redirect(reverse_lazy('tasks:task_list'))
 
     def get_queryset(self):
+        # Optimize query for detail view
         return super().get_queryset().select_related(
-            "project", "category", "subcategory", "created_by"
+            'project', 'category', 'subcategory', 'created_by'
         ).prefetch_related(
             'photos',
-            'comments__author', # Предзагружаем комментарии и их авторов
-            'user_roles__user'
+            Prefetch('comments', queryset=TaskComment.objects.select_related('author').order_by('created_at')), # Order comments
+            Prefetch('user_roles', queryset=TaskUserRole.objects.select_related('user').order_by('role')) # Order roles
         )
 
-    def get_object(self, queryset=None):
-        """Проверяет права доступа перед возвратом объекта."""
-        obj = super().get_object(queryset=queryset)
-        if not obj.has_permission(self.request.user, 'view'):
-            logger.warning(f"User {self.request.user.username} forbidden to view task {obj.id}")
-            raise Http404(_("Вы не имеете доступа к этой задаче."))
-        return obj
-
     def get_context_data(self, **kwargs):
-        """Добавляет данные в контекст для шаблона деталей."""
         context = super().get_context_data(**kwargs)
         task = self.object
-        context['page_title'] = f"{_('Задача')}: {task.title}"
+        context['page_title'] = _('Задача') + f" #{task.task_number}"
+
+        # Permissions for template rendering
+        context['can_change_task'] = task.has_permission(self.request.user, 'change')
+        context['can_delete_task'] = task.has_permission(self.request.user, 'delete')
+        context['can_add_comment'] = task.has_permission(self.request.user, 'add_comment')
+
+        # Separate users by role for easier template access
         context['responsible_users'] = task.get_responsible_users()
         context['executors'] = task.get_executors()
         context['watchers'] = task.get_watchers()
-        TaskPhotoInlineFormSet = inlineformset_factory(Task, TaskPhoto, form=TaskPhotoForm, extra=0, can_delete=False)
-        context['photo_formset'] = TaskPhotoInlineFormSet(instance=task)
-        if 'comment_form' not in context: context['comment_form'] = TaskCommentForm()
-        context['can_change_task'] = task.has_permission(self.request.user, 'change')
-        context['can_delete_task'] = task.has_permission(self.request.user, 'delete')
-        context['can_change_status'] = task.has_permission(self.request.user, 'change_status')
-        context['can_assign_users'] = task.has_permission(self.request.user, 'assign_users')
-        context['can_add_comment'] = task.has_permission(self.request.user, 'add_comment')
-        context['comments'] = task.comments.select_related('author').all() # Оптимизация
+        context['comments'] = task.comments.all() # Already prefetched
+
+        # Add comment form to context
+        if context['can_add_comment']:
+            # Check if form exists from a failed POST, otherwise create new
+             context['comment_form'] = kwargs.get('comment_form', self.comment_form_class())
+
         return context
 
     def post(self, request, *args, **kwargs):
-        """Обрабатывает отправку формы комментария (AJAX или стандартный POST)."""
-        self.object = self.get_object()
-        user = request.user
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        """Handles POST requests for adding comments."""
+        self.object = self.get_object() # Get the task instance
 
-        if not self.object.has_permission(user, 'add_comment'):
-             error_message = _("У вас нет прав для добавления комментария к этой задаче.")
-             if is_ajax:
-                 return JsonResponse({'success': False, 'error': error_message}, status=403)
-             else:
-                 messages.error(request, error_message)
-                 return redirect(self.object.get_absolute_url())
+        # Check permission again for POST
+        if not self.object.has_permission(request.user, 'add_comment'):
+             messages.error(request, _("У вас нет прав для добавления комментария."))
+             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                  return JsonResponse({'success': False, 'error': _("Нет прав.")}, status=403)
+             return redirect(self.object.get_absolute_url())
 
-        form = TaskCommentForm(request.POST)
+        form = self.comment_form_class(request.POST)
 
         if form.is_valid():
-            comment = form.save(commit=False)
-            comment.task = self.object
-            comment.author = user
-            comment.save()
-            logger.info(f"User {user.username} added comment {comment.id} to task {self.object.id}")
+            try:
+                comment = form.save(commit=False)
+                comment.task = self.object
+                comment.author = request.user
+                comment.save()
+                logger.info(f"User {request.user.username} added comment {comment.id} to task {self.object.id}")
 
-            # --- Возвращаем JSON для AJAX запроса ---
-            if is_ajax:
-                # Возвращаем данные нового комментария для добавления в DOM через JS
-                author_avatar_url = user.image.url if user.image else static('img/user.svg') # Получаем URL аватара
-                comment_data = {
-                    'id': comment.id,
-                    'text': comment.text, # JS должен будет экранировать
-                    'created_at_iso': comment.created_at.isoformat(),
-                    'author': {
-                        'id': user.id,
-                        'name': user.display_name,
-                        'avatar_url': author_avatar_url
-                    },
-                }
-                return JsonResponse({'success': True, 'comment': comment_data})
-            # --- Для стандартного POST - редирект ---
-            else:
-                messages.success(request, _("Ваш комментарий успешно добавлен."))
-                return HttpResponseRedirect(self.object.get_absolute_url() + '#comments') # Используем HttpResponseRedirect
-        else:
-            # --- Ошибки валидации ---
-            error_message = _("Ошибка при добавлении комментария. Проверьте текст.")
-            logger.warning(f"Invalid comment submitted by user {user.username} for task {self.object.id}. Errors: {form.errors.as_json()}")
-            if is_ajax:
-                # Возвращаем ошибки формы в JSON
-                 return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
-            else:
-                # Показываем страницу снова с ошибками
-                messages.error(request, error_message)
-                context = self.get_context_data(comment_form=form) # Передаем невалидную форму
-                return self.render_to_response(context)
+                # AJAX success response
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                     author_name = comment.author.display_name if comment.author else _("Аноним")
+                     author_avatar_url = comment.author.image.url if comment.author and comment.author.image else None # TODO: Add default avatar URL path
+                     comment_data = {
+                         'id': comment.id,
+                         'text': comment.text, # Sending raw text, template should escape
+                         'created_at_iso': comment.created_at.isoformat(),
+                         'author': {
+                             'id': comment.author.id if comment.author else None,
+                             'name': author_name,
+                             'avatar_url': author_avatar_url
+                         },
+                         'task_id': comment.task.id,
+                     }
+                     return JsonResponse({'success': True, 'comment': comment_data})
 
-# ==============================================================================
-# Base View for Task Forms (Create & Update)
-# ==============================================================================
-class BaseTaskFormView:
-    """Общая логика для Create и Update Task представлений."""
+                # Standard success response (non-AJAX)
+                messages.success(request, _("Комментарий успешно добавлен."))
+                return redirect(self.object.get_absolute_url() + '#comments') # Redirect to comments anchor
+
+            except Exception as e:
+                 logger.exception(f"Error saving comment for task {self.object.id} by user {request.user.username}: {e}")
+                 error_message = _("Произошла ошибка при сохранении комментария.")
+                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                     return JsonResponse({'success': False, 'error': error_message, 'errors': {'__all__': [error_message]}}, status=500)
+                 messages.error(request, error_message)
+                 # Re-render page with the form containing errors
+                 return render(request, self.template_name, self.get_context_data(comment_form=form))
+
+        else: # Form is invalid
+            logger.warning(f"Invalid comment form submission for task {self.object.id} by user {request.user.username}: {form.errors.as_json()}")
+            error_message = _("Пожалуйста, исправьте ошибки в форме комментария.")
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                 return JsonResponse({'success': False, 'error': error_message, 'errors': form.errors}, status=400)
+            messages.error(request, error_message)
+             # Re-render page with the form containing errors
+            return render(request, self.template_name, self.get_context_data(comment_form=form))
+
+
+class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Task
     form_class = TaskForm
-    template_name = "tasks/task_form.html" # Убедитесь, что шаблон существует
+    template_name = 'tasks/task_form.html'
+    # success_url is determined in form_valid
 
     def get_form_kwargs(self):
-        """Передает пользователя в форму, если форма его ожидает."""
+        """Pass the current user to the form."""
         kwargs = super().get_form_kwargs()
-        # Если TaskForm требует пользователя (например, для фильтрации):
-        # kwargs['user'] = self.request.user
+        kwargs['user'] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
-        """Добавляет формсет для фото в контекст."""
         context = super().get_context_data(**kwargs)
-        num_photos = 10 # Максимальное количество фото
-        extra_photos = 1 # Количество пустых форм для добавления
-
-        TaskPhotoFormSet = inlineformset_factory(
-            Task, TaskPhoto, form=TaskPhotoForm,
-            extra=extra_photos, max_num=num_photos,
-            can_delete=True # Разрешаем удаление в UpdateView
-        )
-
-        if self.request.POST:
-            # Если POST запрос, связываем формсет с данными POST и файлами
-            context['photo_formset'] = TaskPhotoFormSet(
-                self.request.POST, self.request.FILES,
-                instance=self.object if hasattr(self, 'object') else None, # Передаем instance для UpdateView
-                prefix='photos' # Важный префикс для полей формсета
-            )
+        context['page_title'] = _('Создание новой задачи')
+        context['form_action'] = _('Создать задачу')
+        # Initialize photo formset for the template
+        if self.request.method == 'POST':
+            context['photo_formset'] = TaskPhotoFormSet(self.request.POST, self.request.FILES, queryset=TaskPhoto.objects.none(), prefix='photos')
         else:
-            # Если GET запрос, создаем несвязанный формсет
-            context['photo_formset'] = TaskPhotoFormSet(
-                instance=self.object if hasattr(self, 'object') else None, # Передаем instance для UpdateView
-                prefix='photos'
-            )
+            context['photo_formset'] = TaskPhotoFormSet(queryset=TaskPhoto.objects.none(), prefix='photos') # Empty queryset for create
         return context
 
     def form_valid(self, form):
-        """Обрабатывает валидную основную форму и формсет фото."""
+        """Process a valid main task form and the photo formset."""
         context = self.get_context_data()
-        photo_formset = context['photo_formset']
+        photo_formset = context['photo_formset'] # Get formset from context (already initialized with POST data)
 
-        if not photo_formset.is_valid():
-            logger.warning(f"Photo formset invalid. Errors: {photo_formset.errors}")
-            # Возвращаем форму с ошибками, включая ошибки формсета
-            return self.form_invalid(form)
+        if photo_formset.is_valid():
+            # The form's save method now handles setting the creator via __init__ kwarg
+            self.object = form.save() # commit=True by default
 
-        # Устанавливаем создателя для новых задач
-        # Проверяем, является ли это CreateView, проверив наличие self.object до вызова super().form_valid()
-        is_new_task = not hasattr(self, 'object') or not self.object
-        if is_new_task:
-            form.instance.created_by = self.request.user
-            # Статус по умолчанию устанавливается в модели
+            # Save the photo formset instances, associating them with the newly created task
+            instances = photo_formset.save(commit=False)
+            for instance in instances:
+                instance.task = self.object
+                # Set uploaded_by if the model requires it and form doesn't handle it
+                if hasattr(instance, 'uploaded_by') and not instance.uploaded_by_id:
+                     instance.uploaded_by = self.request.user
+                instance.save()
+            photo_formset.save_m2m() # Save any m2m relationships if needed
 
-        # Сохраняем основную форму - TaskForm.save() теперь обрабатывает назначение ролей
-        # commit=True сохраняет задачу и роли
-        self.object = form.save(commit=True)
-        logger.info(f"Task {self.object.id} {'created' if is_new_task else 'updated'} by user {self.request.user.username}.")
-
-
-        # Сохраняем формсет фото, связанный с задачей
-        photo_formset.instance = self.object
-        photos = photo_formset.save(commit=False) # Получаем фото без сохранения в БД
-        for photo in photos:
-             # Устанавливаем загрузившего пользователя, если не установлен
-             if not photo.uploaded_by_id:
-                 photo.uploaded_by = self.request.user
-             photo.save() # Сохраняем каждое фото
-
-        # Обработка удаления фото, отмеченных в формсете
-        for form_in_set in photo_formset.deleted_forms:
-             if form_in_set.instance.pk: # Проверяем, что экземпляр существует (не был пустой доп. формой)
-                 photo_pk = form_in_set.instance.pk
-                 form_in_set.instance.delete()
-                 logger.info(f"Deleted photo {photo_pk} for task {self.object.id}")
-
-        # Вызов form_valid() из SuccessMessageMixin и затем из Create/UpdateView
-        # SuccessMessageMixin покажет сообщение об успехе
-        # Create/UpdateView обработают редирект
-        return super().form_valid(form)
+            logger.info(f"Task '{self.object.task_number}' created successfully by user {self.request.user.username}.")
+            messages.success(self.request, _("Задача '%(number)s' успешно создана.") % {'number': self.object.task_number})
+            return redirect(self.get_success_url()) # Redirect to task detail
+        else:
+            # If photo formset is invalid, re-render the form with errors
+            logger.warning(f"Task creation failed due to invalid photo formset for user {self.request.user.username}. Errors: {photo_formset.errors}")
+            # Pass invalid formset back to template via context
+            return self.render_to_response(self.get_context_data(form=form)) # form_valid isn't called if main form invalid
 
     def form_invalid(self, form):
-        """Обрабатывает невалидную основную форму."""
-        context = self.get_context_data() # Получаем контекст снова, чтобы включить возможно невалидный формсет
-        photo_formset = context['photo_formset']
-        logger.warning(f"Task form invalid. Form Errors: {form.errors}")
-        # Если формсет фото также невалиден, убеждаемся, что он передан обратно в шаблон
-        if not photo_formset.is_valid():
-             context['photo_formset'] = photo_formset
-             logger.warning(f"Photo formset invalid. Formset Errors: {photo_formset.errors}")
-
-        # Базовый класс обработает рендеринг ответа с невалидной формой
-        return super().form_invalid(form)
-
-# ==============================================================================
-# Task Create View
-# ==============================================================================
-class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, BaseTaskFormView, CreateView):
-    """Представление для создания новой задачи."""
-    success_url = reverse_lazy("tasks:task_list") # Куда перенаправить после успеха
-    success_message = _("Задача '%(title)s' успешно создана!") # Сообщение для пользователя
-    # permission_required = 'tasks.add_task' # Раскомментировать если используется PermissionRequiredMixin
-
-    def get_context_data(self, **kwargs):
-        """Добавляет заголовок и текст кнопки в контекст."""
-        context = super().get_context_data(**kwargs)
-        context['page_title'] = _("Создать Задачу")
-        context['form_action'] = _("Создать") # Текст кнопки submit
-        return context
-
-    # form_valid и form_invalid обрабатываются в BaseTaskFormView и базовых классах
-
-# ==============================================================================
-# Task Update View
-# ==============================================================================
-class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, BaseTaskFormView, UpdateView):
-    """Представление для редактирования существующей задачи."""
-    success_message = _("Задача '%(title)s' обновлена!")
-    # permission_required = 'tasks.change_task'
+        """Handle invalid main task form."""
+        logger.warning(f"Invalid task creation form submission by user {self.request.user.username}. Errors: {form.errors.as_json()}")
+        # Pass back the main form with errors and the photo formset (populated from POST)
+        return self.render_to_response(self.get_context_data(form=form))
 
     def get_success_url(self):
-        """Возвращает на страницу деталей задачи после обновления."""
-        return reverse_lazy('tasks:task_detail', kwargs={'pk': self.object.pk})
+        """Redirect to the detail view of the created task."""
+        return reverse('tasks:task_detail', kwargs={'pk': self.object.pk})
 
-    def get_queryset(self):
-        """Оптимизированный queryset для выбора задачи для редактирования."""
-        return Task.objects.select_related(
-            "project", "category", "subcategory", "created_by"
-        ).prefetch_related('photos', 'user_roles__user')
+    # Optional: Add permission checks
+    # def dispatch(self, request, *args, **kwargs):
+    #     if not request.user.has_perm('tasks.add_task'):
+    #         messages.error(request, _("У вас нет прав для создания задач."))
+    #         return self.handle_no_permission()
+    #     return super().dispatch(request, *args, **kwargs)
 
-    def get_object(self, queryset=None):
-        """Проверяет права на редактирование перед возвратом объекта."""
-        obj = super().get_object(queryset=queryset)
-        if not obj.has_permission(self.request.user, 'change'):
-            logger.warning(f"User {self.request.user.username} forbidden to change task {obj.id}")
-            raise Http404(_("У вас нет прав на редактирование этой задачи."))
-        return obj
 
-    def get_context_data(self, **kwargs):
-        """Добавляет заголовок и текст кнопки в контекст."""
-        context = super().get_context_data(**kwargs)
-        context['page_title'] = _("Редактировать Задачу: %s") % self.object.title
-        context['form_action'] = _("Сохранить") # Текст кнопки submit
-        return context
-
-    # form_valid и form_invalid обрабатываются в BaseTaskFormView и базовых классах
-
-# ==============================================================================
-# Task Delete View
-# ==============================================================================
-class TaskDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
-    """Представление для подтверждения и удаления задачи."""
+class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, UpdateView):
     model = Task
-    template_name = "tasks/task_confirm_delete.html" # Убедитесь, что шаблон существует
-    success_url = reverse_lazy("tasks:task_list")
-    success_message = _("Задача удалена!")
-    # permission_required = 'tasks.delete_task'
+    form_class = TaskForm
+    template_name = 'tasks/task_form.html'
+    # success_url depends on the object, set in get_success_url
 
-    def get_object(self, queryset=None):
-        """Проверяет права на удаление перед возвратом объекта."""
-        obj = super().get_object(queryset=queryset)
-        if not obj.has_permission(self.request.user, 'delete'):
-            logger.warning(f"User {self.request.user.username} forbidden to delete task {obj.id}")
-            raise Http404(_("У вас нет прав на удаление этой задачи."))
-        return obj
+    def test_func(self):
+        task = self.get_object()
+        return task.has_permission(self.request.user, 'change')
+
+    def handle_no_permission(self):
+        messages.error(self.request, _("У вас нет прав для редактирования этой задачи."))
+        return redirect(self.get_object().get_absolute_url()) # Redirect back to detail
+
+    def get_form_kwargs(self):
+        """Pass the current user to the form."""
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user # Pass user for potential logic within the form
+        return kwargs
 
     def get_context_data(self, **kwargs):
-        """Добавляет заголовок в контекст."""
         context = super().get_context_data(**kwargs)
-        context['page_title'] = _("Удалить Задачу: %s") % self.object.title
+        context['page_title'] = _('Редактирование задачи') + f": #{self.object.task_number}"
+        context['form_action'] = _('Сохранить изменения')
+        if self.request.method == 'POST':
+            context['photo_formset'] = TaskPhotoFormSet(self.request.POST, self.request.FILES, queryset=TaskPhoto.objects.filter(task=self.object), prefix='photos')
+        else:
+             # Query existing photos for this task for the formset
+             context['photo_formset'] = TaskPhotoFormSet(queryset=TaskPhoto.objects.filter(task=self.object), prefix='photos')
         return context
 
-    # form_valid используется из SuccessMessageMixin и DeleteView для обработки POST и редиректа
+    def form_valid(self, form):
+        """Process valid task form and photo formset."""
+        context = self.get_context_data()
+        photo_formset = context['photo_formset'] # Get formset from context
 
-# ==============================================================================
-# Task Perform View (Example)
-# ==============================================================================
-class TaskPerformView(LoginRequiredMixin, DetailView):
-    """
-    Представление для 'выполнения' задачи (просмотр деталей в специфичном контексте).
-    Может включать опции быстрой смены статуса.
-    """
+        if photo_formset.is_valid():
+            self.object = form.save() # Save main task changes
+
+            # Handle photo deletions marked in the formset
+            for photo_form in photo_formset.deleted_forms:
+                 if photo_form.instance.pk:
+                      try:
+                           # Ensure the photo actually belongs to this task before deleting
+                           if photo_form.instance.task == self.object:
+                                photo_form.instance.delete()
+                                logger.info(f"Photo {photo_form.instance.pk} deleted for task {self.object.id}")
+                           else:
+                               logger.warning(f"Attempt to delete photo {photo_form.instance.pk} not belonging to task {self.object.id}")
+                      except Exception as e:
+                           logger.exception(f"Error deleting photo {photo_form.instance.pk}: {e}")
+                           messages.error(self.request, _("Ошибка при удалении фото %(id)s.") % {'id': photo_form.instance.pk})
+
+            # Save new/updated photos
+            instances = photo_formset.save(commit=False)
+            for instance in instances:
+                 instance.task = self.object # Ensure association
+                 if hasattr(instance, 'uploaded_by') and not instance.uploaded_by_id: # Set uploader for new photos
+                      instance.uploaded_by = self.request.user
+                 instance.save()
+            photo_formset.save_m2m()
+
+            logger.info(f"Task '{self.object.task_number}' updated successfully by user {self.request.user.username}.")
+            messages.success(self.request, _("Задача '%(number)s' успешно обновлена.") % {'number': self.object.task_number})
+            return redirect(self.get_success_url())
+        else:
+            logger.warning(f"Task update failed due to invalid photo formset for task {self.object.id}. Errors: {photo_formset.errors}")
+            # Pass invalid formset back to template via context
+            return self.render_to_response(self.get_context_data(form=form)) # form_valid not called if main invalid
+
+    def form_invalid(self, form):
+        """Handle invalid main task form during update."""
+        logger.warning(f"Invalid task update form submission for task {self.object.id} by user {self.request.user.username}. Errors: {form.errors.as_json()}")
+        # Pass back the main form with errors and the photo formset (populated from POST)
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def get_success_url(self):
+        """Redirect back to the detail view of the updated task."""
+        return reverse('tasks:task_detail', kwargs={'pk': self.object.pk})
+
+
+class TaskDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView): # No SuccessMessageMixin
     model = Task
-    template_name = "tasks/task_perform.html" # Нужен этот шаблон
-    context_object_name = "task"
+    template_name = 'tasks/task_confirm_delete.html'
+    success_url = reverse_lazy('tasks:task_list')
+    context_object_name = 'task' # Use 'task' for clarity in template
 
-    def get_queryset(self):
-        """Использует тот же оптимизированный queryset, что и TaskDetailView."""
-        return Task.objects.select_related(
-            "project", "category", "subcategory", "created_by"
-        ).prefetch_related('photos', 'user_roles__user')
+    def test_func(self):
+        task = self.get_object()
+        return task.has_permission(self.request.user, 'delete')
 
-    def get_object(self, queryset=None):
-        """Проверяет права на 'выполнение' (просмотр + смена статуса)."""
-        obj = super().get_object(queryset=queryset)
-        # Определяем, что значит "выполнять" с точки зрения прав
-        can_view = obj.has_permission(self.request.user, 'view')
-        can_change_status = obj.has_permission(self.request.user, 'change_status')
-
-        if not (can_view and can_change_status): # Пример: нужно право и на просмотр, и на смену статуса
-             logger.warning(f"User {self.request.user.username} forbidden to 'perform' task {obj.id} (view={can_view}, change_status={can_change_status})")
-             raise Http404(_("Вы не имеете доступа к выполнению этой задачи."))
-        return obj
+    def handle_no_permission(self):
+        messages.error(self.request, _("У вас нет прав для удаления этой задачи."))
+        return redirect(self.get_object().get_absolute_url())
 
     def get_context_data(self, **kwargs):
-        """Добавляет специфичный контекст для выполнения."""
         context = super().get_context_data(**kwargs)
-        context['page_title'] = f"{_('Выполнение задачи')}: {self.object.title}"
-        # Добавляем контекст, специфичный для выполнения, например, доступные статусы
-        context['allowed_statuses'] = [
-             (key, label) for key, label in Task.StatusChoices.choices
-             if key in [Task.StatusChoices.IN_PROGRESS, Task.StatusChoices.ON_HOLD, Task.StatusChoices.COMPLETED] # Пример доступных статусов для кнопок
-        ]
+        context['page_title'] = _('Удаление задачи') + f": #{self.object.task_number}"
         return context
 
+    def form_valid(self, form):
+        task_number = self.object.task_number # Get info before deletion
+        try:
+             response = super().form_valid(form)
+             logger.info(f"Task '{task_number}' deleted successfully by user {self.request.user.username}.")
+             messages.success(self.request, _("Задача '%(number)s' успешно удалена.") % {'number': task_number})
+             return response # Use response from super() which handles redirect
+        except Exception as e:
+             logger.exception(f"Error deleting task '{task_number}' by user {self.request.user.username}: {e}")
+             messages.error(self.request, _("Произошла ошибка при удалении задачи."))
+             # Attempt to redirect back to detail, might fail if object is partially deleted
+             try:
+                 return redirect(reverse('tasks:task_detail', kwargs={'pk': self.object.pk}))
+             except:
+                 return redirect(self.success_url) # Fallback to list view
+
+# --- TaskPerformView (Kept as is) ---
+class TaskPerformView(LoginRequiredMixin, UserPassesTestMixin, View):
+
+     def test_func(self):
+         task = get_object_or_404(Task, pk=self.kwargs['pk'])
+         # Example: Only executors or responsible users can perform actions
+         return task.has_permission(self.request.user, 'change_status') # Or a more specific permission
+
+     def handle_no_permission(self):
+         messages.error(self.request, _("У вас нет прав для выполнения этого действия над задачей."))
+         task = get_object_or_404(Task, pk=self.kwargs['pk'])
+         return redirect(task.get_absolute_url())
+
+     def get(self, request, *args, **kwargs):
+         task = get_object_or_404(Task, pk=kwargs['pk'])
+         action = request.GET.get('action', 'toggle') # Allow specific actions via query param
+
+         if action == 'complete':
+             if task.status != Task.StatusChoices.COMPLETED:
+                 task.status = Task.StatusChoices.COMPLETED
+                 messages.success(request, _("Задача '%(num)s' отмечена как выполненная.") % {'num': task.task_number})
+             else:
+                 messages.info(request, _("Задача '%(num)s' уже была выполнена.") % {'num': task.task_number})
+         elif action == 'start':
+              if task.status not in [Task.StatusChoices.IN_PROGRESS, Task.StatusChoices.COMPLETED, Task.StatusChoices.CANCELLED]:
+                  task.status = Task.StatusChoices.IN_PROGRESS
+                  messages.success(request, _("Задача '%(num)s' взята в работу.") % {'num': task.task_number})
+              else:
+                   messages.info(request, _("Невозможно начать выполнение задачи '%(num)s' в текущем статусе.") % {'num': task.task_number})
+         else: # Default 'toggle' or unrecognized action
+             if task.status == Task.StatusChoices.IN_PROGRESS:
+                 task.status = Task.StatusChoices.COMPLETED
+                 messages.success(request, _("Задача '%(num)s' отмечена как выполненная.") % {'num': task.task_number})
+             elif task.status == Task.StatusChoices.COMPLETED:
+                 task.status = Task.StatusChoices.IN_PROGRESS
+                 messages.info(request, _("Задача '%(num)s' возвращена в работу.") % {'num': task.task_number})
+             else:
+                 task.status = Task.StatusChoices.IN_PROGRESS
+                 messages.info(request, _("Задача '%(num)s' взята в работу.") % {'num': task.task_number})
+
+         try:
+             task.save() # clean() method handles completion_date etc.
+             logger.info(f"User {request.user.username} performed action '{action}' on task {task.id}, new status: {task.status}")
+         except Exception as e:
+             logger.exception(f"Error saving task {task.id} after action '{action}' by user {request.user.username}: {e}")
+             messages.error(request, _("Ошибка при сохранении изменений задачи."))
+
+         # Redirect back to the previous page or detail view
+         return redirect(request.META.get('HTTP_REFERER', task.get_absolute_url()))

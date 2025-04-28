@@ -1,7 +1,14 @@
+<!-- tasks/templates/tasks/category_form.html -->
 {% extends 'base.html' %}
-{% load i18n static %}
+{% load i18n static crispy_forms_tags %}
 
 {% block title %}{{ page_title|default:_("Форма категории") }}{% endblock %}
+
+{% block head_extra %}
+    {{ block.super }}
+    {# Include form media if the category form used special widgets #}
+    {{ form.media.css }}
+{% endblock %}
 
 {% block list_title %}
 <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
@@ -10,43 +17,45 @@
 {% endblock %}
 
 {% block list_content %}
-<div class="bg-white dark:bg-dark-800 shadow-2xl rounded-2xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
-    <form method="post" action="">
+<div class="bg-white dark:bg-dark-800 shadow-xl rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
+    {# CategoryForm doesn't use Crispy Forms Helper, so we render using {% crispy form %} assuming default layout #}
+    {# Or render manually if more control is needed #}
+    <form method="post" action="" id="category-form" novalidate>
         {% csrf_token %}
 
-        <div class="mb-6 relative">
-            <input type="text" name="name" id="id_name" class="peer w-full border border-gray-300 dark:border-dark-600 rounded-xl px-4 pt-5 pb-2 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-dark-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder=" " value="{{ form.name.value|default_if_none:'' }}">
-            <label for="id_name" class="absolute left-4 top-2 text-gray-500 dark:text-gray-400 text-sm peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">{{ form.name.label }}</label>
-            {% if form.name.errors %}
-                <p class="text-red-500 text-xs mt-1">{{ form.name.errors.0 }}</p>
-            {% endif %}
-        </div>
+        {# Render form using crispy tag, assuming crispy-tailwind template pack is set #}
+        {% crispy form %}
 
-        <div class="mb-6 relative">
-            <textarea name="description" id="id_description" rows="3" class="peer w-full border border-gray-300 dark:border-dark-600 rounded-xl px-4 pt-5 pb-2 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-dark-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder=" ">{{ form.description.value|default_if_none:'' }}</textarea>
-            <label for="id_description" class="absolute left-4 top-2 text-gray-500 dark:text-gray-400 text-sm peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 transition-all">{{ form.description.label }}</label>
-            {% if form.description.errors %}
-                <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
-            {% endif %}
-        </div>
-
-        {% if form.non_field_errors %}
-            <div role="alert" class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-xl">
-                <h4 class="font-bold">{% trans "Ошибка формы:" %}</h4>
+        {# Display Non-Field Errors (if any) #}
+         {% if form.non_field_errors %}
+            <div role="alert" class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
+                <h4 class="font-bold">{% trans "Общая ошибка формы:" %}</h4>
+                <ul class="list-disc list-inside text-sm mt-1">
                 {% for error in form.non_field_errors %}
-                    <p class="text-sm">{{ error }}</p>
+                    <li>{{ error }}</li>
                 {% endfor %}
+                </ul>
             </div>
-        {% endif %}
+         {% endif %}
 
-        <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-dark-600 mt-6">
-            <a href="{% url 'tasks:category_list' %}" class="px-6 py-3 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-300 dark:hover:bg-dark-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-dark-600 transition-all shadow-md">
+        {# --- Action Buttons --- #}
+        <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
+            <a href="{% url 'tasks:category_list' %}"
+               class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-dark-600 transition-colors shadow-sm">
                 {% trans 'Отмена' %}
             </a>
-            <button type="submit" class="px-6 py-3 rounded-full text-sm font-medium bg-blue-600 dark:bg-ios-blue text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-all shadow-md">
-                <i class="fas fa-save mr-2"></i> {{ form_action|default:_("Сохранить") }}
+            <button type="submit"
+                    class="px-5 py-2.5 rounded-lg text-sm font-medium bg-teal-600 dark:bg-ios-teal text-white hover:bg-teal-700 dark:hover:bg-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-300 dark:focus:ring-teal-800 transition-colors shadow-md inline-flex items-center">
+                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
+                {{ form_action|default:_("Сохранить категорию") }}
             </button>
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {# Include form media if the category form used special widgets #}
+    {{ form.media.js }}
 {% endblock %}

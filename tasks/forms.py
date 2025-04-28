@@ -70,7 +70,7 @@ SELECT2_MULTIPLE_CLASS = "select2-multiple-widget"
 # --------------------------------------------------------------------------
 # This should match the 'name' argument in the path() definition in your api/urls.py
 # Using reverse_lazy allows the URL lookup to happen when needed, not at import time.
-USER_AUTOCOMPLETE_URL_NAME = 'api:user_autocomplete'
+USER_AUTOCOMPLETE_URL_NAME = 'tasks:user_autocomplete'
 
 
 # ============================================================================== #

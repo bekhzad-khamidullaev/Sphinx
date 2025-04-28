@@ -42,7 +42,7 @@ urlpatterns = [
     path('tasks/<int:pk>/update/', task.TaskUpdateView.as_view(), name='task_update'),
     path('tasks/<int:pk>/delete/', task.TaskDeleteView.as_view(), name='task_delete'),
     path('tasks/<int:pk>/perform/', task.TaskPerformView.as_view(), name='task_perform'),
-
+    path('api/user-autocomplete/', api.UserAutocompleteView.as_view(), name='user_autocomplete'),
     # AJAX URL
     path('ajax/tasks/<int:task_id>/update-status/', ajax.update_task_status, name='ajax_update_task_status'),
 
