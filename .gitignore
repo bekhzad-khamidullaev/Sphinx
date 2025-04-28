@@ -22,8 +22,9 @@ build/
 .venv/
 local_settings.py
 media/
-staticfiles/
+# staticfiles/
 django-debug-toolbar/
+debug.log
 
 # Coverage and testing
 htmlcov/
