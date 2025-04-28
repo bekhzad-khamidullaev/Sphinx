@@ -1,6 +1,6 @@
 # tasks/models.py
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime, time
 from unidecode import unidecode
 
 from django.conf import settings
@@ -160,16 +160,20 @@ class Task(BaseModel):
     def clean(self):
         super().clean()
 
+        from datetime import datetime, time
+
         # deadline не может быть раньше start_date
         if self.deadline and self.start_date:
-            if self.deadline.date() < self.start_date:
+            start_datetime = datetime.combine(self.start_date, time.min)
+            if self.deadline < start_datetime:
                 raise ValidationError({
                     'deadline': _("Срок выполнения не может быть раньше даты начала.")
                 })
 
         # completion_date не может быть раньше start_date
         if self.completion_date and self.start_date:
-            if self.completion_date.date() < self.start_date:
+            start_datetime = datetime.combine(self.start_date, time.min)
+            if self.completion_date < start_datetime:
                 raise ValidationError({
                     'completion_date': _("Дата завершения не может быть раньше даты начала.")
                 })
@@ -178,11 +182,11 @@ class Task(BaseModel):
         if self.category and self.subcategory and self.category != self.subcategory.category:
             raise ValidationError(_("Подкатегория не принадлежит выбранной категории."))
 
-        # Если выбрали подкатегорию без категории, подтягиваем категорию автоматически
+        # Автоматическая установка category от subcategory
         if not self.category and self.subcategory:
             self.category = self.subcategory.category
 
-        # Авто‑установка/сброс completion_date при смене статуса
+        # Автоустановка даты завершения
         is_being_completed = (self.status == self.StatusChoices.COMPLETED)
         original_status = None
         if not self._state.adding and self.pk:
@@ -196,13 +200,14 @@ class Task(BaseModel):
         elif not is_being_completed and original_status == self.StatusChoices.COMPLETED:
             self.completion_date = None
 
-        # Авто‑пометка OVERDUE
+        # Просроченные задачи
         if self.is_overdue and self.status not in (
             self.StatusChoices.COMPLETED,
             self.StatusChoices.CANCELLED,
             self.StatusChoices.OVERDUE
         ):
             self.status = self.StatusChoices.OVERDUE
+
 
 
     # def clean(self):

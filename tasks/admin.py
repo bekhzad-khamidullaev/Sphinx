@@ -28,7 +28,7 @@ class TaskUserRoleInline(admin.TabularInline):
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("name", "start_date", "end_date", "created_at", "task_count"); search_fields = ("name", "description"); list_filter = ("start_date", "end_date", "created_at"); date_hierarchy = "created_at"; fieldsets = ((None, {"fields": ("name", "description")}), (_("Даты"), {"fields": ("start_date", "end_date")}),)
-    def get_queryset(self, request): return super().get_queryset(request).annotate(models.Count('tasks'))
+    def get_queryset(self, request): return super().get_queryset(request).annotate(task_count=models.Count('tasks'))
     def task_count(self, obj): count = getattr(obj, 'tasks__count', None); return count if count is not None else obj.tasks.count(); task_count.short_description = _("Кол-во задач"); task_count.admin_order_field = 'tasks__count'
 
 @admin.register(TaskCategory)

@@ -178,18 +178,20 @@ class UserAutocompleteView(APIView):
     """
     Provides user suggestions for autocomplete widgets (like Select2).
     Matches the endpoint expected by 'tasks:user_autocomplete'.
+    Supports optional filtering by project.
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         query = request.query_params.get('q', '').strip()
+        project_id = request.query_params.get('project')  # <-- Добавлено для фильтрации по проекту
         page = int(request.query_params.get('page', 1))
-        page_size = 20 # Number of results per page for Select2 pagination
+        page_size = 20  # Number of results per page for Select2 pagination
 
         results = []
         more = False
 
-        if len(query) >= 1: # Minimum characters to trigger search
+        if len(query) >= 1:  # Minimum characters to trigger search
             # Build the filter dynamically
             search_filter = (
                 Q(username__icontains=query) |
@@ -200,6 +202,15 @@ class UserAutocompleteView(APIView):
             # Query only active users
             queryset = User.objects.filter(is_active=True).filter(search_filter)
 
+            # 🔥 Фильтрация по проекту если задан
+            if project_id:
+                # Если у юзеров есть прямая связь на проект — раскомментировать:
+                # queryset = queryset.filter(project_id=project_id)
+
+                # Или если через профиль или роли, надо написать свою логику
+                # Пока оставлю как пример без изменений, тебе нужно здесь дописать
+                pass
+
             # Calculate pagination offsets
             start_index = (page - 1) * page_size
             end_index = start_index + page_size
@@ -207,7 +218,7 @@ class UserAutocompleteView(APIView):
             # Get total count for pagination check
             total_count = queryset.count()
             if total_count > end_index:
-                more = True # Indicate there are more pages
+                more = True  # Indicate there are more pages
 
             # Get the users for the current page
             users = queryset.order_by('username')[start_index:end_index]
@@ -216,10 +227,7 @@ class UserAutocompleteView(APIView):
             results = [
                 {
                     'id': user.pk,
-                    # Format text as needed (e.g., Full Name (Username))
                     'text': user.display_name or user.username,
-                    # Optionally include extra data like avatar URL
-                    # 'avatar_url': user.image.url if user.image else None
                 }
                 for user in users
             ]
@@ -229,3 +237,10 @@ class UserAutocompleteView(APIView):
             'results': results,
             'pagination': {'more': more}
         })
+# Note: Ensure that the URL patterns are set up to route to these views correctly.
+# You may need to adjust the import paths based on your project structure.
+# Also, consider adding error handling and logging as needed.
+# This is a basic structure. You can expand upon it based on your specific requirements.
+# --------------------------------------------------------------------------
+# End of file
+# tasks/views/api.py

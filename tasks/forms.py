@@ -3,6 +3,7 @@
 import logging
 import re
 from datetime import timedelta
+from django.utils import timezone
 
 from django import forms
 from django.urls import reverse_lazy # Used for generating API URLs dynamically
@@ -136,6 +137,8 @@ class ProjectForm(forms.ModelForm):
         cleaned_data = super().clean()
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
+        if not cleaned_data.get('start_date'):
+            cleaned_data['start_date'] = timezone.now().date()
 
         if start_date and end_date and end_date < start_date:
             self.add_error('end_date', ValidationError(_("Дата завершения не может быть раньше даты начала.")))
@@ -207,6 +210,15 @@ class TaskSubcategoryForm(forms.ModelForm):
             "name": _("Название подкатегории"),
             "description": _("Описание"),
         }
+    def clean(self):
+        cleaned_data = super().clean()
+        category = cleaned_data.get('category')
+        name = cleaned_data.get('name')
+
+        if category and name:
+            if TaskSubcategory.objects.filter(category=category, name__iexact=name).exists():
+                raise ValidationError(_("Подкатегория с таким названием уже существует в выбранной категории."))
+        return cleaned_data
 
 
 # ============================================================================== #
@@ -329,35 +341,34 @@ class TaskForm(forms.ModelForm):
         # Responsible User (Single Selection, Required)
         responsible_user = forms.ModelChoiceField(
             label=_('Ответственный'),
-            # Queryset used primarily for backend validation
             queryset=User.objects.filter(is_active=True),
-            required=True, # A task must have a responsible user
-            # Use ModelSelect2Widget for AJAX single selection
+            required=True,
             widget=ModelSelect2Widget(
                 model=User,
-                # Define fields the widget's default view searches (should align with API view logic)
                 search_fields=[
                     'username__icontains',
                     'first_name__icontains',
                     'last_name__icontains',
-                    'email__icontains'
+                    'email__icontains',
+                    # ДОБАВИМ проект (если ты хочешь по реальным связям фильтровать, через профили или роли)
+                    # 'profile.project__name__icontains', 
                 ],
-                # Merge common attributes with specific ones for this field
                 attrs={
                     **user_select_widget_attrs,
-                    'data-placeholder': _('Выберите ответственного (обязательно)...'), # More specific placeholder
-                    'class': f'{SELECT_CLASSES} {SELECT2_SINGLE_CLASS}' # Add JS target class
-                },
+                    'data-placeholder': _('Выберите ответственного...'),
+                    'data-project-field': 'id_project',  # ВАЖНО: добавляем сюда data-project-field
+                    'class': f'{SELECT_CLASSES} {SELECT2_SINGLE_CLASS} model-select2-widget',  # добавляем model-select2-widget
+                }
             ),
-            help_text=_("Выберите пользователя, который несет основную ответственность за выполнение задачи.")
+            help_text=_("Выберите ответственного пользователя.")
         )
+
 
         # Executors (Multiple Selection, Optional)
         executors = forms.ModelMultipleChoiceField(
             label=_('Исполнители'),
             queryset=User.objects.filter(is_active=True),
-            required=False, # Executors are optional
-            # Use ModelSelect2MultipleWidget for AJAX multiple selection
+            required=False,
             widget=ModelSelect2MultipleWidget(
                 model=User,
                 search_fields=[
@@ -366,22 +377,21 @@ class TaskForm(forms.ModelForm):
                     'last_name__icontains',
                     'email__icontains'
                 ],
-                # Merge common attributes with specific ones
                 attrs={
                     **user_select_widget_attrs,
                     'data-placeholder': _('Выберите одного или нескольких исполнителей...'),
-                    'class': f'{SELECT_CLASSES} {SELECT2_MULTIPLE_CLASS}' # Add JS target class
-                },
+                    'data-project-field': 'id_project',
+                    'class': f'{SELECT_CLASSES} {SELECT2_MULTIPLE_CLASS}'
+                }
             ),
-            help_text=_("Выберите пользователей, которые будут непосредственно выполнять работу по задаче.")
+            help_text=_("Выберите пользователей, которые будут выполнять работу по задаче.")
         )
 
         # Watchers (Multiple Selection, Optional)
         watchers = forms.ModelMultipleChoiceField(
             label=_('Наблюдатели'),
             queryset=User.objects.filter(is_active=True),
-            required=False, # Watchers are optional
-            # Use ModelSelect2MultipleWidget
+            required=False,
             widget=ModelSelect2MultipleWidget(
                 model=User,
                 search_fields=[
@@ -390,15 +400,16 @@ class TaskForm(forms.ModelForm):
                     'last_name__icontains',
                     'email__icontains'
                 ],
-                 # Merge common attributes with specific ones
-                 attrs={
+                attrs={
                     **user_select_widget_attrs,
                     'data-placeholder': _('Выберите наблюдателей (необязательно)...'),
-                    'class': f'{SELECT_CLASSES} {SELECT2_MULTIPLE_CLASS}' # Add JS target class
-                },
+                    'data-project-field': 'id_project',
+                    'class': f'{SELECT_CLASSES} {SELECT2_MULTIPLE_CLASS}'
+                }
             ),
             help_text=_("Выберите пользователей, которые будут получать уведомления об изменениях в этой задаче.")
         )
+        # NOTE: The 'data-project-field' attribute is used in JavaScript to filter users by project
     else:
         # --- Fallback Fields if User Model is Unavailable ---
         # Provide disabled text fields as placeholders to indicate the feature is missing

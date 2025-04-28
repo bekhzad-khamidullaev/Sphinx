@@ -272,6 +272,7 @@ class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
         logger.warning(f"Invalid task creation form submission by user {self.request.user.username}. Errors: {form.errors.as_json()}")
         # Pass back the main form with errors and the photo formset (populated from POST)
         return self.render_to_response(self.get_context_data(form=form))
+    
 
     def get_success_url(self):
         """Redirect to the detail view of the created task."""

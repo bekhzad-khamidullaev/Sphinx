@@ -127,7 +127,7 @@
                               <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{% trans "Загрузите новый файл, чтобы заменить." %}</p>
                              {% endif %}
 
-                            {# The actual file input field - Render with crispy_field for consistency #}
+                            {# The actual file input field - Render using standard Django template syntax #}
                             {{ photo_form.photo }}
 
                             {# Display help text if provided in the form #}
@@ -151,7 +151,7 @@
                                  {% if photo_form.description.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
                              </label>
 
-                             {# The description textarea - Render with crispy_field #}
+                             {# The description textarea - Render using standard Django template syntax #}
                              {{ photo_form.description }}
 
                              {# Display help text if provided #}
@@ -441,5 +441,77 @@
 
         } catch (error) { console.error("Task form script error:", error); }
     }); // End DOMContentLoaded
+</script>
+<script defer>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const projectSelect = document.getElementById('id_project');
+        const userFields = [
+            '#id_responsible_user', 
+            '#id_executors', 
+            '#id_watchers'
+        ];
+
+        function updateUserFieldsProjectFilter() {
+            const selectedProjectId = projectSelect ? projectSelect.value : null;
+
+            userFields.forEach(selector => {
+                const field = document.querySelector(selector);
+                if (field && field.dataset.ajaxUrlOriginal === undefined) {
+                    field.dataset.ajaxUrlOriginal = field.dataset.ajaxUrl || field.getAttribute('data-ajax--url');
+                }
+                if (field && field.dataset.ajaxUrlOriginal) {
+                    const baseUrl = new URL(field.dataset.ajaxUrlOriginal, window.location.origin);
+                    if (selectedProjectId) {
+                        baseUrl.searchParams.set('project', selectedProjectId);
+                    } else {
+                        baseUrl.searchParams.delete('project');
+                    }
+                    field.setAttribute('data-ajax--url', baseUrl.href);
+
+                    // Reinitialize Select2 for updated URL
+                    if ($(field).hasClass('select2-hidden-accessible')) {
+                        $(field).select2('destroy');
+                    }
+                    $(field).select2({
+                        width: '100%',
+                        allowClear: !field.required,
+                        placeholder: field.dataset.placeholder || '{% trans "Выберите значение..." %}',
+                        ajax: {
+                            url: baseUrl.href,
+                            dataType: 'json',
+                            delay: 250,
+                            data: function (params) {
+                                return {
+                                    q: params.term,
+                                    page: params.page
+                                };
+                            },
+                            processResults: function (data, params) {
+                                params.page = params.page || 1;
+                                return {
+                                    results: data.results,
+                                    pagination: { more: data.more }
+                                };
+                            },
+                            cache: true
+                        },
+                        minimumInputLength: field.dataset.minimumInputLength || 1,
+                        language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
+                        dropdownParent: $(field).parent()
+                    });
+                }
+            });
+        }
+
+        if (projectSelect) {
+            projectSelect.addEventListener('change', updateUserFieldsProjectFilter);
+            // Initial call in case project is pre-filled
+            setTimeout(updateUserFieldsProjectFilter, 400);
+        }
+    } catch (error) {
+        console.error('Project-dependent user fields initialization error:', error);
+    }
+});
 </script>
 {% endblock scripts %}

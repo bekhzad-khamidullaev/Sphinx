@@ -37,8 +37,8 @@ class TaskSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
     subcategory_name = serializers.CharField(source="subcategory.name", read_only=True)
     project_name = serializers.CharField(source="project.name", read_only=True)
-    team_name = serializers.CharField(source="team.name", read_only=True)
-    assignee_username = serializers.CharField(source="assignee.username", read_only=True)
+    # team_name = serializers.CharField(source="team.name", read_only=True)
+    # assignee_username = serializers.CharField(source="assignee.username", read_only=True)
     created_by_username = serializers.CharField(
         source="created_by.username", read_only=True
     )
