@@ -35904,6 +35904,7 @@ Traceback (most recent call last):
 KeyError: "Key 'start_date' not found in 'TaskForm'. Choices are: category, deadline, description, estimated_time, executors, priority, project, responsible_user, subcategory, title, watchers."
 Tasks signals imported successfully.
 HR Bot signals imported successfully.
+<<<<<<< HEAD
 Starting server at tcp:port=8000:interface=127.0.0.1
 HTTP/2 support not enabled (install the http2 and tls Twisted extras)
 Configuring endpoint tcp:port=8000:interface=127.0.0.1
@@ -40388,3 +40389,9 @@ HTTP/2 support not enabled (install the http2 and tls Twisted extras)
 Configuring endpoint tcp:port=8000:interface=127.0.0.1
 Listening on TCP address 127.0.0.1:8000
 Not Found: /media/profile_pics/user.svg
+=======
+Starting server at tcp:port=8080:interface=127.0.0.1
+HTTP/2 support enabled
+Configuring endpoint tcp:port=8080:interface=127.0.0.1
+Listen failure: Couldn't listen on 127.0.0.1:8080: [WinError 10048] Only one usage of each socket address (protocol/network address/port) is normally permitted.
+>>>>>>> 7918f6cacf1d496502c26b5f680a759a8ebcc63b
