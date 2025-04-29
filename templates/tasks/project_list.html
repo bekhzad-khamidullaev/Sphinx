@@ -10,16 +10,13 @@
 {% endblock %}
 
 {% block list_actions %}
-<div class="flex space-x-3 items-center ml-4">
-    <a href="{% url 'tasks:project_create' %}" class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-purple-500 dark:bg-ios-purple text-white hover:bg-purple-600 dark:hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:focus:ring-offset-dark-800 transition-all shadow">
+{# Desktop Actions: Create Project Button (Single Button Style) #}
+<div class="flex items-center ml-4">
+    {# Using a standard primary button style #}
+    <a href="{% url 'tasks:project_create' %}"
+       class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
         <i class="fas fa-plus mr-2"></i> {% trans 'Создать проект' %}
     </a>
-    <!-- {% if filterset %}
-     <form method="get" class="flex items-center">
-         {{ filterset.form.name|add_css_class:"form-input rounded-full text-sm dark:bg-dark-700 dark:border-dark-600" }}
-         <button type="submit" class="ml-2 btn-secondary btn-sm rounded-full px-3 py-1.5">{% trans "Найти" %}</button>
-     </form>
-    {% endif %} -->
 </div>
 {% endblock %}
 

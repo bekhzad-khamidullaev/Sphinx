@@ -10,16 +10,46 @@
 {% endblock %}
 
 {% block list_actions %}
-{# Desktop Actions: Create Template + History Link #}
-<div class="flex space-x-3 items-center ml-4">
-    <a href="{% url 'checklists:template_create' %}"
-       class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-indigo-500 dark:bg-ios-indigo text-white hover:bg-indigo-600 dark:hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition-all shadow">
-        <i class="fas fa-plus mr-2"></i> {% trans 'Создать шаблон' %}
-    </a>
-    <a href="{% url 'checklists:history_list' %}"
-        class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-800 transition-all shadow">
-        <i class="fas fa-history mr-2"></i> {% trans 'История' %}
-    </a>
+{# Desktop Actions: Grouped Buttons using Flowbite style #}
+<div class="flex items-center ml-4">
+    <div class="inline-flex rounded-md shadow-xs" role="group">
+
+        {# Create Template Button (First in group) #}
+        <a href="{% url 'checklists:template_create' %}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
+            <i class="fas fa-plus mr-2 text-indigo-500 dark:text-ios-indigo"></i> {% trans 'Создать шаблон' %}
+        </a>
+
+        {# History Link Button (Middle button) #}
+        <a href="{% url 'checklists:history_list' %}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
+            <i class="fas fa-history mr-2 text-orange-500 dark:text-ios-orange"></i> {% trans 'История' %}
+        </a>
+
+        {# Reports Dropdown Button (Last in group) #}
+        <button id="checklist-reports-dropdown-button" data-dropdown-toggle="checklist-reports-dropdown"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150" type="button">
+            <i class="fas fa-chart-pie mr-2 text-green-500 dark:text-ios-green"></i>
+            {% trans 'Отчеты' %}
+            <svg class="w-2.5 h-2.5 ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+            </svg>
+        </button>
+
+        {# Dropdown Menu for Reports #}
+        <div id="checklist-reports-dropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 border dark:border-gray-600">
+            <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="checklist-reports-dropdown-button">
+              <li>
+                <a href="{% url 'checklists:report_summary' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Сводный отчет' %}</a>
+              </li>
+              <li>
+                <a href="{% url 'checklists:report_issues' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Отчет по проблемам' %}</a>
+              </li>
+              {# Add more report links here if needed #}
+            </ul>
+        </div>
+
+    </div>
 </div>
 {% endblock %}
 
