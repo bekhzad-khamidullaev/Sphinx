@@ -15,10 +15,8 @@ class ChecklistItemStatus(models.TextChoices):
     OK = 'ok', _('OK')
     NOT_OK = 'not_ok', _('Не OK')
     NOT_APPLICABLE = 'na', _('Неприменимо')
-    # Add more specific statuses if needed, e.g., YES/NO, PASS/FAIL
 
 class ChecklistTemplate(models.Model):
-    """ Defines the structure and standard items for a reusable checklist. """
     name = models.CharField(max_length=255, verbose_name=_("Название шаблона"))
     description = models.TextField(blank=True, verbose_name=_("Описание"))
     category = models.ForeignKey(
@@ -42,34 +40,32 @@ class ChecklistTemplate(models.Model):
         return self.name
 
     def get_absolute_url(self):
+        # URL to view the template details
         return reverse('checklists:template_detail', kwargs={'pk': self.pk})
 
 class ChecklistTemplateItem(models.Model):
-    """ An individual item/question within a ChecklistTemplate. """
     template = models.ForeignKey(
         ChecklistTemplate,
         on_delete=models.CASCADE,
         related_name='items',
         verbose_name=_("Шаблон")
     )
-    item_text = models.CharField(max_length=500, verbose_name=_("Текст пункта/вопроса"))
+    # Use TextField for potentially longer items
+    item_text = models.TextField(verbose_name=_("Текст пункта/вопроса"))
     order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"), help_text=_("Порядок отображения пункта в чеклисте."))
-    # Optional: Define expected answer type if needed later
-    # expected_status_type = models.CharField(max_length=20, choices=..., default=...)
 
     class Meta:
         verbose_name = _("Пункт шаблона чеклиста")
         verbose_name_plural = _("Пункты шаблонов чеклистов")
-        ordering = ['template', 'order', 'id'] # Order by template, then custom order, then ID
+        ordering = ['template', 'order', 'id'] # Order by template, then custom order
 
     def __str__(self):
         return f"{self.template.name} - {self.item_text[:50]}"
 
 class Checklist(models.Model):
-    """ An instance of a checklist being performed. """
     template = models.ForeignKey(
         ChecklistTemplate,
-        on_delete=models.PROTECT, # Don't delete history if template is deleted
+        on_delete=models.PROTECT, # Keep history even if template is deleted
         related_name='runs',
         verbose_name=_("Шаблон")
     )
@@ -89,7 +85,6 @@ class Checklist(models.Model):
         related_name='checklists',
         verbose_name=_("Связанная задача")
     )
-    # Optional: Add location, general comments for the whole checklist run
     location = models.CharField(max_length=200, blank=True, verbose_name=_("Местоположение/Зона"))
     notes = models.TextField(blank=True, verbose_name=_("Общие примечания"))
     is_complete = models.BooleanField(default=False, verbose_name=_("Завершен"), db_index=True)
@@ -108,27 +103,24 @@ class Checklist(models.Model):
 
     def __str__(self):
         user_name = self.performed_by.username if self.performed_by else 'N/A'
-        return f"{self.template.name} - {user_name} @ {self.performed_at.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.template.name} @ {self.performed_at.strftime('%d.%m.%y %H:%M')} ({user_name})"
 
     def get_absolute_url(self):
+        # URL to view the results of this specific run
         return reverse('checklists:checklist_detail', kwargs={'pk': self.pk})
 
     @property
     def has_issues(self):
-        """ Check if any result in this checklist run is 'Not OK'. """
         return self.results.filter(status=ChecklistItemStatus.NOT_OK).exists()
 
     def mark_complete(self):
-        """ Mark the checklist as complete and set completion time. """
         if not self.is_complete:
             self.is_complete = True
             self.completion_time = timezone.now()
             self.save(update_fields=['is_complete', 'completion_time'])
-            logger.info(f"Checklist {self.id} marked as complete.")
-
+            logger.info(f"Checklist run {self.id} marked as complete.")
 
 class ChecklistResult(models.Model):
-    """ The result for a specific item within a specific checklist run. """
     checklist_run = models.ForeignKey(
         Checklist,
         on_delete=models.CASCADE,
@@ -137,7 +129,7 @@ class ChecklistResult(models.Model):
     )
     template_item = models.ForeignKey(
         ChecklistTemplateItem,
-        on_delete=models.CASCADE, # If template item removed, result doesn't make sense
+        on_delete=models.CASCADE, # Result meaningless without the item
         related_name='results',
         verbose_name=_("Пункт шаблона")
     )
@@ -148,13 +140,12 @@ class ChecklistResult(models.Model):
         verbose_name=_("Статус/Результат")
     )
     comments = models.TextField(blank=True, verbose_name=_("Комментарий к пункту"))
-    recorded_at = models.DateTimeField(auto_now=True, verbose_name=_("Время записи результата")) # Time this specific item was saved
+    recorded_at = models.DateTimeField(auto_now=True, verbose_name=_("Время записи результата"))
 
     class Meta:
         verbose_name = _("Результат пункта чеклиста")
         verbose_name_plural = _("Результаты пунктов чеклистов")
         ordering = ['checklist_run', 'template_item__order']
-        # Ensure only one result per item per run
         constraints = [
             models.UniqueConstraint(fields=['checklist_run', 'template_item'], name='unique_result_per_item_run')
         ]

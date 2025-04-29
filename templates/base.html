@@ -1,217 +1,205 @@
 {% load static i18n %}
 <!DOCTYPE html>
-{# JS будет добавлять/удалять 'dark' класс здесь #}
-<html lang="{{ LANGUAGE_CODE }}" class="h-full">
+{# Light mode enforced #}
+<html lang="{{ LANGUAGE_CODE }}" class="h-full"> {# Removed dark class possibility here #}
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Sphinx - Task Management System">
+    <meta name="description" content="Sphinx - Task & Checklist Management System">
     <link rel="shortcut icon" href="{% static 'img/fav.png' %}" type="image/x-icon">
 
-    {# --- Стили и скрипты --- #}
+    {# --- Preconnect Hints --- #}
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://ajax.googleapis.com">
 
-    {# Tailwind CSS #}
-    <script src="https://cdn.tailwindcss.com/"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
-    <!-- <link href="{% static 'css/tailwind.css' %}" rel="stylesheet"> -->
-    <!-- <link href="{% static 'css/output.css' %}" rel="stylesheet"> -->
-    <!-- <script src="{% static 'js/tailwindcss.js' %}" defer></script> -->
+    {# --- Core CSS & JS Libraries --- #}
+
+    {# Tailwind CSS via CDN #}
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    {# jQuery #}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
+
+    {# Flatpickr (Optional - uncomment if needed by child templates) #}
+    {# <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css"> #}
+    {# <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" defer></script> #}
+    {# <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> #}
+
+    {# Tailwind Configuration Script (Dark Mode Logic Removed) #}
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { dark: { 50: '#f9f9f9', 100: '#f2f2f2', 200: '#e5e5e5', 300: '#d1d1d1', 400: '#b3b3b3', 500: '#8e8e93', 600: '#636366', 700: '#48484a', 800: '#3a3a3c', 900: '#2c2c2e', 950: '#1c1c1e', }, ios: { blue: '#0a84ff', green: '#30d158', indigo: '#5e5ce6', orange: '#ff9f0a', pink: '#ff375f', purple: '#bf5af2', red: '#ff453a', teal: '#64d2ff', yellow: '#ffd60a', } } } } }
-        // JS для установки темы ДО загрузки контента
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
+        // Configure Tailwind CSS (without dark mode specific settings unless needed otherwise)
+        tailwind.config = {
+            // darkMode: 'class', // Removed dark mode trigger
+            theme: {
+                extend: { // Extend default theme
+                    colors: { // Keep custom color palettes if used elsewhere
+                        // Colors previously used for dark mode might still be useful for general styling
+                        dark: { 50: '#f9f9f9', 100: '#f2f2f2', 200: '#e5e5e5', 300: '#d1d1d1', 400: '#b3b3b3', 500: '#8e8e93', 600: '#636366', 700: '#48484a', 800: '#3a3a3c', 900: '#2c2c2e', 950: '#1c1c1e', },
+                        ios: { blue: '#0a84ff', green: '#30d158', indigo: '#5e5ce6', orange: '#ff9f0a', pink: '#ff375f', purple: '#bf5af2', red: '#ff453a', teal: '#64d2ff', yellow: '#ffd60a', }
+                    }
+                    // Add other theme extensions if necessary
+                }
+            }
         }
+        // Ensure 'dark' class is never present on initial load
+        document.documentElement.classList.remove('dark');
+        // Clear any previously stored theme preference to avoid confusion
+        localStorage.removeItem('theme');
     </script>
 
-    {# Font Awesome #}
+    {# Font Awesome Icons #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    {# AlpineJS - нужен для меню пользователя и мобильного меню #}
+    {# AlpineJS #}
     <script src="https://unpkg.com/alpinejs@3.14.9/dist/cdn.min.js" defer></script>
     {# Toastify CSS #}
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    {# Flowbite JS (Optional) #}
+    {# <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js" defer></script> #}
 
-    {# Ваши основные стили #}
+    {# --- Project Specific CSS/JS --- #}
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    {# Основные скрипты #}
-    <script src="{% static 'js/main.js' %}" defer></script> {# Для темной темы и т.д. #}
-    <script src="{% static 'js/search.js' %}" defer></script> {# Для поиска #}
-    <script src="{% static 'js/app_utils.js' %}" defer></script> {# Утилиты, включая authenticatedFetch и showNotification #}
+    <script src="{% static 'js/main.js' %}" defer></script> {# REMOVE Dark mode toggle logic from this file #}
+    <script src="{% static 'js/search.js' %}" defer></script>
+    <script src="{% static 'js/app_utils.js' %}" defer></script>
+
+    {# --- Block for page-specific CSS and form media --- #}
+    {% block head_extra %}{% endblock %}
 
     <title>{% block title %}{% endblock %} | Sphinx</title>
-    {% block extrastyle %}{% endblock %} {# Доп. стили для дочерних шаблонов #}
-</head>
-<body class="h-full bg-gray-50 dark:bg-dark-950 text-gray-900 dark:text-gray-100 flex flex-col"
-      x-data="{ mobileMenuOpen: false }"> {# AlpineJS инициализация #}
 
-    {# Прелоадер #}
-    <div id="preloader" class="fixed inset-0 w-full h-full bg-white/95 dark:bg-dark-950/95 flex items-center justify-center z-[1001] transition-opacity duration-500">
-        <div class="w-12 h-12 border-4 border-gray-200 dark:border-dark-700 border-l-ios-blue rounded-full animate-spin"></div>
+</head>
+<body class="h-full bg-gray-50 text-gray-900 flex flex-col antialiased" x-data="{ mobileMenuOpen: false }"> {# Removed dark: classes #}
+
+    {# Preloader Overlay #}
+    <div id="preloader" class="fixed inset-0 w-full h-full bg-white/95 flex items-center justify-center z-[1001] transition-opacity duration-500"> {# Removed dark: class #}
+        <div class="w-12 h-12 border-4 border-gray-200 border-l-blue-500 rounded-full animate-spin"></div> {# Adjusted border-l color #}
     </div>
 
-    {# Кнопка темной темы (фиксированный размер) #}
-    <button id="darkModeToggle" aria-label="Toggle dark mode" class="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full bg-white dark:bg-dark-800 shadow-lg flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700 transition-all">
-        <i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:block"></i>
-    </button>
+    {# Dark Mode Toggle Button Removed #}
 
-    {# Отображаем контент ТОЛЬКО для аутентифицированных пользователей #}
+    {# Main Content Wrapper (Only if Authenticated) #}
     {% if user.is_authenticated %}
-        {# Хедер #}
-        <header class="fixed w-full top-0 z-40 flex items-center justify-between bg-white/70 dark:bg-dark-800/70 backdrop-blur-lg px-4 py-2 shadow-md dark:shadow-dark-900/50"> {# Уменьшен py-2 #}
-            {# Левая часть: Лого и кнопка мобильного меню #}
+        {# Header #}
+        <header class="fixed w-full top-0 z-40 flex items-center justify-between bg-white/70 backdrop-blur-lg px-4 py-2 shadow-md border-b border-gray-200"> {# Removed dark: classes #}
+            {# Left Side #}
             <div class="flex items-center">
-                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden mr-3 p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-full focus:outline-none" aria-label="Open menu" :aria-expanded="mobileMenuOpen">
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden mr-3 p-2 text-gray-700 hover:bg-gray-100 rounded-full focus:outline-none" aria-label="Open menu" :aria-expanded="mobileMenuOpen">
                     <i class="fas fa-bars fa-lg"></i>
                 </button>
-                <a href="/" class="flex items-center" aria-label="Home">
-                    <img src="{% static 'img/logo.png' %}" alt="Sphinx Logo" class="w-8 h-8 md:w-9 md:h-9"> {# Немного уменьшен лого на мобилке #}
-                    <strong class="ml-2 text-teal-600 dark:text-ios-teal text-lg font-semibold hidden sm:inline-block">Sphinx</strong>
+                <a href="{% url 'tasks:task_list' %}" class="flex items-center flex-shrink-0" aria-label="Home">
+                    <img src="{% static 'img/logo.png' %}" alt="Sphinx Logo" class="w-8 h-8 md:w-9 md:h-9">
+                    <strong class="ml-2 text-teal-600 text-lg font-semibold hidden sm:inline-block">Sphinx</strong>
                 </a>
-                 {# --- ИЗМЕНЕНИЕ: Навигация ПЕРЕМЕЩЕНА сюда --- #}
-                 <nav class="hidden md:flex items-center space-x-2 ml-6"> {# Уменьшен space-x, добавлен ml-6 #}
-                    {# Применяем классы для фиксированного размера к ссылкам-кнопкам #}
-                    <a href="{% url 'tasks:category_list' %}" class="inline-flex items-center justify-center text-sm px-4 py-2 rounded-full shadow-sm bg-white dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors duration-200 border border-gray-200 dark:border-dark-700">
-                        <i class="fas fa-folder mr-2 text-teal-500 dark:text-ios-teal"></i> {% trans 'Категории' %}
+                 {# Desktop Navigation #}
+                 <nav class="hidden md:flex items-center space-x-2 ml-6">
+                    {% url 'tasks:category_list' as category_list_url %}
+                    {% url 'tasks:task_list' as task_list_url %}
+                    {% url 'tasks:project_list' as project_list_url %}
+                    {% url 'checklists:template_list' as template_list_url %}
+                    {% url 'checklists:history_list' as history_list_url %}
+
+                    <a href="{{ category_list_url }}" class="inline-flex items-center justify-center text-sm px-4 py-2 rounded-full shadow-sm {% if request.path == category_list_url %}bg-gray-100 font-semibold{% else %}bg-white{% endif %} hover:bg-gray-100 transition-colors duration-200 border border-gray-200">
+                        <i class="fas fa-folder mr-2 text-teal-500"></i> {% trans 'Категории' %}
                     </a>
-                    <a href="{% url 'tasks:task_list' %}" class="inline-flex items-center justify-center text-sm px-4 py-2 rounded-full shadow-sm bg-white dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors duration-200 border border-gray-200 dark:border-dark-700">
-                        <i class="fas fa-tasks mr-2 text-blue-500 dark:text-ios-blue"></i> {% trans 'Задачи' %}
+                    <a href="{{ task_list_url }}" class="inline-flex items-center justify-center text-sm px-4 py-2 rounded-full shadow-sm {% if request.path == task_list_url %}bg-gray-100 font-semibold{% else %}bg-white{% endif %} hover:bg-gray-100 transition-colors duration-200 border border-gray-200">
+                        <i class="fas fa-tasks mr-2 text-blue-500"></i> {% trans 'Задачи' %}
                     </a>
-                    <a href="{% url 'tasks:project_list' %}" class="inline-flex items-center justify-center text-sm px-4 py-2 rounded-full shadow-sm bg-white dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors duration-200 border border-gray-200 dark:border-dark-700">
-                        <i class="fas fa-project-diagram mr-2 text-purple-500 dark:text-ios-purple"></i> {% trans 'Проекты' %}
+                    <a href="{{ project_list_url }}" class="inline-flex items-center justify-center text-sm px-4 py-2 rounded-full shadow-sm {% if request.path == project_list_url %}bg-gray-100 font-semibold{% else %}bg-white{% endif %} hover:bg-gray-100 transition-colors duration-200 border border-gray-200">
+                        <i class="fas fa-project-diagram mr-2 text-purple-500"></i> {% trans 'Проекты' %}
+                    </a>
+                    <a href="{{ template_list_url }}" class="inline-flex items-center justify-center text-sm px-4 py-2 rounded-full shadow-sm {% if request.path == template_list_url %}bg-gray-100 font-semibold{% else %}bg-white{% endif %} hover:bg-gray-100 transition-colors duration-200 border border-gray-200">
+                        <i class="fas fa-clipboard-list mr-2 text-indigo-500"></i> {% trans 'Шаблоны' %}
                     </a>
                 </nav>
-                 {# --- КОНЕЦ ПЕРЕМЕЩЕНИЯ НАВИГАЦИИ --- #}
             </div>
 
-            {# --- ИЗМЕНЕНИЕ: Убран justify-center из этого блока --- #}
-            <div class="flex-1 flex items-center justify-end"> {# Теперь justify-end #}
-                {# --- Навигация УДАЛЕНА отсюда --- #}
-
-                {# Блок для кнопок действий (из дочерних шаблонов) #}
-                {# Сами кнопки должны иметь классы для фикс. размера, например: inline-flex items-center justify-center px-4 py-2 ... #}
+            {# Right Side #}
+            <div class="flex-1 flex items-center justify-end">
                 <div id="list_actions" class="hidden md:flex items-center space-x-2 mr-4">
                     {% block list_actions %}{% endblock %}
                 </div>
-
-                {# Правая часть: Поиск и Меню пользователя #}
-                <div class="flex items-center space-x-3"> {# Уменьшен space-x #}
+                <div class="flex items-center space-x-3">
                     <div class="universal-search-container relative hidden lg:block">
-                        <input type="search" id="universal-search-input" class="form-input w-40 lg:w-56 px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-ios-blue text-sm border-transparent focus:border-transparent" placeholder="{% trans 'Поиск...' %}" aria-label="{% trans 'Универсальный поиск' %}" autocomplete="off" data-suggestions-url="{% url 'tasks:search-suggestions-api' %}"> {# Уменьшена ширина #}
-                        <div id="universal-suggestions-box" class="absolute z-50 w-full mt-1 bg-white dark:bg-dark-800 rounded-lg shadow-lg max-h-80 overflow-y-auto hidden border border-gray-200 dark:border-dark-700"></div>
+                        <input type="search" id="universal-search-input" class="form-input w-40 lg:w-56 px-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm border-transparent focus:border-transparent" placeholder="{% trans 'Поиск...' %}" aria-label="{% trans 'Универсальный поиск' %}" autocomplete="off" data-suggestions-url="{% url 'tasks:search-suggestions-api' %}">
+                        <div id="universal-suggestions-box" class="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg max-h-80 overflow-y-auto hidden border border-gray-200"></div>
                     </div>
-
                     <div class="relative" x-data="{ userMenuOpen: false }">
-                        <button @click="userMenuOpen = !userMenuOpen" class="flex items-center px-2 py-1 bg-gray-100 dark:bg-dark-700 rounded-full hover:bg-gray-200 dark:hover:bg-dark-600 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-dark-800 focus:ring-blue-500 dark:focus:ring-ios-blue" aria-label="User menu" :aria-expanded="userMenuOpen"> {# Уменьшены паддинги #}
+                        <button @click="userMenuOpen = !userMenuOpen" class="flex items-center px-2 py-1 bg-gray-100 rounded-full hover:bg-gray-200 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500" aria-label="User menu" :aria-expanded="userMenuOpen">
                             <img class="w-7 h-7 rounded-full object-cover" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{% trans 'User profile photo' %}">
-                            <span class="ml-2 text-gray-800 dark:text-gray-200 text-sm hidden md:inline-block">{{ user.get_short_name }}</span> {# Скрыто на sm, показано на md #}
-                            <i class="fas fa-chevron-down ml-1 text-xs text-gray-500 dark:text-gray-400 hidden md:inline-block"></i>
+                            <span class="ml-2 text-gray-800 text-sm hidden md:inline-block truncate max-w-[100px]">{{ user.get_short_name|default:user.username }}</span>
+                            <i class="fas fa-chevron-down ml-1 text-xs text-gray-500 hidden md:inline-block"></i>
                         </button>
-                        <div x-show="userMenuOpen" @click.outside="userMenuOpen = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-800 shadow-xl dark:shadow-dark-900/50 rounded-xl border border-gray-200 dark:border-dark-700 origin-top-right z-50" x-cloak>
-                            {# ... Содержимое выпадающего меню пользователя ... #}
-                            <div class="py-1"> <a href="{% url 'user_profiles:profile_view' %}" class="block px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700">{% trans 'Мой профиль' %}</a> {% if user.is_superuser %}<a href="/admin/" class="block px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700">{% trans 'Админка' %}</a>{% endif %} <a href="{% url 'room:rooms' %}" class="block px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700">{% trans 'Чаты' %}</a> </div> <hr class="border-gray-200 dark:border-dark-600"> <div class="py-1"> <form method="post" action="{% url 'set_language' %}" class="px-4 py-2 text-sm"> {% csrf_token %} <label for="language-select-desktop" class="sr-only">{% trans "Language" %}</label> <select name="language" id="language-select-desktop" onchange="this.form.submit()" class="w-full text-gray-800 dark:text-gray-200 bg-transparent dark:bg-transparent border-0 focus:ring-0 p-0"> <option value="uz" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>🇺🇿 {% trans 'Uzbek' %}</option> <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>🇷🇺 {% trans 'Русский' %}</option> <option value="en" {% if LANGUAGE_CODE == "en" %}selected{% endif %}>🇬🇧 {% trans 'English' %}</option> </select> </form> </div> <hr class="border-gray-200 dark:border-dark-600"> <div class="py-1"> <a href="{% url 'user_profiles:logout' %}" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-dark-700"><i class="fas fa-sign-out-alt mr-2"></i>{% trans 'Выход' %}</a> </div>
+                        <div x-show="userMenuOpen" @click.outside="userMenuOpen = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-56 bg-white shadow-xl rounded-xl border border-gray-200 origin-top-right z-50 overflow-hidden" x-cloak>
+                            <div class="py-1"> <a href="{% url 'user_profiles:profile_view' %}" class="flex items-center px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors"><i class="fas fa-user-circle w-4 mr-3 text-gray-500"></i>{% trans 'Мой профиль' %}</a> {% if user.is_superuser %}<a href="/admin/" class="flex items-center px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors"><i class="fas fa-cog w-4 mr-3 text-gray-500"></i>{% trans 'Админка' %}</a>{% endif %} <a href="{% url 'room:rooms' %}" class="flex items-center px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors"><i class="fas fa-comments w-4 mr-3 text-gray-500"></i>{% trans 'Чаты' %}</a> </div> <hr class="border-gray-200"> <div class="py-1"> <form method="post" action="{% url 'set_language' %}" class="px-4 py-2 text-sm"> {% csrf_token %} <label for="language-select-desktop" class="sr-only">{% trans "Language" %}</label> <select name="language" id="language-select-desktop" onchange="this.form.submit()" class="w-full text-gray-800 bg-transparent border-0 focus:ring-0 p-0 appearance-none"> <option value="uz" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>🇺🇿 {% trans 'Uzbek' %}</option> <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>🇷🇺 {% trans 'Русский' %}</option> <option value="en" {% if LANGUAGE_CODE == "en" %}selected{% endif %}>🇬🇧 {% trans 'English' %}</option> </select> </form> </div> <hr class="border-gray-200"> <div class="py-1"> <a href="{% url 'user_profiles:logout' %}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"><i class="fas fa-sign-out-alt w-4 mr-3"></i>{% trans 'Выход' %}</a> </div>
                         </div>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Mobile Menu Sidebar -->
-        <div x-show="mobileMenuOpen" x-transition:enter="transition ease-in-out duration-300 transform" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-dark-800 shadow-lg z-[60] flex flex-col" @click.outside="mobileMenuOpen = false" x-cloak>
-             <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-700">
-                <a href="/" class="flex items-center" aria-label="Home"><img src="{% static 'img/logo.png' %}" alt="Sphinx Logo" class="w-8 h-8"><strong class="ml-2 text-teal-600 dark:text-ios-teal text-md font-semibold">Sphinx</strong></a>
-                <button @click="mobileMenuOpen = false" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white"><i class="fas fa-times fa-lg"></i></button>
-            </div>
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <a href="{% url 'tasks:category_list' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i class="fas fa-folder w-5 mr-3 text-teal-500 dark:text-ios-teal"></i> {% trans 'Категории' %}</a>
-                <a href="{% url 'tasks:task_list' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i class="fas fa-tasks w-5 mr-3 text-blue-500 dark:text-ios-blue"></i> {% trans 'Задачи' %}</a>
-                <a href="{% url 'tasks:project_list' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i class="fas fa-project-diagram w-5 mr-3 text-purple-500 dark:text-ios-purple"></i> {% trans 'Проекты' %}</a>
-                <hr class="border-gray-200 dark:border-dark-600 my-2">
-                 <div class="relative lg:hidden px-1 py-2">
-                    <input type="search" id="mobile-search-input" class="form-control w-full px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-ios-blue text-sm" placeholder="{% trans 'Поиск...' %}" aria-label="{% trans 'Поиск' %}">
-                    <!-- Suggestions box for mobile can be added here if needed -->
-                 </div>
-                 <hr class="border-gray-200 dark:border-dark-600 my-2">
-                <a href="#" class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i class="fas fa-user w-5 mr-3 text-gray-500"></i> {% trans 'Мой профиль' %}</a>
-                {% if user.is_superuser %}<a href="/admin/" class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i class="fas fa-cog w-5 mr-3 text-gray-500"></i> {% trans 'Админка' %}</a>{% endif %}
-                <a href="{% url 'room:rooms' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i class="fas fa-comments w-5 mr-3 text-gray-500"></i> {% trans 'Чаты' %}</a>
-            </nav>
-            <div class="p-4 border-t border-gray-200 dark:border-dark-700 space-y-2">
-                <form method="post" action="{% url 'set_language' %}" class="w-full">
-                    {% csrf_token %}
-                    <label for="language-select-mobile" class="sr-only">{% trans "Language" %}</label>
-                    <select name="language" id="language-select-mobile" onchange="this.form.submit()" class="w-full text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 rounded-md p-2 border border-gray-300 dark:border-dark-600 text-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="uz" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>🇺🇿 {% trans 'Uzbek' %}</option>
-                        <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>🇷🇺 {% trans 'Русский' %}</option>
-                        <option value="en" {% if LANGUAGE_CODE == "en" %}selected{% endif %}>🇬🇧 {% trans 'English' %}</option>
-                    </select>
-                </form>
-                <a href="{% url 'user_profiles:logout' %}" class="block w-full text-center px-4 py-2 text-sm rounded-md text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-700"><i class="fas fa-sign-out-alt mr-2"></i>{% trans 'Выход' %}</a>
-            </div>
+        {# Mobile Menu Sidebar #}
+        <div x-show="mobileMenuOpen" x-transition:enter="transition ease-in-out duration-300 transform" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-[60] flex flex-col" @click.outside="mobileMenuOpen = false" x-cloak>
+             <div class="flex items-center justify-between p-4 border-b border-gray-200"> <a href="/" class="flex items-center" aria-label="Home"><img src="{% static 'img/logo.png' %}" alt="Sphinx Logo" class="w-8 h-8"><strong class="ml-2 text-teal-600 text-md font-semibold">Sphinx</strong></a> <button @click="mobileMenuOpen = false" class="text-gray-500 hover:text-gray-800 p-1"><i class="fas fa-times fa-lg"></i></button> </div>
+             <nav class="flex-1 p-4 space-y-1 overflow-y-auto"> <a href="{% url 'tasks:category_list' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i class="fas fa-folder w-5 mr-3 text-teal-500"></i> {% trans 'Категории' %}</a> <a href="{% url 'tasks:task_list' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i class="fas fa-tasks w-5 mr-3 text-blue-500"></i> {% trans 'Задачи' %}</a> <a href="{% url 'tasks:project_list' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i class="fas fa-project-diagram w-5 mr-3 text-purple-500"></i> {% trans 'Проекты' %}</a> <a href="{% url 'checklists:template_list' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i class="fas fa-clipboard-list w-5 mr-3 text-indigo-500"></i> {% trans 'Шаблоны чеклистов' %}</a> <a href="{% url 'checklists:history_list' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i class="fas fa-history w-5 mr-3 text-orange-500"></i> {% trans 'История чеклистов' %}</a> <hr class="border-gray-200 my-2"> <div class="relative lg:hidden px-1 py-2"> <input type="search" id="mobile-search-input" class="form-input w-full px-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm border-transparent focus:border-transparent" placeholder="{% trans 'Поиск...' %}" aria-label="{% trans 'Поиск' %}"> </div> <hr class="border-gray-200 my-2"> <a href="{% url 'user_profiles:profile_view' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i class="fas fa-user w-5 mr-3 text-gray-500"></i> {% trans 'Мой профиль' %}</a> {% if user.is_superuser %}<a href="/admin/" class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i class="fas fa-cog w-5 mr-3 text-gray-500"></i> {% trans 'Админка' %}</a>{% endif %} <a href="{% url 'room:rooms' %}" class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i class="fas fa-comments w-5 mr-3 text-gray-500"></i> {% trans 'Чаты' %}</a> </nav>
+             <div class="p-4 border-t border-gray-200 space-y-2"> <form method="post" action="{% url 'set_language' %}" class="w-full"> {% csrf_token %} <label for="language-select-mobile" class="sr-only">{% trans "Language" %}</label> <select name="language" id="language-select-mobile" onchange="this.form.submit()" class="w-full text-gray-800 bg-gray-100 rounded-md p-2 border border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 appearance-none"> <option value="uz" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>🇺🇿 {% trans 'Uzbek' %}</option> <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>🇷🇺 {% trans 'Русский' %}</option> <option value="en" {% if LANGUAGE_CODE == "en" %}selected{% endif %}>🇬🇧 {% trans 'English' %}</option> </select> </form> <a href="{% url 'user_profiles:logout' %}" class="block w-full text-center px-4 py-2 text-sm rounded-md text-red-600 hover:bg-red-100 transition-colors"><i class="fas fa-sign-out-alt mr-2"></i>{% trans 'Выход' %}</a> </div>
         </div>
 
-        {# Оверлей для мобильного меню #}
-        <div x-show="mobileMenuOpen" x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/30 dark:bg-black/50 z-50 md:hidden" @click="mobileMenuOpen = false" x-cloak></div>
+        {# Mobile Menu Overlay #}
+        <div x-show="mobileMenuOpen" x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/30 z-50 md:hidden" @click="mobileMenuOpen = false" x-cloak></div>
 
-        {# Контент #}
-        <main id="main-content" class="flex-1 overflow-y-auto pt-20 pb-24 md:pt-16 md:pb-20 bg-gray-50 dark:bg-dark-950"> {# Добавлен ID #}
+        {# Main Content Area #}
+        <main id="main-content" class="flex-1 overflow-y-auto pt-20 pb-24 md:pt-16 md:pb-20 bg-gray-50">
             <div class="container mx-auto px-4 py-6">
-                <div class="mb-6 block md:hidden"> {# Показываем list_title на мобильных #}
+                {# --- Title Block --- #}
+                <div class="mb-6 hidden md:block">
                      {% block list_title %}{% endblock %}
                  </div>
+                 <div class="mb-6 block md:hidden">
+                     {% block list_title_mobile %}{{ block.super }}{% endblock %}
+                 </div>
+                 {# --- End Title Block --- #}
+
                 <div id="list_actions_mobile" class="md:hidden mb-4 flex flex-wrap gap-2">
                     {% block list_actions_mobile %}{% endblock %}
                 </div>
-                 {# Основной контент дочернего шаблона #}
+                 {# Main Content from Child Template #}
                 {% block list_content %}{% endblock %}
             </div>
         </main>
 
-        {% else %}
+    {% else %} {# If user is NOT authenticated #}
          <div class="flex items-center justify-center min-h-screen">
-            <p>{% trans "Требуется вход в систему." %}</p>
+            <p class="text-xl text-gray-600">{% trans "Требуется вход в систему." %}
+                <a href="{% url 'user_profiles:login' %}" class="text-blue-600 hover:underline ml-2">{% trans "Войти" %}</a>
+            </p>
         </div>
-        {% endif %}
+    {% endif %}
 
-        {# Футер #}
-        <footer class="fixed bottom-0 left-0 w-full bg-white/80 dark:bg-dark-800/80 backdrop-blur-lg border-t border-gray-200 dark:border-dark-700 shadow-lg px-4 py-2 md:px-6 md:py-2 flex flex-col md:flex-row md:items-center md:justify-between rounded-t-xl md:rounded-t-2xl z-30 text-xs md:text-sm"> {# Уменьшен py #}
-            <span class="text-gray-600 dark:text-gray-400 text-center md:text-left mb-1 md:mb-0">© <span id="year"></span> <a href="/" class="hover:underline text-teal-600 dark:text-ios-teal font-medium">Sphinx™</a>. {% trans 'All Rights Reserved' %}.</span> <ul class="flex flex-wrap items-center justify-center md:justify-end font-medium text-gray-600 dark:text-gray-400"> <li><a href="#" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 dark:hover:text-ios-teal transition-colors px-2">{% trans 'Privacy Policy' %}</a></li> </ul>
-        </footer>
+    {# Footer #}
+    <footer class="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-lg px-4 py-2 md:px-6 md:py-2 flex flex-col md:flex-row md:items-center md:justify-between rounded-t-xl md:rounded-t-2xl z-30 text-xs md:text-sm">
+        <span class="text-gray-600 text-center md:text-left mb-1 md:mb-0">© <span id="year"></span> <a href="/" class="hover:underline text-teal-600 font-medium">Sphinx™</a>. {% trans 'All Rights Reserved' %}.</span>
+        <ul class="flex flex-wrap items-center justify-center md:justify-end font-medium text-gray-600">
+            <li><a href="#" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 transition-colors px-2">{% trans 'Privacy Policy' %}</a></li>
+        </ul>
+    </footer>
 
-        {# Глобальный индикатор загрузки (раскомментирован) #}
-        <div id="loading-indicator" class="hidden fixed inset-0 bg-white/70 dark:bg-dark-900/70 flex justify-center items-center z-[999]">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 dark:border-ios-blue"></div>
-        </div>
+    {# Global Loading Indicator (optional) #}
+    <div id="loading-indicator" class="hidden fixed inset-0 bg-white/70 flex justify-center items-center z-[999]">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+    </div>
+
+    {# Toastify JS (for notifications) #}
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            document.querySelectorAll("input, select, textarea").forEach(el => {
-                el.addEventListener("input", function() {
-                    if (this.value.trim() !== "") {
-                        this.classList.remove("border-red-500");
-                    } else {
-                        this.classList.add("border-red-500");
-                    }
-                });
-            });
-      
-            // Добавляем Flatpickr (если нужны даты)
-            flatpickr(".flatpickr", { enableTime: true, dateFormat: "Y-m-d H:i" });
-      
-            // Добавляем Select2 (если нужны dropdowns)
-            $('.select2').select2();
-        });
-      </script>      
+
+    {# --- Block for page-specific JS and form media --- #}
     {% block scripts %}{% endblock %}
+
+    {# Django Browser Reload Script (only included if DEBUG=True) #}
+    {% load django_browser_reload %}
+    {% django_browser_reload_script %}
 </body>
+
 </html>

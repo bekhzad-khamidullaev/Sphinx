@@ -7,6 +7,7 @@
     {{ block.super }}
     {{ form.media.css }}
     {{ item_formset.media.css }}
+    {# Add any specific CSS needed for formset item styling if not covered by widgets #}
 {% endblock %}
 
 {% block list_title %}
@@ -54,6 +55,13 @@
                          </ul>
                      {% endif %}
                  {% endfor %}
+                 {# Display non-field errors for individual forms in the formset #}
+                 {% if f_form.non_field_errors %}
+                     <p class="font-semibold text-sm mt-2">{% trans "Пункт" %} #{{ forloop.counter }} - {% trans "Общая ошибка:" %}</p>
+                      <ul class="list-disc list-inside text-sm mb-2">
+                         {% for error in f_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                     </ul>
+                 {% endif %}
              {% endfor %}
         </div>
     {% endif %}
@@ -65,39 +73,49 @@
 
         <fieldset class="mb-6 border-b border-gray-200 dark:border-dark-600 pb-6">
             <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Основная информация" %}</legend>
-            {# Render main form fields using Crispy Forms #}
-            {% crispy form %}
-            {# Explicit error display below fields (if not handled by crispy layout) #}
-            {% comment %}
-             {% for field in form %}
-                {% if field.errors %}
-                    <div class="text-red-500 text-xs mt-1">{{ field.errors }}</div>
-                {% endif %}
-             {% endfor %}
-            {% endcomment %}
+            {# Use crispy tag if you have a helper defined for ChecklistTemplateForm #}
+            {# {% crispy form %} #}
+            {# Manual rendering if no crispy helper #}
+             <div class="space-y-4">
+                {% for field in form.visible_fields %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ field.label }}
+                            {% if field.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+                        </label>
+                        {# Render field using its widget (which has Tailwind classes) #}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>
+                        {% endif %}
+                        {% if field.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+            </div>
         </fieldset>
 
         <fieldset class="mb-6">
             <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Пункты чеклиста" %}</legend>
 
-            {# Management form for the formset is crucial #}
+            {# Management form for the formset #}
             {{ item_formset.management_form }}
 
             {# Container for individual item forms #}
             <div id="item-formset-container" class="space-y-3">
                 {% for item_form in item_formset %}
-                    {# Render each form using the correct include path #}
                     {% include "includes/formset_item.html" with form=item_form formset=item_formset %}
                 {% endfor %}
             </div>
 
-            {# Empty form template for cloning with JavaScript #}
+            {# Empty form template for cloning #}
             <div id="empty-item-form" class="hidden">
-                 {# Use the correct include path for the empty form #}
                  {% include "includes/formset_item.html" with form=item_formset.empty_form formset=item_formset %}
             </div>
 
-            {# Button to add more forms dynamically #}
+            {# Add Item Button #}
             <div class="mt-4">
                 <button type="button" id="add-item-form"
                         class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-dark-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition">
@@ -111,11 +129,11 @@
         {# Action Buttons #}
         <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
             <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'checklists:template_list' %}{% endif %}"
-               class="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition"> {# Example btn-secondary style #}
+               class="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition"> {# btn-secondary #}
                 {% trans 'Отмена' %}
             </a>
             <button type="submit"
-                    class="inline-flex items-center px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 dark:bg-ios-indigo dark:hover:bg-indigo-500 text-white text-sm font-semibold shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition"> {# Example btn-primary style #}
+                    class="inline-flex items-center px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 dark:bg-ios-indigo dark:hover:bg-indigo-500 text-white text-sm font-semibold shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition"> {# btn-primary #}
                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
                 {% if object %}{% trans "Сохранить изменения" %}{% else %}{% trans "Создать шаблон" %}{% endif %}
             </button>
@@ -126,15 +144,15 @@
 
 {% block scripts %}
     {{ block.super }}
-    {{ form.media.js }}
-    {{ item_formset.media.js }}
+    {{ form.media.js }} {# Include media for main form widgets (like potential date pickers) #}
+    {{ item_formset.media.js }} {# Include media for formset widgets #}
 
     {# --- JavaScript for Dynamic Formset Management --- #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('item-formset-container');
             const addButton = document.getElementById('add-item-form');
-            const emptyFormTemplateNode = document.getElementById('empty-item-form')?.firstElementChild?.cloneNode(true); // Clone the template node itself
+            const emptyFormTemplateNode = document.getElementById('empty-item-form')?.firstElementChild?.cloneNode(true);
             const totalFormsInput = document.querySelector('input[name="{{ item_formset.prefix }}-TOTAL_FORMS"]');
             const prefix = "{{ item_formset.prefix|escapejs }}";
 
@@ -143,123 +161,99 @@
                 return;
             }
 
-            let formCount = parseInt(totalFormsInput.value, 10); // Initial number of forms
+            let formCount = parseInt(totalFormsInput.value, 10);
+            console.log(`Initial Formset State: prefix=${prefix}, initial TOTAL_FORMS=${formCount}`);
 
-            // Function to update indices of ALL forms in the container
-            // Call this only when a NEWLY ADDED form is removed
+            // Function to update indices after removing a NEWLY ADDED form
             function updateIndicesAfterRemoval() {
-                console.log('Updating indices after removal...');
+                console.log('-> updateIndicesAfterRemoval called');
                 const forms = container.querySelectorAll('.item-form');
                 forms.forEach((form, index) => {
-                    // Update the ID of the form row itself
                     form.id = `${prefix}-${index}`;
-                    // Update attributes of inputs, selects, textareas, labels
                     form.querySelectorAll('input, select, textarea, label').forEach(el => {
                         ['id', 'name', 'for'].forEach(attr => {
                             const oldAttrValue = el.getAttribute(attr);
-                            // Regex ensures we only replace the index part
-                            if (oldAttrValue && oldAttrValue.startsWith(`${prefix}-`)) {
-                                const newAttrValue = oldAttrValue.replace(new RegExp(`(${prefix}-)\\d+`), `${prefix}-${index}`);
+                            const regex = new RegExp(`^${prefix}-(\\d+|__prefix__)`);
+                            if (oldAttrValue && regex.test(oldAttrValue)) {
+                                const newAttrValue = oldAttrValue.replace(regex, `${prefix}-${index}`);
                                 el.setAttribute(attr, newAttrValue);
                             }
                         });
                     });
                 });
-                // Update TOTAL_FORMS to reflect the actual number of forms remaining
                 totalFormsInput.value = forms.length;
-                formCount = forms.length; // Reset the counter for adding next form
-                console.log("Indices updated, TOTAL_FORMS set to:", totalFormsInput.value);
+                formCount = forms.length; // Reset counter
+                console.log(`<- updateIndicesAfterRemoval finished. TOTAL_FORMS set to: ${totalFormsInput.value}, next form index: ${formCount}`);
             }
 
             // --- Add Form Button ---
             addButton.addEventListener('click', function() {
-                const newForm = emptyFormTemplateNode.cloneNode(true); // Clone the stored template node
-                const newIndex = formCount; // Use the current count as the index for the new form
+                console.log('-> Add button clicked');
+                const newIndex = formCount; // Use current count for the new form's index
+                const newForm = emptyFormTemplateNode.cloneNode(true);
 
-                // Replace '__prefix__' in the cloned node's attributes
+                newForm.id = `${prefix}-${newIndex}`;
                 newForm.querySelectorAll('*').forEach(el => {
                      ['id', 'name', 'for'].forEach(attr => {
                          const oldAttrValue = el.getAttribute(attr);
                          if (oldAttrValue && oldAttrValue.includes('__prefix__')) {
-                             const newAttrValue = oldAttrValue.replace(/__prefix__/g, newIndex);
-                             el.setAttribute(attr, newAttrValue);
+                             el.setAttribute(attr, oldAttrValue.replace(/__prefix__/g, newIndex));
                          }
                      });
-                 });
-                 // Set the ID for the row itself
-                 newForm.id = `${prefix}-${newIndex}`;
-                 // Clear input values in the cloned form
-                 newForm.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(input => input.value = '');
-                 // Ensure DELETE checkbox (if cloned) is unchecked
-                 const deleteCheckbox = newForm.querySelector(`input[type="checkbox"][name$="-DELETE"]`);
-                 if(deleteCheckbox) deleteCheckbox.checked = false;
-                 // Ensure the form is visible if the template was hidden
-                 newForm.classList.remove('hidden');
+                     if ((el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'number')) || el.tagName === 'TEXTAREA') { el.value = ''; }
+                     if (el.type === 'checkbox' && el.name.endsWith('-DELETE')) { el.checked = false; }
+                });
+                newForm.classList.remove('hidden'); // Make sure it's visible
 
-                container.appendChild(newForm); // Add to the DOM
+                container.appendChild(newForm);
+                formCount++; // Increment AFTER using the index for the new form
+                totalFormsInput.value = formCount; // Update management form
 
                 const newDeleteButton = newForm.querySelector('.delete-item-btn');
-                if (newDeleteButton) {
-                    addDeleteListener(newDeleteButton);
-                }
+                if (newDeleteButton) addDeleteListener(newDeleteButton);
 
-                formCount++; // Increment counter for the *next* form
-                totalFormsInput.value = formCount; // Update management form count
-
-                console.log("Added new form row, TOTAL_FORMS now:", totalFormsInput.value);
-                newForm.querySelector('input[name$="-item_text"]')?.focus(); // Focus item text field
+                console.log(`<- Added new form row ${prefix}-${newIndex}. TOTAL_FORMS now: ${totalFormsInput.value}`);
+                newForm.querySelector('input[name$="-item_text"], textarea[name$="-item_text"]')?.focus(); // Focus text field
             });
 
-             // --- Delete Form Button ---
+            // --- Delete Form Button ---
             function addDeleteListener(button) {
                  button.addEventListener('click', function() {
+                     console.log('-> Delete button clicked');
                      const formRow = this.closest('.item-form');
-                     // Correctly select the DELETE checkbox within this specific form row
                      const deleteCheckbox = formRow.querySelector(`input[type="checkbox"][name$="-DELETE"]`);
 
-                     if (deleteCheckbox) {
-                         // --- Handling EXISTING forms ---
+                     if (deleteCheckbox) { // Existing form
                          deleteCheckbox.checked = !deleteCheckbox.checked;
-                         formRow.classList.toggle('hidden', deleteCheckbox.checked); // Hide visually
-                         // Update button style to indicate marked for deletion
+                         formRow.classList.toggle('hidden', deleteCheckbox.checked);
                          button.classList.toggle('text-red-600', deleteCheckbox.checked);
                          button.classList.toggle('dark:text-red-400', deleteCheckbox.checked);
                          button.classList.toggle('text-gray-400', !deleteCheckbox.checked);
                          button.classList.toggle('dark:text-gray-500', !deleteCheckbox.checked);
                          console.log(`Toggled DELETE checkbox for ${formRow.id} to ${deleteCheckbox.checked}`);
-                         // TOTAL_FORMS count remains unchanged for server-side deletion
-                     } else {
-                         // --- Handling NEWLY ADDED forms ---
+                     } else { // Newly added form
                          console.log(`Removing newly added form row: ${formRow.id}`);
                          formRow.remove();
-                         // Re-calculate TOTAL_FORMS and re-index remaining forms
-                         updateIndicesAfterRemoval();
+                         updateIndicesAfterRemoval(); // Update counts and indices
                      }
                  });
             }
 
-            // Add listeners to initially loaded delete buttons & set initial visual state
+            // Initial setup for delete buttons
             container.querySelectorAll('.item-form').forEach(formRow => {
                  const deleteButton = formRow.querySelector('.delete-item-btn');
-                 // Correctly select the DELETE checkbox within this specific form row
                  const deleteCheckbox = formRow.querySelector(`input[type="checkbox"][name^="${prefix}-"][name$="-DELETE"]`);
-
                  if (deleteButton) {
                      addDeleteListener(deleteButton);
-                     // Set initial visual state if already marked for deletion
-                     if (deleteCheckbox && deleteCheckbox.checked) {
-                         formRow.classList.add('hidden'); // Hide initially if checked
-                         deleteButton.classList.remove('text-gray-400', 'dark:text-gray-500');
+                     if (deleteCheckbox && deleteCheckbox.checked) { // Initialize visual state
+                         formRow.classList.add('hidden');
                          deleteButton.classList.add('text-red-600', 'dark:text-red-400');
+                         deleteButton.classList.remove('text-gray-400', 'dark:text-gray-500');
                      }
                  }
             });
 
-             // --- Initial setup ---
-             // No need to call updateIndicesAfterRemoval on initial load.
-             // formCount is correctly initialized from totalFormsInput.value
-             console.log("Initial form count:", formCount);
-
+             console.log("Formset JS initialized.");
         });
     </script>
 {% endblock %}

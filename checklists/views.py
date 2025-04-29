@@ -1,18 +1,18 @@
 # checklists/views.py
 import logging
 from django.db import transaction
-from django.forms import modelformset_factory, inlineformset_factory
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from django import forms
-from django.db import models
+from django.db.models import Count, Q # Import Q for filtering issues
 
+from django.db import models
+from django.db.models import Prefetch
 from .models import (
     ChecklistTemplate, ChecklistTemplateItem, Checklist, ChecklistResult, ChecklistItemStatus
 )
@@ -22,16 +22,20 @@ from .forms import (
 
 logger = logging.getLogger(__name__)
 
-# --- Template Views ---
+# ==================================
+# Checklist Template Views
+# ==================================
 class ChecklistTemplateListView(LoginRequiredMixin, ListView):
     model = ChecklistTemplate
     template_name = 'checklists/template_list.html'
     context_object_name = 'templates'
-    paginate_by = 15
+    paginate_by = 20
 
     def get_queryset(self):
-        # Show only active templates by default, maybe allow filter for inactive?
-        return ChecklistTemplate.objects.filter(is_active=True).select_related('category').prefetch_related('items')
+        # Show active by default, allow filter via GET param?
+        # queryset = ChecklistTemplate.objects.filter(is_active=True)
+        queryset = ChecklistTemplate.objects.all() # Show all for now
+        return queryset.select_related('category').annotate(item_count_agg=Count('items')).order_by('category__name', 'name')
 
 class ChecklistTemplateDetailView(LoginRequiredMixin, DetailView):
     model = ChecklistTemplate
@@ -39,15 +43,14 @@ class ChecklistTemplateDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'template'
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('items')
-
+        # Order items by the 'order' field
+        return super().get_queryset().prefetch_related(models.Prefetch('items', queryset=ChecklistTemplateItem.objects.order_by('order')))
 
 class ChecklistTemplateCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = ChecklistTemplate
     form_class = ChecklistTemplateForm
     template_name = 'checklists/template_form.html'
     success_message = _("Шаблон чеклиста '%(name)s' успешно создан.")
-    success_url = reverse_lazy('checklists:template_list') # Default, overridden below
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -55,36 +58,37 @@ class ChecklistTemplateCreateView(LoginRequiredMixin, SuccessMessageMixin, Creat
         if self.request.POST:
             context['item_formset'] = ChecklistTemplateItemFormSet(self.request.POST, prefix='items')
         else:
-            context['item_formset'] = ChecklistTemplateItemFormSet(prefix='items')
+            context['item_formset'] = ChecklistTemplateItemFormSet(prefix='items', queryset=ChecklistTemplateItem.objects.none())
         return context
 
     def form_valid(self, form):
         context = self.get_context_data()
         item_formset = context['item_formset']
         with transaction.atomic():
+            # Save the main template form
             self.object = form.save()
+            # Check if the item formset is also valid
             if item_formset.is_valid():
+                # Set the instance for the formset and save
                 item_formset.instance = self.object
                 item_formset.save()
                 logger.info(f"Checklist Template '{self.object.name}' created by {self.request.user.username}")
                 messages.success(self.request, self.get_success_message(form.cleaned_data))
-                return redirect(self.get_success_url()) # Redirect to detail after save
+                return redirect(self.get_success_url())
             else:
-                # If item formset is invalid, the transaction will roll back.
-                # Render the form again with errors (handled by form_invalid).
-                logger.warning(f"Checklist Template item formset invalid for user {self.request.user.username}: {item_formset.errors}")
-                # We shouldn't really get here if the main form was valid due to transaction rollback
-                # but handle defensively.
-                return self.form_invalid(form)
+                # Formset invalid, transaction rolls back. Re-render with errors.
+                logger.warning(f"Checklist Template item formset invalid during create: {item_formset.errors}")
+                # Add formset errors to context for display
+                context['item_formset'] = item_formset
+                return self.render_to_response(context)
 
     def form_invalid(self, form):
-        logger.warning(f"Checklist Template form invalid for user {self.request.user.username}: {form.errors}")
-        # Need to pass the item formset back with potential errors too
-        context = self.get_context_data(form=form) # This re-initializes item_formset with POST data
+        logger.warning(f"Checklist Template form invalid: {form.errors}")
+        # Pass back the main form with errors AND the item formset (re-initialized with POST data)
+        context = self.get_context_data(form=form)
         return self.render_to_response(context)
 
     def get_success_url(self):
-        # Redirect to the detail view of the created template
         return reverse('checklists:template_detail', kwargs={'pk': self.object.pk})
 
 class ChecklistTemplateUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
@@ -115,7 +119,8 @@ class ChecklistTemplateUpdateView(LoginRequiredMixin, SuccessMessageMixin, Updat
                 return redirect(self.get_success_url())
             else:
                 logger.warning(f"Checklist Template update item formset invalid for template {self.object.id}: {item_formset.errors}")
-                return self.form_invalid(form)
+                context['item_formset'] = item_formset # Pass back invalid formset
+                return self.render_to_response(context) # Rerender with errors
 
     def form_invalid(self, form):
         logger.warning(f"Checklist Template update form invalid for template {self.object.id}: {form.errors}")
@@ -125,7 +130,6 @@ class ChecklistTemplateUpdateView(LoginRequiredMixin, SuccessMessageMixin, Updat
     def get_success_url(self):
         return reverse('checklists:template_detail', kwargs={'pk': self.object.pk})
 
-
 class ChecklistTemplateDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
     model = ChecklistTemplate
     template_name = 'checklists/template_confirm_delete.html'
@@ -134,121 +138,120 @@ class ChecklistTemplateDeleteView(LoginRequiredMixin, SuccessMessageMixin, Delet
 
     def form_valid(self, form):
         # Messages need to be displayed before the object is deleted
-        success_message = self.get_success_message({'name': self.object.name})
-        response = super().form_valid(form)
-        messages.success(self.request, success_message)
-        logger.info(f"Checklist Template '{self.object.name}' deleted by {self.request.user.username}")
-        return response
+        # Using delete() method instead of super().form_valid() to ensure message display
+        object_name = self.object.name
+        try:
+            self.object.delete()
+            messages.success(self.request, self.get_success_message({'name': object_name}))
+            logger.info(f"Checklist Template '{object_name}' deleted by {self.request.user.username}")
+        except models.ProtectedError as e:
+            logger.error(f"Cannot delete template '{object_name}' due to protected checklist runs: {e}")
+            messages.error(self.request, _("Невозможно удалить шаблон, так как существуют связанные выполненные чеклисты."))
+            return redirect(self.object.get_absolute_url()) # Redirect back on protection error
+        except Exception as e:
+             logger.exception(f"Error deleting template '{object_name}': {e}")
+             messages.error(self.request, _("Произошла ошибка при удалении шаблона."))
+             return redirect(self.object.get_absolute_url())
+
+        return redirect(self.success_url)
 
 
-# --- Perform Checklist View ---
-class PerformChecklistView(LoginRequiredMixin, FormView): # Use FormView as base
+# ==================================
+# Perform Checklist View
+# ==================================
+class PerformChecklistView(LoginRequiredMixin, View): # Use generic View for more control
     template_name = 'checklists/perform_checklist.html'
-    form_class = forms.Form # We don't have a main form, only the formset
 
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        # Get template based on URL pk
-        self.template = get_object_or_404(ChecklistTemplate, pk=self.kwargs['template_pk'], is_active=True)
-        # Try to find an existing incomplete run for this user and template today, or create new
+    def get_checklist_run(self, request, template_pk):
+        """Gets or creates the checklist run for today."""
+        template = get_object_or_404(ChecklistTemplate, pk=template_pk, is_active=True)
         today = timezone.now().date()
-        self.checklist_run = Checklist.objects.filter(
-            template=self.template,
+        checklist_run, created = Checklist.objects.get_or_create(
+            template=template,
             performed_by=request.user,
             performed_at__date=today,
-            is_complete=False
-        ).first()
+            is_complete=False,
+            defaults={'performed_by': request.user} # Ensure user is set on create
+        )
+        if created:
+            logger.info(f"Created new Checklist run {checklist_run.id} for template {template.id} by {request.user.username}")
+            # Pre-populate results for a new run
+            results_to_create = []
+            for item in template.items.order_by('order'):
+                results_to_create.append(ChecklistResult(checklist_run=checklist_run, template_item=item))
+            if results_to_create:
+                ChecklistResult.objects.bulk_create(results_to_create)
+                logger.debug(f"Created {len(results_to_create)} initial results for new run {checklist_run.id}")
+        return checklist_run, template
 
-        if not self.checklist_run:
-            self.checklist_run = Checklist.objects.create(
-                template=self.template,
-                performed_by=request.user
-            )
-            logger.info(f"Created new Checklist run {self.checklist_run.id} for template {self.template.id} by {request.user.username}")
+    def get(self, request, *args, **kwargs):
+        """Handles GET request: displays the formset."""
+        template_pk = kwargs['template_pk']
+        checklist_run, template = self.get_checklist_run(request, template_pk)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['template'] = self.template
-        context['checklist_run'] = self.checklist_run
-        if 'formset' not in context: # Initialize formset if not already done by POST handling
-            context['formset'] = self.get_formset()
-        context['page_title'] = _("Выполнение чеклиста: ") + self.template.name
-        return context
+        # Get results ordered correctly for the formset
+        queryset = checklist_run.results.select_related('template_item').order_by('template_item__order')
+        formset = ChecklistResultFormSet(instance=checklist_run, prefix='results', queryset=queryset)
 
-    def get_formset(self, data=None):
-        """ Helper to initialize the result formset. """
-        # Pre-populate formset with existing results for this run, if any
-        queryset = ChecklistResult.objects.filter(checklist_run=self.checklist_run)
-
-        # If it's a new run, create initial result objects (PENDING) for each template item
-        if not queryset.exists() and not data: # Don't create if handling POST or results exist
-            initial_results = []
-            for item in self.template.items.all():
-                 # Create initial result linked to the run and template item
-                 result, created = ChecklistResult.objects.get_or_create(
-                     checklist_run=self.checklist_run,
-                     template_item=item,
-                     defaults={'status': ChecklistItemStatus.PENDING} # Default status
-                 )
-                 if created:
-                      initial_results.append(result)
-            if initial_results:
-                 logger.debug(f"Created {len(initial_results)} initial ChecklistResult objects for run {self.checklist_run.id}")
-                 # Re-query after creation
-                 queryset = ChecklistResult.objects.filter(checklist_run=self.checklist_run)
-
-
-        if data: # If POST request
-            return ChecklistResultFormSet(data, instance=self.checklist_run, prefix='results', queryset=queryset)
-        else: # If GET request
-            return ChecklistResultFormSet(instance=self.checklist_run, prefix='results', queryset=queryset)
+        context = {
+            'page_title': _("Выполнение: %s") % template.name,
+            'template': template,
+            'checklist_run': checklist_run,
+            'formset': formset,
+        }
+        return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        formset = self.get_formset(data=request.POST)
+        """Handles POST request: saves the formset."""
+        template_pk = kwargs['template_pk']
+        # Find the specific run being submitted (should exist from GET)
+        checklist_run, template = self.get_checklist_run(request, template_pk)
+
+        formset = ChecklistResultFormSet(request.POST, instance=checklist_run, prefix='results')
+
         if formset.is_valid():
-            return self.formset_valid(formset)
+            try:
+                with transaction.atomic():
+                    formset.save()
+                    checklist_run.mark_complete()
+                    logger.info(f"Checklist run {checklist_run.id} completed by {request.user.username}")
+                    messages.success(request, _("Чеклист '%(name)s' успешно завершен.") % {'name': template.name})
+                    return redirect(reverse('checklists:history_list')) # Redirect after success
+            except Exception as e:
+                logger.exception(f"Error saving completed checklist run {checklist_run.id}: {e}")
+                messages.error(request, _("Произошла ошибка при сохранении чеклиста."))
+                # Fall through to re-render form with error message
         else:
-            return self.formset_invalid(formset)
+            logger.warning(f"Invalid ChecklistResultFormSet for run {checklist_run.id}: {formset.errors}")
+            messages.error(request, _("Пожалуйста, исправьте ошибки в пунктах чеклиста."))
 
-    def formset_valid(self, formset):
-        try:
-            with transaction.atomic():
-                # Save results
-                formset.save()
-                # Mark the main checklist run as complete
-                self.checklist_run.mark_complete()
-                logger.info(f"Checklist run {self.checklist_run.id} completed by {self.request.user.username}")
-                messages.success(self.request, _("Чеклист '%(name)s' успешно завершен.") % {'name': self.template.name})
-                return redirect(self.get_success_url())
-        except Exception as e:
-             logger.exception(f"Error saving completed checklist run {self.checklist_run.id}: {e}")
-             messages.error(self.request, _("Произошла ошибка при сохранении чеклиста."))
-             # Re-render the form with the valid formset but show an error
-             return self.render_to_response(self.get_context_data(formset=formset))
+        # Re-render form if invalid or save error occurred
+        context = {
+            'page_title': _("Выполнение: %s") % template.name,
+            'template': template,
+            'checklist_run': checklist_run,
+            'formset': formset, # Pass back formset with errors
+        }
+        return render(request, self.template_name, context)
 
-    def formset_invalid(self, formset):
-        logger.warning(f"Invalid ChecklistResultFormSet for run {self.checklist_run.id}: {formset.errors}")
-        messages.error(self.request, _("Пожалуйста, исправьте ошибки в пунктах чеклиста."))
-        return self.render_to_response(self.get_context_data(formset=formset))
-
-    def get_success_url(self):
-        # Redirect to checklist history or maybe template list
-        return reverse('checklists:history_list')
-
-
-# --- Checklist History/Results Views ---
+# ==================================
+# Checklist History/Results Views
+# ==================================
 class ChecklistHistoryListView(LoginRequiredMixin, ListView):
     model = Checklist
     template_name = 'checklists/history_list.html'
     context_object_name = 'checklist_runs'
-    paginate_by = 20
+    paginate_by = 25
 
     def get_queryset(self):
-        # Show only completed checklists, maybe filter by user/date range later
-        return Checklist.objects.filter(is_complete=True).select_related(
+        # Show only completed checklists, allow filtering by user?
+        qs = Checklist.objects.filter(is_complete=True)
+        # Optionally filter for current user if not staff:
+        # if not self.request.user.is_staff:
+        #    qs = qs.filter(performed_by=self.request.user)
+        return qs.select_related(
             'template', 'performed_by', 'template__category', 'related_task'
         ).order_by('-performed_at')
-
 
 class ChecklistDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = Checklist
@@ -256,66 +259,90 @@ class ChecklistDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     context_object_name = 'checklist_run'
 
     def test_func(self):
-        # Example permission: Allow viewing if user performed it or is staff
+        # Allow viewing if user performed it or is staff/superuser
         run = self.get_object()
         return run.performed_by == self.request.user or self.request.user.is_staff
 
+    def handle_no_permission(self):
+        messages.error(self.request, _("У вас нет прав для просмотра этого результата чеклиста."))
+        return redirect(reverse_lazy('checklists:history_list'))
+
     def get_queryset(self):
+        # Optimize query by prefetching results and related items
         return super().get_queryset().select_related(
             'template', 'performed_by', 'related_task', 'template__category'
         ).prefetch_related(
-            'results__template_item' # Prefetch results and their linked item
+            # Prefetch results and their corresponding template item, ordered correctly
+            models.Prefetch('results', queryset=ChecklistResult.objects.select_related('template_item').order_by('template_item__order'))
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = _("Результаты чеклиста: ") + str(self.object)
-        # Results are prefetched, order them if needed
-        context['results'] = self.object.results.order_by('template_item__order')
+        context['page_title'] = _("Результаты чеклиста: %s") % str(self.object)
+        # Results are already prefetched and ordered in get_queryset
+        context['results'] = self.object.results.all()
         return context
 
-# --- Reporting Views (Basic Examples) ---
-
+# ==================================
+# Reporting Views
+# ==================================
 class ChecklistReportView(LoginRequiredMixin, ListView):
-     """ Basic report showing counts """
-     template_name = 'checklists/report_summary.html'
-     context_object_name = 'report_data'
-
-     def get_queryset(self):
-        # Aggregate data - e.g., count checklists by template and status
-        # This needs refinement based on actual reporting needs
-        report = Checklist.objects.filter(is_complete=True) \
-            .values('template__name') \
-            .annotate(
-                total_runs=models.Count('id'),
-                runs_with_issues=models.Count('id', filter=models.Q(results__status=ChecklistItemStatus.NOT_OK))
-            ).order_by('template__name')
-        return report
-
-     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['page_title'] = _("Сводный отчет по чеклистам")
-        # Add date range filters here if needed
-        return context
-
-
-class ChecklistIssuesReportView(LoginRequiredMixin, ListView):
-    """ Report showing only items marked 'Not OK' """
-    template_name = 'checklists/report_issues.html'
-    context_object_name = 'issue_results'
-    paginate_by = 30
+    """ Basic summary report showing counts per template. """
+    template_name = 'checklists/report_summary.html'
+    context_object_name = 'report_data'
 
     def get_queryset(self):
-        # Filter results directly
+        # Aggregate data: count total runs and runs with issues per template
+        report = ChecklistTemplate.objects.filter(runs__is_complete=True).annotate(
+            total_runs=Count('runs', filter=Q(runs__is_complete=True)),
+            runs_with_issues=Count('runs', filter=Q(runs__is_complete=True, runs__results__status=ChecklistItemStatus.NOT_OK))
+        ).annotate(
+            runs_without_issues=Count('runs', filter=Q(runs__is_complete=True, runs__results__status=ChecklistItemStatus.OK)) + Count('runs', filter=Q(runs__is_complete=True, runs__results__status=ChecklistItemStatus.NA))
+        ).filter(total_runs__gt=0).order_by('category__name', 'name') # Only show templates with completed runs
+        return report
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Сводный отчет по чеклистам")
+        context['total_checklists'] = Checklist.objects.filter(is_complete=True).count()
+        context['total_templates'] = ChecklistTemplate.objects.filter(runs__is_complete=True).distinct().count()
+        context['total_users'] = Checklist.objects.filter(is_complete=True).values('performed_by').distinct().count()
+        context['total_tasks'] = Checklist.objects.filter(is_complete=True).values('related_task').distinct().count()
+        context['total_issues'] = ChecklistResult.objects.filter(status=ChecklistItemStatus.NOT_OK).count()
+        context['total_results'] = ChecklistResult.objects.count()
+        context['total_runs'] = Checklist.objects.filter(is_complete=True).count()
+        context['total_runs_with_issues'] = ChecklistResult.objects.filter(status=ChecklistItemStatus.NOT_OK).count()
+        context['total_runs_without_issues'] = context['total_runs'] - context['total_runs_with_issues']
+        # TODO: Add date range filters
+        return context
+
+class ChecklistIssuesReportView(LoginRequiredMixin, ListView):
+    """ Report showing only items marked 'Not OK'. """
+    template_name = 'checklists/report_issues.html'
+    context_object_name = 'issue_results'
+    paginate_by = 50
+
+    def get_queryset(self):
+        """ Filter results to show only 'Not OK' items. """
+        # Filter results directly for 'Not OK' status
+        # TODO: Add date range filtering
         return ChecklistResult.objects.filter(status=ChecklistItemStatus.NOT_OK) \
             .select_related(
                 'checklist_run__template',
                 'checklist_run__performed_by',
-                'template_item'
+                'template_item',
+                'template_item__template',
+                'template_item__template__category'
             ).order_by('-checklist_run__performed_at', 'template_item__order')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = _("Отчет по пунктам с проблемами")
-        # Add date range filters here if needed
+        context['total_issues'] = self.get_queryset().count()
+        context['total_checklists'] = Checklist.objects.filter(is_complete=True).count()
+        context['total_templates'] = ChecklistTemplate.objects.filter(runs__is_complete=True).distinct().count()
+        context['total_users'] = Checklist.objects.filter(is_complete=True).values('performed_by').distinct().count()
+        context['total_tasks'] = Checklist.objects.filter(is_complete=True).values('related_task').distinct().count()
+
+        # TODO: Add date range filters
         return context

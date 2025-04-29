@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load i18n static %}
+{% load i18n static app_filters %} {# Load necessary tags #}
 
 {% block title %}{% trans "Шаблоны чеклистов" %}{% endblock %}
 
@@ -10,20 +10,33 @@
 {% endblock %}
 
 {% block list_actions %}
-<a href="{% url 'checklists:template_create' %}"
-   class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-indigo-500 dark:bg-ios-indigo text-white hover:bg-indigo-600 dark:hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition-all shadow">
-    <i class="fas fa-plus mr-2"></i> {% trans 'Создать шаблон' %}
-</a>
+{# Desktop Actions: Create Template + History Link #}
+<div class="flex space-x-3 items-center ml-4">
+    <a href="{% url 'checklists:template_create' %}"
+       class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-indigo-500 dark:bg-ios-indigo text-white hover:bg-indigo-600 dark:hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition-all shadow">
+        <i class="fas fa-plus mr-2"></i> {% trans 'Создать шаблон' %}
+    </a>
+    <a href="{% url 'checklists:history_list' %}"
+        class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-800 transition-all shadow">
+        <i class="fas fa-history mr-2"></i> {% trans 'История' %}
+    </a>
+</div>
 {% endblock %}
+
 {% block list_actions_mobile %}
- <a href="{% url 'checklists:template_create' %}"
+{# Mobile Actions: Create Template + History Link #}
+<a href="{% url 'checklists:template_create' %}"
    class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-indigo-500 dark:bg-ios-indigo text-white hover:bg-indigo-600 dark:hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-950 transition-all shadow">
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать шаблон' %}
 </a>
+<a href="{% url 'checklists:history_list' %}"
+    class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-950 transition-all shadow">
+    <i class="fas fa-history mr-2"></i> {% trans 'История' %}
+</a>
 {% endblock %}
 
-
 {% block list_content %}
+{# Reusing the table structure from previous example #}
 <div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
@@ -43,7 +56,7 @@
                         <a href="{{ template.get_absolute_url }}" class="hover:underline text-blue-600 dark:text-blue-400">{{ template.name }}</a>
                     </td>
                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ template.category.name|default:"-" }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{{ template.items.count }}</td>
+                    <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{{ template.item_count_agg|default:template.items.count }}</td> {# Use annotated count if available #}
                     <td class="px-4 py-3 text-center">
                         {% if template.is_active %}
                             <i class="fas fa-check-circle text-green-500 dark:text-ios-green" title="{% trans 'Да' %}"></i>
@@ -75,4 +88,9 @@
     </div>
 </div>
 {% include "includes/pagination.html" with page_obj=page_obj %} {# Use your pagination include #}
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+{# No specific JS needed for this basic list #}
 {% endblock %}

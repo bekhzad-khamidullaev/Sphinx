@@ -10,205 +10,295 @@ from .models import (
     ChecklistTemplateItem,
     Checklist,
     ChecklistResult,
-    ChecklistItemStatus
+    ChecklistItemStatus,
 )
-# Assuming TaskCategory is needed for filtering or display if not using Select2
-# Import it safely in case the tasks app isn't always present or configured
+
+# Import TaskCategory safely
 try:
     from tasks.models import TaskCategory
 except ImportError:
     TaskCategory = None
-    logger.warning("Could not import TaskCategory from tasks.models for Checklist forms.")
 
-
+# Setup logger for this module
 logger = logging.getLogger(__name__)
+# Optional: Set level for debugging during development if not set globally
+# logger.setLevel(logging.DEBUG)
 
-# --- Reusable Tailwind CSS Classes (Define locally for this module) ---
-# Based on classes from tasks/forms.py for consistency
-BASE_INPUT_CLASSES = "block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring focus:ring-blue-500 focus:border-blue-500 focus:outline-none dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500 transition duration-150 ease-in-out"
+# --- Reusable Tailwind CSS Classes ---
+BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500"
 TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
 TEXTAREA_CLASSES = f"form-textarea {BASE_INPUT_CLASSES}"
 SELECT_CLASSES = f"form-select {BASE_INPUT_CLASSES}"
-CHECKBOX_CLASSES = "form-checkbox h-5 w-5 rounded text-blue-600 border-gray-300 dark:border-dark-500 dark:bg-dark-600 dark:checked:bg-blue-500 focus:ring-blue-500 dark:focus:ring-blue-500 dark:focus:ring-offset-dark-800 transition duration-150 ease-in-out"
-# Specific for small inputs like 'order'
-NUMBER_INPUT_CLASSES_SMALL = f"form-input {BASE_INPUT_CLASSES} w-16 text-center text-sm"
-# Classes for radio buttons (wrapper needs styling in template or custom widget)
-RADIO_SELECT_CLASSES = "inline-flex items-center space-x-2" # JS/CSS in template handles individual radio look
+CHECKBOX_CLASSES = "form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-dark-600 dark:border-dark-500 dark:checked:bg-indigo-500 dark:focus:ring-offset-dark-800"
+NUMBER_INPUT_CLASSES_SMALL = (
+    f"form-input {BASE_INPUT_CLASSES} w-16 text-center text-sm py-1"
+)
+RADIO_LABEL_CLASSES = "inline-flex items-center mr-4 cursor-pointer text-sm"
+RADIO_INPUT_CLASSES = "form-radio h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:bg-dark-600 dark:border-dark-500 dark:checked:bg-indigo-500 dark:focus:ring-offset-dark-800"
 
-# ==============================================================================
+if TaskCategory is None:
+    logger.warning(
+        "TaskCategory model not available for Checklist forms. Category field will be disabled."
+    )
+
+
+# ==================================
 # Checklist Template Form
-# ==============================================================================
+# ==================================
 class ChecklistTemplateForm(forms.ModelForm):
     """Form for creating and editing Checklist Templates."""
 
-    # Make category optional if TaskCategory couldn't be imported
+    logger.debug("Defining ChecklistTemplateForm fields...")
+
     if TaskCategory:
         category = forms.ModelChoiceField(
-            queryset=TaskCategory.objects.all().order_by('name'),
-            required=False, # Allow templates without a category
+            queryset=TaskCategory.objects.all().order_by("name"),
+            required=False,
             label=_("Категория (из Задач)"),
-            widget=forms.Select(attrs={'class': SELECT_CLASSES}),
-            help_text=_("Выберите подходящую категорию для группировки.")
+            widget=forms.Select(attrs={"class": SELECT_CLASSES}),
+            help_text=_("Группировка шаблонов."),
         )
     else:
-         # Provide a disabled placeholder if TaskCategory is unavailable
         category = forms.CharField(
             label=_("Категория (из Задач)"),
             required=False,
             disabled=True,
-            widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES + ' bg-gray-100 dark:bg-dark-800 cursor-not-allowed'}),
-            help_text=_("Модуль 'tasks' с категориями не найден.")
+            widget=forms.TextInput(
+                attrs={
+                    "class": TEXT_INPUT_CLASSES
+                    + " bg-gray-100 dark:bg-dark-800 cursor-not-allowed"
+                }
+            ),
+            help_text=_("Модуль 'tasks' не найден."),
         )
-
 
     class Meta:
         model = ChecklistTemplate
-        fields = ['name', 'category', 'description', 'is_active']
+        fields = ["name", "category", "description", "is_active"]
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': TEXT_INPUT_CLASSES,
-                'placeholder': _("Название шаблона, напр., 'Ежедневный обход склада'")
-            }),
-            # Category widget is handled by the explicit field definition above
-            'description': forms.Textarea(attrs={
-                'rows': 3,
-                'class': TEXTAREA_CLASSES,
-                'placeholder': _("Краткое описание назначения чеклиста (опционально)")
-            }),
-            'is_active': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}),
+            "name": forms.TextInput(
+                attrs={
+                    "class": TEXT_INPUT_CLASSES,
+                    "placeholder": _("Название шаблона..."),
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "class": TEXTAREA_CLASSES,
+                    "placeholder": _("Описание назначения..."),
+                }
+            ),
+            "is_active": forms.CheckboxInput(
+                attrs={"class": CHECKBOX_CLASSES + " ml-2"}
+            ),
         }
         labels = {
-            'name': _("Название шаблона"),
-            # 'category' label is defined in the explicit field
-            'description': _("Описание"),
-            'is_active': _("Активен"),
+            "name": _("Название"),
+            "description": _("Описание"),
+            "is_active": _("Активен"),
         }
-        help_texts = {
-            'name': _("Дайте шаблону понятное имя."),
-            # 'category' help_text is defined in the explicit field
-            'is_active': _("Только активные шаблоны будут доступны для выполнения."),
-        }
+        help_texts = {"is_active": _("Активные шаблоны доступны для выполнения.")}
 
-# ==============================================================================
-# Checklist Template Item Form and Formset
-# ==============================================================================
-class ChecklistTemplateItemForm(forms.ModelForm):
-    """Form for a single item within the ChecklistTemplateItemFormSet."""
-    class Meta:
-        model = ChecklistTemplateItem
-        # 'template' is set automatically by the formset
-        # 'id' is needed implicitly by the formset for updates/deletes
-        fields = ['order', 'item_text']
-        widgets = {
-            'item_text': forms.TextInput(attrs={
-                'class': f'{TEXT_INPUT_CLASSES} text-sm', # Use text-sm for items
-                'placeholder': _('Текст пункта/вопроса, напр., "Проверить пожарные выходы"')
-            }),
-            'order': forms.NumberInput(attrs={
-                'class': NUMBER_INPUT_CLASSES_SMALL,
-                'min': '0',
-                'placeholder': _("№")
-            }),
-        }
-        labels = {
-            'order': _("Пор."), # Shorter label
-            'item_text': _("Текст пункта"),
-        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance_pk = self.instance.pk if self.instance else "New"
+        logger.debug(
+            f"ChecklistTemplateForm initialized for instance PK: {instance_pk}"
+        )
 
     def clean(self):
-        """
-        Ensure item text is provided if the form is not marked for deletion,
-        and order is non-negative.
-        """
         cleaned_data = super().clean()
-        is_deleted = cleaned_data.get('DELETE', False)
-        item_text = cleaned_data.get('item_text', '').strip()
-        order = cleaned_data.get('order')
+        instance_pk = self.instance.pk if self.instance else "New"
+        logger.debug(
+            f"Running clean() for ChecklistTemplateForm PK: {instance_pk}. Data: {cleaned_data}"
+        )
+        # Example Validation: Check for unique name (case-insensitive) if needed
+        name = cleaned_data.get("name")
+        if name:
+            query = ChecklistTemplate.objects.filter(name__iexact=name)
+            if self.instance and self.instance.pk:
+                query = query.exclude(pk=self.instance.pk)
+            if query.exists():
+                logger.warning(
+                    f"Validation Error: Template with name '{name}' already exists."
+                )
+                self.add_error(
+                    "name",
+                    ValidationError(
+                        _("Шаблон с таким названием уже существует."),
+                        code="duplicate_name",
+                    ),
+                )
+        return cleaned_data
 
-        # Require item_text only if the form is not being deleted AND it's not an empty extra form
-        # This is hard to determine reliably here. Model's blank=False is the primary validation.
-        # We can add a check: if not item_text and not is_deleted and self.instance and self.instance.pk:
-        #     self.add_error('item_text', ValidationError(_("Этот пункт не может быть пустым."), code='required'))
 
-        if order is not None and order < 0:
-            self.add_error('order', ValidationError(_("Порядок не может быть отрицательным."), code='negative_order'))
+# ==================================
+# Checklist Template Item Form
+# ==================================
+class ChecklistTemplateItemForm(forms.ModelForm):
+    """Form for a single item within the ChecklistTemplateItemFormSet."""
+
+    class Meta:
+        model = ChecklistTemplateItem
+        fields = ["order", "item_text"]
+        widgets = {
+            "item_text": forms.Textarea(
+                attrs={
+                    "class": f"{TEXTAREA_CLASSES} text-sm py-1",
+                    "rows": 2,
+                    "placeholder": _("Текст пункта/вопроса..."),
+                }
+            ),
+            "order": forms.NumberInput(
+                attrs={"class": NUMBER_INPUT_CLASSES_SMALL, "min": "0"}
+            ),
+        }
+        labels = {"order": _("№"), "item_text": _("Текст пункта")}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make item_text required visually and for validation unless form is deleted
+        if not (self.prefix and self.data.get(f"{self.prefix}-DELETE")):
+            self.fields["item_text"].required = True
+
+    def clean_order(self):
+        order = self.cleaned_data.get("order")
+        if order is None:  # Handle case where order might not be provided for new forms
+            return 0  # Default to 0 if empty
+        if order < 0:
+            raise ValidationError(
+                _("Порядок не может быть отрицательным."), code="negative_order"
+            )
+        return order
+
+    def clean(self):
+        cleaned_data = super().clean()
+        is_deleted = cleaned_data.get("DELETE", False)
+        item_text = cleaned_data.get("item_text", "").strip()
+        instance_pk = self.instance.pk if self.instance else "New"
+        logger.debug(
+            f"Running clean() for ChecklistTemplateItemForm PK: {instance_pk}. Deleted: {is_deleted}, Text: '{item_text[:30]}...', Order: {cleaned_data.get('order')}"
+        )
+
+        # Check requiredness only if not marked for deletion
+        # (Relying on blank=False in model and required=True set in __init__)
+        # if not is_deleted and not item_text:
+        #    self.add_error('item_text', ValidationError(_("Текст пункта обязателен."), code='required'))
 
         return cleaned_data
 
 
+# ==================================
+# Checklist Template Item Formset
+# ==================================
 ChecklistTemplateItemFormSet = inlineformset_factory(
-    ChecklistTemplate,                  # Parent Model
-    ChecklistTemplateItem,              # Child Model
-    form=ChecklistTemplateItemForm,     # Use the custom form above
-    fields=('order', 'item_text'),      # Fields to include from the model/form
-    extra=1,                            # Start with 1 empty extra form
-    min_num=0,                          # Allow zero items (template can be saved empty)
-    validate_min=False,                 # Don't force validation on min_num=0
-    can_delete=True,                    # Allow deleting existing items
-    can_order=False                     # We use our own 'order' field, not built-in ordering
-    # Widgets are now defined in ChecklistTemplateItemForm
+    ChecklistTemplate,
+    ChecklistTemplateItem,
+    form=ChecklistTemplateItemForm,
+    fields=("order", "item_text"),
+    extra=1,
+    min_num=0,
+    validate_min=False,  # Allow saving with 0 items initially
+    can_delete=True,
+    can_order=False,
 )
 
 
-# ==============================================================================
-# Checklist Results FormSet (for Performing Checklist)
-# ==============================================================================
+# ==================================
+# Checklist Result Form
+# ==================================
+class ChecklistResultForm(forms.ModelForm):
+    """Form for a single result item within the ChecklistResultFormSet."""
+
+    template_item_display = forms.CharField(
+        label=_("Пункт"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "readonly": True,
+                "rows": 2,
+                "class": "block w-full text-sm p-2 rounded-md border-none bg-gray-100 dark:bg-dark-900/50 dark:text-gray-300 focus:ring-0",
+            }
+        ),
+    )
+
+    class Meta:
+        model = ChecklistResult
+        fields = ["template_item_display", "status", "comments"]
+        widgets = {
+            "status": forms.RadioSelect(
+                attrs={"class": "flex flex-wrap gap-x-4 gap-y-1"}
+            ),
+            "comments": forms.Textarea(
+                attrs={
+                    "rows": 1,
+                    "class": f"{TEXTAREA_CLASSES} text-sm py-1",
+                    "placeholder": _("Комментарий (если Не OK)..."),
+                }
+            ),
+        }
+        labels = {"status": _("Результат"), "comments": _("Комментарий")}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance_pk = self.instance.pk if self.instance else "New"
+        logger.debug(f"ChecklistResultForm initialized for instance PK: {instance_pk}")
+        if self.instance and self.instance.pk and self.instance.template_item:
+            self.fields["template_item_display"].initial = (
+                self.instance.template_item.item_text
+            )
+        self.fields["status"].required = True
+        self.fields["status"].empty_label = None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get("status")
+        comments = cleaned_data.get("comments", "").strip()
+        instance_pk = self.instance.pk if self.instance else "New"
+        logger.debug(
+            f"Running clean() for ChecklistResultForm PK: {instance_pk}. Status: {status}, Comments: '{comments[:30]}...'"
+        )
+
+        if status == ChecklistItemStatus.NOT_OK and not comments:
+            logger.warning(
+                f"Validation Error: Comment required for result {instance_pk} because status is NOT_OK."
+            )
+            self.add_error(
+                "comments",
+                ValidationError(
+                    _('Комментарий обязателен, если статус "%(status)s".')
+                    % {"status": ChecklistItemStatus.NOT_OK.label},
+                    code="comment_required_for_not_ok",
+                ),
+            )
+        return cleaned_data
+
+
+# ==================================
+# Checklist Result Formset
+# ==================================
 class BaseChecklistResultFormSet(BaseInlineFormSet):
-    """
-    Base formset to add the read-only item text display
-    when performing a checklist.
-    """
+    """Base formset for checklist results."""
+
     def add_fields(self, form, index):
         super().add_fields(form, index)
-        # Display the corresponding template item's text read-only
-        # Ensure 'instance' and 'template_item' are available
-        template_item_text = ''
-        # Check if form has an instance and the related template_item exists
-        if form.instance and hasattr(form.instance, 'template_item') and form.instance.template_item:
-             template_item_text = form.instance.template_item.item_text
-        # If it's a new form (no instance yet), try getting from initial data if provided
-        elif form.initial and form.initial.get('template_item'):
-            try:
-                item = ChecklistTemplateItem.objects.get(pk=form.initial['template_item'])
-                template_item_text = item.item_text
-            except ChecklistTemplateItem.DoesNotExist:
-                logger.warning(f"Template item with pk {form.initial['template_item']} not found for initial data in formset.")
+        # The custom form 'ChecklistResultForm' now handles adding 'template_item_display'
 
-        form.fields['template_item_display'] = forms.CharField(
-            label=_("Пункт для проверки"),
-            initial=template_item_text,
-            required=False,
-            widget=forms.Textarea(attrs={ # Use Textarea for potentially long item text
-                'readonly': True,
-                'rows': 2, # Allow slightly more space
-                'class': 'block w-full text-sm p-2 rounded-md border-none bg-gray-100 dark:bg-dark-900/50 dark:text-gray-300 pointer-events-none focus:ring-0' # Readonly styling
-            })
+    def clean(self):
+        super().clean()
+        logger.debug(
+            f"Running clean() for BaseChecklistResultFormSet (Prefix: {self.prefix})"
         )
-        # Order fields for better layout in the template
-        # Make sure all expected fields are present before ordering
-        field_order = ['template_item_display', 'status', 'comments']
-        existing_fields = list(form.fields.keys())
-        form.order_fields([f for f in field_order if f in existing_fields])
+        # Any cross-form validation for the entire result set can go here
 
 
 ChecklistResultFormSet = inlineformset_factory(
-    Checklist,                          # Parent Model (the specific run)
-    ChecklistResult,                    # Child Model (the results)
-    formset=BaseChecklistResultFormSet, # Use the custom base formset
-    fields=('status', 'comments'),      # Fields to edit for each item
-    extra=0,                            # Do not show extra empty forms (created dynamically in view if needed)
-    can_delete=False,                   # Cannot delete results while performing
-    widgets={
-        # Use RadioSelect for status - more user-friendly for predefined choices
-        'status': forms.RadioSelect(
-            # Note: 'class' here applies to the wrapper, not individual radios.
-            # Styling individual radios often requires template customization or a custom widget.
-             attrs={'class': RADIO_SELECT_CLASSES}
-        ),
-        'comments': forms.Textarea(attrs={
-            'rows': 1, # Start small, can grow
-            'class': f'{TEXTAREA_CLASSES} text-sm py-1', # Apply consistent styling, slightly smaller padding
-            'placeholder': _('Комментарий (если статус "Не OK" или по необходимости)...')
-        }),
-    }
+    Checklist,
+    ChecklistResult,
+    form=ChecklistResultForm,  # Use the custom form
+    formset=BaseChecklistResultFormSet,  # Use the custom base formset
+    fields=("status", "comments"),  # Editable fields
+    extra=0,
+    can_delete=False,
 )
