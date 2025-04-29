@@ -1,13 +1,5 @@
 {# templates/includes/pagination.html #}
 {% load i18n %}
-
-{# 
-   Этот шаблон принимает следующие переменные контекста:
-   - page_obj: Объект страницы Paginator (обязательно).
-   - paginator: Объект Paginator (опционально, используется для общего кол-ва).
-   - is_paginated: Флаг наличия пагинации (опционально).
-   - param_name: Имя GET-параметра для номера страницы (по умолчанию 'page').
-#}
 {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages page_param=param_name|default:'page' %}
 <div class="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm w-full">
 

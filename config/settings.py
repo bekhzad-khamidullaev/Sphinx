@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'tasks',                # Core task management functionality
     'room',                 # Chat/room functionality (assuming it exists)
     'hrbot',
+    'checklists',
     # Celery (if used for background tasks) - Uncomment if needed
     # 'celery',
     # 'django_celery_beat', # For scheduled tasks

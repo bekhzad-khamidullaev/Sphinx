@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "Шаблон чеклиста" %}: {{ template.name }}{% endblock %}
+
+{% block list_title %}
+<div class="flex items-center justify-between flex-wrap gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
+            {{ template.name }}
+        </h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+           {% if template.category %}{% trans 'Категория' %}: {{ template.category.name }}{% else %}{% trans 'Без категории' %}{% endif %}
+           <span class="mx-2 text-gray-300 dark:text-gray-600">|</span>
+           {% if template.is_active %}
+               <span class="text-green-600 dark:text-green-400">{% trans 'Активен' %}</span>
+           {% else %}
+               <span class="text-red-600 dark:text-red-400">{% trans 'Неактивен' %}</span>
+           {% endif %}
+        </p>
+    </div>
+    <div class="flex space-x-3 flex-shrink-0">
+        <a href="{% url 'checklists:checklist_perform' template_pk=template.pk %}" class="btn-primary bg-green-600 hover:bg-green-700 dark:bg-ios-green dark:hover:bg-green-500 focus:ring-green-500">
+             <i class="fas fa-play mr-2"></i> {% trans 'Выполнить' %}
+        </a>
+        <a href="{% url 'checklists:template_update' pk=template.pk %}" class="btn-secondary bg-yellow-400 hover:bg-yellow-500 text-gray-900 dark:bg-ios-yellow dark:hover:bg-yellow-300 focus:ring-yellow-500">
+            <i class="fas fa-edit mr-2"></i> {% trans 'Редактировать' %}
+        </a>
+         <a href="{% url 'checklists:template_list' %}" class="btn-secondary">
+             <i class="fas fa-arrow-left mr-2"></i> {% trans 'К списку шаблонов' %}
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="mt-6 space-y-6">
+    {# Description Section #}
+    {% if template.description %}
+    <div class="bg-white dark:bg-dark-800 shadow rounded-lg border border-gray-200 dark:border-dark-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">{% trans "Описание" %}</h2>
+        <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+            {{ template.description|linebreaksbr }}
+        </div>
+    </div>
+    {% endif %}
+
+    {# Items Section #}
+    <div class="bg-white dark:bg-dark-800 shadow rounded-lg border border-gray-200 dark:border-dark-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Пункты чеклиста" %} ({{ template.items.count }})</h2>
+        {% if template.items.all %}
+        <ul class="space-y-3 list-decimal list-inside text-gray-700 dark:text-gray-300">
+            {% for item in template.items.all %} {# Assumes items are ordered by 'order' field in model #}
+            <li class="bg-gray-50 dark:bg-dark-700 p-3 rounded-md border border-gray-200 dark:border-dark-600">
+                {{ item.item_text }}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-gray-500 dark:text-gray-400 italic">{% trans "В этом шаблоне пока нет пунктов." %}</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

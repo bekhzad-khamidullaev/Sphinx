@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load i18n crispy_forms_tags static %}
+
+{% block title %}{{ page_title|default:_("Форма шаблона чеклиста") }}{% endblock %}
+
+{% block head_extra %}
+    {{ block.super }}
+    {{ form.media.css }}
+    {{ item_formset.media.css }}
+{% endblock %}
+
+{% block list_title %}
+<h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
+    {{ page_title }}
+</h1>
+{% endblock %}
+
+{% block list_content %}
+<div class="bg-white dark:bg-dark-800 shadow-xl rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
+
+    {# --- Display ALL form errors prominently at the top --- #}
+    {% if form.errors or item_formset.errors %}
+        <div role="alert" class="mb-6 p-4 border border-red-400 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg">
+            <h4 class="font-bold text-lg mb-2">{% trans "Пожалуйста, исправьте ошибки:" %}</h4>
+            {# Main form non-field errors #}
+            {% if form.non_field_errors %}
+                <ul class="list-disc list-inside text-sm mb-2">
+                {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+            {% endif %}
+             {# Formset non-form errors #}
+            {% if item_formset.non_form_errors %}
+                 <p class="font-semibold text-sm mt-2">{% trans "Ошибки в пунктах чеклиста (общие):" %}</p>
+                 <ul class="list-disc list-inside text-sm mb-2">
+                {% for error in item_formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+            {% endif %}
+             {# Main form field errors #}
+             {% for field in form %}
+                 {% if field.errors %}
+                     <p class="font-semibold text-sm mt-2">{{ field.label }}:</p>
+                     <ul class="list-disc list-inside text-sm mb-2">
+                         {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                     </ul>
+                 {% endif %}
+             {% endfor %}
+             {# Formset field errors #}
+             {% for f_form in item_formset %}
+                 {% for field in f_form %}
+                     {% if field.errors %}
+                         <p class="font-semibold text-sm mt-2">{% trans "Пункт" %} #{{ forloop.parentloop.counter }} - {{ field.label }}:</p>
+                         <ul class="list-disc list-inside text-sm mb-2">
+                             {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                         </ul>
+                     {% endif %}
+                 {% endfor %}
+             {% endfor %}
+        </div>
+    {% endif %}
+    {# --- End Error Display --- #}
+
+
+    <form method="post" action="" id="template-form" autocomplete="off" novalidate>
+        {% csrf_token %}
+
+        <fieldset class="mb-6 border-b border-gray-200 dark:border-dark-600 pb-6">
+            <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Основная информация" %}</legend>
+            {# Render main form fields using Crispy Forms #}
+            {% crispy form %}
+            {# Explicit error display below fields (if not handled by crispy layout) #}
+            {% comment %}
+            <div class="space-y-4">
+                {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                        {% endif %}
+                        {% if field.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ field.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            {% endcomment %}
+        </fieldset>
+
+        <fieldset class="mb-6">
+            <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Пункты чеклиста" %}</legend>
+
+            {# Management form for the formset is crucial #}
+            {{ item_formset.management_form }}
+
+            {# Container for individual item forms #}
+            <div id="item-formset-container" class="space-y-3">
+                {% for item_form in item_formset %}
+                    {# Render each form using the correct include path #}
+                    {% include "includes/formset_item.html" with form=item_form formset=item_formset %}
+                {% endfor %}
+            </div>
+
+            {# Empty form template for cloning with JavaScript #}
+            <div id="empty-item-form" class="hidden">
+                 {# Use the correct include path for the empty form #}
+                 {% include "includes/formset_item.html" with form=item_formset.empty_form formset=item_formset %}
+            </div>
+
+            {# Button to add more forms dynamically #}
+            <div class="mt-4">
+                <button type="button" id="add-item-form"
+                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-dark-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition">
+                    <i class="fas fa-plus mr-2"></i> {% trans 'Добавить пункт' %}
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">{% trans "Пустые строки будут проигнорированы. Нажмите иконку корзины для удаления." %}</p>
+
+        </fieldset>
+
+        {# Action Buttons #}
+        <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
+            <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'checklists:template_list' %}{% endif %}"
+               class="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition"> {# Example btn-secondary style #}
+                {% trans 'Отмена' %}
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 dark:bg-ios-indigo dark:hover:bg-indigo-500 text-white text-sm font-semibold shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition"> {# Example btn-primary style #}
+                <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
+                {% if object %}{% trans "Сохранить изменения" %}{% else %}{% trans "Создать шаблон" %}{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {{ form.media.js }}
+    {{ item_formset.media.js }}
+
+    {# --- JavaScript for Dynamic Formset Management --- #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('item-formset-container');
+            const addButton = document.getElementById('add-item-form');
+            const emptyFormTemplate = document.getElementById('empty-item-form');
+            // Correctly target TOTAL_FORMS input using the prefix
+            const totalFormsInput = document.querySelector('input[name="{{ item_formset.prefix }}-TOTAL_FORMS"]');
+            const prefix = "{{ item_formset.prefix|escapejs }}"; // Get prefix safely
+
+            if (!container || !addButton || !emptyFormTemplate || !totalFormsInput) {
+                console.warn("Formset management elements not found. Add/delete buttons won't work.");
+                return;
+            }
+
+            let formNum = parseInt(totalFormsInput.value, 10); // Initial number of forms
+
+            function updateElementIndices() {
+                const forms = container.querySelectorAll('.item-form');
+                forms.forEach((form, index) => {
+                    // Update IDs and names within the form
+                    form.querySelectorAll('input, select, textarea, label').forEach(el => {
+                        ['id', 'name', 'for'].forEach(attr => {
+                            const oldAttrValue = el.getAttribute(attr);
+                            // Regex ensures we only replace the index part or __prefix__
+                            if (oldAttrValue && oldAttrValue.startsWith(prefix + '-')) {
+                                const newAttrValue = oldAttrValue.replace(new RegExp(`^${prefix}-(\\d+|__prefix__)`), `${prefix}-${index}`);
+                                el.setAttribute(attr, newAttrValue);
+                            }
+                        });
+                    });
+                    // Update the row ID itself
+                    form.id = `${prefix}-${index}`;
+                });
+                 let currentTotal = forms.length;
+                 totalFormsInput.value = currentTotal;
+                 formNum = currentTotal; // Reset formNum based on current count after potential deletions/renumbering
+                 console.log("Updated indices, TOTAL_FORMS set to:", currentTotal);
+            }
+
+            // --- Add Form Button ---
+            addButton.addEventListener('click', function() {
+                // Clone the empty form template's content
+                const newFormHtml = emptyFormTemplate.innerHTML.replace(/__prefix__/g, formNum);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newFormHtml.trim(); // Use trim() to avoid potential whitespace nodes
+                const newFormRow = tempDiv.firstElementChild;
+
+                if (!newFormRow) {
+                    console.error("Failed to clone empty form template.");
+                    return;
+                }
+
+                container.appendChild(newFormRow);
+                totalFormsInput.value = formNum + 1; // Increment management form count
+                formNum++; // Increment JS counter for the next form
+
+                // Add delete listener to the new row's button
+                 const newDeleteButton = newFormRow.querySelector('.delete-item-btn');
+                 if(newDeleteButton) {
+                     addDeleteListener(newDeleteButton);
+                 }
+                 console.log("Added new form row, TOTAL_FORMS now:", totalFormsInput.value);
+            });
+
+             // --- Delete Form Button ---
+             function addDeleteListener(button) {
+                 button.addEventListener('click', function() {
+                     const formRow = this.closest('.item-form');
+                     const deleteCheckbox = formRow.querySelector(`input[type="checkbox"][name^="${prefix}-"][name$="-DELETE"]`);
+
+                     if (deleteCheckbox) {
+                         // --- Handling EXISTING forms ---
+                         deleteCheckbox.checked = !deleteCheckbox.checked;
+                         formRow.classList.toggle('opacity-50', deleteCheckbox.checked);
+                         formRow.classList.toggle('border-red-300', deleteCheckbox.checked);
+                         formRow.classList.toggle('dark:border-red-700', deleteCheckbox.checked);
+                         formRow.classList.toggle('hidden', deleteCheckbox.checked); // Hide visually
+                         // Optionally update button visual state
+                         button.classList.toggle('text-gray-400', !deleteCheckbox.checked);
+                         button.classList.toggle('dark:text-gray-500', !deleteCheckbox.checked);
+                         button.classList.toggle('text-red-600', deleteCheckbox.checked);
+                         button.classList.toggle('dark:text-red-400', deleteCheckbox.checked);
+                         console.log(`Toggled DELETE checkbox for ${formRow.id} to ${deleteCheckbox.checked}`);
+                     } else {
+                         // --- Handling NEWLY ADDED forms ---
+                         console.log(`Removing newly added form row: ${formRow.id}`);
+                         formRow.remove();
+                         updateElementIndices(); // Update TOTAL_FORMS and renumber remaining forms
+                     }
+                 });
+             }
+
+            // Add listeners to initially loaded delete buttons
+            container.querySelectorAll('.delete-item-btn').forEach(button => {
+                addDeleteListener(button);
+                 // Initialize visual state for existing forms marked for deletion on load
+                 const formRow = button.closest('.item-form');
+                 const deleteCheckbox = formRow.querySelector(`input[type="checkbox"][name^="${prefix}-"][name$="-DELETE"]`);
+                 if (deleteCheckbox && deleteCheckbox.checked) {
+                     formRow.classList.add('opacity-50', 'border-red-300', 'dark:border-red-700', 'hidden'); // Also hide initially if checked
+                      button.classList.remove('text-gray-400', 'dark:text-gray-500');
+                      button.classList.add('text-red-600', 'dark:text-red-400');
+                 }
+            });
+
+             // --- Initial call to set the correct form number counter ---
+             updateElementIndices();
+
+        });
+    </script>
+{% endblock %}

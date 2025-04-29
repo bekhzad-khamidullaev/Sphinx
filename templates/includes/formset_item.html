@@ -1,0 +1,51 @@
+{% comment %} checklists/templates/checklists/includes/formset_item.html {% endcomment %}
+{% load i18n %}
+
+{# Unique ID for the row, using the form prefix and counter #}
+<div class="item-form flex items-start space-x-3 p-3 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 transition-colors duration-150 ease-in-out {% if form.errors %}border-red-500 dark:border-red-700{% endif %}" id="{{ form.prefix }}"> {# Use form.prefix for ID #}
+
+    {# Hidden fields must be rendered for the formset to work #}
+    {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
+
+    {# Order Field - Ensure widget in forms.py has Tailwind classes #}
+    <div class="flex-shrink-0 w-16">
+        <label for="{{ form.order.id_for_label }}" class="sr-only">{% trans "Порядок" %}</label>
+        {{ form.order }} {# Render field using widget #}
+        {% if form.order.errors %}<div class="text-red-500 text-xs mt-1">{{ form.order.errors|first }}</div>{% endif %}
+    </div>
+
+    {# Item Text Field - Ensure widget in forms.py has Tailwind classes #}
+    <div class="flex-grow">
+         <label for="{{ form.item_text.id_for_label }}" class="sr-only">{% trans "Текст пункта" %}</label>
+        {{ form.item_text }} {# Render field using widget #}
+        {% if form.item_text.errors %}<div class="text-red-500 text-xs mt-1">{{ form.item_text.errors|first }}</div>{% endif %}
+        {# Add non-field errors specific to this form #}
+        {% if form.non_field_errors %}
+            <div class="text-red-500 text-xs mt-1 font-semibold">
+                {% for error in form.non_field_errors %} {{ error }} {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Delete Control - Button styling linked to the hidden checkbox #}
+    {% if formset.can_delete %}
+    <div class="flex-shrink-0 flex items-center pt-1">
+         {# Visually hidden checkbox, controlled by the button #}
+        <div class="hidden">{{ form.DELETE }}</div>
+        {# Button to trigger delete (JS will toggle the checkbox) #}
+         <button type="button"
+                class="delete-item-btn p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors"
+                title="{% trans 'Удалить этот пункт' %}">
+            <i class="fas fa-trash-alt fa-fw"></i>
+            <span class="sr-only">{% trans 'Удалить' %}</span> {# For accessibility #}
+        </button>
+    </div>
+    {% endif %}
+
+     {# Display non-field errors for THIS specific form in the formset #}
+     {% if form.non_field_errors %}
+        <div class="col-span-full text-red-500 text-xs mt-1 pl-18"> {# Adjust alignment if needed #}
+             {% for error in form.non_field_errors %} {{ error }} {% endfor %}
+        </div>
+     {% endif %}
+</div>

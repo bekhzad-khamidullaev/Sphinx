@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "Результаты чеклиста" %}: {{ checklist_run }}{% endblock %}
+
+{% block list_title %}
+<div class="flex items-center justify-between flex-wrap gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
+            {% trans "Результаты чеклиста" %}
+        </h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+           {{ checklist_run.template.name }} {% if checklist_run.template.category %}({{ checklist_run.template.category.name }}){% endif %}
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+           {% blocktrans with user=checklist_run.performed_by.display_name|default:"-" time=checklist_run.performed_at|date:"d.m.Y H:i" %}Выполнен: {{ user }} в {{ time }}{% endblocktrans %}
+        </p>
+    </div>
+    <div class="flex space-x-3 flex-shrink-0">
+         <a href="{% url 'checklists:history_list' %}" class="btn-secondary">
+             <i class="fas fa-arrow-left mr-2"></i> {% trans 'К истории' %}
+        </a>
+        {# Add print/export button if needed #}
+    </div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="mt-6 space-y-6">
+    {# Optional General Info section #}
+    <div class="bg-white dark:bg-dark-800 shadow rounded-lg border border-gray-200 dark:border-dark-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 border-b dark:border-dark-600 pb-2">{% trans "Общая информация" %}</h2>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Шаблон:" %}</dt><dd class="text-gray-800 dark:text-gray-200">{{ checklist_run.template.name }}</dd></div>
+            <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Выполнен:" %}</dt><dd class="text-gray-800 dark:text-gray-200">{{ checklist_run.performed_by.display_name|default:'-' }}</dd></div>
+            <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Время начала:" %}</dt><dd class="text-gray-800 dark:text-gray-200">{{ checklist_run.performed_at|date:"d.m.Y H:i:s" }}</dd></div>
+            <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Время завершения:" %}</dt><dd class="text-gray-800 dark:text-gray-200">{{ checklist_run.completion_time|date:"d.m.Y H:i:s"|default:'-' }}</dd></div>
+             {% if checklist_run.related_task %}
+             <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Связанная задача:" %}</dt><dd class="text-gray-800 dark:text-gray-200"><a href="{{ checklist_run.related_task.get_absolute_url }}" class="text-blue-600 hover:underline">{{ checklist_run.related_task.task_number }} - {{ checklist_run.related_task.title }}</a></dd></div>
+             {% endif %}
+             {% if checklist_run.location %}
+             <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Местоположение:" %}</dt><dd class="text-gray-800 dark:text-gray-200">{{ checklist_run.location }}</dd></div>
+             {% endif %}
+             {% if checklist_run.notes %}
+             <div class="md:col-span-2"><dt class="text-gray-500 dark:text-gray-400 mb-1">{% trans "Общие примечания:" %}</dt><dd class="text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-dark-700 p-2 rounded border dark:border-dark-600">{{ checklist_run.notes|linebreaksbr }}</dd></div>
+             {% endif %}
+        </dl>
+    </div>
+
+    {# Results Section #}
+    <div class="bg-white dark:bg-dark-800 shadow rounded-lg border border-gray-200 dark:border-dark-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Результаты по пунктам" %}</h2>
+        <div class="space-y-4">
+            {% for result in results %} {# Assumes context['results'] is ordered #}
+            <div class="result-item p-4 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 flex flex-col md:flex-row md:items-start gap-4">
+                <div class="flex-grow">
+                    <p class="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">{{ forloop.counter }}. {{ result.template_item.item_text }}</p>
+                     {% if result.comments %}
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 pl-4 border-l-2 border-gray-300 dark:border-dark-600 italic">{% trans "Комментарий:" %} {{ result.comments }}</p>
+                    {% endif %}
+                </div>
+                <div class="flex-shrink-0 md:text-right">
+                    <span class="status-badge px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                        {% if result.status == 'ok' %}bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-200
+                        {% elif result.status == 'not_ok' %}bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200
+                        {% elif result.status == 'na' %}bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400
+                        {% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/60 dark:text-yellow-200{% endif %}">
+                        {{ result.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+             <p class="text-gray-500 dark:text-gray-400 italic">{% trans "Нет результатов для этого прогона." %}</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

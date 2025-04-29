@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Сводный отчет по чеклистам" %}{% endblock %}
+
+{% block list_title %}
+<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
+    {% trans 'Сводный отчет по чеклистам' %}
+</h1>
+{% endblock %}
+
+{% block list_actions %}
+{# Add links to other reports or back #}
+<a href="{% url 'checklists:report_issues' %}" class="btn-secondary">
+    <i class="fas fa-exclamation-triangle mr-2"></i> {% trans 'Отчет по проблемам' %}
+</a>
+{% endblock %}
+
+{% block list_content %}
+<div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+            <thead class="bg-gray-50 dark:bg-dark-700/50">
+                <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th scope="col" class="px-4 py-3.5">{% trans 'Шаблон чеклиста' %}</th>
+                    <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Всего выполнено' %}</th>
+                    <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Выполнено с проблемами' %}</th>
+                    <th scope="col" class="px-4 py-3.5 text-center">{% trans '% с проблемами' %}</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
+                {% for item in report_data %} {# Assumes context_object_name='report_data' #}
+                <tr class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm">
+                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                        {{ item.template__name }}
+                    </td>
+                    <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{{ item.total_runs }}</td>
+                    <td class="px-4 py-3 text-center {% if item.runs_with_issues > 0 %}text-red-600 dark:text-red-400 font-medium{% else %}text-gray-600 dark:text-gray-400{% endif %}">
+                        {{ item.runs_with_issues }}
+                    </td>
+                    <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">
+                        {% if item.total_runs > 0 %}
+                            {{ item.runs_with_issues|floatformat:0 }}/{{ item.total_runs|floatformat:0 }}
+                             ({% widthratio item.runs_with_issues item.total_runs 100 %}%)
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
+                         <i class="fas fa-chart-bar fa-3x mb-3 text-gray-300 dark:text-gray-600"></i><br>
+                        {% trans "Нет данных для отчета." %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
