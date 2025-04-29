@@ -25,6 +25,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() f
 # --- Application Definition ---
 INSTALLED_APPS = [
     # Django Core Apps
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

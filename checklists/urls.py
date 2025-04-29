@@ -1,8 +1,15 @@
 # checklists/urls.py
 from django.urls import path
 from . import views
+from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 
 app_name = 'checklists'
+
+# --- CHANGE ADMIN TITLES HERE ---
+admin.site.site_header = _("Sphinx")  # Main header text
+admin.site.site_title = _("Админка Sphinx")             # Browser tab title
+admin.site.index_title = _("Добро пожаловать в Админку Sphinx") # Title on the admin index page
 
 urlpatterns = [
     # Template CRUD
