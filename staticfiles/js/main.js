@@ -25,7 +25,7 @@ function handlePreloader() {
     // Скрываем прелоадер при полной загрузке страницы
     window.addEventListener('load', () => {
         console.log('Window loaded event');
-        setTimeout(hidePreloader, 300); // Небольшая задержка для плавности
+        setTimeout(hidePreloader, 30); // Небольшая задержка для плавности
     });
 
     // Запасной вариант: скрыть через 5 секунд в любом случае

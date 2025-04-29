@@ -2,23 +2,24 @@ from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r'ws/tasks/', consumers.TaskConsumer.as_asgi()),
-    # Task update WebSocket connection
-    re_path(r'ws/task_updates/', consumers.TaskConsumer.as_asgi()),  # Removed the extra $ at the end
+    # Задачи — без параметров
+    re_path(r'^ws/tasks/$', consumers.TaskConsumer.as_asgi()),
 
-    # Generic WebSocket connection (e.g., for receiving updates)
-    re_path(r'ws/generic/(?P<group>\w+)/$', consumers.GenericConsumer.as_asgi()),
+    # Обновления задач — без параметров
+    re_path(r'^ws/task_updates/$', consumers.TaskConsumer.as_asgi()),
 
-    # Project WebSocket connection
-    re_path(r'ws/projects/$', consumers.ProjectConsumer.as_asgi()),
+    # Generic обновления по группе — обязательно с именем группы
+    re_path(r'^ws/generic/(?P<group>\w+)/$', consumers.GenericConsumer.as_asgi()),
 
-    # Team WebSocket connection
-    re_path(r'ws/teams/$', consumers.TeamConsumer.as_asgi()),
+    # Проекты — без параметров
+    re_path(r'^ws/projects/$', consumers.ProjectConsumer.as_asgi()),
 
-    # User WebSocket connection
-    re_path(r'ws/users/$', consumers.UserConsumer.as_asgi()),
+    # Команды — без параметров
+    re_path(r'^ws/teams/$', consumers.TeamConsumer.as_asgi()),
 
-    # Comments WebSocket connection
-    re_path(r'ws/tasks/(?P<task_id>\d+)/comments/$', consumers.TaskCommentConsumer.as_asgi()),
+    # Пользователи — без параметров
+    re_path(r'^ws/users/$', consumers.UserConsumer.as_asgi()),
 
+    # Комментарии к задачам — с ID задачи
+    re_path(r'^ws/tasks/(?P<task_id>\d+)/comments/$', consumers.TaskCommentConsumer.as_asgi()),
 ]

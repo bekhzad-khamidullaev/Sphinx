@@ -539,13 +539,19 @@ class TaskForm(forms.ModelForm):
 
         # --- Handle start_date field styling if included ---
         if 'start_date' in self.fields:
-            self.fields['start_date'].widget = forms.DateInput(
-                 format='%Y-%m-%d',
-                 attrs={'type': 'date', 'class': DATE_INPUT_CLASSES}
-            )
-            self.fields['start_date'].label = _('Дата начала')
-            self.fields['start_date'].help_text = _("Дата, когда планируется начать работу над задачей.")
-            self.fields['start_date'].required = False # Make start_date optional if needed
+             # Define input formats the field should accept during validation
+             self.fields['start_date'].input_formats = ['%Y-%m-%d', '%d.%m.%Y']
+             # Apply the widget with the correct class for Flatpickr
+             self.fields['start_date'].widget = forms.DateInput(
+                 format='%Y-%m-%d', # Default format for display/initial value
+                 attrs={'type': 'date', 'class': f'{DATE_INPUT_CLASSES} flatpickr-date'}
+             )
+             self.fields['start_date'].label = _('Дата начала')
+             self.fields['start_date'].help_text = _("Дата, когда планируется начать работу над задачей.")
+             self.fields['start_date'].required = True # Field is required
+             # Set initial value for new tasks
+             if not self.initial.get('start_date') and not (instance and instance.start_date):
+                  self.fields['start_date'].initial = timezone.now().date()# Make start_date optional if needed
 
         # --- Configure Crispy Forms Helper for Layout Rendering ---
         self.helper = FormHelper(self)

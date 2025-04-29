@@ -1,6 +1,7 @@
 # tasks/templatetags/app_filters.py
 from django import template
 import logging # Добавим логгирование для отладки
+from ..models import Task
 
 register = template.Library()
 logger = logging.getLogger(__name__)
@@ -68,3 +69,40 @@ def add_attr(field, attr_string):
          logger.error(f"Error adding attributes in template tag 'attr': {e}")
          return field
 
+@register.filter(name='get_priority_color')
+def get_priority_color(priority_value):
+    """
+    Maps a Task priority integer value to a Tailwind CSS border color class.
+    """
+    # Ensure priority_value is an integer if it comes directly from model
+    try:
+        priority_value = int(priority_value)
+    except (ValueError, TypeError):
+        return 'border-gray-300 dark:border-gray-500' # Default/fallback color
+
+    if priority_value == Task.TaskPriority.HIGH:
+        return 'border-red-500 dark:border-red-400'
+    elif priority_value == Task.TaskPriority.MEDIUM_HIGH:
+        # Using Orange as an example for Medium-High
+        return 'border-orange-500 dark:border-orange-400'
+    elif priority_value == Task.TaskPriority.MEDIUM:
+        return 'border-yellow-500 dark:border-yellow-400'
+    elif priority_value == Task.TaskPriority.MEDIUM_LOW:
+        # Using Blue as an example for Medium-Low
+        return 'border-blue-500 dark:border-blue-400'
+    elif priority_value == Task.TaskPriority.LOW:
+        return 'border-green-500 dark:border-green-400'
+    else:
+        # Default color for unknown priorities
+        return 'border-gray-300 dark:border-gray-500'
+
+@register.filter(name='replace')
+def replace_string(value, args):
+    """Replaces occurrences of a string with another."""
+    if not isinstance(value, str) or not args:
+        return value
+    try:
+        old, new = args.split(',')
+        return value.replace(old, new)
+    except ValueError:
+        return value # Error in arguments

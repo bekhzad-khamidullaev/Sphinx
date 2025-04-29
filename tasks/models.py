@@ -2,7 +2,7 @@
 import logging
 from datetime import timedelta, datetime, time
 from unidecode import unidecode
-
+from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, IntegrityError, transaction
@@ -38,9 +38,21 @@ class Project(BaseModel):
     start_date = models.DateField(null=True, blank=True, verbose_name=_("Дата начала"))
     end_date = models.DateField(null=True, blank=True, verbose_name=_("Дата завершения"))
 
-    def clean(self):
-        if self.start_date and self.end_date and self.start_date > self.end_date:
-            raise ValidationError(_("Дата завершения не может быть раньше даты начала."))
+def clean(self):
+    super().clean()
+
+    if self.start_date:
+        start_datetime = timezone.make_aware(datetime.combine(self.start_date, time.min))
+
+        if self.deadline and self.deadline < start_datetime:
+            raise ValidationError({
+                'deadline': _("Срок выполнения не может быть раньше даты начала.")
+            })
+
+        if self.completion_date and self.completion_date < start_datetime:
+            raise ValidationError({
+                'completion_date': _("Дата завершения не может быть раньше даты начала.")
+            })
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
@@ -148,10 +160,8 @@ class Task(BaseModel):
     priority = models.IntegerField(default=TaskPriority.MEDIUM, choices=TaskPriority.choices, verbose_name=_("Приоритет"), db_index=True)
     deadline = models.DateTimeField(null=True, blank=True, verbose_name=_("Срок выполнения"), db_index=True)
     start_date = models.DateField(
-        verbose_name=_('Дата начала'),
-        default=timezone.now, # Устанавливает текущую дату при создании
-        # editable=False, # Можно сделать нередактируемым в админке/формах
-        # blank=True # Можно разрешить быть пустым, если default не всегда нужен
+        verbose_name=_('Дата начала')
+        # No default, null=False, blank=False by default
     )
     completion_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата завершения"))
     estimated_time = models.DurationField(null=True, blank=True, verbose_name=_("Оценка времени"))
@@ -160,20 +170,15 @@ class Task(BaseModel):
     def clean(self):
         super().clean()
 
-        from datetime import datetime, time
+        if self.start_date:
+            start_datetime = timezone.make_aware(datetime.combine(self.start_date, time.min))
 
-        # deadline не может быть раньше start_date
-        if self.deadline and self.start_date:
-            start_datetime = datetime.combine(self.start_date, time.min)
-            if self.deadline < start_datetime:
+            if self.deadline and self.deadline < start_datetime:
                 raise ValidationError({
                     'deadline': _("Срок выполнения не может быть раньше даты начала.")
                 })
 
-        # completion_date не может быть раньше start_date
-        if self.completion_date and self.start_date:
-            start_datetime = datetime.combine(self.start_date, time.min)
-            if self.completion_date < start_datetime:
+            if self.completion_date and self.completion_date < start_datetime:
                 raise ValidationError({
                     'completion_date': _("Дата завершения не может быть раньше даты начала.")
                 })

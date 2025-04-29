@@ -24,19 +24,26 @@ class GenericConsumer(AsyncWebsocketConsumer):
 
 
 class TaskConsumer(AsyncWebsocketConsumer):
+    DEFAULT_GROUP_NAME = "task_updates"
+
     async def connect(self):
         user = self.scope.get('user')
         if not user or not user.is_authenticated:
             await self.close()
             return
 
-        self.group_name = self.scope["url_route"]["kwargs"]["group"]
+        self.group_name = (
+            self.scope.get("url_route", {})
+            .get("kwargs", {})
+            .get("group", self.DEFAULT_GROUP_NAME)
+        )
+
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
         try:
