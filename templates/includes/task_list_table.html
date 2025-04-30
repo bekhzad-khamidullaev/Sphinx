@@ -1,129 +1,109 @@
 {% load i18n app_filters static %}
 
+<!-- Горизонтальный список (рендерится всегда, но может быть скрыт JS) -->
 <div id="task-list"
-    class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 hidden"
-    data-ajax-base-url="{{ ajax_base_url }}">
-    <div class="overflow-x-auto"> {# Responsive wrapper #}
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
-            <thead class="bg-gray-50 dark:bg-dark-700/50 sticky top-0 z-10">
-                {# Table Header Row #}
-                <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    <th scope="col" class="px-4 py-3.5 cursor-pointer sort-header" data-column="task_number" aria-sort="none">
-                        <i class="fas fa-hashtag fa-fw mr-1 opacity-75"></i>{% trans 'Задача' %}
-                        <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50"></i>
-                    </th>
-                    <th scope="col" class="px-4 py-3.5 cursor-pointer sort-header" data-column="title" aria-sort="none">
-                        <i class="fas fa-heading fa-fw mr-1 opacity-75"></i>{% trans 'Название' %}
-                        <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50"></i>
-                    </th>
-                    <th scope="col" class="px-4 py-3.5 cursor-pointer sort-header" data-column="project" aria-sort="none">
-                        <i class="fas fa-project-diagram fa-fw mr-1 opacity-75"></i>{% trans 'Проект' %}
-                        <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50"></i>
-                    </th>
-                    <th scope="col" class="px-4 py-3.5 cursor-pointer sort-header" data-column="status" aria-sort="none">
-                        <i class="fas fa-circle-notch fa-fw mr-1 opacity-75"></i>{% trans 'Статус' %}
-                        <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50"></i>
-                    </th>
-                    <th scope="col" class="px-4 py-3.5 cursor-pointer sort-header" data-column="priority" aria-sort="none">
-                        <i class="fas fa-exclamation-triangle fa-fw mr-1 opacity-75"></i>{% trans 'Приоритет' %}
-                        <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50"></i>
-                    </th>
-                    <th scope="col" class="px-4 py-3.5 cursor-pointer sort-header" data-column="deadline" aria-sort="none">
-                        <i class="fas fa-calendar-alt fa-fw mr-1 opacity-75"></i>{% trans 'Срок' %}
-                        <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50"></i>
-                    </th>
-                    <th scope="col" class="px-4 py-3.5 cursor-pointer sort-header" data-column="created_by" aria-sort="none">
-                        <i class="fas fa-user fa-fw mr-1 opacity-75"></i>{% trans 'Инициатор' %}
-                        <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50"></i>
-                    </th>
-                    <th scope="col" class="px-4 py-3.5 text-center"><i class="fas fa-cogs fa-fw mr-1 opacity-75"></i>{% trans 'Действия' %}</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-                {% for task in page_obj.object_list %} {# Use the paginated object list here #}
-                {% with priority_color_class=task.priority|get_priority_color %}
-                {# Table Row with left priority border #}
-                <tr id="task-row-{{ task.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300 border-l-4 {{ priority_color_class }}">
-                    {# Task Number #}
-                    <td class="px-4 py-3 whitespace-nowrap align-middle">
-                        <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-800 dark:hover:text-blue-300">
-                            {{ task.task_number }}
-                        </a>
-                    </td>
-                    {# Title #}
-                    <td class="px-4 py-3 align-middle whitespace-normal break-words max-w-xs">{{ task.title }}</td>
-                    {# Project #}
-                    <td class="px-4 py-3 whitespace-nowrap align-middle text-gray-600 dark:text-gray-400">{{ task.project.name }}</td>
-                    {# Status #}
-                    <td class="px-4 py-3 whitespace-nowrap align-middle">
-                        <div class="flex items-center space-x-1 group relative h-full"> {# Ensure full height for positioning #}
-                            <span class="status-badge px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full
-                                {% if task.status == 'new' %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/60 dark:text-yellow-200{% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200{% elif task.status == 'canceled' %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through{% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-200{% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200{% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
-                                {{ task.status_display|default:task.status }}
+    class="mt-6 overflow-x-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 hidden"
+    {# JS уберет hidden если view=list #} data-ajax-base-url="{{ ajax_base_url }}">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+        <thead class="bg-gray-50 dark:bg-dark-700">
+            <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="task_number" aria-sort="none">
+                    <i class="fas fa-hashtag fa-fw mr-1"></i>{% trans 'Задача' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="title" aria-sort="none"><i
+                        class="fas fa-heading fa-fw mr-1"></i>{% trans 'Название' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="project" aria-sort="none"><i
+                        class="fas fa-project-diagram fa-fw mr-1"></i>{% trans 'Проект' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="status" aria-sort="none"><i
+                        class="fas fa-circle-notch fa-fw mr-1"></i>{% trans 'Статус' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="priority" aria-sort="none"><i
+                        class="fas fa-exclamation-triangle fa-fw mr-1"></i>{% trans 'Приоритет' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="deadline" aria-sort="none"><i
+                        class="fas fa-calendar-alt fa-fw mr-1"></i>{% trans 'Срок' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 cursor-pointer sort-header" data-column="created_by" aria-sort="none">
+                    <i class="fas fa-user fa-fw mr-1"></i>{% trans 'Инициатор' %} <i
+                        class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500"></i></th>
+                <th scope="col" class="px-4 py-3 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия'
+                    %}</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
+            {% for task in page_obj.object_list %}
+            <tr id="task-row-{{ task.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300">
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                        {{ task.task_number }}
+                    </a>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ task.title|truncatechars:40 }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ task.project.name }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    {# === ИЗМЕНЕНО ЗДЕСЬ: Объединение статуса и переключателя === #}
+                    {% if not task.is_overdue %}
+                        {# Если задача не просрочена, показываем select, стилизованный под badge #}
+                        <select class="status-dropdown appearance-none px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all border border-transparent hover:border-gray-300 dark:hover:border-dark-600 focus:border-blue-400 cursor-pointer
+                            {# Динамические классы для цвета фона и текста, как у badge #}
+                            {% if task.status == 'new' %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200
+                            {% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200
+                            {% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200
+                            {% elif task.status == 'canceled' %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through
+                            {% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200
+                            {# Статус 'overdue' здесь не должен появляться из-за `if not task.is_overdue`, но добавим для полноты #}
+                            {% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200
+                            {% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}"
+                            name="status" data-task-id="{{ task.pk }}" title="{% trans 'Изменить статус' %}">
+                            {% for status_val, status_name in status_choices %}
+                                {# Отображаемое имя статуса берется из status_choices #}
+                                <option value="{{ status_val }}"{% if task.status == status_val %} selected{% endif %}>{{ status_name }}</option>
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        {# Если задача просрочена, показываем статичный badge и сообщение #}
+                        <div class="flex items-center space-x-1">
+                            <span class="status-badge px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200">
+                                {{ task.status_display|default:task.status }} {# Обычно здесь будет 'Просрочена' #}
                             </span>
-                            {% if not task.is_overdue and task.status != 'completed' and task.status != 'canceled' %}
-                            {# Dropdown - appears on hover/focus, covers the badge area #}
-                            <select class="status-dropdown absolute inset-0 w-full h-full appearance-none px-1.5 py-0.5 rounded text-xs font-medium bg-transparent dark:bg-transparent text-transparent focus:text-gray-600 dark:focus:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-opacity border border-transparent hover:border-gray-300 dark:hover:border-dark-600 focus:border-blue-400 cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 z-10"
-                                    name="status" data-task-id="{{ task.pk }}" title="{% trans 'Изменить статус' %}"
-                                    data-previous-value="{{ task.status }}"> {# Store initial value for JS #}
-                                {% for status_val, status_name in status_choices %}
-                                    <option value="{{ status_val }}"{% if task.status == status_val %} selected{% endif %}>{{ status_name }}</option>
-                                {% endfor %}
-                            </select>
-                            {% elif task.is_overdue %}
-                             {# Overdue Indicator #}
-                             <span class="absolute -right-2 -top-2 hidden group-hover:block bg-red-100 dark:bg-red-900/80 text-red-700 dark:text-red-200 text-xs px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-10" title="{% trans 'Задача просрочена!' %}">
-                                 <i class="fas fa-exclamation-triangle"></i>
-                             </span>
-                            {% endif %}
+                            <span class="text-xs italic text-red-500 dark:text-red-400">{% trans "Сначала продлите срок" %}</span>
                         </div>
-                    </td>
-                    {# Priority #}
-                    <td class="px-4 py-3 whitespace-nowrap align-middle {{ priority_color_class|replace:'border-l-4 border-,text-' }}">
-                        <span class="inline-flex items-center gap-1.5 text-xs font-medium"> {# Increased gap #}
-                            {% if task.priority == 1 %}<i class="fas fa-flag fa-fw text-red-500"></i> {% trans "Высокий" %}
-                             {% elif task.priority == 2 %}<i class="fas fa-angle-double-up fa-fw text-orange-500"></i> {% trans "В.Сред." %}
-                             {% elif task.priority == 3 %}<i class="fas fa-equals fa-fw text-yellow-500"></i> {% trans "Средний" %}
-                             {% elif task.priority == 4 %}<i class="fas fa-angle-double-down fa-fw text-blue-500"></i> {% trans "Н.Сред." %}
-                             {% elif task.priority == 5 %}<i class="fas fa-angle-down fa-fw text-green-500"></i> {% trans "Низкий" %}
-                             {% else %}{{ task.get_priority_display }} {% endif %}
+                    {% endif %}
+                    {# === КОНЕЦ ИЗМЕНЕНИЯ === #}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-yellow-600 dark:text-yellow-300">
+                        <i class="fas fa-bolt"></i> {{ task.priority_display }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    {% if task.deadline %}
+                        <span class="inline-flex items-center gap-1 text-xs {% if task.is_overdue %}text-red-600 dark:text-red-400{% else %}text-gray-500 dark:text-gray-300{% endif %}">
+                            <i class="fas fa-calendar-alt"></i> {{ task.deadline|date:"d.m.Y" }}
                         </span>
-                    </td>
-                    {# Deadline #}
-                    <td class="px-4 py-3 whitespace-nowrap align-middle">
-                        {% if task.deadline %}
-                            <span class="inline-flex items-center gap-1 text-xs {% if task.is_overdue %}text-red-600 dark:text-red-400 font-semibold{% else %}text-gray-500 dark:text-gray-400{% endif %}">
-                                <i class="far fa-calendar-alt fa-fw"></i> {{ task.deadline|date:"d.m.Y" }}
-                            </span>
-                        {% else %}
-                            <span class="text-gray-400 dark:text-gray-500">—</span>
-                        {% endif %}
-                    </td>
-                    {# Creator #}
-                    <td class="px-4 py-3 whitespace-nowrap align-middle text-gray-600 dark:text-gray-400">{{ task.created_by.display_name|default:"-" }}</td>
-                    {# Actions #}
-                    <td class="px-4 py-3 text-center whitespace-nowrap align-middle">
-                        <div class="flex items-center justify-center space-x-1">
-                            <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Подробнее' %}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-eye fa-fw"></i></a>
-                            <a href="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}" class="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-edit fa-fw"></i></a>
-                            <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}" data-task-name="{{ task.title|escapejs }}" data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" title="{% trans 'Удалить' %}" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-trash fa-fw"></i></button>
-                        </div>
-                    </td>
-                </tr>
-                {% endwith %} {# End priority_color_class #}
-                {% empty %}
-                {# Empty state row #}
-                <tr>
-                    <td colspan="8" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
-                        <div class="flex flex-col items-center">
-                            <i class="fas fa-folder-open fa-3x mb-3 text-gray-300 dark:text-gray-600"></i>
-                            <span class="text-base">{% trans 'Задачи не найдены.' %}</span>
-                            <span class="text-sm mt-1">{% trans 'Попробуйте изменить фильтры или создать новую задачу.' %}</span>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div> {# End overflow-x-auto #}
+                    {% else %}
+                        <span class="text-gray-400 dark:text-gray-500">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ task.created_by.display_name|default:"-" }}</td>
+                <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <div class="flex items-center justify-center space-x-2">
+                        <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Подробнее' %}" class="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-full transition-colors"><i class="fas fa-eye fa-fw"></i></a>
+                        <button type="button" data-action="edit-task" data-edit-url="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-600 rounded-full transition-colors"><i class="fas fa-edit fa-fw"></i></button>
+                        <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}" data-task-name="{{ task.task_number|escapejs }}" data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" title="{% trans 'Удалить' %}" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-full transition-colors"><i class="fas fa-trash fa-fw"></i></button>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400 italic">
+                    <i class="fas fa-folder-open fa-2x mb-2 text-gray-400 dark:text-gray-500"></i><br>
+                    {% trans 'Задачи не найдены.' %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>

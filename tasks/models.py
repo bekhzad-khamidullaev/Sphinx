@@ -38,25 +38,19 @@ class Project(BaseModel):
     start_date = models.DateField(null=True, blank=True, verbose_name=_("Дата начала"))
     end_date = models.DateField(null=True, blank=True, verbose_name=_("Дата завершения"))
 
-def clean(self):
-    super().clean()
-
-    if self.start_date:
-        start_datetime = timezone.make_aware(datetime.combine(self.start_date, time.min))
-
-        if self.deadline and self.deadline < start_datetime:
-            raise ValidationError({
-                'deadline': _("Срок выполнения не может быть раньше даты начала.")
-            })
-
-        if self.completion_date and self.completion_date < start_datetime:
-            raise ValidationError({
-                'completion_date': _("Дата завершения не может быть раньше даты начала.")
-            })
+    # --- Methods correctly indented inside the class ---
+    def clean(self):
+        # Note: self.deadline and self.completion_date don't exist on Project model.
+        # This validation should likely be on the Task model.
+        # Keeping the date validation for start/end within Project.
+        super().clean()
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValidationError(_("Дата завершения не может быть раньше даты начала."))
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         super().save(*args, **kwargs)
+        # WebSocket notification logic remains
         try:
             channel_layer = get_channel_layer()
             action = "create" if is_new else "update"
@@ -67,10 +61,10 @@ def clean(self):
         except Exception as e:
             logger.error(f"Failed to send WebSocket notification for Project {self.id}: {e}")
 
-
     def delete(self, *args, **kwargs):
         project_id = self.id
         super().delete(*args, **kwargs)
+        # WebSocket notification logic remains
         try:
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
@@ -80,17 +74,18 @@ def clean(self):
         except Exception as e:
             logger.error(f"Failed to send WebSocket deletion notification for Project {project_id}: {e}")
 
-
     def get_absolute_url(self):
-         return f"{reverse('tasks:task_list')}?project={self.pk}"
+         # Link to the task list filtered by this project
+         return reverse('tasks:task_list') + f'?project={self.pk}'
 
-
+    # --- Meta class correctly indented ---
     class Meta:
         verbose_name = _("Проект")
         verbose_name_plural = _("Проекты")
         ordering = ["name", "-created_at"]
         indexes = [models.Index(fields=["name"], name="project_name_idx")]
 
+    # --- __str__ method correctly indented ---
     def __str__(self):
         return self.name
 
@@ -450,7 +445,7 @@ class TaskComment(BaseModel):
 class TaskPhoto(BaseModel):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="photos", verbose_name=_("Задача"), db_index=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="uploaded_photos", verbose_name=_("Загрузил"))
-    photo = models.ImageField(upload_to="task_photos/", verbose_name=_("Фотография"))
+    photo = models.ImageField(upload_to="task_photos/", verbose_name=_("Фотография"), blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, verbose_name=_("Описание фотографии"))
 
     class Meta:

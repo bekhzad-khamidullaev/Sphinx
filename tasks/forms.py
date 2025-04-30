@@ -106,7 +106,7 @@ class ProjectForm(forms.ModelForm):
                 'class': DATE_INPUT_CLASSES,
                 'placeholder': _('ГГГГ-ММ-ДД')
             }),
-             # REMOVED 'is_active' widget definition
+            # REMOVED 'is_active' widget definition
         }
         labels = {
             "name": _("Название проекта"),
@@ -226,17 +226,7 @@ class TaskSubcategoryForm(forms.ModelForm):
 # ============================================================================== #
 class TaskForm(forms.ModelForm):
     """
-    Comprehensive form for creating and editing Task instances.
-    Features include:
-    - Standard input fields styled with Tailwind CSS.
-    - Select2 widgets for Project and Category/Subcategory selection.
-    - AJAX-powered ModelSelect2 widgets for selecting Responsible User, Executors, and Watchers.
-    - Dynamic population of Subcategory choices based on selected Category via JavaScript.
-    - Custom validation for estimated time format.
-    - Cross-field validation for Category/Subcategory and User Roles.
-    - Atomic save method to update Task and associated TaskUserRole records safely.
-    - Crispy Forms integration for layout rendering in templates.
-    - Graceful degradation if User/TaskUserRole models are unavailable.
+    Form for creating and editing Task instances.
     """
 
     # --- Core Task Fields ---
@@ -293,6 +283,7 @@ class TaskForm(forms.ModelForm):
         # NOTE: The original Project model did NOT have 'is_active'. Query adjusted.
         queryset=Project.objects.all().order_by("name"), # Query all projects
         required=False, # Task may not belong to a project
+        # Reverted: label_from_instance is not compatible with custom widgets
         widget=Select2Widget(attrs={
             'data-placeholder': _('Выберите проект (необязательно)...'),
             'class': f'{SELECT_CLASSES} {SELECT2_SINGLE_CLASS}' # Base style + JS target class
