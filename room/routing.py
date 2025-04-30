@@ -1,8 +1,10 @@
 from django.urls import path
+from .consumers import ChatConsumer, UserSearchConsumer
 
-from . import consumers
 
 websocket_urlpatterns = [
-    path('ws/<str:room_name>/', consumers.ChatConsumer.as_asgi()),
-    path("ws/search/", consumers.UserSearchConsumer.as_asgi()),
+    # Path for the main chat room connection
+    path('ws/chat/<str:room_name>/', ChatConsumer.as_asgi()),
+    # Path for the user search functionality
+    path("ws/user_search/", UserSearchConsumer.as_asgi()),
 ]

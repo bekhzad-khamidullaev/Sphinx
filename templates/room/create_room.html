@@ -1,76 +1,97 @@
 {% extends 'base.html' %}
+{% load static i18n %}
 
-{% block title %}Create Room{% endblock %}
+{% block title %}{% trans "Создать новую комнату" %}{% endblock %}
 
-{% block content %}
+{% block list_title %}
+<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
+    {% trans 'Создать новую комнату' %}
+</h1>
+{% endblock %}
 
-<h2>Create a Room</h2>
-<form id="create-room-form" method="POST" action="{% url 'room:create_room' %}">
-    {% csrf_token %}
-    <div class="mb-4">
-        <label for="room-name" class="block text-sm font-medium text-gray-700">Room Name</label>
-        <input type="text" name="name" id="room-name" required class="w-full p-2 border rounded-lg" placeholder="Enter room name">
-    </div>
-    
-    <div class="mb-4">
-        <label for="room-private" class="block text-sm font-medium text-gray-700">Private Room</label>
-        <input type="checkbox" name="private" id="room-private" class="mr-2"> Private
-    </div>
-    
-    <div class="mb-4">
-        <label for="room-participants" class="block text-sm font-medium text-gray-700">Participants</label>
-        <select name="participants" id="room-participants" multiple class="w-full p-2 border rounded-lg">
-            {% for user in users %}
-                <option value="{{ user.id }}">{{ user.username }}</option>
-            {% endfor %}
-        </select>
-    </div>
+{% block list_content %}
+<div class="mt-6 max-w-2xl mx-auto bg-white dark:bg-dark-800 shadow-xl rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8">
+    <form method="post" action="{% url 'room:create_room' %}" autocomplete="off" novalidate>
+        {% csrf_token %}
 
-    <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-lg">Create Room</button>
-</form>
+        {# Display non-field errors first #}
+        {% if form.non_field_errors %}
+            <div class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+         {# Display manually passed error #}
+         {% if error %}
+            <div class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300">
+                 <p>{{ error }}</p>
+             </div>
+         {% endif %}
 
-<script>
-    // Toggle participants container visibility based on private checkbox
-    document.getElementById('private').addEventListener('change', function () {
-        const participantsContainer = document.getElementById('participants-container');
-        if (this.checked) {
-            participantsContainer.classList.remove('hidden');
-        } else {
-            participantsContainer.classList.add('hidden');
-        }
-    });
+        <div class="space-y-4">
+            {# Room Name #}
+            <div>
+                <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {{ form.name.label }} {% if form.name.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <p class="text-xs text-red-500 mt-1">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
 
-    // Handle form submission
-    document.getElementById('create-room-form').addEventListener('submit', function (e) {
-        e.preventDefault();
+             {# Private Checkbox #}
+             <div class="flex items-center">
+                {{ form.private }}
+                 <label for="{{ form.private.id_for_label }}" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                     {{ form.private.label }}
+                 </label>
+             </div>
+             {% if form.private.help_text %}
+                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">{{ form.private.help_text|safe }}</p>
+             {% endif %}
+             {% if form.private.errors %}
+                 <p class="text-xs text-red-500 mt-1 ml-6">{{ form.private.errors.0 }}</p>
+             {% endif %}
 
-        const roomName = document.getElementById('room-name').value;
-        const isPrivate = document.getElementById('private').checked;
-        const participants = Array.from(document.getElementById('participants').selectedOptions).map(option => option.value);
+              {# Participants Multi-Select #}
+              {# This field might need Select2 for better UX if many users #}
+            <div x-data="{ isPrivate: {{ form.private.value|yesno:'true,false' }} }" x-init="$watch('isPrivate', value => console.log(value))">
+                <label for="{{ form.participants.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {{ form.participants.label }}
+                </label>
+                 {# Conditionally show participants based on 'private' checkbox #}
+                 <div x-show="document.getElementById('{{ form.private.id_for_label }}').checked">
+                     {{ form.participants }}
+                     {% if form.participants.help_text %}
+                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ form.participants.help_text|safe }}</p>
+                     {% endif %}
+                     {% if form.participants.errors %}
+                         <p class="text-xs text-red-500 mt-1">{{ form.participants.errors.0 }}</p>
+                     {% endif %}
+                 </div>
+                 <p x-show="!document.getElementById('{{ form.private.id_for_label }}').checked" class="text-xs text-gray-500 italic">
+                     {% trans "Выбор участников доступен только для приватных комнат." %}
+                 </p>
+             </div>
 
-        const data = {
-            name: roomName,
-            private: isPrivate,
-            participants: participants
-        };
+        </div>
 
-        fetch("{% url 'chat:create_room' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}',
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = `/chat/${data.room_slug}/`;  // Redirect to the new room
-            } else {
-                alert('Error creating room');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-</script>
+        {# Action Buttons #}
+        <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
+            <a href="{% url 'room:rooms' %}" class="btn-secondary">
+                {% trans 'Отмена' %}
+            </a>
+            <button type="submit" class="btn-primary bg-teal-600 hover:bg-teal-700 dark:bg-ios-teal dark:hover:bg-teal-500 focus:ring-teal-500">
+                <i class="fas fa-plus mr-2"></i> {% trans 'Создать комнату' %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {{ form.media.js }} {# Include if using special widgets like Select2 #}
 {% endblock %}

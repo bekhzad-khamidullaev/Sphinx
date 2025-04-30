@@ -1,0 +1,77 @@
+{% load static i18n %}
+
+{% with own_message=message.user_id|stringformat:"s" == request.user.pk|stringformat:"s" %}
+<div class="message-item flex {% if own_message %}justify-end{% else %}justify-start{% endif %} group" id="message-{{ message.id }}" data-message-id="{{ message.id }}">
+    <div class="flex items-end max-w-[85%] {% if own_message %}flex-row-reverse{% endif %} space-x-2 rtl:space-x-reverse">
+        {# Avatar (optional) #}
+        {% if not own_message %}
+        <img src="{% if message.user.image %}{{ message.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ message.user.username }}" class="w-6 h-6 rounded-full flex-shrink-0 mb-4 object-cover">
+        {% endif %}
+
+        {# Message Bubble #}
+        <div class="flex flex-col space-y-1 text-sm {% if own_message %} items-end {% else %} items-start {% endif %}">
+            {# Username (only for others' messages) #}
+            {% if not own_message %}
+                <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ message.user.username|default:"System" }}</span>
+            {% endif %}
+
+            {# Reply Context #}
+            {% if message.reply_to %}
+            <a href="#message-{{ message.reply_to.id }}" class="block text-xs p-2 rounded-lg border {% if own_message %}bg-blue-100 border-blue-200 dark:bg-blue-900/50 dark:border-blue-700/50{% else %}bg-gray-100 border-gray-200 dark:bg-dark-700 dark:border-dark-600{% endif %} opacity-80 hover:opacity-100 mb-1 max-w-xs">
+                <p class="font-medium text-gray-700 dark:text-gray-300">{% trans "В ответ" %} {{ message.reply_to.user.username|default:"System" }}</p>
+                <p class="text-gray-500 dark:text-gray-400 italic truncate">
+                    {% if message.reply_to.is_deleted %}
+                        {% trans "[сообщение удалено]" %}
+                    {% elif message.reply_to.file %}
+                        <i class="fas fa-file mr-1"></i> {% trans "Файл:" %} {{ message.reply_to.file.name|filename }}
+                    {% else %}
+                         {{ message.reply_to.content|truncatechars:50 }}
+                    {% endif %}
+                </p>
+            </a>
+            {% endif %}
+
+            {# Main Bubble Content #}
+            <div class="relative px-3 py-2 rounded-xl {% if own_message %}rounded-br-none bg-blue-600 dark:bg-ios-blue text-white{% else %}rounded-bl-none bg-white dark:bg-dark-700 text-gray-900 dark:text-gray-100 shadow-sm border border-gray-200 dark:border-dark-600{% endif %}">
+                 {# Message Content #}
+                 {% if message.is_deleted %}
+                    <em class="text-xs italic opacity-70">{% trans "Сообщение удалено" %}</em>
+                 {% elif message.file %}
+                    <div class="flex items-center space-x-2">
+                         <i class="fas fa-file-alt fa-lg opacity-70"></i>
+                         <div>
+                             <a href="{{ message.file.url }}" target="_blank" rel="noopener noreferrer" class="hover:underline break-all">{{ message.file.name|filename }}</a>
+                             {% if message.content %} {# Optional caption #}
+                                 <p class="mt-1 text-xs opacity-90">{{ message.content|linebreaksbr }}</p>
+                             {% endif %}
+                         </div>
+                    </div>
+                 {% else %}
+                     <p class="whitespace-pre-wrap break-words">{{ message.content|linebreaksbr }}</p>
+                 {% endif %}
+
+                 {# Timestamp & Edit Status #}
+                 <span class="absolute bottom-1 {% if own_message %}right-2{% else %}left-2{% endif %} text-xs {% if own_message %}text-blue-200{% else %}text-gray-400 dark:text-gray-500{% endif %} opacity-0 group-hover:opacity-100 transition-opacity pt-1">
+                     {% if message.edited_at %}<span title="{% trans 'Отредактировано' %} {{ message.edited_at|date:'d.m H:i' }}">(ред.)</span>{% endif %}
+                     {{ message.date_added|date:"H:i" }}
+                 </span>
+
+                 {# Reactions Area #}
+                 <div class="reactions-area mt-1 flex flex-wrap gap-1 {% if own_message %}justify-end{% else %}justify-start{% endif %}" id="reactions-{{ message.id }}">
+                    {# Reactions will be populated by JS #}
+                 </div>
+
+                 {# Action Buttons (Appear on hover) #}
+                 <div class="absolute top-0 {% if own_message %}left-[-3.5rem]{% else %}right-[-3.5rem]{% endif %} z-10 hidden group-hover:flex space-x-1 bg-gray-100 dark:bg-dark-600 p-1 rounded-full shadow text-xs">
+                    <button type="button" data-action="add-reaction" title="{% trans 'Реагировать' %}" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-dark-500"><i class="far fa-smile"></i></button>
+                    <button type="button" data-action="reply-message" title="{% trans 'Ответить' %}" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-dark-500"><i class="fas fa-reply"></i></button>
+                    {% if own_message and not message.is_deleted %}
+                    <button type="button" data-action="edit-message" title="{% trans 'Редактировать' %}" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-dark-500"><i class="fas fa-pen"></i></button>
+                    <button type="button" data-action="delete-message" title="{% trans 'Удалить' %}" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-dark-500 text-red-500"><i class="fas fa-trash"></i></button>
+                    {% endif %}
+                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endwith %}

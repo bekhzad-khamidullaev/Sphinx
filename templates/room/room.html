@@ -1,147 +1,127 @@
-<!-- filename: templates/room/room.html -->
 {% extends 'base.html' %}
-{% load static %} {# Load static for potential CSS/JS assets #}
+{% load static i18n %}
 
-{% block title %}{{ room.name }} | {% endblock %}
+{% block title %}{{ room.name }} | {% trans "Чат" %}{% endblock %}
 
-{% block content %}
-<div class="flex h-screen bg-gray-100">
-
-    <!-- Sidebar with Chat List -->
-    <div class="w-1/4 bg-white p-4 border-r hidden md:block overflow-y-auto">
-         <div class="mb-4">
-             <a href="{% url 'room:create_room' %}" class="block w-full text-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Create Room</a>
-         </div>
-        <h3 class="text-lg font-semibold mb-2">Chats</h3>
-        <ul id="chat-list" class="space-y-2">
-            {% for r in rooms_for_sidebar %}
-            <li id="sidebar-room-{{ r.slug }}" class="rounded-lg border border-gray-200 hover:shadow-md transition-shadow {% if r.slug == room.slug %}bg-gray-100{% endif %}">
-                <a href="{{ r.get_absolute_url }}" class="block p-3 font-semibold rounded-md">
-                    {{ r.name }}
-                    {# Add unread indicator here later #}
-                    <span id="unread-{{ r.slug }}" class="ml-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden"></span>
-                </a>
-            </li>
-            {% empty %}
-            <li>No rooms found.</li>
-            {% endfor %}
-        </ul>
-         <div class="mt-4 pt-4 border-t">
-            <h3 class="text-lg font-semibold mb-2">Online Users</h3>
-            <ul id="online-users-list" class="space-y-1 text-sm text-gray-600">
-                <!-- Online users will be populated by JS -->
-                 <li id="no-online-users" class="text-gray-400">Loading...</li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- Chat Window -->
-    <div class="flex-1 flex flex-col bg-gray-50">
-        <div class="flex-none bg-white p-4 border-b flex justify-between items-center">
-            <h2 class="text-xl font-semibold">{{ room.name }}</h2>
-            <div>
-                 <!-- Search Button Placeholder -->
-                 <button id="search-button" class="p-2 rounded hover:bg-gray-100" title="Search Messages">
-                     <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
-                 </button>
-                 <!-- Archive Button Placeholder -->
-                 <button id="archive-button" data-room-slug="{{ room.slug }}" class="p-2 rounded hover:bg-gray-100 ml-2" title="Archive Chat">
-                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                 </button>
-            </div>
-        </div>
-
-         <!-- Search Input Area (Initially Hidden) -->
-         <div id="search-area" class="p-2 bg-white border-b hidden">
-             <input type="text" id="search-input" placeholder="Search messages in this room..." class="w-full p-2 border rounded">
-             <div id="search-results" class="mt-2 max-h-40 overflow-y-auto"></div>
-         </div>
-
-        <!-- Messages List -->
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
-            {% include 'room/partials/messages_list.html' with messages=messages %}
-        </div>
-
-         <!-- Reply Preview Area -->
-         <div id="reply-preview-area" class="p-2 bg-gray-200 border-t hidden">
-             <div class="flex justify-between items-center text-sm">
-                 <div>
-                     Replying to <strong id="reply-preview-user"></strong>:
-                     <span id="reply-preview-content" class="text-gray-600 italic ml-1"></span>
-                 </div>
-                 <button id="cancel-reply-button" class="text-red-500 hover:text-red-700">×</button>
-             </div>
-         </div>
-
-        <!-- Message Input -->
-        <div class="p-4 bg-white border-t flex items-center gap-3">
-             <!-- File Upload Button -->
-            <label for="file-input" class="cursor-pointer p-3 rounded-full hover:bg-gray-100" title="Attach File">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-            </label>
-            <input type="file" id="file-input" class="hidden">
-
-            <input type="text" name="content" aria-label="Message input" class="flex-grow p-3 rounded-full text-sm border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400" placeholder="Type your message..." id="chat-message-input">
-            <button type="button" id="chat-message-submit" class="p-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-                </svg>
-            </button>
-        </div>
-    </div>
-</div>
+{% block head_extra %}
+    {{ block.super }}
+    {# Add any specific CSS for chat #}
+    {# <link rel="stylesheet" href="{% static 'css/chat.css' %}"> #}
+    <style>
+        /* Simple scrollbar styling */
+        #chat-messages::-webkit-scrollbar { width: 6px; }
+        #chat-messages::-webkit-scrollbar-track { background: transparent; }
+        #chat-messages::-webkit-scrollbar-thumb { background-color: theme('colors.gray.300'); border-radius: 3px; }
+        html.dark #chat-messages::-webkit-scrollbar-thumb { background-color: theme('colors.dark.600'); }
+    </style>
 {% endblock %}
 
+{# Remove default page title block for chat view #}
+{% block list_title %}{% endblock %}
+{% block list_title_mobile %}{% endblock %}
+{% block list_actions %}{% endblock %}
+{% block list_actions_mobile %}{% endblock %}
+
+{% block list_content %}
+    {# Full height chat container (adjust height calc based on your header/footer height) #}
+    <div class="flex h-[calc(100vh-theme(space.16)-theme(space.10))] -mt-6 -mx-4"> {# Negative margin to fill space #}
+
+        {# Sidebar (Room List) - Hidden on small screens #}
+        <aside class="w-64 bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700 flex-col hidden md:flex">
+             <div class="p-4 border-b border-gray-200 dark:border-dark-700 flex justify-between items-center flex-shrink-0">
+                 <h2 class="text-lg font-semibold">{% trans "Комнаты" %}</h2>
+                 <a href="{% url 'room:create_room' %}" title="{% trans 'Создать новую комнату' %}" class="text-blue-600 dark:text-blue-400 hover:underline p-1 rounded hover:bg-gray-100 dark:hover:bg-dark-700">
+                     <i class="fas fa-plus"></i>
+                 </a>
+             </div>
+             <nav class="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
+                 {% for r in rooms_for_sidebar %}
+                     <a href="{% url 'room:room' r.slug %}"
+                        class="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium group
+                               {% if r.slug == room.slug %} bg-indigo-100 dark:bg-dark-700 text-indigo-700 dark:text-white font-semibold {% else %} text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700/50 {% endif %}">
+                         <span class="truncate"># {{ r.name }}</span>
+                         {# Placeholder for unread count badge #}
+                         {# <span class="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 ml-auto hidden group-hover:hidden">3</span> #}
+                     </a>
+                 {% empty %}
+                     <p class="text-xs text-gray-500 p-3 text-center italic">{% trans "Нет других комнат." %}</p>
+                 {% endfor %}
+             </nav>
+        </aside>
+
+        {# Main Chat Area #}
+        <main class="flex-1 flex flex-col bg-gray-50 dark:bg-dark-900">
+            {# Chat Header #}
+            <header class="p-4 border-b border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 shadow-sm flex-shrink-0">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-xl font-semibold truncate pr-4"># {{ room.name }}</h1>
+                    {# Add room actions dropdown here if needed #}
+                </div>
+                <div id="online-users" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <i class="fas fa-circle text-green-500 text-[0.5rem] mr-1"></i>
+                    <span id="online-count">0</span> {% trans "в сети" %}:
+                    <span id="online-list" class="ml-1">{% trans "Загрузка..." %}</span>
+                </div>
+            </header>
+
+            {# Message List #}
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+                {# Loading indicator? #}
+                {# Messages will be loaded here by JS or initial render #}
+                 {% for message in messages %}
+                     {% include "includes//message.html" %} {# Use a partial template #}
+                 {% empty %}
+                     <p id="no-messages" class="text-center text-gray-500 italic py-10">{% trans "Сообщений пока нет. Начните диалог!" %}</p>
+                 {% endfor %}
+                 <div id="message-anchor"></div> {# For scrolling to bottom #}
+            </div>
+
+            {# Message Input Area #}
+            <footer class="p-3 md:p-4 border-t border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 flex-shrink-0">
+                 {# Optional: Reply preview area #}
+                 <div id="reply-preview-area" class="mb-2 text-xs p-2 bg-gray-100 dark:bg-dark-700 rounded hidden border-l-4 border-blue-500">
+                     <div class="flex justify-between items-center">
+                        <span>{% trans "Ответ на:" %} <strong id="reply-preview-user"></strong>: <em id="reply-preview-text" class="truncate inline-block max-w-xs"></em></span>
+                        <button type="button" id="cancel-reply-btn" class="text-gray-500 hover:text-red-600 text-lg">×</button>
+                     </div>
+                     <input type="hidden" id="reply-message-id" value="">
+                 </div>
+                 {# File preview area #}
+                 <div id="file-preview" class="mb-2 text-xs p-2 bg-gray-100 dark:bg-dark-700 rounded hidden flex items-center justify-between">
+                     <span><i class="fas fa-paperclip mr-1"></i> <span id="file-preview-name"></span></span>
+                     <button type="button" id="remove-file-btn" class="text-red-500 hover:text-red-700 ml-2">×</button>
+                 </div>
+                 {# Main Input Form #}
+                <form id="chat-message-form" class="flex items-center space-x-2">
+                    {# File input button #}
+                    <label for="chat-file-input" class="flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-700 cursor-pointer text-gray-500 dark:text-gray-400" title="{% trans 'Прикрепить файл' %}">
+                        <i class="fas fa-paperclip"></i>
+                        <input type="file" id="chat-file-input" class="hidden">
+                    </label>
+                    {# Text Input #}
+                    <input type="text" id="chat-message-input" placeholder="{% trans 'Введите сообщение...' %}" autocomplete="off"
+                           class="flex-1 form-input block w-full px-4 py-2 border border-gray-300 rounded-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500">
+                    {# Send Button #}
+                    <button type="submit" id="chat-message-submit"
+                            class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500" title="{% trans 'Отправить' %}">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </footer>
+        </main>
+    </div>
+{% endblock %}
 
 {% block scripts %}
-{{ room.slug|json_script:"json-roomname" }}
-{{ request.user.username|json_script:"json-username" }}
-{{ request.user.id|json_script:"json-userid" }}
-
-{# Include CSRF token for AJAX requests #}
+{{ block.super }}
+{# Pass room slug and user ID to JavaScript #}
 <script>
-    const csrfToken = '{{ csrf_token }}';
+    window.roomSlug = "{{ room.slug|escapejs }}";
+    window.currentUserId = {{ request.user.pk|default:'null' }};
+    window.currentUsername = "{{ request.user.username|escapejs }}"; // Pass username too
+    // Simple function to get base WS path (adjust if needed)
+    function getWebsocketPath() { return "/ws/"; }
+    window.djangoWsPath = getWebsocketPath();
 </script>
-
-{# Include the updated JavaScript logic #}
-<script src="{% static 'js/chat_room.js' %}"></script>
-
-{# Add a template for new messages #}
-<template id="message-template">
-    <div id="message-{message_id}" class="flex message-container" data-message-id="{message_id}" data-username="{username}">
-        <div class="max-w-[80%] p-3 rounded-lg message-bubble">
-            <!-- Reply Block -->
-            <div class="reply-block hidden border-l-2 border-blue-300 pl-2 mb-1 text-sm opacity-80">
-                <strong class="reply-user"></strong>
-                <div class="reply-content text-xs italic"></div>
-            </div>
-            <!-- File Block -->
-            <div class="file-block hidden mb-1">
-                <a href="#" target="_blank" class="file-link text-blue-700 underline">
-                    <span class="file-name"></span>
-                </a>
-                <!-- Add image/video preview logic here if needed -->
-            </div>
-             <!-- Content Block -->
-            <div class="message-content text-sm break-words"></div>
-             <!-- Meta Block -->
-            <div class="flex items-center justify-between mt-1 text-xs message-meta">
-                <span class="timestamp"></span>
-                <span class="edited-indicator text-gray-400 ml-1 hidden">(edited)</span>
-                <!-- Message Actions (Reply, Edit, Delete, React) -->
-                 <div class="message-actions opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-2 space-x-1">
-                    <button class="action-reply p-0.5 rounded hover:bg-gray-200" title="Reply">↩️</button>
-                    <button class="action-edit p-0.5 rounded hover:bg-gray-200" title="Edit">✏️</button>
-                    <button class="action-delete p-0.5 rounded hover:bg-gray-200" title="Delete">🗑️</button>
-                    <button class="action-react p-0.5 rounded hover:bg-gray-200" title="React">😊</button>
-                 </div>
-            </div>
-             <!-- Reactions Block -->
-             <div class="reactions-block flex flex-wrap gap-1 mt-1">
-                <!-- Reactions populated by JS -->
-             </div>
-        </div>
-    </div>
-</template>
-
+<script src="{% static 'js/chat.js' %}" defer></script> {# Your chat-specific JS #}
 {% endblock %}
