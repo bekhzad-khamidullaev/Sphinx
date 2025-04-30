@@ -3,6 +3,7 @@ from django import template
 import logging  # Добавим логгирование для отладки
 from ..models import Task
 from urllib.parse import urlencode
+import os
 
 register = template.Library()
 logger = logging.getLogger(__name__)
@@ -147,3 +148,13 @@ def url_replace(context, field, value):
         query_params[field] = value
 
     return urlencode(query_params)
+
+
+@register.filter(name='filename')
+def filename(value):
+    """ Extracts filename from a FileField's name/path. """
+    if hasattr(value, 'name'):
+        return os.path.basename(value.name)
+    elif isinstance(value, str):
+         return os.path.basename(value)
+    return value

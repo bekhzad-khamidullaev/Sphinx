@@ -32,11 +32,32 @@ class Room(models.Model):
             models.Index(fields=['is_archived', 'private']),
         ]
 
-    def __str__(self):
-        return self.name
+    def get_last_message(self):
+        """ Gets the very last message object for this room (can be slow). """
+        return self.messages.order_by('-date_added').first()
+
+    def has_unread_messages(self, user):
+        """ Checks if a user has unread messages in this room (less efficient than view annotation). """
+        if not user or not user.is_authenticated:
+            return False
+        try:
+            read_status = MessageReadStatus.objects.get(user=user, room=self)
+            last_read_id = read_status.last_read_message_id # Can be None
+            # Check if any message exists with ID > last_read_id (or if last_read_id is None and messages exist)
+            if last_read_id is None:
+                return self.messages.exists()
+            else:
+                # This still requires querying messages, less ideal than annotation
+                return self.messages.filter(id__gt=last_read_id).exists()
+        except MessageReadStatus.DoesNotExist:
+            # User has never read anything, return True if room has messages
+            return self.messages.exists()
 
     def get_absolute_url(self):
         return reverse('room:room', kwargs={'slug': self.slug})
+
+    def __str__(self):
+        return self.name
 
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -59,6 +80,13 @@ class Message(models.Model):
             models.Index(fields=['room', 'date_added']),
             models.Index(fields=['room', 'is_deleted', 'date_added']), # For fetching non-deleted messages
         ]
+
+    def get_filename(self):
+        """Returns the base name of the uploaded file."""
+        import os
+        if self.file and hasattr(self.file, 'name'):
+            return os.path.basename(self.file.name)
+        return None
 
     def __str__(self):
         prefix = f"[{_('Удалено')}] " if self.is_deleted else ""

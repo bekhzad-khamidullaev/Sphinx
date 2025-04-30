@@ -1,30 +1,32 @@
 {% extends 'base.html' %}
 {% load static i18n %}
+{% load app_filters %}
 
 {% block title %}{{ room.name }} | {% trans "Чат" %}{% endblock %}
 
 {% block head_extra %}
     {{ block.super }}
-    {# Add any specific CSS for chat #}
-    {# <link rel="stylesheet" href="{% static 'css/chat.css' %}"> #}
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
     <style>
-        /* Simple scrollbar styling */
+        /* Scrollbar styling */
         #chat-messages::-webkit-scrollbar { width: 6px; }
         #chat-messages::-webkit-scrollbar-track { background: transparent; }
         #chat-messages::-webkit-scrollbar-thumb { background-color: theme('colors.gray.300'); border-radius: 3px; }
         html.dark #chat-messages::-webkit-scrollbar-thumb { background-color: theme('colors.dark.600'); }
+        #chat-messages { scrollbar-width: thin; scrollbar-color: theme('colors.gray.300') transparent; }
+        html.dark #chat-messages { scrollbar-color: theme('colors.dark.600') transparent; }
     </style>
 {% endblock %}
 
-{# Remove default page title block for chat view #}
+{# Remove default page title/actions blocks for chat view #}
 {% block list_title %}{% endblock %}
 {% block list_title_mobile %}{% endblock %}
 {% block list_actions %}{% endblock %}
 {% block list_actions_mobile %}{% endblock %}
 
 {% block list_content %}
-    {# Full height chat container (adjust height calc based on your header/footer height) #}
-    <div class="flex h-[calc(100vh-theme(space.16)-theme(space.10))] -mt-6 -mx-4"> {# Negative margin to fill space #}
+    {# Full height chat container #}
+    <div class="flex h-[calc(100vh-theme(space.16)-theme(space.10))] -mt-6 -mx-4">
 
         {# Sidebar (Room List) - Hidden on small screens #}
         <aside class="w-64 bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700 flex-col hidden md:flex">
@@ -34,22 +36,11 @@
                      <i class="fas fa-plus"></i>
                  </a>
              </div>
-             <nav class="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
+             <nav id="sidebar-room-list" class="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
+                 {# Loop through sidebar rooms and include the partial #}
                  {% for r in rooms_for_sidebar %}
-                    {% if r.slug %} {# Check if slug exists before creating the link #}
-                     <a href="{% url 'room:room' r.slug %}"
-                        class="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium group
-                               {% if r.slug == room.slug %} bg-indigo-100 dark:bg-dark-700 text-indigo-700 dark:text-white font-semibold {% else %} text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700/50 {% endif %}">
-                         <span class="truncate"># {{ r.name }}</span>
-                         {# Placeholder for unread count badge #}
-                         {# <span class="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 ml-auto hidden group-hover:hidden">3</span> #}
-                     </a>
-                    {% else %} {# Display non-clickable item if slug is missing #}
-                    <div class="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
-                         <span class="truncate"># {{ r.name }}</span>
-                         <span class="text-red-500 text-xs italic">({% trans "Ошибка URL" %})</span>
-                     </div>
-                    {% endif %}
+                     {# Pass 'current_room' to highlight the active one #}
+                     {% include "includes/room_list_item.html" with room=r current_room=room %}
                  {% empty %}
                      <p class="text-xs text-gray-500 p-3 text-center italic">{% trans "Нет других комнат." %}</p>
                  {% endfor %}
@@ -62,54 +53,77 @@
             <header class="p-4 border-b border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 shadow-sm flex-shrink-0">
                 <div class="flex justify-between items-center">
                     <h1 class="text-xl font-semibold truncate pr-4"># {{ room.name }}</h1>
-                    {# TODO: Add room actions dropdown here if needed (e.g., archive, search, participants) #}
+                    {# Header Actions Dropdown #}
+                     <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-full focus:outline-none" title="{% trans 'Действия с комнатой' %}">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        <div x-show="open" @click.outside="open = false"
+                             x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 shadow-lg rounded-md border border-gray-200 dark:border-dark-600 z-20 overflow-hidden" x-cloak>
+                            <ul class="py-1 text-sm text-gray-700 dark:text-gray-300">
+                                {# Add other actions here #}
+                                 <li>
+                                     <button type="button"
+                                             data-action="archive-room"
+                                             data-url="{% url 'room:archive_room' room.slug %}"
+                                             data-room-name="{{ room.name|escapejs }}"
+                                             class="w-full text-left flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-700 text-red-600 dark:text-red-400">
+                                         <i class="fas fa-archive w-4 mr-2"></i> {% trans "Архивировать" %}
+                                     </button>
+                                 </li>
+                             </ul>
+                        </div>
+                    </div>
                 </div>
-                <div id="online-users" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    <i class="fas fa-circle text-green-500 text-[0.5rem] mr-1"></i>
-                    <span id="online-count">0</span> {% trans "в сети" %}:
-                    <span id="online-list" class="ml-1">{% trans "Загрузка..." %}</span>
+                 <div id="online-users" class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+                    <span class="relative flex h-2 w-2 mr-1.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    <span id="online-count">0</span> {% trans "в сети" %}: 
+                    <span id="online-list" class="ml-1 truncate">{% trans "Загрузка..." %}</span>
                 </div>
             </header>
 
             {# Message List #}
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
-                {# Loading indicator? #}
-                {# Messages will be loaded here by JS or initial render #}
+                 <div id="older-messages-loading" class="text-center py-4 hidden">
+                     <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                 </div>
                  {% for message in messages %}
-                     {# Corrected include path #}
-                     {% include "room/partials/message.html" with message=message %}
+                     {# Include partial, passing message and user #}
+                     {% include "includes/message.html" with message=message user=request.user %}
                  {% empty %}
-                     <p id="no-messages" class="text-center text-gray-500 italic py-10">{% trans "Сообщений пока нет. Начните диалог!" %}</p>
+                     <p id="no-messages" class="text-center text-gray-500 dark:text-gray-400 italic py-10">{% trans "Сообщений пока нет. Начните диалог!" %}</p>
                  {% endfor %}
-                 <div id="message-anchor"></div> {# For scrolling to bottom #}
+                 <div id="message-anchor"></div>
             </div>
 
             {# Message Input Area #}
             <footer class="p-3 md:p-4 border-t border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 flex-shrink-0">
-                 {# Optional: Reply preview area #}
+                 {# Reply preview area #}
                  <div id="reply-preview-area" class="mb-2 text-xs p-2 bg-gray-100 dark:bg-dark-700 rounded hidden border-l-4 border-blue-500">
                      <div class="flex justify-between items-center">
-                        <span>{% trans "Ответ на:" %} <strong id="reply-preview-user"></strong>: <em id="reply-preview-text" class="truncate inline-block max-w-xs"></em></span>
-                        <button type="button" id="cancel-reply-btn" class="text-gray-500 hover:text-red-600 text-lg">×</button>
+                        <span>{% trans "Ответ на:" %} <strong id="reply-preview-user"></strong>: <em id="reply-preview-text" class="truncate inline-block max-w-xs italic"></em></span>
+                        <button type="button" id="cancel-reply-btn" class="text-gray-500 hover:text-red-600 text-lg font-semibold leading-none p-1">×</button>
                      </div>
                      <input type="hidden" id="reply-message-id" value="">
                  </div>
                  {# File preview area #}
-                 <div id="file-preview" class="mb-2 text-xs p-2 bg-gray-100 dark:bg-dark-700 rounded hidden flex items-center justify-between">
-                     <span><i class="fas fa-paperclip mr-1"></i> <span id="file-preview-name"></span></span>
-                     <button type="button" id="remove-file-btn" class="text-red-500 hover:text-red-700 ml-2">×</button>
+                 <div id="file-preview" class="mb-2 text-xs p-2 bg-gray-100 dark:bg-dark-700 rounded hidden flex items-center justify-between border-l-4 border-gray-400">
+                     <span><i class="fas fa-paperclip mr-1"></i> <span id="file-preview-name" class="font-medium"></span></span>
+                     <button type="button" id="remove-file-btn" class="text-red-500 hover:text-red-700 ml-2 font-semibold p-1 leading-none">×</button>
                  </div>
                  {# Main Input Form #}
                 <form id="chat-message-form" class="flex items-center space-x-2">
-                    {# File input button #}
                     <label for="chat-file-input" class="flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-700 cursor-pointer text-gray-500 dark:text-gray-400" title="{% trans 'Прикрепить файл' %}">
                         <i class="fas fa-paperclip"></i>
                         <input type="file" id="chat-file-input" class="hidden">
                     </label>
-                    {# Text Input #}
                     <input type="text" id="chat-message-input" placeholder="{% trans 'Введите сообщение...' %}" autocomplete="off"
                            class="flex-1 form-input block w-full px-4 py-2 border border-gray-300 rounded-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500">
-                    {# Send Button #}
                     <button type="submit" id="chat-message-submit"
                             class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500" title="{% trans 'Отправить' %}">
                         <i class="fas fa-paper-plane"></i>
@@ -122,22 +136,21 @@
 
 {% block scripts %}
 {{ block.super }}
-{# Pass room slug and user ID/name to JavaScript #}
+{# Pass necessary data to JavaScript #}
 <script>
     window.roomSlug = "{{ room.slug|escapejs }}";
-    window.currentUserId = {{ request.user.pk|default:'null' }}; // Ensure 'null' if not logged in
+    window.currentUserId = {{ request.user.pk|default:'null' }};
     window.currentUsername = "{{ request.user.username|escapejs }}";
-    // Function to construct WebSocket path (adjust if your base path differs)
+    // Function to construct WebSocket path
     function getWebsocketPath(type, slug = null) {
-        if (type === 'chat' && slug) {
-            return `/ws/chat/${slug}/`; // Path from room/routing.py
-        } else if (type === 'search') {
-             return `/ws/user_search/`; // Path from room/routing.py
-        }
-        // Fallback or other paths
-        return '/ws/';
+        if (type === 'chat' && slug) { return `/ws/chat/${slug}/`; } // Correct path
+        if (type === 'search') { return `/ws/user_search/`; } // Correct path
+        console.warn(`Unknown WS path type: ${type}`); return '/ws/';
     }
-    window.djangoWsPath = getWebsocketPath; // Make function available globally
+    window.djangoWsPath = getWebsocketPath;
 </script>
-<script src="{% static 'js/chat_room.js' %}" defer></script> {# Your chat-specific JS #}
+{# Load chat-specific JS AFTER defining window variables #}
+<script src="{% static 'js/chat.js' %}" defer></script>
+{# Load JS for handling room actions (like archive) #}
+<script src="{% static 'js/room_actions.js' %}" defer></script>
 {% endblock %}

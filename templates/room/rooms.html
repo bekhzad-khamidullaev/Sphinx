@@ -11,85 +11,49 @@
 
 {% block list_actions %}
 <a href="{% url 'room:create_room' %}"
-   class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-teal-500 dark:bg-ios-teal text-white hover:bg-teal-600 dark:hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-dark-800 transition-all shadow">
+   class="btn-primary bg-teal-500 hover:bg-teal-600 dark:bg-ios-teal dark:hover:bg-teal-700 focus:ring-teal-500"> {# Use primary button style #}
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать комнату' %}
 </a>
 {% endblock %}
 
 {% block list_actions_mobile %}
  <a href="{% url 'room:create_room' %}"
-   class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-teal-500 dark:bg-ios-teal text-white hover:bg-teal-600 dark:hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-dark-950 transition-all shadow">
+   class="flex-1 btn-primary bg-teal-500 hover:bg-teal-600 dark:bg-ios-teal dark:hover:bg-teal-700 focus:ring-teal-500"> {# Use primary button style #}
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать комнату' %}
 </a>
 {% endblock %}
 
-
 {% block list_content %}
 <div class="mt-6">
     {% if rooms %}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="room-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {% for room in rooms %}
-                {# --- Check if slug exists before creating the link --- #}
-                {% if room.slug %}
-                    <a href="{% url 'room:room' room.slug %}" class="block p-4 bg-white dark:bg-dark-800 rounded-lg shadow hover:shadow-md transition-shadow border border-gray-200 dark:border-dark-700">
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1 truncate"># {{ room.name }}</h3>
-                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>
-                                {% if room.private %}
-                                    <i class="fas fa-lock mr-1" title="{% trans 'Приватная' %}"></i>
-                                {% else %}
-                                    <i class="fas fa-globe-americas mr-1" title="{% trans 'Публичная' %}"></i>
-                                {% endif %}
-                                {% blocktrans count participant_count=room.participants.count %}
-                                    {{ participant_count }} участник
-                                {% plural %}
-                                    {{ participant_count }} участников
-                                {% endblocktrans %} {# Corrected plural form #}
-                            </span>
-                            {% if room.last_message_time %}
-                                <span title="{{ room.last_message_time|date:'d.m.Y H:i:s' }}">
-                                    <i class="far fa-clock mr-1"></i>{% trans "Активна:" %} {{ room.last_message_time|timesince }}
-                                </span>
-                            {% endif %}
-                        </div>
-                        {# TODO: Add unread message indicator here #}
-                    </a>
-                {% else %}
-                    {# --- Display a non-clickable card for rooms without a slug --- #}
-                    <div class="block p-4 bg-gray-100 dark:bg-dark-700 rounded-lg shadow border border-gray-300 dark:border-dark-600 opacity-70 cursor-not-allowed">
-                        <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-1 truncate"># {{ room.name }}</h3>
-                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>
-                                {% if room.private %}<i class="fas fa-lock mr-1"></i>{% else %}<i class="fas fa-globe-americas mr-1"></i>{% endif %}
-                                {% blocktrans count participant_count=room.participants.count %}
-                                    {{ participant_count }} участник
-                                {% plural %}
-                                    {{ participant_count }} участников
-                                {% endblocktrans %}
-                            </span>
-                            <span class="text-red-600 dark:text-red-400">
-                                <i class="fas fa-exclamation-triangle mr-1"></i> {% trans "Ошибка URL" %}
-                            </span>
-                        </div>
-                        <p class="text-xs text-red-500 dark:text-red-400 mt-1">{% trans "(Отсутствует slug. Обратитесь к администратору)" %}</p>
-                    </div>
-                {% endif %} {# --- End if room.slug --- #}
+                 {# Include the partial template for each room #}
+                 {% include "includes/room_list_item.html" with room=room %}
             {% endfor %}
         </div>
-        {# Include pagination if you add it to the view #}
-        {# {% include "includes/pagination.html" with page_obj=page_obj %} #}
+         {# Pagination #}
+         {% if is_paginated %}
+             <div class="mt-6">
+                 {% include "includes/pagination.html" with page_obj=page_obj %}
+             </div>
+         {% endif %}
     {% else %}
         <div class="text-center text-gray-500 dark:text-gray-400 py-12 px-6 bg-white dark:bg-dark-800 rounded-lg shadow border border-gray-200 dark:border-dark-700">
             <i class="fas fa-comments fa-3x mb-3 text-gray-400 dark:text-gray-500"></i>
             <p class="text-lg">{% trans "Нет доступных чат-комнат." %}</p>
             <p class="text-sm mt-1">{% trans "Вы можете создать новую комнату." %}</p>
             <div class="mt-4">
-                 {# Ensure btn-primary class is defined or use Tailwind directly #}
-                 <a href="{% url 'room:create_room' %}" class="inline-flex items-center px-4 py-2 rounded-md bg-teal-600 hover:bg-teal-700 dark:bg-ios-teal dark:hover:bg-teal-500 text-white text-sm font-semibold shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                 <a href="{% url 'room:create_room' %}" class="btn-primary bg-teal-600 hover:bg-teal-700 dark:bg-ios-teal dark:hover:bg-teal-500 focus:ring-teal-500">
                     <i class="fas fa-plus mr-2"></i> {% trans 'Создать первую комнату' %}
                  </a>
             </div>
         </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static 'js/room_actions.js' %}" defer></script> {# Load new JS file #}
 {% endblock %}

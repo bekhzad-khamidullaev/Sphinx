@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 {% load static i18n %}
+{% load widget_tweaks %} {# Load widget_tweaks if using render_field #}
 
 {% block title %}{% trans "Создать новую комнату" %}{% endblock %}
+
+{% block head_extra %}
+    {{ block.super }}
+    {{ form.media.css }} {# Include if using special widgets like Select2 #}
+{% endblock %}
 
 {% block list_title %}
 <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
@@ -22,48 +28,58 @@
                 {% endfor %}
             </div>
         {% endif %}
-         {# Display manually passed error #}
+         {# Display manually passed error from view #}
          {% if error %}
             <div class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300">
                  <p>{{ error }}</p>
              </div>
          {% endif %}
 
-        <div class="space-y-4">
+        <div class="space-y-5"> {# Increased spacing #}
             {# Room Name #}
             <div>
                 <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     {{ form.name.label }} {% if form.name.field.required %}<span class="text-red-500">*</span>{% endif %}
                 </label>
-                {{ form.name }}
+                {# Render field using widget_tweaks to add classes from form #}
+                {% render_field form.name %}
                 {% if form.name.errors %}
                     <p class="text-xs text-red-500 mt-1">{{ form.name.errors.0 }}</p>
                 {% endif %}
             </div>
 
              {# Private Checkbox #}
-             <div class="flex items-center">
-                {{ form.private }}
-                 <label for="{{ form.private.id_for_label }}" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+             <div class="flex items-center pt-2">
+                 {# Render checkbox using widget_tweaks #}
+                 {% render_field form.private class+="mr-2" %}
+                 <label for="{{ form.private.id_for_label }}" class="block text-sm text-gray-900 dark:text-gray-300 cursor-pointer">
                      {{ form.private.label }}
                  </label>
              </div>
              {% if form.private.help_text %}
-                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">{{ form.private.help_text|safe }}</p>
+                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ form.private.help_text|safe }}</p>
              {% endif %}
              {% if form.private.errors %}
                  <p class="text-xs text-red-500 mt-1 ml-6">{{ form.private.errors.0 }}</p>
              {% endif %}
 
-              {# Participants Multi-Select #}
-              {# This field might need Select2 for better UX if many users #}
-            <div x-data="{ isPrivate: {{ form.private.value|yesno:'true,false' }} }" x-init="$watch('isPrivate', value => console.log(value))">
-                <label for="{{ form.participants.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {{ form.participants.label }}
-                </label>
+             {# Participants Multi-Select #}
+             {# Using AlpineJS to toggle visibility based on the checkbox state #}
+            <div x-data="{ isPrivate: Boolean({{ form.private.value|yesno:'true,false,null' }}) }">
+                 <label for="{{ form.participants.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                     {{ form.participants.label }}
+                 </label>
                  {# Conditionally show participants based on 'private' checkbox #}
-                 <div x-show="document.getElementById('{{ form.private.id_for_label }}').checked">
-                     {{ form.participants }}
+                 {# Check checkbox's checked state directly #}
+                 <div x-show="document.getElementById('{{ form.private.id_for_label }}').checked"
+                      x-transition:enter="transition ease-out duration-200"
+                      x-transition:enter-start="opacity-0 -translate-y-2"
+                      x-transition:enter-end="opacity-100 translate-y-0"
+                      x-transition:leave="transition ease-in duration-150"
+                      x-transition:leave-start="opacity-100 translate-y-0"
+                      x-transition:leave-end="opacity-0 -translate-y-2">
+                     {# Render field using widget_tweaks #}
+                     {% render_field form.participants %}
                      {% if form.participants.help_text %}
                          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ form.participants.help_text|safe }}</p>
                      {% endif %}
@@ -71,19 +87,19 @@
                          <p class="text-xs text-red-500 mt-1">{{ form.participants.errors.0 }}</p>
                      {% endif %}
                  </div>
-                 <p x-show="!document.getElementById('{{ form.private.id_for_label }}').checked" class="text-xs text-gray-500 italic">
+                 {# Show message when private is unchecked #}
+                 <p x-show="!document.getElementById('{{ form.private.id_for_label }}').checked" class="text-xs text-gray-500 dark:text-gray-400 italic mt-1">
                      {% trans "Выбор участников доступен только для приватных комнат." %}
                  </p>
              </div>
-
         </div>
 
         {# Action Buttons #}
         <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
-            <a href="{% url 'room:rooms' %}" class="btn-secondary">
+            <a href="{% url 'room:rooms' %}" class="inline-flex items-center px-4 py-2 rounded-md text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95 transition"> {# btn-secondary style #}
                 {% trans 'Отмена' %}
             </a>
-            <button type="submit" class="btn-primary bg-teal-600 hover:bg-teal-700 dark:bg-ios-teal dark:hover:bg-teal-500 focus:ring-teal-500">
+            <button type="submit" class="inline-flex items-center px-4 py-2 rounded-md bg-teal-600 hover:bg-teal-700 dark:bg-ios-teal dark:hover:bg-teal-500 text-white text-sm font-semibold shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 active:scale-95 transition"> {# btn-primary style #}
                 <i class="fas fa-plus mr-2"></i> {% trans 'Создать комнату' %}
             </button>
         </div>
@@ -93,5 +109,19 @@
 
 {% block scripts %}
     {{ block.super }}
-    {{ form.media.js }} {# Include if using special widgets like Select2 #}
+    {{ form.media.js }} {# Load JS for widgets like Select2 if used on participants #}
+    <script>
+        // Add listener to update Alpine's isPrivate when checkbox changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const privateCheckbox = document.getElementById('{{ form.private.id_for_label }}');
+            if (privateCheckbox) {
+                const alpineComponent = privateCheckbox.closest('[x-data]');
+                if (alpineComponent && alpineComponent.__x) {
+                     privateCheckbox.addEventListener('change', () => {
+                        alpineComponent.__x.$data.isPrivate = privateCheckbox.checked;
+                    });
+                }
+            }
+        });
+    </script>
 {% endblock %}
