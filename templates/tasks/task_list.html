@@ -12,54 +12,60 @@
 
 {% block list_actions %}
 {# Desktop Actions #}
-<div class="flex space-x-3 items-center ml-4">
-    <a href="{% url 'tasks:task_create' %}"
-        class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium bg-blue-500 dark:bg-ios-blue text-white hover:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-dark-800 transition-all shadow">
-        <i class="fas fa-plus mr-2"></i> {% trans 'Создать задачу' %}
-    </a>
-    <button type="button" id="toggleViewBtn"
-        class="flex items-center px-4 py-2 min-w-[150px] justify-center rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-800 transition-all shadow"
-        aria-pressed="false" data-kanban-text="{% trans 'Вид: Канбан' %}"
-        data-list-text="{% trans 'Вид: Список' %}">
-        <i id="viewIcon" class="fas fa-columns mr-2"></i>
-        <span id="viewText">{% trans 'Вид: Канбан' %}</span> {# Initial text will be updated by JS #}
-    </button>
+<div class="flex items-center ml-4 space-x-3"> {# Outer container with spacing #}
 
-    <div id="column-toggle-dropdown" class="relative hidden"> {# Hidden by default, shown by JS for Kanban #}
-        <button id="dropdownHoverButton" data-dropdown-toggle="dropdownHover" data-dropdown-trigger="hover"
-            class="flex items-center text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-gray-300 dark:focus:ring-offset-dark-800 font-medium rounded-full text-sm px-4 py-2 text-center inline-flex items-center transition-all shadow"
-            type="button">
-            <i class="fas fa-columns mr-2"></i> {% trans 'Колонки' %} <svg class="w-2.5 h-2.5 ml-2" aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="m1 1 4 4 4-4" />
+    {# Group for Create and View Toggle Buttons #}
+    <div class="inline-flex rounded-md shadow-xs" role="group">
+        <a href="{% url 'tasks:task_create' %}"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
+            <i class="fas fa-plus mr-2 text-blue-500 dark:text-ios-blue"></i> {% trans 'Создать задачу' %}
+        </a>
+        <button type="button" id="toggleViewBtn"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150"
+           aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
+             <i id="viewIcon" class="fas fa-columns mr-2"></i>
+             <span id="viewText">{% trans 'Вид' %}</span>
+        </button>
+    </div>
+
+    {# Column Toggle Dropdown (Separate Button - Styled like Flowbite Checkbox Dropdown Button) #}
+    {# This button itself should only be visible when Kanban is active - handled by JS #}
+    <div id="column-toggle-dropdown" class="relative hidden">
+        <button id="dropdownCheckboxButton" data-dropdown-toggle="dropdownColumnCheckbox" {# Changed ID and toggle target #}
+           class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" type="button">
+            <i class="fas fa-columns mr-2"></i> {% trans 'Колонки' %}
+            <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
             </svg>
         </button>
-        {# Dropdown menu #}
-        <div id="dropdownHover"
-            class="z-50 hidden bg-white dark:bg-dark-800 divide-y divide-gray-100 dark:divide-dark-600 rounded-lg shadow-lg w-52 border border-gray-200 dark:border-dark-700">
-            <ul class="py-2 text-sm text-gray-700 dark:text-gray-300" aria-labelledby="dropdownHoverButton">
-                <li><button type="button" id="resetHiddenColumnsBtn"
-                        class="flex items-center px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-dark-700 focus:outline-none text-blue-600 dark:text-blue-400"><i
-                            class="fas fa-eye mr-2"></i> {% trans 'Показать все' %}</button></li>
-                <hr class="border-gray-200 dark:border-dark-600 my-1">
-                {% for status, _ in status_mapping.items %} {# Use status_mapping from context #}
+
+        {# Dropdown menu - Styled like Flowbite Checkbox Dropdown Menu #}
+        <div id="dropdownColumnCheckbox" {# Changed ID to match toggle target #}
+            class="z-50 hidden w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 border dark:border-gray-600">
+            <ul class="p-3 space-y-3 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownCheckboxButton">
+                <li>
+                    <button type="button" id="resetHiddenColumnsBtn"
+                        class="flex items-center w-full text-left text-blue-600 dark:text-blue-400 hover:underline focus:outline-none">
+                         <i class="fas fa-eye mr-2"></i> {% trans 'Показать все' %}
+                    </button>
+                </li>
+                <hr class="border-gray-200 dark:border-gray-600 !my-2"> {# Adjusted margin #}
+                {% for status, _ in status_mapping.items %}
                 {% with status_display_name=status_mapping|getkey:status %}
                 <li>
-                    <label
-                        class="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-700 w-full">
-                        <input type="checkbox"
-                            class="toggle-column-checkbox form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            data-status="{{ status }}" checked>
-                        <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300"
-                            data-status="{{ status }}">{{ status_display_name|default:status }}</span>
-                    </label>
+                    <div class="flex items-center">
+                        <input id="checkbox-column-{{ status }}" type="checkbox" value="{{ status }}"
+                           class="toggle-column-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
+                           data-status="{{ status }}" checked>
+                        <label for="checkbox-column-{{ status }}" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer">{{ status_display_name|default:status }}</label>
+                    </div>
                 </li>
                 {% endwith %}
                 {% endfor %}
             </ul>
         </div>
-    </div>
+    </div>{# End Column Toggle Wrapper #}
+
 </div>
 {% endblock %}
 
