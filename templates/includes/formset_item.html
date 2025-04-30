@@ -1,50 +1,59 @@
 {% comment %} checklists/templates/checklists/includes/formset_item.html {% endcomment %}
 {% load i18n %}
+{% load widget_tweaks %}
 
-{# Unique ID for the row, using the form prefix and counter #}
-<div class="item-form flex items-start space-x-3 p-3 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 transition-colors duration-150 ease-in-out {% if form.errors %}border-red-500 dark:border-red-700{% endif %}" id="{{ form.prefix }}"> {# Use form.prefix for ID #}
+{# Expects 'form' (a form from ChecklistTemplateItemFormSet) and 'formset' #}
+<div class="item-form flex items-start space-x-2 p-3 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 {% if form.errors %}border-2 border-red-500 dark:border-red-700{% endif %}" id="{{ form.prefix }}">
 
-    {# Hidden fields must be rendered for the formset to work #}
+    {# Hidden fields (ID, DELETE, FK to parent if needed) #}
     {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
 
-    {# Order Field - Ensure widget in forms.py has Tailwind classes #}
+    {# Order Field #}
     <div class="flex-shrink-0 w-16">
         <label for="{{ form.order.id_for_label }}" class="sr-only">{% trans "Порядок" %}</label>
-        {{ form.order }} {# Render field using widget #}
+        {% render_field form.order class+="form-input text-sm text-center w-full py-1" placeholder="#" title=_("Порядок") %}
         {% if form.order.errors %}<div class="text-red-500 text-xs mt-1">{{ form.order.errors|first }}</div>{% endif %}
     </div>
 
-    {# Item Text Field - Ensure widget in forms.py has Tailwind classes #}
-    <div class="flex-grow">
-         <label for="{{ form.item_text.id_for_label }}" class="sr-only">{% trans "Текст пункта" %}</label>
-        {{ form.item_text }} {# Render field using widget #}
-        {% if form.item_text.errors %}<div class="text-red-500 text-xs mt-1">{{ form.item_text.errors|first }}</div>{% endif %}
-        {# Add non-field errors specific to this form #}
-        {% if form.non_field_errors %}
-            <div class="text-red-500 text-xs mt-1 font-semibold">
-                {% for error in form.non_field_errors %} {{ error }} {% endfor %}
-            </div>
+    {# Item Text & Point Fields (Combined Column) #}
+    <div class="flex-grow space-y-1">
+        {# Item Text #}
+        <div>
+             <label for="{{ form.item_text.id_for_label }}" class="sr-only">{% trans "Текст пункта" %}</label>
+             {% render_field form.item_text class+="form-textarea text-sm w-full py-1" rows="2" placeholder=_("Текст пункта чеклиста...") %}
+             {% if form.item_text.errors %}<div class="text-red-500 text-xs mt-1">{{ form.item_text.errors|first }}</div>{% endif %}
+        </div>
+         {# Target Point #}
+         {% if form.target_point %}
+         <div class="flex items-center space-x-1">
+            <label for="{{ form.target_point.id_for_label }}" class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{% trans "Точка:" %}</label>
+            {# Render select with widget_tweaks to ensure form's classes are applied #}
+            {% render_field form.target_point class+="form-select text-xs py-1 flex-grow min-w-0" %}
+             {% if form.target_point.help_text %}
+                <span class="text-xs text-gray-400" title="{{ form.target_point.help_text }}"><i class="far fa-question-circle"></i></span>
+             {% endif %}
+            {% if form.target_point.errors %}<div class="text-red-500 text-xs mt-1">{{ form.target_point.errors|first }}</div>{% endif %}
+         </div>
         {% endif %}
     </div>
 
-    {# Delete Control - Button styling linked to the hidden checkbox #}
+
+    {# Delete Control #}
     {% if formset.can_delete %}
     <div class="flex-shrink-0 flex items-center pt-1">
-         {# Visually hidden checkbox, controlled by the button #}
         <div class="hidden">{{ form.DELETE }}</div>
-        {# Button to trigger delete (JS will toggle the checkbox) #}
          <button type="button"
-                class="delete-item-btn p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors"
+                class="delete-item-btn p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors"
                 title="{% trans 'Удалить этот пункт' %}">
             <i class="fas fa-trash-alt fa-fw"></i>
-            <span class="sr-only">{% trans 'Удалить' %}</span> {# For accessibility #}
+            <span class="sr-only">{% trans 'Удалить' %}</span>
         </button>
     </div>
     {% endif %}
 
      {# Display non-field errors for THIS specific form in the formset #}
      {% if form.non_field_errors %}
-        <div class="col-span-full text-red-500 text-xs mt-1 pl-18"> {# Adjust alignment if needed #}
+        <div class="w-full text-red-500 text-xs mt-1 pt-1 border-t border-dashed border-red-300 dark:border-red-700 col-span-full"> {# Adjust col-span if layout changes #}
              {% for error in form.non_field_errors %} {{ error }} {% endfor %}
         </div>
      {% endif %}

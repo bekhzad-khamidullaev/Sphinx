@@ -123,32 +123,43 @@ def replace_string(value, args):
 
 
 @register.simple_tag(takes_context=True)
-def url_replace(context, field, value):
+def url_replace(context, **kwargs):
     """
-    Replaces or adds a field/value query parameter to the current URL.
-    Useful for pagination and sorting links.
+    Updates query parameters in the current URL.
+
+    Usage: {% url_replace param1=value1 param2=value2 %}
+    Example for page: {% url_replace page=page_obj.next_page_number %}
+    Example for sort (toggles direction): {% url_replace sort=column_name %}
+    Example for page and keeping sort: {% url_replace page=1 sort=current_sort %}
+
+    It intelligently handles the 'sort' parameter to toggle direction.
     """
-    query_params = context["request"].GET.copy()
-    # Determine the next sort value (toggle direction)
-    if field == "sort":
-        current_sort = query_params.get("sort")
-        if current_sort == value:  # If currently sorting ascending by this field
-            query_params[field] = f"-{value}"  # Sort descending
-        elif current_sort == f"-{value}":  # If currently sorting descending
-            query_params[field] = value  # Sort ascending again
-            # Alternatively, remove sort to go back to default:
-            # del query_params[field]
-        else:  # If sorting by another field or not sorting
-            query_params[field] = value  # Sort ascending by this field
-        # Reset page to 1 when changing sort order
-        if "page" in query_params:
-            del query_params["page"]
-    else:
-        # For other fields like 'page', just set the value
-        query_params[field] = value
+    request = context.get("request")
+    if not request:
+        logger.error("Request object not found in context for url_replace tag.")
+        return ""
+    query_params = request.GET.copy()
 
-    return urlencode(query_params)
+    for field, value in kwargs.items():
+        # Special handling for 'sort' parameter to toggle direction
+        if field == "sort":
+            current_sort = query_params.get("sort")
+            column_name = str(value) # Ensure it's a string
+            if current_sort == column_name:
+                query_params[field] = f"-{column_name}" # Toggle to descending
+            elif current_sort == f"-{column_name}":
+                 query_params[field] = column_name # Toggle back to ascending
+                 # Alternatively, remove sort completely: del query_params[field]
+            else:
+                query_params[field] = column_name # Set initial ascending sort
+            # Reset page when changing sort
+            query_params.pop("page", None)
+        elif value is None or value == '':
+             query_params.pop(field, None) # Remove param if value is empty/None
+        else:
+            query_params[field] = str(value) # Set/update other params
 
+    return query_params.urlencode()
 
 @register.filter(name='filename')
 def filename(value):

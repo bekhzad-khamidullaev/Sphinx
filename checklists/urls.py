@@ -1,15 +1,14 @@
 # checklists/urls.py
-from django.urls import path
+from django.urls import path, include
 from . import views
-from django.contrib import admin
-from django.utils.translation import gettext_lazy as _
+# from . import api as checklist_api
 
 app_name = 'checklists'
 
-# --- CHANGE ADMIN TITLES HERE ---
-admin.site.site_header = _("Sphinx")  # Main header text
-admin.site.site_title = _("Админка Sphinx")             # Browser tab title
-admin.site.index_title = _("Добро пожаловать в Админку Sphinx") # Title on the admin index page
+# API URL patterns
+api_urlpatterns = [
+    path('points/', views.ChecklistPointListView.as_view(), name='api_checklist_point_list'),
+]
 
 urlpatterns = [
     # Template CRUD
@@ -19,7 +18,7 @@ urlpatterns = [
     path('templates/<int:pk>/edit/', views.ChecklistTemplateUpdateView.as_view(), name='template_update'),
     path('templates/<int:pk>/delete/', views.ChecklistTemplateDeleteView.as_view(), name='template_delete'),
 
-    # Perform Checklist - Uses template PK
+    # Perform Checklist
     path('perform/<int:template_pk>/', views.PerformChecklistView.as_view(), name='checklist_perform'),
 
     # History / Results
@@ -29,4 +28,7 @@ urlpatterns = [
     # Reports
     path('reports/summary/', views.ChecklistReportView.as_view(), name='report_summary'),
     path('reports/issues/', views.ChecklistIssuesReportView.as_view(), name='report_issues'),
+
+    # API Endpoints
+    # path('api/', include((api_urlpatterns, 'checklists'), namespace='api')),
 ]

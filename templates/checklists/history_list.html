@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
-{% load i18n static app_filters crispy_forms_tags app_filters %} {# Added crispy and app_filters #}
+{% load i18n static app_filters crispy_forms_tags widget_tweaks %}
 
 {% block title %}{% trans "История выполнения чеклистов" %}{% endblock %}
 
 {% block head_extra %}
     {{ block.super }}
-    {% if filterset %}{{ filterset.form.media.css }}{% endif %} {# Include filter form media CSS #}
-    {# Add sorting icon styles like in task_list.html #}
+    {% if filterset %}{{ filterset.form.media.css }}{% endif %} {# Include filter form media CSS (for widgets like DatePicker) #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> {# Flatpickr CSS #}
+    {# Sorting icon styles #}
     <style>
         .sort-header[aria-sort="ascending"] .fa-sort::before { content: "\f0de"; /* fa-sort-up */ }
         .sort-header[aria-sort="descending"] .fa-sort::before { content: "\f0dd"; /* fa-sort-down */ }
@@ -23,14 +24,16 @@
 
 {% block list_actions %}
 {# --- Desktop Filter and Actions --- #}
-<div class="flex items-center space-x-2 ml-auto"> {# Use ml-auto to push right #}
-    {# Filter Button (Optional: Use AlpineJS or similar for toggle) #}
-    <button type="button" id="toggleFilterBtn"
-            aria-expanded="false" aria-controls="filter-section"
-            class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-dark-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-        <i class="fas fa-filter mr-2"></i> {% trans "Фильтры" %}
-        <i id="filter-arrow" class="fas fa-chevron-down ml-2 text-xs"></i>
-    </button>
+<div class="flex items-center space-x-2 ml-auto">
+    {# Filter Button using AlpineJS for toggle #}
+    <div x-data="{ filterOpen: sessionStorage.getItem('checklistFilterOpen') === 'true' }">
+        <button @click="filterOpen = !filterOpen; sessionStorage.setItem('checklistFilterOpen', filterOpen)"
+                id="toggleFilterBtn" :aria-expanded="filterOpen" aria-controls="filter-section"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-dark-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <i class="fas fa-filter mr-2"></i> {% trans "Фильтры" %}
+            <i id="filter-arrow" class="fas ml-2 text-xs transition-transform duration-200" :class="filterOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+        </button>
+    </div>
     {# Other actions #}
     <a href="{% url 'checklists:template_list' %}" class="btn-secondary text-sm">
         <i class="fas fa-list-alt mr-1.5"></i> {% trans 'К шаблонам' %}
@@ -44,12 +47,12 @@
 {% block list_actions_mobile %}
 {# Mobile Actions #}
 <a href="{% url 'checklists:template_list' %}"
-    class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-950 transition-all shadow">
+    class="flex-1 btn-secondary text-sm"> {# Use button styles #}
     <i class="fas fa-clipboard-list mr-2"></i> {% trans 'К шаблонам' %}
 </a>
-{# Mobile Filter Trigger (Example using Flowbite Drawer) #}
+{# Mobile Filter Trigger (Using Flowbite Drawer - ensure Flowbite JS is loaded in base.html) #}
 <button type="button" data-drawer-target="filter-drawer-checklist" data-drawer-show="filter-drawer-checklist" data-drawer-placement="right" aria-controls="filter-drawer-checklist"
-   class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-dark-950 transition-all shadow">
+   class="flex-1 btn-secondary text-sm"> {# Use button styles #}
     <i class="fas fa-filter mr-2"></i> {% trans 'Фильтр' %}
 </button>
 {% endblock %}
@@ -57,23 +60,22 @@
 
 {% block list_content %}
 
-{# --- Filter Section (Desktop - Collapsible) --- #}
-<div id="filter-section" class="mb-6 hidden" x-data="{ open: false }" x-cloak>
-    {# Button removed, use toggleFilterBtn from list_actions #}
-    <div x-show="open" x-transition class="border border-gray-200 dark:border-dark-700 p-4 bg-white dark:bg-dark-800 rounded-lg shadow">
+{# --- Filter Section (Desktop - Collapsible using AlpineJS) --- #}
+<div id="filter-section" class="mb-6" x-show="filterOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" x-cloak>
+    <div class="border border-gray-200 dark:border-dark-700 p-4 bg-white dark:bg-dark-800 rounded-lg shadow-md">
         {% if filterset %}
         <form method="get" action="" id="filter-form" class="space-y-4">
-             {# Preserve existing query parameters like view or sort #}
+             {# Preserve existing query parameters like view or sort which are not part of the filter #}
             {% for key, value in request.GET.items %}
                 {% if key != 'page' and key not in filterset.form.fields %}
                     <input type="hidden" name="{{ key|escape }}" value="{{ value|escape }}">
                 {% endif %}
             {% endfor %}
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                 {# Render filter fields using crispy forms #}
-                 {% crispy filterset.form %}
-            </div>
+            {# Render filter fields using crispy forms tag #}
+            {# This assumes you've configured crispy-tailwind template pack #}
+            {% crispy filterset.form %}
+
             <div class="mt-4 flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-dark-600">
                 <a href="{% url 'checklists:history_list' %}" class="btn-secondary text-sm">{% trans "Сбросить" %}</a>
                 <button type="submit" class="btn-primary text-sm">
@@ -88,6 +90,7 @@
 </div>
 
 {# --- Filter Drawer (Mobile - Example using Flowbite) --- #}
+{# Ensure Flowbite JS is loaded in base.html for this to work #}
 <div id="filter-drawer-checklist" class="fixed top-0 right-0 z-50 h-screen p-4 overflow-y-auto transition-transform translate-x-full bg-white w-80 dark:bg-gray-800" tabindex="-1" aria-labelledby="filter-drawer-checklist-label">
     <h5 id="filter-drawer-checklist-label" class="inline-flex items-center mb-4 text-base font-semibold text-gray-500 dark:text-gray-400"><i class="fas fa-filter mr-2"></i>{% trans 'Фильтр Истории' %}</h5>
     <button type="button" data-drawer-hide="filter-drawer-checklist" aria-controls="filter-drawer-checklist" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white" >
@@ -102,11 +105,20 @@
                 <input type="hidden" name="{{ key }}" value="{{ value }}">
              {% endif %}
         {% endfor %}
-         {# Render fields one below other #}
+         {# Render fields one below other - Manually add classes #}
          {% for field in filterset.form %}
-            <div>
-                <label for="{{ field.id_for_label }}_mobile" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
-                {{ field|add_css_class:"form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm"|attr:"id:"|add:field.id_for_label|add:"_mobile" }}
+         {% with mobile_field_id=field.id_for_label|add:"_mobile" %}
+         <div>
+             <label for="{{ mobile_field_id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
+             {% if field.name == 'performed_at_after' or field.name == 'performed_at_before' %}
+                  {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_field_id %}
+              {% elif field.name == 'category' or field.name == 'performed_by' or field.name == 'has_issues' %} {# Group select fields #}
+                  {% render_field field class+="form-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_field_id %}
+              {% else %} {# Default to text input #}
+                  {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_field_id %}
+              {% endif %}
+         {% endwith %} {# End with mobile_field_id #}
+
                 {% if field.help_text %}<p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>{% endif %}
                 {% if field.errors %}<p class="text-xs text-red-500 mt-1">{{ field.errors.0 }}</p>{% endif %}
             </div>
@@ -125,19 +137,18 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
             <thead class="bg-gray-50 dark:bg-dark-700/50 sticky top-0 z-10">
                 <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {# --- Sortable Headers --- #}
-                    {# Use the custom template tag for sortable headers #}
+                    {# --- Use Sortable Headers Include --- #}
                     {% include 'includes/sortable_th.html' with column_name='template__name' display_name=_('Шаблон') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
                     {% include 'includes/sortable_th.html' with column_name='performed_by__username' display_name=_('Кем выполнен') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
                     {% include 'includes/sortable_th.html' with column_name='performed_at' display_name=_('Дата выполнения') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
-                    <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Проблемы?' %}</th> {# Sorting by issues needs annotation/custom logic #}
+                    <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Проблемы?' %}</th> {# Needs custom sorting logic #}
                     {% include 'includes/sortable_th.html' with column_name='related_task__task_number' display_name=_('Задача') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
                     {% include 'includes/sortable_th.html' with column_name='location' display_name=_('Место') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
                     <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Действия' %}</th>
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-                {% for run in checklist_runs %} {# Use context object name from view #}
+                {% for run in checklist_runs %} {# Context object name from view #}
                 <tr class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm">
                     <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                         <a href="{{ run.get_absolute_url }}" class="hover:underline text-blue-600 dark:text-blue-400" title="{{ run.template.description|default:'' }}">{{ run.template.name }}</a>
@@ -183,7 +194,10 @@
     </div>
 </div>
 {% if is_paginated %} {# Only show pagination if needed #}
-    {% include "includes/pagination.html" with page_obj=page_obj query_params=request.GET.urlencode %}
+    <div class="mt-6">
+        {# Use your updated pagination include that uses url_replace correctly #}
+        {% include "includes/pagination.html" with page_obj=page_obj %}
+    </div>
 {% endif %}
 {% endblock %}
 
@@ -192,29 +206,35 @@
 {# Include filter form media if date pickers etc. are used #}
 {% if filterset %}
  {{ filterset.form.media.js }}
+ <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+ <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Russian locale for Flatpickr #}
 {% endif %}
 {# Script for Flatpickr and Filter Toggle #}
 <script defer>
  document.addEventListener('DOMContentLoaded', function() {
     // Flatpickr initialization
     if (typeof flatpickr !== 'undefined') {
-         flatpickr(".flatpickr-date", { // Target date inputs by class
+         flatpickr(".flatpickr-date", { // Target date inputs by class added in filters.py
             dateFormat: "Y-m-d",
             altInput: true,
             altFormat: "d.m.Y",
-            locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}" // Use current language for locale
+            locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
          });
+         // Add init for datetime pickers if your filter uses them
+         // flatpickr(".flatpickr-datetime", { ... });
     } else {
          console.warn("Flatpickr not loaded, date filter widgets might not work correctly.");
     }
 
-    // Filter Toggle Logic (Example using Alpine syntax from task_list, adapt if not using Alpine)
+    // Basic Filter Toggle Logic (Replace with Alpine if you prefer)
     const filterBtn = document.getElementById('toggleFilterBtn');
     const filterSection = document.getElementById('filter-section');
     const filterArrow = document.getElementById('filter-arrow');
 
     if (filterBtn && filterSection && filterArrow) {
-        // Check if any filter parameters are active (excluding page/sort)
+        // Check sessionStorage for previous state
+        const filterState = sessionStorage.getItem('checklistFilterOpen');
+        // Determine if any filters are active initially (excluding page/sort)
         const params = new URLSearchParams(window.location.search);
         let filtersActive = false;
         for (const [key, value] of params.entries()) {
@@ -224,27 +244,30 @@
             }
         }
 
-        // Check session storage for preference
-        const filterState = sessionStorage.getItem('checklistFilterOpen');
+        // Open if saved state is true OR if no saved state but filters are active
         const shouldOpen = filterState === 'true' || (filterState === null && filtersActive);
 
-        // Set initial state based on preference or active filters
         filterSection.classList.toggle('hidden', !shouldOpen);
         filterBtn.setAttribute('aria-expanded', shouldOpen.toString());
         filterArrow.classList.toggle('fa-chevron-up', shouldOpen);
         filterArrow.classList.toggle('fa-chevron-down', !shouldOpen);
-        // If using Alpine, update its state too:
-        // if (window.Alpine) { Alpine.store('filterOpen', shouldOpen); }
 
-        // Add click listener to toggle
+        // Add click listener
         filterBtn.addEventListener('click', () => {
             const isHidden = filterSection.classList.toggle('hidden');
             filterBtn.setAttribute('aria-expanded', String(!isHidden));
             filterArrow.classList.toggle('fa-chevron-down', isHidden);
             filterArrow.classList.toggle('fa-chevron-up', !isHidden);
+            // Save state to sessionStorage
             sessionStorage.setItem('checklistFilterOpen', String(!isHidden));
-            // if (window.Alpine) { Alpine.store('filterOpen', !isHidden); }
         });
+    }
+
+    // Initialize Flowbite drawers if used for mobile filters
+    if (typeof Flowbite !== 'undefined' && typeof initFlowbite !== 'undefined') {
+         initFlowbite();
+    } else {
+        // console.warn("Flowbite not detected, mobile filter drawer might not work.");
     }
 
  });
