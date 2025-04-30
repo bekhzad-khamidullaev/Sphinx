@@ -36,6 +36,7 @@
              </div>
              <nav class="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
                  {% for r in rooms_for_sidebar %}
+                    {% if r.slug %} {# Check if slug exists before creating the link #}
                      <a href="{% url 'room:room' r.slug %}"
                         class="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium group
                                {% if r.slug == room.slug %} bg-indigo-100 dark:bg-dark-700 text-indigo-700 dark:text-white font-semibold {% else %} text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700/50 {% endif %}">
@@ -43,6 +44,12 @@
                          {# Placeholder for unread count badge #}
                          {# <span class="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 ml-auto hidden group-hover:hidden">3</span> #}
                      </a>
+                    {% else %} {# Display non-clickable item if slug is missing #}
+                    <div class="flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                         <span class="truncate"># {{ r.name }}</span>
+                         <span class="text-red-500 text-xs italic">({% trans "Ошибка URL" %})</span>
+                     </div>
+                    {% endif %}
                  {% empty %}
                      <p class="text-xs text-gray-500 p-3 text-center italic">{% trans "Нет других комнат." %}</p>
                  {% endfor %}
@@ -55,7 +62,7 @@
             <header class="p-4 border-b border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 shadow-sm flex-shrink-0">
                 <div class="flex justify-between items-center">
                     <h1 class="text-xl font-semibold truncate pr-4"># {{ room.name }}</h1>
-                    {# Add room actions dropdown here if needed #}
+                    {# TODO: Add room actions dropdown here if needed (e.g., archive, search, participants) #}
                 </div>
                 <div id="online-users" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <i class="fas fa-circle text-green-500 text-[0.5rem] mr-1"></i>
@@ -69,7 +76,8 @@
                 {# Loading indicator? #}
                 {# Messages will be loaded here by JS or initial render #}
                  {% for message in messages %}
-                     {% include "includes//message.html" %} {# Use a partial template #}
+                     {# Corrected include path #}
+                     {% include "room/partials/message.html" with message=message %}
                  {% empty %}
                      <p id="no-messages" class="text-center text-gray-500 italic py-10">{% trans "Сообщений пока нет. Начните диалог!" %}</p>
                  {% endfor %}
@@ -114,14 +122,22 @@
 
 {% block scripts %}
 {{ block.super }}
-{# Pass room slug and user ID to JavaScript #}
+{# Pass room slug and user ID/name to JavaScript #}
 <script>
     window.roomSlug = "{{ room.slug|escapejs }}";
-    window.currentUserId = {{ request.user.pk|default:'null' }};
-    window.currentUsername = "{{ request.user.username|escapejs }}"; // Pass username too
-    // Simple function to get base WS path (adjust if needed)
-    function getWebsocketPath() { return "/ws/"; }
-    window.djangoWsPath = getWebsocketPath();
+    window.currentUserId = {{ request.user.pk|default:'null' }}; // Ensure 'null' if not logged in
+    window.currentUsername = "{{ request.user.username|escapejs }}";
+    // Function to construct WebSocket path (adjust if your base path differs)
+    function getWebsocketPath(type, slug = null) {
+        if (type === 'chat' && slug) {
+            return `/ws/chat/${slug}/`; // Path from room/routing.py
+        } else if (type === 'search') {
+             return `/ws/user_search/`; // Path from room/routing.py
+        }
+        // Fallback or other paths
+        return '/ws/';
+    }
+    window.djangoWsPath = getWebsocketPath; // Make function available globally
 </script>
-<script src="{% static 'js/chat.js' %}" defer></script> {# Your chat-specific JS #}
+<script src="{% static 'js/chat_room.js' %}" defer></script> {# Your chat-specific JS #}
 {% endblock %}

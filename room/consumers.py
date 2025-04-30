@@ -7,8 +7,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.utils.timezone import now
-from django.utils.translation import gettext as _ # Use standard gettext here
+from django.utils.translation import gettext as _
+from django.db.models import Q
+
 
 User = settings.AUTH_USER_MODEL
 from .models import Room, Message, Reaction, MessageReadStatus
