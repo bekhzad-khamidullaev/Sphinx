@@ -16,16 +16,62 @@ class ChecklistItemStatus(models.TextChoices):
     NOT_OK = 'not_ok', _('Не OK')
     NOT_APPLICABLE = 'na', _('Неприменимо')
 
+# ==================================
+# Location and Point Models
+# ==================================
+class Location(models.Model):
+    """ Represents a physical location (e.g., Building, Floor, Area). """
+    name = models.CharField(max_length=150, unique=True, verbose_name=_("Название Местоположения"))
+    description = models.TextField(blank=True, verbose_name=_("Описание"))
+    # Optional hierarchy
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='child_locations', verbose_name=_("Родительское Местоположение"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Местоположение")
+        verbose_name_plural = _("Местоположения")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class ChecklistPoint(models.Model):
+    """ Represents a specific point or room within a Location. """
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='points', verbose_name=_("Местоположение"))
+    name = models.CharField(max_length=150, verbose_name=_("Название Точки/Комнаты"))
+    description = models.TextField(blank=True, verbose_name=_("Описание"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Точка/Комната Чеклиста")
+        verbose_name_plural = _("Точки/Комнаты Чеклистов")
+        ordering = ['location__name', 'name']
+        constraints = [
+            models.UniqueConstraint(fields=['location', 'name'], name='unique_point_per_location')
+        ]
+
+    def __str__(self):
+        return f"{self.location.name} / {self.name}"
+
+
 class ChecklistTemplate(models.Model):
     name = models.CharField(max_length=255, verbose_name=_("Название шаблона"))
     description = models.TextField(blank=True, verbose_name=_("Описание"))
     category = models.ForeignKey(
         TaskCategory,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='checklist_templates',
-        verbose_name=_("Категория (из Задач)")
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='checklist_templates', verbose_name=_("Категория (из Задач)")
+    )
+    # Optional: Link template to a default location/point
+    target_location = models.ForeignKey(
+        Location, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='checklist_templates', verbose_name=_("Целевое Местоположение")
+    )
+    target_point = models.ForeignKey(
+        ChecklistPoint, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='checklist_templates', verbose_name=_("Целевая Точка/Комната")
     )
     is_active = models.BooleanField(default=True, verbose_name=_("Активен"), help_text=_("Активные шаблоны доступны для выполнения."))
     created_at = models.DateTimeField(auto_now_add=True)
@@ -53,6 +99,11 @@ class ChecklistTemplateItem(models.Model):
     # Use TextField for potentially longer items
     item_text = models.TextField(verbose_name=_("Текст пункта/вопроса"))
     order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"), help_text=_("Порядок отображения пункта в чеклисте."))
+    # Optional: Link specific item to a point
+    target_point = models.ForeignKey(
+        ChecklistPoint, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='template_items', verbose_name=_("Целевая Точка/Комната для Пункта")
+    )
 
     class Meta:
         verbose_name = _("Пункт шаблона чеклиста")
@@ -85,8 +136,15 @@ class Checklist(models.Model):
         related_name='checklists',
         verbose_name=_("Связанная задача")
     )
-    location = models.CharField(max_length=200, blank=True, verbose_name=_("Местоположение/Зона"))
-    notes = models.TextField(blank=True, verbose_name=_("Общие примечания"))
+    location = models.ForeignKey(
+        Location, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='checklist_runs', verbose_name=_("Местоположение Прогона")
+    )
+    point = models.ForeignKey(
+        ChecklistPoint, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='checklist_runs', verbose_name=_("Точка/Комната Прогона")
+    )
+    notes = models.TextField(blank=True, verbose_name=_("Общие примечания к Прогону"))
     is_complete = models.BooleanField(default=False, verbose_name=_("Завершен"), db_index=True)
     completion_time = models.DateTimeField(null=True, blank=True, verbose_name=_("Время завершения"))
 

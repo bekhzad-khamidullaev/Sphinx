@@ -3,59 +3,103 @@ import django_filters
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
-
 from .models import Checklist, ChecklistTemplate, ChecklistItemStatus
-from tasks.models import TaskCategory # Use categories for filtering
+from tasks.models import TaskCategory # Assuming filtering by TaskCategory is desired
+from django.db.models import Q
 
 User = get_user_model()
 
-# Reusable Tailwind classes (copy from forms.py or define centrally)
-BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500"
-SELECT_CLASSES = f"form-select {BASE_INPUT_CLASSES}"
-DATE_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES} flatpickr-date" # Assuming flatpickr
-
 class ChecklistHistoryFilter(django_filters.FilterSet):
-    template = django_filters.ModelChoiceFilter(
-        queryset=ChecklistTemplate.objects.filter(is_active=True).order_by('name'),
-        label=_('Шаблон чеклиста'),
-        widget=forms.Select(attrs={'class': SELECT_CLASSES})
+    # Filter by Template Name (contains)
+    template_name = django_filters.CharFilter(
+        field_name='template__name',
+        lookup_expr='icontains',
+        label=_('Шаблон'),
+        widget=forms.TextInput(attrs={'placeholder': _('Название шаблона...')})
     )
+
+    # Filter by Template Category
     category = django_filters.ModelChoiceFilter(
         field_name='template__category',
-        queryset=TaskCategory.objects.all().order_by('name'),
+        queryset=TaskCategory.objects.all() if TaskCategory else TaskCategory.objects.none(), # Handle if TaskCategory not available
         label=_('Категория шаблона'),
-        widget=forms.Select(attrs={'class': SELECT_CLASSES})
+        widget=forms.Select
     )
+
+    # Filter by User who performed the checklist
     performed_by = django_filters.ModelChoiceFilter(
         queryset=User.objects.filter(is_active=True).order_by('username'),
         label=_('Кем выполнен'),
-        widget=forms.Select(attrs={'class': SELECT_CLASSES})
+        widget=forms.Select
     )
-    # Example: Filter by date range
-    performed_after = django_filters.DateFilter(
-        field_name='performed_at', lookup_expr='date__gte', label=_('Выполнен после'),
-        widget=forms.DateInput(attrs={'type': 'date', 'class': DATE_INPUT_CLASSES})
+
+    # Filter by Date Range (Performed At)
+    performed_at_after = django_filters.DateFilter(
+        field_name='performed_at',
+        lookup_expr='date__gte',
+        label=_('Выполнен после'),
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'flatpickr-date'}) # Add class for JS picker
     )
-    performed_before = django_filters.DateFilter(
-        field_name='performed_at', lookup_expr='date__lte', label=_('Выполнен до'),
-        widget=forms.DateInput(attrs={'type': 'date', 'class': DATE_INPUT_CLASSES})
+    performed_at_before = django_filters.DateFilter(
+        field_name='performed_at',
+        lookup_expr='date__lte',
+        label=_('Выполнен до'),
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'flatpickr-date'}) # Add class for JS picker
     )
-    # Example: Filter by whether issues were found
+
+    # Filter by location (contains)
+    location = django_filters.CharFilter(
+        lookup_expr='icontains',
+        label=_('Местоположение'),
+        widget=forms.TextInput(attrs={'placeholder': _('Зона, объект...')})
+    )
+
+    # Filter by presence of issues ('Not OK' status in results)
     has_issues = django_filters.BooleanFilter(
         label=_('Есть проблемы?'),
         method='filter_has_issues',
-        widget=forms.Select(choices=[('', '---------'), (True, _('Да')), (False, _('Нет'))], attrs={'class': SELECT_CLASSES})
+        widget=forms.NullBooleanSelect # Provides "Yes", "No", "Any" options
     )
+
+    # Filter by related task (using task number or title) - More complex
+    # related_task_search = django_filters.CharFilter(
+    #     method='filter_related_task',
+    #     label=_('Связанная задача'),
+    #     widget=forms.TextInput(attrs={'placeholder': _('Номер или название задачи...')})
+    # )
 
     class Meta:
         model = Checklist
-        fields = ['template', 'category', 'performed_by', 'performed_after', 'performed_before', 'has_issues']
+        # Specify fields included in the filterset
+        # Note: fields mentioned above are automatically included if using field_name
+        # Add any direct model fields here if needed, e.g., 'is_complete' (though view filters this)
+        fields = [
+            'template_name',
+            'category',
+            'performed_by',
+            'performed_at_after',
+            'performed_at_before',
+            'location',
+            'has_issues',
+            # 'related_task_search',
+        ]
 
     def filter_has_issues(self, queryset, name, value):
+        """ Custom filter method for the 'has_issues' BooleanFilter. """
         if value is True:
-            # Find runs where at least one result has status NOT_OK
+            # Return runs where at least one result has 'not_ok' status
             return queryset.filter(results__status=ChecklistItemStatus.NOT_OK).distinct()
         elif value is False:
-            # Find runs where NO result has status NOT_OK
+            # Return runs where *no* result has 'not_ok' status
             return queryset.exclude(results__status=ChecklistItemStatus.NOT_OK).distinct()
-        return queryset # No filter applied if value is empty/None
+        # If value is None (Any), return the original queryset
+        return queryset
+
+    # Optional: Implement filter_related_task if needed
+    def filter_related_task(self, queryset, name, value):
+        if value:
+            return queryset.filter(
+                Q(related_task__task_number__icontains=value) |
+                Q(related_task__title__icontains=value)
+            ).distinct()
+        return queryset

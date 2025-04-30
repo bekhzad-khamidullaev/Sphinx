@@ -335,52 +335,31 @@ class PerformChecklistView(
 # ==================================
 class ChecklistHistoryListView(LoginRequiredMixin, ListView):
     model = Checklist
-    template_name = "checklists/history_list.html"
-    context_object_name = "checklist_runs"
-    paginate_by = 25  # Adjust as needed
+    template_name = 'checklists/history_list.html'
+    context_object_name = 'checklist_runs'
+    paginate_by = 20 # Or your preferred number
 
     def get_queryset(self):
-        # Start with completed runs and optimize joins
+        # Base queryset: completed runs, optimized with related fields
         base_queryset = Checklist.objects.filter(is_complete=True).select_related(
-            "template", "performed_by", "template__category", "related_task"
-        )  # Default ordering is handled below
+            'template', 'performed_by', 'template__category', 'related_task'
+        ).order_by('-performed_at') # Default ordering
 
-        # Apply filtering
-        self.filterset = ChecklistHistoryFilter(
-            self.request.GET, queryset=base_queryset
-        )
-        filtered_qs = self.filterset.qs.distinct()
+        # Apply filtering using the FilterSet
+        self.filterset = ChecklistHistoryFilter(self.request.GET, queryset=base_queryset)
 
-        # Apply sorting
-        sort_param = self.request.GET.get(
-            "sort", "-performed_at"
-        )  # Default sort by newest run
-        allowed_sort_fields = [
-            "template__name",
-            "performed_by__username",
-            "performed_at",
-            "related_task__task_number",
-            "location",
-            # Add 'has_issues' if you implement annotation for it
-        ]
-        sort_field = sort_param.lstrip("-")
-
-        if sort_field in allowed_sort_fields:
-            return filtered_qs.order_by(sort_param)
-        else:
-            logger.warning(f"ChecklistHistory: Attempted invalid sort '{sort_param}'")
-            return filtered_qs.order_by("-performed_at")  # Fallback sort
+        # Return the filtered queryset
+        # distinct() might be needed depending on filter complexity (e.g., has_issues)
+        return self.filterset.qs.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = _("История выполнения чеклистов")
-        context["filterset"] = self.filterset  # Pass filterset to template
-        context["current_sort"] = self.request.GET.get(
-            "sort", "-performed_at"
-        )  # Pass current sort for headers
-        # Pass other context if needed, e.g., total counts
-        # context['total_runs'] = self.filterset.qs.count() # Count after filtering
+        context['filterset'] = self.filterset # Pass filterset to template
+        context['page_title'] = _('История выполнения чеклистов')
+        # Pass current sort parameter for sortable headers
+        context['current_sort'] = self.request.GET.get('sort', '-performed_at') # Default sort
         return context
+
 
 
 class ChecklistDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
@@ -461,7 +440,7 @@ class ChecklistReportView(LoginRequiredMixin, ListView):
                     "runs",
                     filter=Q(
                         runs__is_complete=True,
-                        runs__results__status=ChecklistItemStatus.NA,
+                        runs__results__status=ChecklistItemStatus.NOT_APPLICABLE,
                     ),
                 )
             )

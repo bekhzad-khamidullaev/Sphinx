@@ -1,15 +1,29 @@
+{# templates/includes/sortable_th.html #}
 {% load app_filters i18n %}
-{# Expects: column_name, display_name, current_sort #}
-<th scope="col" class="px-4 py-3.5 cursor-pointer sort-header" data-column="{{ column_name }}">
-    <a href="?{% url_replace context 'page' page_obj.next_page_number %}">Next</a>
-        {% if icon_class %}<i class="{{ icon_class }} fa-fw mr-1 opacity-75"></i>{% endif %}
-        {{ display_name }}
-        {% if current_sort == column_name %}
-            <i class="fas fa-sort-up ml-1"></i> {# Ascending #}
-        {% elif current_sort == '-'|add:column_name %}
-            <i class="fas fa-sort-down ml-1"></i> {# Descending #}
-        {% else %}
-            <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50"></i> {# Default #}
-        {% endif %}
+
+<th scope="col" class="px-4 py-3.5 cursor-pointer sort-header whitespace-nowrap hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors duration-150" data-column="{{ column_name }}">
+    {# The entire header cell content is a link to trigger sorting #}
+    <a href="?{% url_replace sort=column_name %}" class="flex items-center justify-between w-full group" title="{% trans 'Сортировать по:' %} {{ display_name }}">
+        {# Left part: Icon + Display Name #}
+        <span class="flex items-center">
+            {% if icon_class %}
+                <i class="{{ icon_class }} fa-fw mr-1.5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-150"></i>
+            {% endif %}
+            {{ display_name }}
+        </span>
+
+        {# Right part: Sort Indicator Icon #}
+        <span>
+            {% if current_sort == column_name %}
+                {# Currently sorted Ascending by this column #}
+                <i class="fas fa-sort-up ml-1 text-gray-700 dark:text-gray-300" aria-label="{% trans 'Sorted ascending' %}"></i>
+            {% elif current_sort == '-'|add:column_name %}
+                {# Currently sorted Descending by this column #}
+                <i class="fas fa-sort-down ml-1 text-gray-700 dark:text-gray-300" aria-label="{% trans 'Sorted descending' %}"></i>
+            {% else %}
+                {# Not currently sorted by this column - show default sort icon #}
+                <i class="fas fa-sort ml-1 text-gray-400 dark:text-gray-500 opacity-50 group-hover:opacity-100 transition-opacity duration-150" aria-label="{% trans 'Sort' %}"></i>
+            {% endif %}
+        </span>
     </a>
 </th>

@@ -13,6 +13,8 @@ from django.forms import inlineformset_factory
 from django.contrib.admin import SimpleListFilter
 
 from .models import (
+    Location,
+    ChecklistPoint,
     ChecklistTemplate,
     ChecklistTemplateItem,
     Checklist,
@@ -21,6 +23,9 @@ from .models import (
 )
 from .forms import ChecklistResultFormSet  # Import formset for perform view
 
+
+from django.forms import inlineformset_factory
+from django.contrib.admin import SimpleListFilter
 # Safely import TaskCategory for filtering
 try:
     from tasks.models import TaskCategory
@@ -30,42 +35,34 @@ except ImportError:
 
 class ChecklistTemplateItemInline(admin.TabularInline):
     model = ChecklistTemplateItem
-    formset = inlineformset_factory(
-        ChecklistTemplate,
-        ChecklistTemplateItem,
-        fields=("order", "item_text"),
-        extra=1,
-        can_delete=True,
-        can_order=False,
-        widgets={  # Apply basic admin styling
-            "item_text": admin.widgets.AdminTextInputWidget(attrs={"size": "80"}),
-            "order": admin.widgets.AdminIntegerFieldWidget(
-                attrs={"style": "width: 4em;"}
-            ),
-        },
+    formset = inlineformset_factory( # Use inlineformset_factory here for consistency
+        ChecklistTemplate, ChecklistTemplateItem,
+        fields=('order', 'item_text', 'target_point'), # Add target_point
+        extra=1, can_delete=True, can_order=False,
+        widgets={
+            'item_text': admin.widgets.AdminTextInputWidget(attrs={'size': '60'}),
+            'order': admin.widgets.AdminIntegerFieldWidget(attrs={'style': 'width: 4em;'}),
+            'target_point': admin.widgets.ForeignKeyRawIdWidget( # Use Raw ID or Autocomplete
+                 ChecklistTemplateItem._meta.get_field('target_point').remote_field, admin.site
+             )
+        }
     )
-    # form = ChecklistTemplateItemForm # Alternative: use custom form
-    # fields = ('order', 'item_text') # Specify fields if using ModelForm
+    fields = ('order', 'item_text', 'target_point') # Fields to display
     extra = 1
-    ordering = ("order",)
+    ordering = ('order',)
+    autocomplete_fields = ['target_point']
     verbose_name = _("Пункт шаблона")
     verbose_name_plural = _("Пункты шаблона")
 
 
 @admin.register(ChecklistTemplate)
 class ChecklistTemplateAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "category_display",
-        "item_count",
-        "is_active",
-        "created_at",
-        "perform_link",
-    )
-    list_filter = ("is_active", "category")
-    search_fields = ("name", "description", "category__name", "items__item_text")
+    list_display = ('name', 'category_display', 'target_location', 'target_point', 'item_count', 'is_active', 'perform_link') # Added location/point
+    list_filter = ('is_active', 'category', 'target_location') # Added location filter
+    search_fields = ('name', 'description', 'category__name', 'items__item_text', 'target_location__name', 'target_point__name') # Added search fields
     inlines = [ChecklistTemplateItemInline]
-    list_select_related = ("category",)
+    list_select_related = ('category', 'target_location', 'target_point') # Add related fields
+    autocomplete_fields = ['category', 'target_location', 'target_point'] # Enable autocomplete
     actions = ["activate_templates", "deactivate_templates"]
 
     def get_queryset(self, request):
@@ -275,29 +272,9 @@ class ChecklistResultInline(admin.TabularInline):
 
 @admin.register(Checklist)
 class ChecklistAdmin(admin.ModelAdmin):
-    list_display = (
-        "template",
-        "performed_by_link",
-        "performed_at",
-        "is_complete",
-        "has_issues_display",
-        "related_task_link",
-        "location",
-    )
-    list_filter = (
-        "is_complete",
-        "performed_at",
-        "template",
-        "performed_by",
-        ("template__category", admin.RelatedOnlyFieldListFilter),
-    )
-    search_fields = (
-        "template__name",
-        "performed_by__username",
-        "related_task__title",
-        "location",
-        "notes",
-    )
+    list_display = ('name', 'category_display', 'target_location', 'target_point', 'item_count', 'is_active', 'perform_link') # Added location/point
+    list_filter = ('is_active', 'category', 'target_location') # Added location filter
+    search_fields = ('name', 'description', 'category__name', 'items__item_text', 'target_location__name', 'target_point__name') # Added search fields
     readonly_fields = (
         "template",
         "performed_by",
@@ -389,6 +366,34 @@ class ChecklistAdmin(admin.ModelAdmin):
     has_issues_display.short_description = _("Проблемы?")
 
 
-# Note: ChecklistResultAdmin is usually not needed as results are viewed via ChecklistAdmin inline
-# @admin.register(ChecklistResult)
-# class ChecklistResultAdmin(admin.ModelAdmin): ...
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'parent', 'description_excerpt')
+    search_fields = ('name', 'description', 'parent__name')
+    list_filter = ('parent',)
+    autocomplete_fields = ('parent',)
+
+    def description_excerpt(self, obj):
+        return obj.description[:50] + '...' if obj.description and len(obj.description) > 50 else obj.description
+    description_excerpt.short_description = _("Описание")
+
+@admin.register(ChecklistPoint)
+class ChecklistPointAdmin(admin.ModelAdmin):
+    list_display = ('name', 'location_link', 'description_excerpt')
+    search_fields = ('name', 'description', 'location__name')
+    list_filter = ('location',)
+    autocomplete_fields = ('location',)
+    ordering = ('location__name', 'name')
+
+    def location_link(self, obj):
+        if obj.location:
+            link = reverse("admin:checklists_location_change", args=[obj.location.id])
+            return format_html('<a href="{}">{}</a>', link, obj.location.name)
+        return "-"
+    location_link.short_description = _("Местоположение")
+    location_link.admin_order_field = 'location__name'
+
+    def description_excerpt(self, obj):
+        return obj.description[:50] + '...' if obj.description and len(obj.description) > 50 else obj.description
+    description_excerpt.short_description = _("Описание")
+
