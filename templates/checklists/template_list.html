@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load i18n static app_filters %} {# Load necessary tags #}
+{% load i18n static app_filters %} {# Ensure app_filters is loaded if needed #}
 
 {% block title %}{% trans "Шаблоны чеклистов" %}{% endblock %}
 
@@ -66,7 +66,6 @@
 {% endblock %}
 
 {% block list_content %}
-{# Reusing the table structure from previous example #}
 <div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
@@ -83,7 +82,7 @@
                 {% for template in templates %} {# Assumes context_object_name='templates' #}
                 <tr class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm">
                     <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                        <a href="{{ template.get_absolute_url }}" class="hover:underline text-blue-600 dark:text-blue-400">{{ template.name }}</a>
+                        <a href="{{ template.get_absolute_url }}" class="hover:underline text-blue-600 dark:text-blue-400">{{ template.name }} {% if template.version %}(v{{ template.version }}){% endif %}</a>
                     </td>
                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ template.category.name|default:"-" }}</td>
                     <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{{ template.item_count_agg|default:template.items.count }}</td> {# Use annotated count if available #}
@@ -122,5 +121,6 @@
 
 {% block scripts %}
 {{ block.super }}
-{# No specific JS needed for this basic list #}
+{# Initialize Flowbite Dropdowns if not done globally #}
+{# <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.1/flowbite.min.js" defer></script> #}
 {% endblock %}

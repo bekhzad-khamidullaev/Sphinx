@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "django_browser_reload",  # For auto-reloading in development
     "django_select2",
     "widget_tweaks",
+    'taggit',
     # Your Project Apps
     "user_profiles",  # User management, teams, profiles, company structure
     "tasks",  # Core task management functionality

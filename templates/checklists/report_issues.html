@@ -1,21 +1,50 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load i18n static app_filters %} {# Load necessary tags #}
 
 {% block title %}{% trans "Отчет по проблемам в чеклистах" %}{% endblock %}
 
+{% block head_extra %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> {# Flatpickr CSS #}
+{% endblock %}
+
+
 {% block list_title %}
 <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
-    {% trans 'Отчет по проблемам в чеклистах' %}
+    {% trans 'Отчет по пунктам с проблемами' %}
 </h1>
+<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{% trans "Список всех пунктов, отмеченных как 'Не ОК' при выполнении чеклистов." %}</p>
 {% endblock %}
 
 {% block list_actions %}
-<a href="{% url 'checklists:report_summary' %}" class="btn-secondary">
-    <i class="fas fa-list-ol mr-2"></i> {% trans 'Сводный отчет' %}
+<a href="{% url 'checklists:report_summary' %}" class="btn-secondary text-sm">
+    <i class="fas fa-list-ol mr-1.5"></i> {% trans 'Сводный отчет' %}
+</a>
+<a href="{% url 'checklists:history_list' %}" class="btn-secondary text-sm">
+    <i class="fas fa-history mr-1.5"></i> {% trans 'К истории' %}
 </a>
 {% endblock %}
 
 {% block list_content %}
+{# Date Range Filter Form (Similar to summary report) #}
+<div class="bg-white dark:bg-dark-800 shadow-md rounded-lg border border-gray-200 dark:border-dark-700 p-4 mb-6">
+    <form method="get" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+        <div>
+            <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{% trans "Начальная дата" %}</label>
+            <input type="date" id="start_date" name="start_date" value="{{ start_date|default:'' }}" class="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm">
+        </div>
+        <div>
+            <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{% trans "Конечная дата" %}</label>
+            <input type="date" id="end_date" name="end_date" value="{{ end_date|default:'' }}" class="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm">
+        </div>
+        <div class="flex space-x-2">
+            <button type="submit" class="btn-primary text-sm w-full sm:w-auto">{% trans "Применить" %}</button>
+            <a href="{% url 'checklists:report_issues' %}" class="btn-secondary text-sm w-full sm:w-auto">{% trans "Сбросить" %}</a>
+        </div>
+    </form>
+</div>
+
+{# Table of Issues #}
 <div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
@@ -27,35 +56,43 @@
                     <th scope="col" class="px-4 py-3.5">{% trans 'Комментарий' %}</th>
                     <th scope="col" class="px-4 py-3.5">{% trans 'Выполнил' %}</th>
                     <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Прогон' %}</th>
+                     <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Исправлено?' %}</th>
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
                 {% for result in issue_results %} {# Assumes context_object_name='issue_results' #}
                 <tr class="hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150 text-sm">
-                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap align-top">
                         {{ result.checklist_run.performed_at|date:"d.m.Y H:i" }}
                     </td>
-                    <td class="px-4 py-3 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                    <td class="px-4 py-3 font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap align-top">
                          {{ result.checklist_run.template.name }}
                     </td>
-                    <td class="px-4 py-3 text-red-700 dark:text-red-300 whitespace-normal break-words max-w-md">
-                         {{ result.template_item.item_text }}
+                    <td class="px-4 py-3 text-red-700 dark:text-red-300 whitespace-normal break-words max-w-sm align-top">
+                         {{ result.template_item.order }}. {{ result.template_item.item_text }}
                     </td>
-                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-normal break-words max-w-md">
+                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-normal break-words max-w-sm align-top">
                          {{ result.comments|default:"-" }}
                     </td>
-                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap align-top">
                          {{ result.checklist_run.performed_by.display_name|default:"-" }}
                     </td>
-                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <td class="px-4 py-3 text-center whitespace-nowrap align-top">
                         <a href="{{ result.checklist_run.get_absolute_url }}" title="{% trans 'Просмотр прогона' %}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-eye fa-fw"></i></a>
+                    </td>
+                     <td class="px-4 py-3 text-center whitespace-nowrap align-top">
+                         {% if result.is_corrected %}
+                             <i class="fas fa-check-circle text-green-500 dark:text-ios-green" title="{% trans 'Да' %}"></i>
+                         {% else %}
+                              <i class="fas fa-times-circle text-gray-400 dark:text-gray-500" title="{% trans 'Нет' %}"></i>
+                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
                          <i class="fas fa-check-double fa-3x mb-3 text-gray-300 dark:text-gray-600"></i><br>
-                        {% trans "Не найдено пунктов чеклистов с проблемами." %}
+                        {% trans "Не найдено пунктов чеклистов с проблемами за выбранный период." %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -64,4 +101,22 @@
     </div>
 </div>
 {% include "includes/pagination.html" with page_obj=page_obj %} {# If pagination is used #}
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Russian locale for Flatpickr #}
+<script defer>
+ document.addEventListener('DOMContentLoaded', function() {
+    if (typeof flatpickr !== 'undefined') {
+         flatpickr(".flatpickr-date", { // Target date inputs by class
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d.m.Y",
+            locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
+         });
+    }
+ });
+</script>
 {% endblock %}

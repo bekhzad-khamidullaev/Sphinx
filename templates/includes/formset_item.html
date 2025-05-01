@@ -1,62 +1,52 @@
-{% comment %} checklists/templates/checklists/includes/formset_item.html {% endcomment %}
-{% load i18n %}
-{% load widget_tweaks %}
+{% load i18n static widget_tweaks %}
 
-{# Expects 'form' (a form from ChecklistTemplateItemFormSet) and 'formset' #}
-<div class="item-form flex items-start space-x-2 p-3 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 {% if form.errors %}border-2 border-red-500 dark:border-red-700{% endif %}" id="{{ form.prefix }}">
+{# Represents one row in the formset #}
+<div class="formset-item item-form p-4 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 space-y-3" id="{{ prefix }}-{% if forloop %}{{ forloop.counter0 }}{% else %}__prefix__{% endif %}">
+     {# Hidden fields for the form (ID, FKs, etc.) #}
+     {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
 
-    {# Hidden fields (ID, DELETE, FK to parent if needed) #}
-    {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
-
-    {# Order Field #}
-    <div class="flex-shrink-0 w-16">
-        <label for="{{ form.order.id_for_label }}" class="sr-only">{% trans "Порядок" %}</label>
-        {% trans "Порядок" as order_title %} {# Translate title #}
-        {% render_field form.order class+="form-input text-sm text-center w-full py-1" placeholder="#" title=order_title %} {# Use variable #}
-        {% if form.order.errors %}<div class="text-red-500 text-xs mt-1">{{ form.order.errors|first }}</div>{% endif %}
-    </div>
-
-    {# Item Text & Point Fields (Combined Column) #}
-    <div class="flex-grow space-y-1">
-        {# Item Text #}
-        <div>
-             <label for="{{ form.item_text.id_for_label }}" class="sr-only">{% trans "Текст пункта" %}</label>
-             {% trans "Текст пункта чеклиста..." as item_placeholder %} {# Translate placeholder #}
-             {% render_field form.item_text class+="form-textarea text-sm w-full py-1" rows="2" placeholder=item_placeholder %} {# Use variable #}
-             {% if form.item_text.errors %}<div class="text-red-500 text-xs mt-1">{{ form.item_text.errors|first }}</div>{% endif %}
-        </div>
-         {# Target Point #}
-         {% if form.target_point %}
-         <div class="flex items-center space-x-1">
-            <label for="{{ form.target_point.id_for_label }}" class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{% trans "Точка:" %}</label>
-            {# Render select with widget_tweaks to ensure form's classes are applied #}
-            {% render_field form.target_point class+="form-select text-xs py-1 flex-grow min-w-0" %}
-             {% if form.target_point.help_text %}
-                <span class="text-xs text-gray-400" title="{{ form.target_point.help_text }}"><i class="far fa-question-circle"></i></span>
-             {% endif %}
-            {% if form.target_point.errors %}<div class="text-red-500 text-xs mt-1">{{ form.target_point.errors|first }}</div>{% endif %}
+     <div class="flex items-start justify-between gap-4">
+         {# Main Form Fields (order, item_text, answer_type etc.) #}
+         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 flex-grow">
+             {% for field in form.visible_fields %}
+             <div>
+                 <label for="{{ field.id_for_label }}" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">
+                     {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                 </label>
+                  {% if field.widget_type == 'checkbox' %}
+                       <div class="flex items-center pt-1">
+                           {% render_field field class+="form-checkbox h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600" %}
+                           <label for="{{ field.id_for_label }}" class="ml-2 block text-xs text-gray-900 dark:text-gray-300">{{ field.label }}</label>
+                      </div>
+                      <script>document.querySelector('label[for="{{ field.id_for_label }}"]').classList.add('hidden');</script> {# Hide original label #}
+                  {% elif field.widget_type == 'select' %}
+                      {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                  {% elif field.widget_type == 'textarea' %}
+                      {% render_field field class+="form-textarea block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" rows="1" %}
+                  {% elif field.name == 'order' %}
+                      {% render_field field class+="form-input w-16 text-center text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                  {% else %} {# Default input #}
+                      {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                  {% endif %}
+                  {% if field.errors %}<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
+             </div>
+             {% endfor %}
          </div>
-        {% endif %}
-    </div>
-
-
-    {# Delete Control #}
-    {% if formset.can_delete %}
-    <div class="flex-shrink-0 flex items-center pt-1">
-        <div class="hidden">{{ form.DELETE }}</div>
-         <button type="button"
-                class="delete-item-btn p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors"
-                title="{% trans 'Удалить этот пункт' %}">
-            <i class="fas fa-trash-alt fa-fw"></i>
-            <span class="sr-only">{% trans 'Удалить' %}</span>
-        </button>
-    </div>
-    {% endif %}
-
-     {# Display non-field errors for THIS specific form in the formset #}
-     {% if form.non_field_errors %}
-        <div class="w-full text-red-500 text-xs mt-1 pt-1 border-t border-dashed border-red-300 dark:border-red-700 col-span-full"> {# Adjust col-span if layout changes #}
-             {% for error in form.non_field_errors %} {{ error }} {% endfor %}
-        </div>
-     {% endif %}
+         {# Delete Button #}
+         {% if formset.can_delete %}
+         <div class="flex-shrink-0 pt-5">
+             <button type="button" title="{% trans 'Удалить пункт' %}" class="delete-formset-item p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors">
+                 <i class="fas fa-trash fa-fw"></i>
+             </button>
+              {# The actual DELETE checkbox is hidden #}
+              <div class="hidden">{{ form.DELETE }}</div>
+         </div>
+         {% endif %}
+     </div>
+      {# Display Non-field errors specific to this form #}
+      {% if form.non_field_errors %}
+         <div class="text-sm text-red-600 dark:text-red-400">
+             {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+         </div>
+      {% endif %}
 </div>

@@ -7,12 +7,22 @@
     {{ block.super }}
     {% if filterset %}{{ filterset.form.media.css }}{% endif %} {# Include filter form media CSS (for widgets like DatePicker) #}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> {# Flatpickr CSS #}
+    {# Load Select2 CSS if using it for filters #}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     {# Sorting icon styles #}
     <style>
         .sort-header[aria-sort="ascending"] .fa-sort::before { content: "\f0de"; /* fa-sort-up */ }
         .sort-header[aria-sort="descending"] .fa-sort::before { content: "\f0dd"; /* fa-sort-down */ }
         .sort-header[aria-sort="none"] .fa-sort { opacity: 0.3; }
         .sort-header:hover .fa-sort { opacity: 0.7; }
+        /* Select2 dark mode (add if needed) */
+         html.dark .select2-container--default .select2-selection--single { background-color: theme('colors.dark.700'); border-color: theme('colors.dark.600'); }
+         html.dark .select2-container--default .select2-selection--single .select2-selection__rendered { color: theme('colors.gray.300'); }
+         html.dark .select2-container--default .select2-selection--single .select2-selection__arrow b { border-color: theme('colors.gray.400') transparent transparent transparent; }
+         html.dark .select2-dropdown { background-color: theme('colors.dark.800'); border-color: theme('colors.dark.600'); }
+         html.dark .select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: theme('colors.blue.600'); }
+         html.dark .select2-results__option[aria-selected=true] { background-color: theme('colors.dark.600');}
+         html.dark .select2-search--dropdown .select2-search__field { background-color: theme('colors.dark.700'); border-color: theme('colors.dark.600'); color: theme('colors.gray.300'); }
     </style>
 {% endblock %}
 
@@ -61,7 +71,7 @@
 {% block list_content %}
 
 {# --- Filter Section (Desktop - Collapsible using AlpineJS) --- #}
-<div id="filter-section" class="mb-6" x-show="filterOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" x-cloak>
+<div id="filter-section" class="mb-6 hidden" x-show="filterOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" x-cloak>
     <div class="border border-gray-200 dark:border-dark-700 p-4 bg-white dark:bg-dark-800 rounded-lg shadow-md">
         {% if filterset %}
         <form method="get" action="" id="filter-form" class="space-y-4">
@@ -72,9 +82,31 @@
                 {% endif %}
             {% endfor %}
 
-            {# Render filter fields using crispy forms tag #}
-            {# This assumes you've configured crispy-tailwind template pack #}
-            {% crispy filterset.form %}
+            {# Render filter fields manually with widget_tweaks for more control #}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {% for field in filterset.form %}
+                      <div>
+                           <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
+                           {# Apply classes based on field type - CORRECTED #}
+                           {% if field.widget_type == 'select' or field.widget_type == 'selectmultiple' %}
+                               {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                           {% elif field.name == 'performed_at' %} {# Special handling for DateRangeFilter widget #}
+                                <div class="flex space-x-2">
+                                     {# Access subwidgets for DateRangeFilter #}
+                                     {% trans "От" as placeholder_from %}
+                                     {% trans "До" as placeholder_to %}
+                                     {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_from index=0 %}
+                                     {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_to index=1 %}
+                                </div>
+                           {% elif field.widget_type == 'nullbooleanselect' %}
+                                {% render_field field class+="form-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                           {% else %} {# Default input #}
+                               {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                           {% endif %}
+                           {% if field.errors %}<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
+                      </div>
+                 {% endfor %}
+            </div>
 
             <div class="mt-4 flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-dark-600">
                 <a href="{% url 'checklists:history_list' %}" class="btn-secondary text-sm">{% trans "Сбросить" %}</a>
@@ -107,17 +139,25 @@
         {% endfor %}
          {# Render fields one below other - Manually add classes #}
          {% for field in filterset.form %}
-         {% with mobile_field_id=field.id_for_label|add:"_mobile" %}
+         {% with mobile_base_id=field.id_for_label|add:"_mobile" %}
          <div>
-             <label for="{{ mobile_field_id }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
-             {% if field.name == 'performed_at_after' or field.name == 'performed_at_before' %}
-                  {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_field_id %}
-              {% elif field.name == 'category' or field.name == 'performed_by' or field.name == 'has_issues' %} {# Group select fields #}
-                  {% render_field field class+="form-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_field_id %}
+              {# Adjust label 'for' attribute for multi-widget fields #}
+             <label for="{{ mobile_base_id }}{% if field.name == 'performed_at' %}_0{% endif %}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
+              {# Apply specific classes based on widget type #}
+              {% if field.name == 'performed_at' %} {# Date Range #}
+                 <div class="space-y-2">
+                      {% trans "От" as placeholder_from_mobile %}
+                      {% trans "До" as placeholder_to_mobile %}
+                      {# REMOVED id=... from render_field #}
+                      {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_from_mobile index=0 %}
+                      {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_to_mobile index=1 %}
+                 </div>
+              {% elif field.widget_type == 'select' or field.widget_type == 'nullbooleanselect' %}
+                  {% render_field field class+="form-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_base_id %}
               {% else %} {# Default to text input #}
-                  {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_field_id %}
+                  {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_base_id %}
               {% endif %}
-         {% endwith %} {# End with mobile_field_id #}
+         {% endwith %} {# End with mobile_base_id #}
 
                 {% if field.help_text %}<p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>{% endif %}
                 {% if field.errors %}<p class="text-xs text-red-500 mt-1">{{ field.errors.0 }}</p>{% endif %}
@@ -142,9 +182,9 @@
                     {% include 'includes/sortable_th.html' with column_name='performed_by__username' display_name=_('Кем выполнен') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
                     {% include 'includes/sortable_th.html' with column_name='performed_at' display_name=_('Дата выполнения') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
                     <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Проблемы?' %}</th> {# Needs custom sorting logic #}
-                    {% include 'includes/sortable_th.html' with column_name='related_task__task_number' display_name=_('Задача') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
-                    {% include 'includes/sortable_th.html' with column_name='location' display_name=_('Место') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
-                    <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Действия' %}</th>
+                     {% include 'includes/sortable_th.html' with column_name='status' display_name=_('Статус') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
+                     <th scope="col" class="px-4 py-3.5">{% trans 'Место/Точка' %}</th>
+                     <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Действия' %}</th>
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
@@ -162,17 +202,29 @@
                              <i class="fas fa-check-circle text-green-500 dark:text-ios-green" title="{% trans 'Нет' %}"></i>
                         {% endif %}
                     </td>
-                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                        {% if run.related_task %}
-                            <a href="{% url 'tasks:task_detail' pk=run.related_task.pk %}" class="hover:underline text-blue-500" title="{{ run.related_task.title }}">{{ run.related_task.task_number }}</a>
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ run.location|default:"-" }}</td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                            {% if run.status == 'approved' %} bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
+                            {% elif run.status == 'submitted' %} bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100
+                            {% elif run.status == 'rejected' %} bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100
+                            {% elif run.status == 'in_progress' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100
+                            {% else %} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
+                            {% endif %}">
+                            {{ run.get_status_display }}
+                          </span>
+                     </td>
+                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                         {{ run.location|default:"-" }}
+                         {% if run.point %}<span class="text-xs">/ {{ run.point.name }}</span>{% endif %}
+                     </td>
                     <td class="px-4 py-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center space-x-1">
                             <a href="{{ run.get_absolute_url }}" title="{% trans 'Просмотр результатов' %}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-eye fa-fw"></i></a>
+                             {% if request.user.is_staff and run.status == 'submitted' %}
+                                  <a href="{% url 'checklists:checklist_status_change' pk=run.pk %}" title="{% trans 'Изменить статус (одобрить/отклонить)' %}" class="p-2 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-check-double fa-fw"></i></a>
+                             {% endif %}
+                              {# Add delete action? Requires view and permissions #}
+                             {# <a href="#" title="{% trans 'Удалить прогон' %}" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-trash fa-fw"></i></a> #}
                         </div>
                     </td>
                 </tr>
@@ -182,7 +234,7 @@
                         <div class="flex flex-col items-center">
                             <i class="fas fa-history fa-3x mb-3 text-gray-300 dark:text-gray-600"></i>
                             <span class="text-base">{% trans "Нет записей о выполнении чеклистов." %}</span>
-                             {% if request.GET %} {# Suggest resetting filters if filters are active #}
+                             {% if request.GET and filterset.is_filtered %} {# Suggest resetting filters if filters are active #}
                               <a href="{% url 'checklists:history_list' %}" class="mt-2 text-sm text-blue-600 hover:underline">{% trans "Сбросить фильтры?" %}</a>
                               {% endif %}
                         </div>
@@ -196,7 +248,7 @@
 {% if is_paginated %} {# Only show pagination if needed #}
     <div class="mt-6">
         {# Use your updated pagination include that uses url_replace correctly #}
-        {% include "includes/pagination.html" with page_obj=page_obj %}
+        {% include "includes/pagination.html" with page_obj=page_obj request=request %} {# Pass request to pagination #}
     </div>
 {% endif %}
 {% endblock %}
@@ -208,11 +260,39 @@
  {{ filterset.form.media.js }}
  <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
  <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Russian locale for Flatpickr #}
+ {# Load Select2 JS (ensure jQuery is loaded first) #}
+ <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
+ <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+ <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
 {% endif %}
+{# Load AlpineJS if not loaded globally #}
+{# <script src="//unpkg.com/alpinejs" defer></script> #}
+
 {# Script for Flatpickr and Filter Toggle #}
 <script defer>
  document.addEventListener('DOMContentLoaded', function() {
-    // Flatpickr initialization
+     // --- Initialize Select2 for Filters ---
+     if (typeof $ !== 'undefined' && $.fn.select2) {
+         // Initialize selects inside the desktop filter section
+        $('#filter-section .select2-basic').select2({
+            theme: 'default',
+            language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
+            width: '100%',
+            allowClear: true,
+            placeholder: "{% trans 'Любой' %}",
+        });
+        // Initialize selects inside the mobile filter drawer
+         $('#filter-drawer-checklist .select2-basic').select2({ // Use the correct ID if different for mobile
+            theme: 'default',
+            language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
+            width: '100%',
+            allowClear: true,
+            placeholder: "{% trans 'Любой' %}",
+        });
+        // console.log("Select2 initialized for filters.");
+     } else { console.warn("jQuery or Select2 not loaded for filters."); }
+
+    // --- Flatpickr initialization ---
     if (typeof flatpickr !== 'undefined') {
          flatpickr(".flatpickr-date", { // Target date inputs by class added in filters.py
             dateFormat: "Y-m-d",
@@ -220,54 +300,41 @@
             altFormat: "d.m.Y",
             locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
          });
-         // Add init for datetime pickers if your filter uses them
-         // flatpickr(".flatpickr-datetime", { ... });
+         // console.log("Flatpickr initialized for filters.");
     } else {
          console.warn("Flatpickr not loaded, date filter widgets might not work correctly.");
     }
 
-    // Basic Filter Toggle Logic (Replace with Alpine if you prefer)
-    const filterBtn = document.getElementById('toggleFilterBtn');
-    const filterSection = document.getElementById('filter-section');
-    const filterArrow = document.getElementById('filter-arrow');
+    // --- Desktop Filter Toggle Logic (Uses AlpineJS from base template) ---
+     if (typeof Alpine !== 'undefined') {
+          // console.log("AlpineJS detected for filter toggle.");
+          // Force open if filters are active and state is closed
+           const filterBtn = document.getElementById('toggleFilterBtn');
+           if (filterBtn && filterBtn.__x && filterBtn.__x.$data.filterOpen === false) {
+                const params = new URLSearchParams(window.location.search);
+                let filtersActive = false;
+                for (const [key, value] of params.entries()) {
+                    if (key !== 'page' && key !== 'sort' && value) {
+                        filtersActive = true;
+                        break;
+                    }
+                }
+                if (filtersActive) {
+                    // Dispatch event to tell Alpine to open
+                    filterBtn.dispatchEvent(new CustomEvent('click')); // Simulate click to toggle open
+                    // console.log("Filters active, attempting to open filter section via simulated click.");
+                }
+           }
+     } else {
+         console.warn("AlpineJS not detected, desktop filter toggle might not work.");
+     }
 
-    if (filterBtn && filterSection && filterArrow) {
-        // Check sessionStorage for previous state
-        const filterState = sessionStorage.getItem('checklistFilterOpen');
-        // Determine if any filters are active initially (excluding page/sort)
-        const params = new URLSearchParams(window.location.search);
-        let filtersActive = false;
-        for (const [key, value] of params.entries()) {
-            if (key !== 'page' && key !== 'sort' && value) {
-                filtersActive = true;
-                break;
-            }
-        }
-
-        // Open if saved state is true OR if no saved state but filters are active
-        const shouldOpen = filterState === 'true' || (filterState === null && filtersActive);
-
-        filterSection.classList.toggle('hidden', !shouldOpen);
-        filterBtn.setAttribute('aria-expanded', shouldOpen.toString());
-        filterArrow.classList.toggle('fa-chevron-up', shouldOpen);
-        filterArrow.classList.toggle('fa-chevron-down', !shouldOpen);
-
-        // Add click listener
-        filterBtn.addEventListener('click', () => {
-            const isHidden = filterSection.classList.toggle('hidden');
-            filterBtn.setAttribute('aria-expanded', String(!isHidden));
-            filterArrow.classList.toggle('fa-chevron-down', isHidden);
-            filterArrow.classList.toggle('fa-chevron-up', !isHidden);
-            // Save state to sessionStorage
-            sessionStorage.setItem('checklistFilterOpen', String(!isHidden));
-        });
-    }
-
-    // Initialize Flowbite drawers if used for mobile filters
-    if (typeof Flowbite !== 'undefined' && typeof initFlowbite !== 'undefined') {
+    // --- Initialize Flowbite drawers (if used for mobile filters) ---
+    if (typeof Flowbite !== 'undefined' && typeof initFlowbite === 'function') {
          initFlowbite();
+          // console.log("Flowbite initialized for mobile filter drawer.");
     } else {
-        // console.warn("Flowbite not detected, mobile filter drawer might not work.");
+        console.warn("Flowbite not detected, mobile filter drawer might not work.");
     }
 
  });

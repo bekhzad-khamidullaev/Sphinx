@@ -8,8 +8,52 @@
     {{ block.super }}
     {# Select2 CSS (if not loaded globally) #}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    {# Flatpickr CSS #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     {{ form.media.css }}
     {{ item_formset.media.css }}
+    <style>
+        /* Select2 dark mode styles */
+        html.dark .select2-container--default .select2-selection--single,
+        html.dark .select2-container--default .select2-selection--multiple {
+            background-color: theme('colors.dark.700');
+            border-color: theme('colors.dark.600');
+            color: theme('colors.gray.300');
+        }
+        html.dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: theme('colors.gray.300');
+        }
+        html.dark .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-color: theme('colors.gray.400') transparent transparent transparent;
+        }
+        html.dark .select2-dropdown {
+            background-color: theme('colors.dark.800');
+            border-color: theme('colors.dark.600');
+        }
+        html.dark .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: theme('colors.blue.600');
+            color: white;
+        }
+        html.dark .select2-results__option[aria-selected=true] {
+             background-color: theme('colors.dark.600');
+        }
+        html.dark .select2-search--dropdown .select2-search__field {
+            background-color: theme('colors.dark.700');
+            border-color: theme('colors.dark.600');
+            color: theme('colors.gray.300');
+        }
+         /* Style for deleted formset rows */
+        .formset-item.deleted {
+            opacity: 0.5;
+            border-left: 3px solid theme('colors.red.500');
+        }
+        .formset-item.deleted label,
+        .formset-item.deleted input,
+        .formset-item.deleted select,
+        .formset-item.deleted textarea {
+             pointer-events: none; /* Disable interaction */
+        }
+    </style>
 {% endblock %}
 
 {% block list_title %}
@@ -20,15 +64,7 @@
 <div class="bg-white dark:bg-dark-800 shadow-xl rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
 
     {# --- Error Display --- #}
-    {% if form.errors or item_formset.errors %}
-        <div role="alert" class="mb-6 p-4 border border-red-400 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg">
-            <h4 class="font-bold text-lg mb-2">{% trans "Пожалуйста, исправьте ошибки:" %}</h4>
-            {% if form.non_field_errors %}<ul class="list-disc list-inside text-sm mb-2">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-            {% if item_formset.non_form_errors %}<p class="font-semibold text-sm mt-2">{% trans "Ошибки пунктов (общие):" %}</p><ul class="list-disc list-inside text-sm mb-2">{% for error in item_formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-            {% for field in form %}{% if field.errors %}<p class="font-semibold text-sm mt-2">{{ field.label }}:</p><ul class="list-disc list-inside text-sm mb-2">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}{% endfor %}
-            {% for f_form in item_formset %}{% for field in f_form %}{% if field.errors %}<p class="font-semibold text-sm mt-2">{% blocktrans with count=forloop.parentloop.counter label=field.label %}Пункт #{{ count }} - {{ label }}:{% endblocktrans %}</p><ul class="list-disc list-inside text-sm mb-2">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}{% endfor %}{% if f_form.non_field_errors %}<p class="font-semibold text-sm mt-2">{% blocktrans with count=forloop.counter %}Пункт #{{ count }} - Общая ошибка:{% endblocktrans %}</p><ul class="list-disc list-inside text-sm mb-2">{% for error in f_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}{% endfor %}
-        </div>
-    {% endif %}
+    {% include 'includes/form_errors.html' with form=form formset=item_formset %}
     {# --- End Error Display --- #}
 
     <form method="post" action="" id="template-form" autocomplete="off" novalidate>
@@ -37,31 +73,55 @@
         <fieldset class="mb-6 border-b border-gray-200 dark:border-dark-600 pb-6">
             <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Основная информация" %}</legend>
             {# Render main form fields manually #}
-             <div class="space-y-4">
-                {% for field in form.visible_fields %}
-                     <div>
-                         <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                             {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
-                         </label>
-                         {% render_field field %} {# Use widget_tweaks to apply classes from form #}
-                         {% if field.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
-                         {% if field.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
-                     </div>
-                 {% endfor %}
-                 {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                 {% for field in form.visible_fields %}
+                      <div class="{% if field.name == 'description' or field.name == 'tags' %}md:col-span-2{% endif %}">
+                          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                          </label>
+                          {# Apply classes based on field type #}
+                         {% if field.widget_type == 'checkbox' %}
+                              <div class="flex items-center"> {# Wrapper for proper alignment #}
+                                   {% render_field field class+="form-checkbox h-5 w-5 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600" %}
+                                   <label for="{{ field.id_for_label }}" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">{{ field.label }}</label> {# Add label next to checkbox #}
+                              </div>
+                              {# Hide the default label above the checkbox #}
+                              <script>
+                                  // Ensure the label exists before trying to hide it
+                                  const label_{{ field.auto_id }} = document.querySelector('label[for="{{ field.id_for_label }}"]');
+                                  if (label_{{ field.auto_id }} && !label_{{ field.auto_id }}.closest('.flex')) {
+                                      label_{{ field.auto_id }}.classList.add('hidden');
+                                  }
+                              </script>
+                          {% elif field.widget_type == 'select' %}
+                              {% render_field field class+="form-select block w-full select2-basic text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                          {% elif field.widget_type == 'textarea' %}
+                              {% render_field field class+="form-textarea block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" rows="3" %}
+                          {% elif field.widget_type == 'date' %}
+                               {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                          {% elif field.widget_type == 'clearablefile' %} {# For Taggit's default widget or similar #}
+                               {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                           {% else %} {# Default text/number/etc. input styling #}
+                               {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                           {% endif %}
+                           {% if field.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
+                           {% if field.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
+                      </div>
+                  {% endfor %}
+                  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
              </div>
         </fieldset>
 
         <fieldset class="mb-6">
             <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Пункты чеклиста" %}</legend>
             {{ item_formset.management_form }}
-            <div id="item-formset-container" class="space-y-3">
+            <div id="item-formset-container" class="space-y-4">
                 {% for item_form in item_formset %}
-                    {% include "includes/formset_item.html" with form=item_form formset=item_formset %}
+                    {% include "includes/formset_item.html" with form=item_form formset=item_formset prefix=item_formset.prefix forloop=forloop %}
                 {% endfor %}
             </div>
             <div id="empty-item-form" class="hidden">
-                 {% include "includes/formset_item.html" with form=item_formset.empty_form formset=item_formset %}
+                 {% include "includes/formset_item.html" with form=item_formset.empty_form formset=item_formset prefix=item_formset.prefix forloop=None %}
             </div>
             <div class="mt-4">
                 <button type="button" id="add-item-form" class="btn-secondary btn-sm"> {# Use button styles #}
@@ -90,12 +150,57 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
+    {# Load Flatpickr #}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Russian locale for Flatpickr #}
 
     {{ form.media.js }}
     {{ item_formset.media.js }}
     {# --- JavaScript for Formset & Dependent Dropdown --- #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+             console.log("Checklist Template Form JS Loaded");
+
+             // --- Initialize Select2 ---
+             function initSelect2(selector) {
+                 // Check if element exists and is not already initialized
+                 $(selector).not('.select2-hidden-accessible').each(function() {
+                      if (typeof $ !== 'undefined' && $.fn.select2) {
+                           $(this).select2({
+                                theme: 'default', // or 'bootstrap5' etc. if you have themes
+                                language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
+                                width: '100%',
+                                // Allow clearing only if the field is not required
+                                allowClear: $(this).prop('required') ? false : true,
+                                placeholder: $(this).data('placeholder') || '',
+                           });
+                           // console.log(`Select2 initialized for: ${this.id || this.name}`);
+                      } else { console.warn("jQuery or Select2 not loaded."); }
+                 });
+             }
+             // Initialize for existing fields
+             initSelect2('.select2-basic'); // Generic class for selects needing basic select2
+             initSelect2('#id_target_location');
+             initSelect2('#id_target_point');
+             // Initialize formset selects using more specific selectors if needed
+             initSelect2('.item-form select[name$="-target_point"]');
+             initSelect2('.item-form select[name$="-parent_item"]');
+             initSelect2('.item-form select[name$="-answer_type"]');
+
+             // --- Initialize Flatpickr ---
+              function initFlatpickr(selector) {
+                 if (typeof flatpickr !== 'undefined') {
+                    flatpickr(selector, { // Target date inputs by class added in form
+                         dateFormat: "Y-m-d",
+                         altInput: true,
+                         altFormat: "d.m.Y",
+                         locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
+                     });
+                     // console.log(`Flatpickr initialized for: ${selector}`);
+                 } else { console.warn("Flatpickr not loaded."); }
+              }
+              initFlatpickr(".flatpickr-date");
+
             // --- Formset Management JS ---
             const container = document.getElementById('item-formset-container');
             const addButton = document.getElementById('add-item-form');
@@ -105,42 +210,112 @@
 
             if (container && addButton && emptyFormTemplateNode && totalFormsInput) {
                 let formCount = parseInt(totalFormsInput.value, 10);
-                console.log(`Initial Formset State: prefix=${prefix}, initial TOTAL_FORMS=${formCount}`);
 
-                function updateElementIndices() { /* ... (implementation from previous correct response) ... */ }
-                addButton.addEventListener('click', function() { /* ... (implementation from previous correct response) ... */ });
-                function addDeleteListener(button) { /* ... (implementation from previous correct response) ... */ }
-                container.querySelectorAll('.item-form').forEach(formRow => { /* ... (attach initial listeners and set initial state) ... */ });
-                console.log("Formset JS initialized.");
+                function updateElementIndices(elem, index) {
+                    const idRegex = new RegExp(`(${prefix}-(\\d+|__prefix__))`);
+                    const nameRegex = new RegExp(`(${prefix}-(\\d+|__prefix__))`);
+
+                    if (elem.id) { elem.id = elem.id.replace(idRegex, `${prefix}-${index}`); }
+                    if (elem.name) { elem.name = elem.name.replace(nameRegex, `${prefix}-${index}`); }
+                    // Update 'for' attribute on labels
+                     elem.querySelectorAll('label').forEach(label => {
+                        if (label.htmlFor) { label.htmlFor = label.htmlFor.replace(idRegex, `${prefix}-${index}`); }
+                     });
+                    // Update other attributes if necessary (e.g., data-*)
+
+                    // Recursively update children (safer than querySelectorAll('*'))
+                    elem.childNodes.forEach(child => {
+                         if (child.nodeType === Node.ELEMENT_NODE) {
+                              updateElementIndices(child, index);
+                         }
+                    });
+                 }
+
+                addButton.addEventListener('click', function() {
+                    const newForm = emptyFormTemplateNode.cloneNode(true);
+                    // Ensure the new form doesn't have the 'deleted' class initially
+                    newForm.classList.remove('deleted');
+
+                    updateElementIndices(newForm, formCount);
+                    container.appendChild(newForm);
+                    totalFormsInput.value = formCount + 1;
+
+
+                    // Add delete listener to the new form's button
+                    const deleteButton = newForm.querySelector('.delete-formset-item');
+                     if (deleteButton) { addDeleteListener(deleteButton); }
+
+                    // Re-initialize Select2 and Flatpickr for the new form
+                    // Use specific selectors within the newForm element
+                    initSelect2($(`#${newForm.id} .select2-basic`));
+                    initSelect2($(`#${newForm.id} select[name$="-target_point"]`));
+                    initSelect2($(`#${newForm.id} select[name$="-parent_item"]`));
+                    initSelect2($(`#${newForm.id} select[name$="-answer_type"]`)); // Corrected: Removed redundant call
+                    initFlatpickr($(`#${newForm.id} .flatpickr-date`));
+
+                     formCount++; // Increment count AFTER using it as index
+
+                    // Focus on the first input of the new form (optional)
+                     newForm.querySelector('input, textarea, select')?.focus();
+                });
+
+                function addDeleteListener(button) {
+                     button.addEventListener('click', function() {
+                        const formRow = this.closest('.formset-item');
+                        const deleteInput = formRow.querySelector('input[type="checkbox"][id$="-DELETE"]');
+                         if (deleteInput) {
+                             deleteInput.checked = !deleteInput.checked; // Toggle checked state
+                             formRow.classList.toggle('deleted', deleteInput.checked);
+                             // Change button icon/tooltip
+                             const icon = this.querySelector('i');
+                             if (icon) {
+                                  icon.classList.toggle('fa-trash', !deleteInput.checked);
+                                  icon.classList.toggle('fa-undo', deleteInput.checked);
+                                  this.title = deleteInput.checked ? '{% trans "Восстановить пункт" %}' : '{% trans "Удалить пункт" %}';
+                             }
+                         }
+                     });
+                 }
+
+                // Add initial delete listeners and set initial state for existing forms
+                container.querySelectorAll('.item-form').forEach(formRow => {
+                    const deleteButton = formRow.querySelector('.delete-formset-item');
+                    const deleteInput = formRow.querySelector('input[type="checkbox"][id$="-DELETE"]');
+                     if (deleteButton) { addDeleteListener(deleteButton); }
+                     if (deleteInput && deleteInput.checked) {
+                          formRow.classList.add('deleted');
+                           if(deleteButton){
+                               const icon = deleteButton.querySelector('i');
+                                if (icon) {
+                                     icon.classList.remove('fa-trash');
+                                     icon.classList.add('fa-undo');
+                                     deleteButton.title = '{% trans "Восстановить пункт" %}';
+                                }
+                           }
+                     }
+                });
+                // console.log("Formset JS initialized.");
             } else { console.warn("Formset management elements not found."); }
 
-             // --- Dependent Location -> Point Dropdown JS ---
+             // --- Dependent Location -> Point Dropdown JS (Main Form) ---
              const locationSelect = document.getElementById('id_target_location');
              const pointSelect = document.getElementById('id_target_point');
              const pointWrapper = pointSelect?.closest('div');
 
              if (locationSelect && pointSelect) {
-                 const initialPointValue = '{{ form.target_point.value|default:""|escapejs }}';
+                 const initialPointValue = '{{ form.target_point.value|default:""|escapejs }}'; // Get initial value if editing
                  const pointApiUrl = "{% url 'checklists:api:api_checklist_point_list' %}";
-
-                 // --- Define translation strings in the outer scope ---
                  const noLocationText = "{% trans "--- Сначала выберите местоположение ---" %}";
                  const selectPointText = "{% trans "--------- Выберите точку ---------" %}";
                  const noPointsText = "{% trans "--- Точек не найдено ---" %}";
                  const errorText = "{% trans "--- Ошибка загрузки ---" %}";
-                 // --- End string definitions ---
 
                  function updatePoints() {
                      const locationId = locationSelect.value;
-                     const noLocationText = "{% trans "--- Сначала выберите местоположение ---" %}";
-                     const selectPointText = "{% trans "--------- Выберите точку ---------" %}";
-                     const noPointsText = "{% trans "--- Точек не найдено ---" %}";
-                     const errorText = "{% trans "--- Ошибка загрузки ---" %}";
-
-                     pointSelect.innerHTML = `<option value="">${noLocationText}</option>`;
                      pointSelect.disabled = true;
-                     pointSelect.value = '';
-                     if (pointWrapper) pointWrapper.classList.add('opacity-50'); // Visually disable wrapper too
+                     if (pointWrapper) pointWrapper.classList.add('opacity-50');
+                     // Use jQuery for Select2 interaction
+                     $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
 
                      if (locationId) {
                          const url = `${pointApiUrl}?location=${locationId}`;
@@ -148,35 +323,49 @@
                              .then(response => response.ok ? response.json() : Promise.reject('Network error'))
                              .then(data => {
                                  const points = Array.isArray(data) ? data : (data.results || []);
-                                 pointSelect.innerHTML = `<option value="">${selectPointText}</option>`;
+                                 // Add placeholder first
+                                 const placeholderOption = new Option(selectPointText, '', false, false);
+                                 $(pointSelect).append(placeholderOption);
+
                                  if (points.length > 0) {
                                      points.forEach(point => {
                                          const option = new Option(point.name, point.id);
-                                         // Check against initialPointValue (make sure types match if needed)
+                                         // Check against initialPointValue and preselect if editing
                                          if (initialPointValue && point.id == initialPointValue) {
                                               option.selected = true;
                                          }
-                                         pointSelect.add(option);
+                                         $(pointSelect).append(option);
                                      });
                                      pointSelect.disabled = false;
                                      if (pointWrapper) pointWrapper.classList.remove('opacity-50');
                                  } else {
-                                     pointSelect.innerHTML = `<option value="">${noPointsText}</option>`;
+                                      // No points found, keep disabled and show "No points"
+                                      $(pointSelect).empty().append(new Option(noPointsText, '')).trigger('change');
+                                      pointSelect.disabled = true;
                                  }
+                                 // Trigger change for Select2 to update display
+                                 $(pointSelect).trigger('change');
                              })
                              .catch(error => {
                                  console.error('Error loading points:', error);
-                                 pointSelect.innerHTML = `<option value="">${errorText}</option>`;
+                                  $(pointSelect).empty().append(new Option(errorText, '')).trigger('change');
                                  pointSelect.disabled = true;
-                                  if (pointWrapper) pointWrapper.classList.add('opacity-50');
+                                 if (pointWrapper) pointWrapper.classList.add('opacity-50');
                              });
+                     } else {
+                         // No location selected, ensure placeholder and disabled state
+                         $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
+                         pointSelect.disabled = true;
+                          if (pointWrapper) pointWrapper.classList.add('opacity-50');
                      }
                  }
-                 locationSelect.addEventListener('change', updatePoints);
-                 if (locationSelect.value) { updatePoints(); } // Initial load
+                 $(locationSelect).on('change', updatePoints);
+                 // Initial load check - needs slight delay for Select2 init?
+                 // setTimeout(updatePoints, 100); // Or updatePoints(); if select2 init is reliable before this
+                 if (locationSelect.value) { updatePoints(); }
                  else { // Ensure disabled state if no initial location
                       pointSelect.disabled = true;
-                      pointSelect.innerHTML = `<option value="">${noLocationText}</option>`;
+                      $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
                       if (pointWrapper) pointWrapper.classList.add('opacity-50');
                  }
 

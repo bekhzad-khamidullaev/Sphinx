@@ -1,0 +1,29 @@
+{% load i18n static widget_tweaks %}
+
+{# --- Renders a single form field with label, help text, and errors --- #}
+{# Context: field (the BoundField object) #}
+
+<div>
+    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+    </label>
+    {% if field.widget_type == 'checkbox' %}
+         <div class="flex items-center"> {# Wrapper for proper alignment #}
+             {% render_field field class+="form-checkbox h-5 w-5 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600" %}
+             <label for="{{ field.id_for_label }}" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">{{ field.label }}</label> {# Add label next to checkbox #}
+         </div>
+         <script>document.querySelector('label[for="{{ field.id_for_label }}"]').classList.add('hidden');</script> {# Hide original label #}
+     {% elif field.widget_type == 'select' %}
+         {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+     {% elif field.widget_type == 'textarea' %}
+         {% render_field field class+="form-textarea block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" rows="3" %}
+      {% elif field.widget_type == 'clearablefile' %}
+          {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md" %}
+     {% elif field.widget_type == 'date' or field.widget_type == 'datetime-local' or field.widget_type == 'time' %}
+          {% render_field field class+="form-input flatpickr-input block w-auto text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+     {% else %} {# Default input styling #}
+         {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+     {% endif %}
+     {% if field.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
+     {% if field.errors %}<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
+</div>

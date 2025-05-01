@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% trans "Удаление шаблона чеклиста" %}{% endblock %}
 
@@ -17,10 +17,22 @@
         Вы уверены, что хотите удалить шаблон чеклиста <strong>"{{ template_name }}"</strong>?
         {% endblocktrans %}
     </p>
-    <p class="text-yellow-600 dark:text-yellow-400 font-semibold mb-6">
-        {% trans "Внимание: Если этот шаблон использовался, история прогонов будет сохранена, но создать новые прогоны по этому шаблону будет невозможно." %}
-    </p>
-    <p class="text-red-600 dark:text-red-400 font-semibold mb-6">{% trans "Это действие нельзя будет отменить!" %}</p>
+
+     {% if object.runs.count > 0 %}
+         <div role="alert" class="mb-6 p-4 border border-yellow-400 bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:border-yellow-700/50 dark:text-yellow-300 rounded-md">
+             <h4 class="font-bold mb-1">{% trans "Внимание!" %}</h4>
+             <p class="text-sm">
+             {% blocktrans trimmed count counter=object.runs.count %}
+                 Существует {{ counter }} выполненный чеклист на основе этого шаблона. Удаление шаблона НЕВОЗМОЖНО. Сначала удалите связанные прогоны или архивируйте шаблон.
+             {% plural %}
+                  Существуют {{ counter }} выполненных чеклистов на основе этого шаблона. Удаление шаблона НЕВОЗМОЖНО. Сначала удалите связанные прогоны или архивируйте шаблон.
+             {% endblocktrans %}
+             </p>
+         </div>
+     {% else %}
+         <p class="text-red-600 dark:text-red-400 font-semibold mb-6">{% trans "Это действие нельзя будет отменить!" %}</p>
+     {% endif %}
+
 
     <form method="post" action="">
         {% csrf_token %}
@@ -28,9 +40,11 @@
             <a href="{{ object.get_absolute_url }}" class="btn-secondary">
                 {% trans 'Отмена' %}
             </a>
-            <button type="submit" class="btn-danger"> {# Use your danger button style #}
-                <i class="fas fa-trash mr-2"></i> {% trans 'Да, удалить шаблон' %}
-            </button>
+             {% if object.runs.count == 0 %}
+             <button type="submit" class="btn-danger"> {# Use your danger button style #}
+                 <i class="fas fa-trash mr-2"></i> {% trans 'Да, удалить шаблон' %}
+             </button>
+             {% endif %}
         </div>
     </form>
 

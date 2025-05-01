@@ -1,348 +1,168 @@
-# checklists/admin.py
-import logging
-from django.contrib import admin, messages
-from django.urls import path, reverse
+from django.contrib import admin
+from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django.db import models
-from django.template.response import TemplateResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.utils import timezone
-from django.db import transaction
-from django.forms import inlineformset_factory # Import for inline formset definition
-from django.contrib.admin import SimpleListFilter # For custom filters if needed
 
 from .models import (
-    Location,
-    ChecklistPoint,
-    ChecklistTemplate,
-    ChecklistTemplateItem,
-    Checklist,
-    ChecklistResult,
-    ChecklistItemStatus,
+    Location, ChecklistPoint, ChecklistTemplate, ChecklistSection,
+    ChecklistTemplateItem, Checklist, ChecklistResult, AnswerType,
+    ChecklistItemStatus, ChecklistRunStatus # Import new models/enums
 )
-from .forms import ChecklistResultFormSet # Import formset for perform view
 
-# Safely import TaskCategory for filtering
-try:
-    from tasks.models import TaskCategory
-except ImportError:
-    TaskCategory = None
-
-logger = logging.getLogger(__name__)
-
-
-# --- Inlines ---
-
-class ChecklistTemplateItemInline(admin.TabularInline):
-    model = ChecklistTemplateItem
-    formset = inlineformset_factory( # Use inlineformset_factory here for consistency
-        ChecklistTemplate, ChecklistTemplateItem,
-        fields=('order', 'item_text', 'target_point'), # Add target_point
-        extra=1, can_delete=True, can_order=False,
-        # Use admin widgets for better integration
-        widgets={
-            'item_text': admin.widgets.AdminTextareaWidget(attrs={'rows': 2, 'cols': '60'}),
-            'order': admin.widgets.AdminIntegerFieldWidget(attrs={'style': 'width: 4em;'}),
-            'target_point': admin.widgets.ForeignKeyRawIdWidget( # Use Raw ID or Autocomplete
-                 ChecklistTemplateItem._meta.get_field('target_point').remote_field, admin.site
-             )
-        }
-    )
-    fields = ('order', 'item_text', 'target_point') # Fields to display in the inline
-    extra = 1
-    ordering = ('order',)
-    autocomplete_fields = ['target_point'] # Enable autocomplete if ChecklistPointAdmin is set up
-    verbose_name = _("Пункт шаблона")
-    verbose_name_plural = _("Пункты шаблона")
-
-
-class ChecklistResultInline(admin.TabularInline):
-    model = ChecklistResult
-    # Define the fields editable by the formset (exclude non-editable ones like recorded_at, template_item_display)
-    formset = inlineformset_factory(
-        Checklist, ChecklistResult,
-        fields=('status', 'comments'), # Only editable fields here
-        extra=0, can_delete=False
-    )
-    # Define fields to DISPLAY in the inline, including read-only ones
-    fields = ('template_item_display', 'status', 'comments', 'recorded_at')
-    readonly_fields = (
-        "template_item_display",
-        "recorded_at",
-        "status",
-        "comments",
-    )  # Readonly in history view
-    ordering = ("template_item__order",)
-    verbose_name = _("Результат пункта")
-    verbose_name_plural = _("Результаты пунктов")
-
-    def template_item_display(self, obj):
-        """Display the text of the related template item."""
-        return obj.template_item.item_text if obj.template_item else "N/A"
-    template_item_display.short_description = _("Пункт")
-
-    # Prevent modifications through the history inline
-    def has_add_permission(self, request, obj=None): return False
-    def has_change_permission(self, request, obj=None): return False
-    def has_delete_permission(self, request, obj=None): return False
-
-
-# --- ModelAdmins ---
+# --- Admin Configuration ---
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'parent', 'description_excerpt')
-    search_fields = ('name', 'description', 'parent__name')
+    list_display = ('name', 'parent', 'created_at', 'updated_at')
     list_filter = ('parent',)
-    autocomplete_fields = ('parent',)
+    search_fields = ('name', 'description')
     ordering = ('name',)
-
-    def description_excerpt(self, obj):
-        if obj.description:
-            return obj.description[:50] + '...' if len(obj.description) > 50 else obj.description
-        return "-"
-    description_excerpt.short_description = _("Описание")
 
 @admin.register(ChecklistPoint)
 class ChecklistPointAdmin(admin.ModelAdmin):
-    list_display = ('name', 'location_link', 'description_excerpt')
-    search_fields = ('name', 'description', 'location__name')
+    list_display = ('name', 'location', 'created_at', 'updated_at')
     list_filter = ('location',)
-    autocomplete_fields = ('location',) # Enable search/select for location
+    search_fields = ('name', 'description', 'location__name')
     ordering = ('location__name', 'name')
+    raw_id_fields = ('location',) # Use raw_id_fields for large number of locations
 
-    def location_link(self, obj):
-        if obj.location:
-            link = reverse("admin:checklists_location_change", args=[obj.location.id])
-            return format_html('<a href="{}">{}</a>', link, obj.location.name)
-        return "-"
-    location_link.short_description = _("Местоположение")
-    location_link.admin_order_field = 'location__name'
+class ChecklistSectionInline(admin.StackedInline):
+    model = ChecklistSection
+    extra = 1
+    fields = ('title', 'order',) # Removed parent_section as per model structure
+    verbose_name = _("Секция")
+    verbose_name_plural = _("Секции")
+    ordering = ('order', 'title')
 
-    def description_excerpt(self, obj):
-        if obj.description:
-            return obj.description[:50] + '...' if len(obj.description) > 50 else obj.description
-        return "-"
-    description_excerpt.short_description = _("Описание")
+class ChecklistTemplateItemInline(admin.StackedInline):
+    model = ChecklistTemplateItem
+    extra = 1
+    # Added answer_type, help_text, default_value, parent_item
+    fields = ('section', 'order', 'item_text', 'answer_type', 'target_point', 'help_text', 'default_value', 'parent_item',)
+    raw_id_fields = ('section', 'target_point', 'parent_item',) # Use raw_id_fields if many sections/points/items/parents
+    verbose_name = _("Пункт шаблона")
+    verbose_name_plural = _("Пункты шаблона")
+    # Order by section order, then item order
+    ordering = ('section__order', 'order',)
+
 
 @admin.register(ChecklistTemplate)
 class ChecklistTemplateAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category_display', 'target_location', 'target_point', 'item_count', 'is_active', 'perform_link')
-    list_filter = ('is_active', 'category', 'target_location')
-    search_fields = ('name', 'description', 'category__name', 'items__item_text', 'target_location__name', 'target_point__name')
-    inlines = [ChecklistTemplateItemInline]
-    list_select_related = ('category', 'target_location', 'target_point')
-    autocomplete_fields = ['category', 'target_location', 'target_point'] # Enable autocomplete
-    actions = ["activate_templates", "deactivate_templates"]
-    save_on_top = True
-
+    list_display = ('name', 'version', 'is_active', 'is_archived', 'target_location', 'category', 'frequency', 'created_at')
+    list_filter = ('is_active', 'is_archived', 'category', 'target_location', 'frequency')
+    search_fields = ('name', 'description', 'tags__name')
+    raw_id_fields = ('category', 'target_location', 'target_point') # Use raw_id_fields for FKs
+    # filter_horizontal = ('tags',) # Removed tags due to admin.E013 error
+    inlines = [ChecklistSectionInline, ChecklistTemplateItemInline] # Add sections and items as inlines
+    # prepopulated_fields = {} # Add if you had a slug field or similar
     fieldsets = (
-        (None, {'fields': ('name', 'category', 'description', 'is_active')}),
-        (_("Целевое Местоположение/Точка (Общее)"), {'fields': ('target_location', 'target_point'), 'classes': ('collapse',)}),
-        # Inlines will appear after fieldsets
+        (None, {
+            'fields': ('name', 'description', 'uuid', 'version', 'is_active', 'is_archived', 'tags')
+        }),
+        (_('Целевые объекты'), {
+            'fields': ('category', 'target_location', 'target_point',) # Reordered fields
+        }),
+        (_('Планирование'), {
+            'fields': ('frequency', 'next_due_date')
+        }),
+        (_('Метаданные'), {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',) # Hide by default
+        })
     )
+    readonly_fields = ('uuid', 'created_at', 'updated_at')
+    save_on_top = True # Save buttons at the top
 
     def get_queryset(self, request):
-        # Annotate with item count
-        return super().get_queryset(request).annotate(item_count_agg=models.Count('items'))
+        qs = super().get_queryset(request)
+        # Optimize template listing by selecting related objects
+        return qs.select_related('category', 'target_location', 'target_point').prefetch_related('tags')
 
-    def item_count(self, obj):
-        # Use annotated value
-        return obj.item_count_agg
-    item_count.short_description = _("Пунктов")
-    item_count.admin_order_field = 'item_count_agg'
+    # Override save_model to apply .clean() validation explicitly if needed
+    # Django admin automatically calls clean() on save, so usually not needed.
+    # def save_model(self, request, obj, form, change):
+    #     obj.clean() # Ensure model-level clean is run
+    #     super().save_model(request, obj, form, change)
 
-    def category_display(self, obj):
-        return obj.category.name if obj.category else '-'
-    category_display.short_description = _("Категория")
-    category_display.admin_order_field = 'category__name'
 
-    def perform_link(self, obj):
-        """Link to start performing this checklist template."""
-        if obj.is_active:
-            url = reverse('admin:checklists_checklisttemplate_perform', args=[obj.pk])
-            # Use standard admin button styles if available or simple link
-            return format_html('<a href="{}" class="button">{}</a>', url, _("Выполнить"))
-        return _("Неактивен")
-    perform_link.short_description = _("Запустить")
-    perform_link.allow_tags = True # Important for rendering HTML
+class ChecklistResultInline(admin.StackedInline):
+    model = ChecklistResult
+    extra = 0 # Don't add empty forms by default
+    # Exclude all specific value fields, they will be read-only or handled differently
+    exclude = ('value', 'numeric_value', 'boolean_value', 'date_value', 'datetime_value', 'time_value', 'file_attachment', 'media_url')
+    # Display only fields relevant in admin for review/correction
+    fields = ('template_item', 'display_value_admin', 'status', 'is_corrected', 'comments', 'recorded_at', 'created_by', 'updated_by')
+    readonly_fields = ('template_item', 'display_value_admin', 'recorded_at', 'created_by', 'updated_by') # Make value fields read-only in admin
+    raw_id_fields = ('template_item', 'created_by', 'updated_by') # Use raw_id_fields for FKs
+    verbose_name = _("Результат пункта")
+    verbose_name_plural = _("Результаты пунктов")
+    ordering = ('template_item__section__order', 'template_item__order',) # Order by item order within section
 
-    # --- Actions ---
-    @admin.action(description=_("Активировать выбранные шаблоны"))
-    def activate_templates(self, request, queryset):
-        updated = queryset.update(is_active=True)
-        self.message_user(request, _("%(count)d шаблонов было активировано.") % {'count': updated}, messages.SUCCESS)
+    def display_value_admin(self, obj):
+        """Helper to display the correct value type in admin."""
+        return obj.display_value
+    display_value_admin.short_description = _("Ответ") # Column header
 
-    @admin.action(description=_("Деактивировать выбранные шаблоны"))
-    def deactivate_templates(self, request, queryset):
-        updated = queryset.update(is_active=False)
-        self.message_user(request, _("%(count)d шаблонов было деактивировано.") % {'count': updated}, messages.SUCCESS)
+    def get_queryset(self, request):
+         qs = super().get_queryset(request)
+         # Prefetch template item for ordering and display
+         return qs.select_related('template_item', 'template_item__section', 'template_item__target_point', 'created_by', 'updated_by')
 
-    # --- Custom Perform View URL and Logic ---
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('<int:template_pk>/perform/', self.admin_site.admin_view(self.perform_checklist_view), name='checklists_checklisttemplate_perform'),
-        ]
-        return custom_urls + urls
+    # Optional: Define a custom form if you need complex validation in the inline
+    # form = YourChecklistResultAdminForm
 
-    def perform_checklist_view(self, request, template_pk):
-        """ Renders and handles the checklist perform form within the admin. """
-        template = get_object_or_404(ChecklistTemplate, pk=template_pk, is_active=True)
-        checklist_run = None
-        today = timezone.now().date()
-        existing_run = Checklist.objects.filter(
-            template=template, performed_by=request.user,
-            performed_at__date=today, is_complete=False
-        ).first()
-
-        if request.method == 'POST':
-            run_id = request.POST.get('checklist_run_id')
-            if run_id:
-                checklist_run = get_object_or_404(Checklist, pk=run_id, template=template, performed_by=request.user, is_complete=False)
-            elif existing_run:
-                 checklist_run = existing_run
-            else:
-                 messages.error(request, _("Не удалось найти активный прогон для сохранения."))
-                 return redirect(reverse('admin:checklists_checklisttemplate_changelist'))
-
-            # Pass the existing run instance to the formset
-            formset = ChecklistResultFormSet(request.POST, instance=checklist_run, prefix='results')
-            if formset.is_valid():
-                try:
-                    with transaction.atomic():
-                        formset.save()
-                        checklist_run.mark_complete()
-                        messages.success(request, _("Чеклист '%(name)s' успешно завершен.") % {'name': template.name})
-                        return redirect(reverse('admin:checklists_checklist_changelist')) # Redirect to history list
-                except Exception as e:
-                    logger.exception(f"Admin: Error saving checklist run {checklist_run.id}: {e}")
-                    messages.error(request, _("Ошибка сохранения чеклиста: %(error)s") % {'error': e})
-            else:
-                 logger.warning(f"Admin: Invalid ChecklistResultFormSet for run {checklist_run.id}: {formset.errors}")
-                 messages.error(request, _("Пожалуйста, исправьте ошибки в пунктах чеклиста."))
-        else: # GET request
-            checklist_run = existing_run
-            if not checklist_run:
-                # Create new run and initial results
-                checklist_run = Checklist.objects.create(
-                    template=template, performed_by=request.user,
-                    location=template.target_location, point=template.target_point
-                )
-                results_to_create = []
-                items_queryset = template.items.order_by('order')
-                # Filter items by run's point only if the run has a point specified
-                if checklist_run.point:
-                     items_queryset = items_queryset.filter(Q(target_point__isnull=True) | Q(target_point=checklist_run.point))
-                elif checklist_run.location:
-                      items_queryset = items_queryset.filter(Q(target_point__isnull=True) | Q(target_point__location=checklist_run.location))
-
-                for item in items_queryset:
-                    results_to_create.append(ChecklistResult(checklist_run=checklist_run, template_item=item))
-                if results_to_create:
-                    ChecklistResult.objects.bulk_create(results_to_create)
-
-            # Get queryset ordered correctly for the formset
-            queryset = checklist_run.results.select_related('template_item').order_by('template_item__order')
-            formset = ChecklistResultFormSet(instance=checklist_run, prefix='results', queryset=queryset)
-
-        # Prepare admin context
-        context = {
-            **self.admin_site.each_context(request),
-            'title': _("Выполнение: %s") % template.name,
-            'template': template,
-            'checklist_run': checklist_run, # Pass the specific run instance
-            'formset': formset,
-            'opts': self.model._meta,
-            'media': self.media + formset.media, # Combine admin and formset media
-            'has_view_permission': self.has_view_permission(request, obj=template),
-            'has_change_permission': False,
-            'has_delete_permission': False,
-            'has_add_permission': False,
-        }
-        # Render using the admin template
-        return TemplateResponse(request, "admin/checklists/perform_checklist.html", context)
 
 @admin.register(Checklist)
 class ChecklistAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'performed_by_link', 'performed_at', 'is_complete', 'has_issues_display', 'related_task_link')
-    list_filter = ('is_complete', 'performed_at', 'template', 'performed_by', 'location', 'point', ('template__category', admin.RelatedOnlyFieldListFilter))
-    search_fields = ('template__name', 'performed_by__username', 'related_task__title', 'location__name', 'point__name', 'notes', 'id') # Search by UUID too
-    readonly_fields = ('template', 'performed_by', 'performed_at', 'completion_time', 'checklist_link', 'location', 'point', 'notes', 'related_task') # Make more fields readonly in history view
-    list_select_related = ('template', 'performed_by', 'related_task', 'template__category', 'location', 'point')
+    list_display = ('__str__', 'template', 'status', 'performed_at', 'performed_by', 'location', 'point', 'is_complete', 'score', 'approved_at', 'view_link')
+    list_filter = ('status', 'is_complete', 'template', 'location', 'point', 'performed_by', 'approved_by', 'template__category') # Added template category filter
+    search_fields = ('template__name', 'notes', 'performed_by__username', 'location__name', 'point__name', 'external_reference')
+    raw_id_fields = ('template', 'performed_by', 'related_task', 'location', 'point', 'approved_by')
     inlines = [ChecklistResultInline]
-    date_hierarchy = 'performed_at'
-
+    # score is calculated, completion/approval time/status are set by logic/status changes
+    readonly_fields = ('created_at', 'updated_at', 'completion_time', 'approved_at', 'score')
     fieldsets = (
-        (None, {'fields': ('checklist_link','template', 'performed_by', 'performed_at', 'is_complete', 'completion_time')}),
-        (_("Контекст прогона"), {'fields': ('related_task_link_field', 'location', 'point', 'notes'), 'classes': ('collapse',)}), # Use link field
+        (None, {
+            'fields': ('template', 'performed_by', 'performed_at', 'status', 'is_complete', 'completion_time', 'score')
+        }),
+        (_('Связанные объекты'), {
+            'fields': ('related_task', 'location', 'point', 'external_reference') # Added external_reference
+        }),
+        (_('Примечания'), { # Renamed section
+            'fields': ('notes',)
+        }),
+        (_('Одобрение/Проверка'), { # Renamed section
+            'fields': ('approved_by', 'approved_at',),
+            'classes': ('collapse',)
+        }),
+         (_('Метаданные'), {
+            'fields': ('id', 'created_at', 'updated_at'), # Added id
+            'classes': ('collapse',)
+        })
     )
-    readonly_fields = ('template', 'performed_by', 'performed_at', 'completion_time', 'checklist_link', 'location', 'point', 'notes', 'related_task_link_field') # Add link field here
+    ordering = ('-performed_at',)
+    save_on_top = True
 
-    def checklist_link(self, obj):
-        """Link to view/edit this specific run."""
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # Optimize checklist listing
+        return qs.select_related('template', 'performed_by', 'location', 'point', 'approved_by', 'template__category', 'related_task')
+
+    def view_link(self, obj):
         if obj.pk:
-             url = reverse('admin:checklists_checklist_change', args=[obj.pk])
-             return format_html('<a href="{}">{} {}</a>', url, _("Просмотр Прогона #"), obj.pk)
+            # Use the history_list detail view name
+            url = reverse('checklists:checklist_detail', kwargs={'pk': obj.pk})
+            return format_html('<a href="{}">{}</a>', url, _('Просмотр'))
         return "-"
-    checklist_link.short_description = _("Ссылка")
+    view_link.short_description = _("Ссылка")
 
-    def performed_by_link(self, obj):
-        if obj.performed_by:
-            link = reverse("admin:user_profiles_user_change", args=[obj.performed_by.id])
-            return format_html('<a href="{}">{}</a>', link, obj.performed_by.display_name)
-        return "-"
-    performed_by_link.short_description = _("Кем выполнен")
-    performed_by_link.admin_order_field = 'performed_by__username'
+    # You might want to override save_model or formfield_for_foreignkey
+    # to handle specific logic, e.g., setting status to IN_PROGRESS on first save
+    # or limiting location/point choices based on template.
+    # Admin handles basic FK saving, signals handle initial result creation.
 
-    def related_task_link(self, obj):
-        """Link for list display."""
-        if obj.related_task:
-             link = reverse("admin:tasks_task_change", args=[obj.related_task.id])
-             return format_html('<a href="{}">{}</a>', link, obj.related_task.task_number or obj.related_task.id)
-        return "-"
-    related_task_link.short_description = _("Связанная задача")
-    related_task_link.admin_order_field = 'related_task__task_number'
 
-    def related_task_link_field(self, obj):
-        """Link for display within fieldsets (read-only)."""
-        return self.related_task_link(obj) # Reuse list display logic
-    related_task_link_field.short_description = _("Связанная задача")
-
-    def location_link(self, obj): # For list display
-        if obj.location:
-            link = reverse("admin:checklists_location_change", args=[obj.location.id])
-            return format_html('<a href="{}">{}</a>', link, obj.location.name)
-        return "-"
-    location_link.short_description = _("Место")
-    location_link.admin_order_field = 'location__name'
-
-    def point_link(self, obj): # For list display
-        if obj.point:
-            link = reverse("admin:checklists_checklistpoint_change", args=[obj.point.id])
-            return format_html('<a href="{}">{}</a>', link, obj.point.name)
-        return "-"
-    point_link.short_description = _("Точка")
-    point_link.admin_order_field = 'point__name'
-
-    def has_issues_display(self, obj):
-        return obj.has_issues
-    has_issues_display.boolean = True
-    has_issues_display.short_description = _("Проблемы?")
-
-    # --- Permissions ---
-    def has_add_permission(self, request):
-        # Prevent creating runs directly in admin
-        return False
-    def has_change_permission(self, request, obj=None):
-         # Allow changing notes maybe, but not results history
-        return False # Or check specific user permissions
-    def has_delete_permission(self, request, obj=None):
-        # Allow deletion only for superusers for cleanup
-        return request.user.is_superuser
-
-# Note: ChecklistResultAdmin is usually not needed as results are viewed via ChecklistAdmin inline
-# If needed, register it similar to other models.
-# @admin.register(ChecklistResult)
-# class ChecklistResultAdmin(admin.ModelAdmin): ...
+# Register other models if needed, but they might be covered by inlines or less frequently edited
+# admin.site.register(ChecklistSection) # Usually managed via Template inline
+# admin.site.register(ChecklistTemplateItem) # Usually managed via Template inline
+# admin.site.register(ChecklistResult) # Usually managed via Checklist run inline
