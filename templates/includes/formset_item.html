@@ -11,7 +11,8 @@
     {# Order Field #}
     <div class="flex-shrink-0 w-16">
         <label for="{{ form.order.id_for_label }}" class="sr-only">{% trans "Порядок" %}</label>
-        {% render_field form.order class+="form-input text-sm text-center w-full py-1" placeholder="#" title=_("Порядок") %}
+        {% trans "Порядок" as order_title %} {# Translate title #}
+        {% render_field form.order class+="form-input text-sm text-center w-full py-1" placeholder="#" title=order_title %} {# Use variable #}
         {% if form.order.errors %}<div class="text-red-500 text-xs mt-1">{{ form.order.errors|first }}</div>{% endif %}
     </div>
 
@@ -20,7 +21,8 @@
         {# Item Text #}
         <div>
              <label for="{{ form.item_text.id_for_label }}" class="sr-only">{% trans "Текст пункта" %}</label>
-             {% render_field form.item_text class+="form-textarea text-sm w-full py-1" rows="2" placeholder=_("Текст пункта чеклиста...") %}
+             {% trans "Текст пункта чеклиста..." as item_placeholder %} {# Translate placeholder #}
+             {% render_field form.item_text class+="form-textarea text-sm w-full py-1" rows="2" placeholder=item_placeholder %} {# Use variable #}
              {% if form.item_text.errors %}<div class="text-red-500 text-xs mt-1">{{ form.item_text.errors|first }}</div>{% endif %}
         </div>
          {# Target Point #}

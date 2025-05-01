@@ -57,11 +57,11 @@
             {{ item_formset.management_form }}
             <div id="item-formset-container" class="space-y-3">
                 {% for item_form in item_formset %}
-                    {% include "checklists/includes/formset_item.html" with form=item_form formset=item_formset %}
+                    {% include "includes/formset_item.html" with form=item_form formset=item_formset %}
                 {% endfor %}
             </div>
             <div id="empty-item-form" class="hidden">
-                 {% include "checklists/includes/formset_item.html" with form=item_formset.empty_form formset=item_formset %}
+                 {% include "includes/formset_item.html" with form=item_formset.empty_form formset=item_formset %}
             </div>
             <div class="mt-4">
                 <button type="button" id="add-item-form" class="btn-secondary btn-sm"> {# Use button styles #}
@@ -120,9 +120,15 @@
              const pointWrapper = pointSelect?.closest('div');
 
              if (locationSelect && pointSelect) {
-                 const initialPointValue = '{{ form.target_point.value|default:""|escapejs }}'; // Use escapejs
-                 // Use the named URL defined in checklists/urls.py under the 'api' namespace
+                 const initialPointValue = '{{ form.target_point.value|default:""|escapejs }}';
                  const pointApiUrl = "{% url 'checklists:api:api_checklist_point_list' %}";
+
+                 // --- Define translation strings in the outer scope ---
+                 const noLocationText = "{% trans "--- Сначала выберите местоположение ---" %}";
+                 const selectPointText = "{% trans "--------- Выберите точку ---------" %}";
+                 const noPointsText = "{% trans "--- Точек не найдено ---" %}";
+                 const errorText = "{% trans "--- Ошибка загрузки ---" %}";
+                 // --- End string definitions ---
 
                  function updatePoints() {
                      const locationId = locationSelect.value;

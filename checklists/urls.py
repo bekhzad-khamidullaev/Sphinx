@@ -30,5 +30,5 @@ urlpatterns = [
     path('reports/issues/', views.ChecklistIssuesReportView.as_view(), name='report_issues'),
 
     # API Endpoints
-    # path('api/', include((api_urlpatterns, 'checklists'), namespace='api')),
+    path('api/', include((api_urlpatterns, 'checklists'), namespace='api')),
 ]

@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.db.models import Count, Q, Prefetch
 from django.http import JsonResponse
-
+from .filters import ChecklistHistoryFilter
 # Import forms and models from current app
 from .models import (
     ChecklistTemplate, ChecklistTemplateItem, Checklist, ChecklistResult,
@@ -295,31 +295,6 @@ class ChecklistHistoryListView(LoginRequiredMixin, ListView):
     model = Checklist
     template_name = 'checklists/history_list.html'
     context_object_name = 'checklist_runs'
-<<<<<<< HEAD
-    paginate_by = 25
-
-    def get_queryset(self):
-        # Base queryset: completed runs
-        base_queryset = Checklist.objects.filter(is_complete=True).select_related(
-            'template', 'performed_by', 'template__category', 'related_task',
-            'location', 'point'
-        )
-        # Apply filtering using FilterSet if defined and imported
-        # self.filterset = ChecklistHistoryFilter(self.request.GET, queryset=base_queryset)
-        # return self.filterset.qs.distinct().order_by('-performed_at')
-
-        # Return base queryset if no FilterSet class
-        return base_queryset.order_by('-performed_at')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Pass filterset to template if using filters.py
-        # context['filterset'] = getattr(self, 'filterset', None)
-        context['page_title'] = _('История выполнения чеклистов')
-        context['current_sort'] = self.request.GET.get('sort', '-performed_at')
-        return context
-
-=======
     paginate_by = 20 # Or your preferred number
 
     def get_queryset(self):
@@ -345,7 +320,6 @@ class ChecklistHistoryListView(LoginRequiredMixin, ListView):
 
 
 
->>>>>>> 29f70277ec8ecd071d7cb509df403b43bbb02843
 class ChecklistDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = Checklist
     template_name = 'checklists/checklist_detail.html'
@@ -384,14 +358,6 @@ class ChecklistReportView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Aggregate data: count total runs and runs with issues per template
-<<<<<<< HEAD
-        report = ChecklistTemplate.objects.filter(runs__is_complete=True).annotate(
-            total_runs=Count('runs', filter=Q(runs__is_complete=True)),
-            runs_with_issues=Count('runs', filter=Q(runs__is_complete=True, runs__results__status=ChecklistItemStatus.NOT_OK))
-        ).annotate( # Separate annotation for clarity
-            runs_without_issues=Count('runs', filter=Q(runs__is_complete=True) & (Q(runs__results__status=ChecklistItemStatus.OK) | Q(runs__results__status=ChecklistItemStatus.NOT_APPLICABLE)))
-        ).filter(total_runs__gt=0).order_by('category__name', 'name')
-=======
         report = (
             ChecklistTemplate.objects.filter(runs__is_complete=True)
             .annotate(
@@ -423,7 +389,6 @@ class ChecklistReportView(LoginRequiredMixin, ListView):
             .filter(total_runs__gt=0)
             .order_by("category__name", "name")
         )  # Only show templates with completed runs
->>>>>>> 29f70277ec8ecd071d7cb509df403b43bbb02843
         return report
 
     def get_context_data(self, **kwargs):
