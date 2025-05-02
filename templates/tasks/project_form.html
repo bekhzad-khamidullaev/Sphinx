@@ -1,34 +1,21 @@
-<!-- tasks/templates/tasks/project_form.html -->
 {% extends 'base.html' %}
 {% load i18n static crispy_forms_tags %}
-
 {% block title %}{{ page_title|default:_("Форма проекта") }}{% endblock %}
-
 {% block head_extra %}
     {{ block.super }}
-    {# Include form media if needed (e.g., for date pickers) #}
     {{ form.media.css }}
-     {# Add flatpickr CSS if ProjectForm uses it #}
-    {# <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 {% endblock %}
-
-
 {% block list_title %}
 <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
     {{ page_title }}
 </h1>
 {% endblock %}
-
 {% block list_content %}
-<div class="bg-white dark:bg-dark-800 shadow-xl rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
-    {# The form tag is needed because form_tag=False in ProjectForm's helper #}
+<div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
     <form method="post" action="" id="project-form" novalidate>
          {% csrf_token %}
-
-         {# Render the form fields using Crispy Forms helper and layout #}
          {% crispy form %}
-
-         {# Display Non-Field Errors (if any) #}
          {% if form.non_field_errors %}
             <div role="alert" class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
                 <h4 class="font-bold">{% trans "Общая ошибка формы:" %}</h4>
@@ -39,15 +26,13 @@
                 </ul>
             </div>
          {% endif %}
-
-         {# --- Action Buttons --- #}
          <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
              <a href="{% url 'tasks:project_list' %}"
-                class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-dark-600 transition-colors shadow-sm">
+                class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
                  {% trans 'Отмена' %}
              </a>
              <button type="submit"
-                     class="px-5 py-2.5 rounded-lg text-sm font-medium bg-purple-600 dark:bg-ios-purple text-white hover:bg-purple-700 dark:hover:bg-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-800 transition-colors shadow-md inline-flex items-center">
+                     class="px-4 py-2 rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:bg-ios-purple dark:hover:bg-purple-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
                  <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
                  {{ form_action|default:_("Сохранить проект") }}
              </button>
@@ -55,30 +40,22 @@
     </form>
 </div>
 {% endblock %}
-
 {% block scripts %}
     {{ block.super }}
-    {# Include form media if needed (e.g., for date pickers) #}
     {{ form.media.js }}
-
-    {# Add flatpickr or other date picker initialization if ProjectForm uses it
-       Make sure the input fields have the correct class (e.g., 'flatpickr-date')
-    #}
-    {# Example using flatpickr:
     <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> // Russian locale
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
     <script defer>
       document.addEventListener('DOMContentLoaded', function() {
         try {
-          flatpickr(".flatpickr-date", { // Target inputs with class 'flatpickr-date'
+          flatpickr(".flatpickr-date", {
             dateFormat: "Y-m-d",
-            locale: "ru", // Use Russian locale
+            locale: "ru",
             allowInput: true,
-            altInput: true, // Show user-friendly format
+            altInput: true,
             altFormat: "d.m.Y",
           });
         } catch (e) { console.error("Flatpickr init error:", e); }
       });
     </script>
-    #}
 {% endblock %}

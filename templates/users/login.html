@@ -6,49 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="{% trans "Sphinx - Task Management System - Login" %}">
     <link rel="shortcut icon" href="{% static 'img/fav.png' %}" type="image/x-icon">
-
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Configure Tailwind CSS (without dark mode specific settings)
         tailwind.config = {
-            // darkMode: 'class', // Removed
-            theme: {
-                extend: {
-                    colors: {
-                        // Keep colors if used elsewhere for light mode styling
-                        dark: { 50: '#f9f9f9', 100: '#f2f2f2', 200: '#e5e5e5', 300: '#d1d1d1', 400: '#b3b3b3', 500: '#8e8e93', 600: '#636366', 700: '#48484a', 800: '#3a3a3c', 900: '#2c2c2e', 950: '#1c1c1e', },
-                        ios: { blue: '#0a84ff', green: '#30d158', indigo: '#5e5ce6', orange: '#ff9f0a', pink: '#ff375f', purple: '#bf5af2', red: '#ff453a', teal: '#64d2ff', yellow: '#ffd60a', }
-                    }
-                }
-            }
+            theme: { extend: { colors: { ios: { blue: '#0a84ff', green: '#30d158', indigo: '#5e5ce6', orange: '#ff9f0a', pink: '#ff375f', purple: '#bf5af2', red: '#ff453a', teal: '#64d2ff', yellow: '#ffd60a', } } } }
         }
-         // Ensure 'dark' class is never present on initial load
          document.documentElement.classList.remove('dark');
          localStorage.removeItem('theme');
     </script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
-
     <title>{% trans "Вход" %} | Sphinx</title>
 </head>
-<body class="h-full flex flex-col items-center justify-center bg-gray-100 px-4 py-12 sm:px-6 lg:px-8"> {# Removed dark: classes #}
-
-    {# Dark Mode Toggle Button Removed #}
-
-    <div class="max-w-md w-full space-y-6 bg-white p-6 sm:p-8 md:p-10 rounded-xl shadow-2xl border border-gray-200"> {# Removed dark: classes #}
+<body class="h-full flex flex-col items-center justify-center bg-gray-100 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-6 bg-white p-6 sm:p-8 md:p-10 rounded-xl shadow-2xl border border-gray-200">
         <div>
             <img class="mx-auto h-12 w-auto" src="{% static 'img/logo.png' %}" alt="{% trans "Sphinx Логотип" %}">
-            <h2 class="mt-6 text-center text-3xl font-bold text-gray-900"> {# Removed dark: classes #}
+            <h2 class="mt-6 text-center text-3xl font-bold text-gray-900">
                 {% trans "Вход в аккаунт" %}
             </h2>
         </div>
-
-        {# Display Login Errors if any #}
          {% if form.non_field_errors %}
          <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md text-sm" role="alert">
              {% for error in form.non_field_errors %}
@@ -56,48 +36,41 @@
              {% endfor %}
          </div>
          {% endif %}
-
         <form class="mt-8 space-y-6" action="{% url 'user_profiles:base' %}" method="post">
              {% csrf_token %}
              <input type="hidden" name="next" value="{{ next }}">
-
              <div>
-                 {# Use Django's form rendering for label and input to handle IDs correctly #}
                  <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                     {% trans 'Имя пользователя или Email' %} {# Use trans tag for label text #}
+                     {% trans 'Имя пользователя или Email' %}
                  </label>
                  <div class="mt-1">
-                     {{ form.username|attr:"class:appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"|attr:"placeholder:Имя пользователя или Email"|attr:"required"|attr:"autocomplete:username" }}
+                     {% render_field form.username class="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder=_("Имя пользователя или Email") required=True autocomplete="username" %}
                  </div>
                  {% if form.username.errors %}
                      <p class="text-xs text-red-500 mt-1">{{ form.username.errors|first }}</p>
                  {% endif %}
              </div>
-
              <div>
                  <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700">
                       {% trans 'Пароль' %}
                  </label>
                  <div class="mt-1">
-                      {{ form.password|attr:"class:appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"|attr:"placeholder:••••••••"|attr:"required"|attr:"autocomplete:current-password" }}
+                      {% render_field form.password class="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="••••••••" required=True autocomplete="current-password" %}
                  </div>
                   {% if form.password.errors %}
                      <p class="text-xs text-red-500 mt-1">{{ form.password.errors|first }}</p>
                  {% endif %}
              </div>
-
              <div class="pt-2">
-                 <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"> {# Removed dark: classes #}
+                 <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
                      {% trans 'Войти' %}
                  </button>
              </div>
         </form>
-
          <div class="text-sm text-center">
-            <a href="#" class="font-medium text-blue-600 hover:text-blue-500"> {# Removed dark: classes #}
+            <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
                 {% trans "Забыли пароль?" %}
             </a>
-            {# Add Registration Link if applicable #}
           <p class="mt-2">
                  {% trans "Нет аккаунта?" %}
                  <a href="" class="font-medium text-blue-600 hover:text-blue-500">
@@ -106,11 +79,6 @@
              </p>
         </div>
     </div>
-
-    {# Removed main.js call as dark mode toggle logic is not needed here #}
-    {# <script src="{% static 'js/main.js' %}" defer></script> #}
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-     {# Include app_utils.js if showNotification is used for login errors (unlikely) #}
-    {# <script src="{% static 'js/app_utils.js' %}" defer></script>  #}
 </body>
 </html>

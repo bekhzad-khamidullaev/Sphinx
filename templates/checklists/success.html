@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+{% load i18n static %}
+<html lang="ru" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <title>{% trans "Успешно" %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="shortcut icon" href="{% static 'img/fav.png' %}" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="h-full flex items-center justify-center bg-gray-100 p-4">
+    <div class="bg-white shadow-lg rounded-xl border border-gray-200 p-8 max-w-md w-full text-center">
+        <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+        <h1 class="text-xl font-semibold text-gray-800 mb-2">{% trans "Действие выполнено" %}</h1>
+        <p class="text-gray-600">{% trans "Пользователь успешно подтверждён HR-отделом." %}</p>
+    </div>
+</body>
+</html>

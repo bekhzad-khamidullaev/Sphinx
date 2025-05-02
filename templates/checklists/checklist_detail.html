@@ -1,19 +1,15 @@
 {% extends 'base.html' %}
 {% load i18n static app_filters %}
-{% load widget_tweaks %} {# Load widget_tweaks #}
-
+{% load widget_tweaks %}
 {% block title %}{% trans "Результаты чеклиста" %}: {{ checklist_run }}{% endblock %}
-
 {% block head_extra %}
     {{ block.super }}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    {# Flatpickr CSS - Load if needed by status_form #}
     {% if status_form.approved_at %}
          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     {% endif %}
     {% if status_form %}{{ status_form.media.css }}{% endif %}
     <style>
-        /* Select2 dark mode styles */
         html.dark .select2-container--default .select2-selection--single { background-color: theme('colors.dark.700'); border-color: theme('colors.dark.600'); }
         html.dark .select2-container--default .select2-selection--single .select2-selection__rendered { color: theme('colors.gray.300'); }
         html.dark .select2-container--default .select2-selection--single .select2-selection__arrow b { border-color: theme('colors.gray.400') transparent transparent transparent; }
@@ -23,7 +19,6 @@
         html.dark .select2-search--dropdown .select2-search__field { background-color: theme('colors.dark.700'); border-color: theme('colors.dark.600'); color: theme('colors.gray.300'); }
     </style>
 {% endblock %}
-
 {% block list_title %}
 <div class="flex items-center justify-between flex-wrap gap-4">
     <div>
@@ -38,31 +33,25 @@
         </p>
     </div>
 {% endblock %}
-
 {% block list_actions %}
-    {# Moved actions here #}
-    <div class="flex space-x-3 flex-shrink-0">
-         <a href="{% url 'checklists:history_list' %}" class="btn-secondary text-sm">
+    <div class="flex flex-wrap gap-2 sm:gap-3 flex-shrink-0">
+        <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
              <i class="fas fa-arrow-left mr-2"></i> {% trans 'К истории' %}
         </a>
          {% if request.user.is_staff and checklist_run.status == 'submitted' %}
-             <button id="toggleStatusFormBtn" type="button" class="btn-secondary text-sm bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700 dark:hover:bg-yellow-800/50">
+             <button id="toggleStatusFormBtn" type="button" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700 dark:hover:bg-yellow-800/50">
                  <i class="fas fa-check-double mr-1.5"></i> {% trans 'Изменить статус' %}
              </button>
          {% endif %}
     </div>
 {% endblock %}
-
 {% block list_content %}
 <div class="mt-6 space-y-6">
-
-    {# Status Change Form (Hidden initially, toggled by button) #}
      {% if request.user.is_staff and checklist_run.status == 'submitted' %}
           <div id="statusFormContainer" class="hidden bg-yellow-50 dark:bg-dark-800 shadow-md rounded-lg border border-yellow-300 dark:border-dark-700 p-6 mb-6" x-data="{ statusFormOpen: false }" x-cloak>
                <h3 class="text-lg font-semibold mb-4 dark:text-white text-yellow-800 dark:text-yellow-300">{% trans "Одобрение / Отклонение чеклиста" %}</h3>
                <form method="post" action="{% url 'checklists:checklist_status_change' pk=checklist_run.pk %}" id="status-update-form" novalidate>
                    {% csrf_token %}
-                   {# Render status form fields using include #}
                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                        {% include 'includes/form_field.html' with field=status_form.status %}
                        {% include 'includes/form_field.html' with field=status_form.approved_by %}
@@ -70,23 +59,20 @@
                        <div class="md:col-span-2">{% include 'includes/form_field.html' with field=status_form.notes %}</div>
                    </div>
                    <div class="flex justify-end space-x-3 mt-4 pt-4 border-t border-yellow-200 dark:border-dark-600">
-                       <button type="button" @click="statusFormOpen = false; document.getElementById('statusFormContainer').classList.add('hidden'); document.getElementById('toggleStatusFormBtn')?.classList.remove('hidden');" class="btn-secondary text-sm">{% trans "Отмена" %}</button> {# Added check for button existence #}
-                       <button type="submit" class="btn-primary text-sm">{% trans "Сохранить статус" %}</button>
+                       <button type="button" @click="statusFormOpen = false; document.getElementById('statusFormContainer').classList.add('hidden'); document.getElementById('toggleStatusFormBtn')?.classList.remove('hidden');" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">{% trans "Отмена" %}</button>
+                       <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">{% trans "Сохранить статус" %}</button>
                    </div>
                </form>
           </div>
      {% endif %}
-
-
-    {# General Info section - Restored Detail #}
-    <div class="bg-white dark:bg-dark-800 shadow rounded-lg border border-gray-200 dark:border-dark-700 p-6">
+    <div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 border-b dark:border-dark-600 pb-2">{% trans "Общая информация" %}</h2>
         <dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
             <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Шаблон:" %}</dt><dd class="text-gray-800 dark:text-gray-200">{{ checklist_run.template.name }}</dd></div>
             <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Выполнен:" %}</dt><dd class="text-gray-800 dark:text-gray-200">{{ checklist_run.performed_by.display_name|default:'-' }}</dd></div>
              <div><dt class="text-gray-500 dark:text-gray-400">{% trans "Статус:" %}</dt>
                  <dd>
-                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                      <span class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full
                         {% if checklist_run.status == 'approved' %} bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
                         {% elif checklist_run.status == 'submitted' %} bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100
                         {% elif checklist_run.status == 'rejected' %} bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100
@@ -120,9 +106,7 @@
              {% endif %}
         </dl>
     </div>
-
-    {# Results Section - Using simple loop #}
-    <div class="bg-white dark:bg-dark-800 shadow rounded-lg border border-gray-200 dark:border-dark-700 p-6">
+    <div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Результаты по пунктам" %}</h2>
          {% if results %}
             <div class="space-y-4">
@@ -136,28 +120,21 @@
              <p class="text-gray-500 dark:text-gray-400 italic">{% trans "Нет результатов для этого прогона." %}</p>
          {% endif %}
     </div>
-
 </div>
 {% endblock %}
-
-
 {% block scripts %}
  {{ block.super }}
- {# Load JS libs needed for this page's forms #}
  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
- {% if status_form.approved_at %} {# Load Flatpickr only if needed #}
+ {% if status_form.approved_at %}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
  {% endif %}
-
  {% if status_form %}
     {{ status_form.media.js }}
  {% endif %}
-
  <script>
-    // AlpineJS related script for toggling the form
     document.addEventListener('alpine:init', () => {
         const btn = document.getElementById('toggleStatusFormBtn');
         const container = document.getElementById('statusFormContainer');
@@ -173,13 +150,12 @@
             });
         }
     });
-    // Fallback if Alpine isn't used or fails
     document.addEventListener('DOMContentLoaded', () => {
          if (typeof Alpine === 'undefined') {
              const btn = document.getElementById('toggleStatusFormBtn');
              const container = document.getElementById('statusFormContainer');
-             const cancelBtn = container?.querySelector('.btn-secondary'); // Assuming cancel button exists
-             if (btn && container && cancelBtn) { // Added check for cancelBtn
+             const cancelBtn = container?.querySelector('.btn-secondary');
+             if (btn && container && cancelBtn) {
                  btn.addEventListener('click', () => { container.classList.remove('hidden'); btn.classList.add('hidden'); });
                  cancelBtn.addEventListener('click', () => { container.classList.add('hidden'); btn.classList.remove('hidden'); });
              }
@@ -187,11 +163,9 @@
     });
   </script>
  <script defer>
-    // Initialization script for Select2 and Flatpickr inside the Status Form
     document.addEventListener('DOMContentLoaded', function() {
        const statusContainer = document.getElementById('statusFormContainer');
-       if (statusContainer) { // Only initialize if the form is potentially present
-            // Init Flatpickr
+       if (statusContainer) {
             const approvedAtInput = document.getElementById('id_approved_at');
             if (approvedAtInput && typeof flatpickr !== 'undefined') {
                 flatpickr(approvedAtInput, {
@@ -202,12 +176,9 @@
                     locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
                 });
             } else if (approvedAtInput) { console.warn("Flatpickr library not loaded.");}
-
-             // Init Select2
              if (typeof $ !== 'undefined' && $.fn.select2) {
                  const statusSelect = $('#id_status');
                  const approvedBySelect = $('#id_approved_by');
-
                  if (statusSelect.length) {
                      statusSelect.select2({
                          theme: 'default', language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",

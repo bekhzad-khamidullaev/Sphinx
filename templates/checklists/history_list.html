@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n static app_filters crispy_forms_tags widget_tweaks %}
-
 {% block title %}{% trans "История выполнения чеклистов" %}{% endblock %}
-
 {% block head_extra %}
     {{ block.super }}
     {% if filterset %}{{ filterset.form.media.css }}{% endif %}
@@ -22,48 +20,41 @@
          html.dark .select2-search--dropdown .select2-search__field { background-color: theme('colors.dark.700'); border-color: theme('colors.dark.600'); color: theme('colors.gray.300'); }
     </style>
 {% endblock %}
-
 {% block list_title %}
 <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
     {% trans 'История выполнения чеклистов' %}
 </h1>
 {% endblock %}
-
 {% block list_actions %}
 <div class="flex items-center space-x-2 ml-auto">
     <div x-data="{ filterOpen: sessionStorage.getItem('checklistFilterOpen') === 'true' }">
         <button @click="filterOpen = !filterOpen; sessionStorage.setItem('checklistFilterOpen', filterOpen)"
                 id="toggleFilterBtn" :aria-expanded="filterOpen" aria-controls="filter-section"
-                class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-dark-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
             <i class="fas fa-filter mr-2"></i> {% trans "Фильтры" %}
             <i id="filter-arrow" class="fas ml-2 text-xs transition-transform duration-200" :class="filterOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
     </div>
-    <a href="{% url 'checklists:template_list' %}" class="btn-secondary text-sm">
+    <a href="{% url 'checklists:template_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
         <i class="fas fa-list-alt mr-1.5"></i> {% trans 'К шаблонам' %}
     </a>
-     <a href="{% url 'checklists:report_summary' %}" class="btn-secondary text-sm">
+     <a href="{% url 'checklists:report_summary' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
         <i class="fas fa-chart-bar mr-1.5"></i> {% trans 'Отчеты' %}
     </a>
 </div>
 {% endblock %}
-
 {% block list_actions_mobile %}
 <a href="{% url 'checklists:template_list' %}"
-    class="flex-1 btn-secondary text-sm">
+    class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
     <i class="fas fa-clipboard-list mr-2"></i> {% trans 'К шаблонам' %}
 </a>
 <button type="button" data-drawer-target="filter-drawer-checklist" data-drawer-show="filter-drawer-checklist" data-drawer-placement="right" aria-controls="filter-drawer-checklist"
-   class="flex-1 btn-secondary text-sm">
+   class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
     <i class="fas fa-filter mr-2"></i> {% trans 'Фильтр' %}
 </button>
 {% endblock %}
-
-
 {% block list_content %}
-
 <div x-data="{ filterOpen: sessionStorage.getItem('checklistFilterOpen') === 'true' }" id="filter-wrapper">
-
     <div id="filter-section" class="mb-6 hidden" x-show="filterOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" x-cloak>
         <div class="border border-gray-200 dark:border-dark-700 p-4 bg-white dark:bg-dark-800 rounded-lg shadow-md">
             {% if filterset %}
@@ -73,7 +64,6 @@
                         <input type="hidden" name="{{ key|escape }}" value="{{ value|escape }}">
                     {% endif %}
                 {% endfor %}
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                      {% for field in filterset.form %}
                           <div>
@@ -96,10 +86,9 @@
                           </div>
                      {% endfor %}
                 </div>
-
                 <div class="mt-4 flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-dark-600">
-                    <a href="{% url 'checklists:history_list' %}" class="btn-secondary text-sm">{% trans "Сбросить" %}</a>
-                    <button type="submit" class="btn-primary text-sm">
+                    <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">{% trans "Сбросить" %}</a>
+                    <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
                         <i class="fas fa-search mr-2"></i> {% trans "Применить" %}
                     </button>
                 </div>
@@ -109,7 +98,6 @@
             {% endif %}
         </div>
     </div>
-
     <div id="filter-drawer-checklist" class="fixed top-0 right-0 z-50 h-screen p-4 overflow-y-auto transition-transform translate-x-full bg-white w-80 dark:bg-gray-800" tabindex="-1" aria-labelledby="filter-drawer-checklist-label">
         <h5 id="filter-drawer-checklist-label" class="inline-flex items-center mb-4 text-base font-semibold text-gray-500 dark:text-gray-400"><i class="fas fa-filter mr-2"></i>{% trans 'Фильтр Истории' %}</h5>
         <button type="button" data-drawer-hide="filter-drawer-checklist" aria-controls="filter-drawer-checklist" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white" >
@@ -140,19 +128,17 @@
                       {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_base_id %}
                   {% endif %}
              {% endwith %}
-
                     {% if field.help_text %}<p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>{% endif %}
                     {% if field.errors %}<p class="text-xs text-red-500 mt-1">{{ field.errors.0 }}</p>{% endif %}
                 </div>
             {% endfor %}
             <div class="grid grid-cols-2 gap-4 pt-4">
-                 <a href="{% url 'checklists:history_list' %}" class="btn-secondary w-full text-center">{% trans 'Сбросить' %}</a>
-                 <button type="submit" class="btn-primary w-full">{% trans 'Применить' %}</button>
+                 <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm w-full text-center">{% trans 'Сбросить' %}</a>
+                 <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm w-full">{% trans 'Применить' %}</button>
             </div>
         </form>
         {% endif %}
      </div>
-
     <div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
          <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
@@ -183,7 +169,7 @@
                             {% endif %}
                         </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
-                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                              <span class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full
                                 {% if run.status == 'approved' %} bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
                                 {% elif run.status == 'submitted' %} bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100
                                 {% elif run.status == 'rejected' %} bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100
@@ -199,9 +185,9 @@
                          </td>
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center space-x-1">
-                                <a href="{{ run.get_absolute_url }}" title="{% trans 'Просмотр результатов' %}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-eye fa-fw"></i></a>
+                                <a href="{{ run.get_absolute_url }}" title="{% trans 'Просмотр результатов' %}" class="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-eye fa-fw"></i></a>
                                  {% if request.user.is_staff and run.status == 'submitted' %}
-                                      <a href="{% url 'checklists:checklist_status_change' pk=run.pk %}" title="{% trans 'Изменить статус (одобрить/отклонить)' %}" class="p-2 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-check-double fa-fw"></i></a>
+                                      <a href="{% url 'checklists:checklist_status_change' pk=run.pk %}" title="{% trans 'Изменить статус (одобрить/отклонить)' %}" class="p-1.5 rounded-full text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-check-double fa-fw"></i></a>
                                  {% endif %}
                             </div>
                         </td>
@@ -228,11 +214,8 @@
             {% include "includes/pagination.html" with page_obj=page_obj request=request %}
         </div>
     {% endif %}
-
 </div>
-
 {% endblock %}
-
 {% block scripts %}
 {{ block.super }}
 {% if filterset %}
@@ -243,7 +226,6 @@
  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
 {% endif %}
-
 <script defer>
  document.addEventListener('DOMContentLoaded', function() {
      if (typeof $ !== 'undefined' && $.fn.select2) {
@@ -262,7 +244,6 @@
             placeholder: "{% trans 'Любой' %}",
         });
      } else { console.warn("jQuery or Select2 not loaded for filters."); }
-
     if (typeof flatpickr !== 'undefined') {
          flatpickr(".flatpickr-date", {
             dateFormat: "Y-m-d",
@@ -273,7 +254,6 @@
     } else {
          console.warn("Flatpickr not loaded, date filter widgets might not work correctly.");
     }
-
      if (typeof Alpine !== 'undefined') {
            const filterBtn = document.getElementById('toggleFilterBtn');
            if (filterBtn && filterBtn.__x && filterBtn.__x.$data.filterOpen === false) {
@@ -306,7 +286,6 @@
             filterBtn.setAttribute('aria-expanded', shouldOpen);
             filterArrow.classList.toggle('fa-chevron-up', shouldOpen);
             filterArrow.classList.toggle('fa-chevron-down', !shouldOpen);
-
             filterBtn.addEventListener('click', () => {
                 const isHidden = filterSection.classList.toggle('hidden');
                 filterBtn.setAttribute('aria-expanded', String(!isHidden));
@@ -316,13 +295,11 @@
             });
          }
      }
-
     if (typeof Flowbite !== 'undefined' && typeof initFlowbite === 'function') {
          initFlowbite();
     } else {
         console.warn("Flowbite not detected, mobile filter drawer might not work.");
     }
-
  });
 </script>
 {% endblock %}

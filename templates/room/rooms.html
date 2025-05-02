@@ -1,38 +1,31 @@
 {% extends 'base.html' %}
 {% load static i18n %}
-
 {% block title %}{% trans "Чат-комнаты" %}{% endblock %}
-
 {% block list_title %}
 <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
     {% trans 'Чат-комнаты' %}
 </h1>
 {% endblock %}
-
 {% block list_actions %}
 <a href="{% url 'room:create_room' %}"
-   class="btn-primary bg-teal-500 hover:bg-teal-600 dark:bg-ios-teal dark:hover:bg-teal-700 focus:ring-teal-500"> {# Use primary button style #}
+   class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:bg-ios-teal dark:hover:bg-teal-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать комнату' %}
 </a>
 {% endblock %}
-
 {% block list_actions_mobile %}
  <a href="{% url 'room:create_room' %}"
-   class="flex-1 btn-primary bg-teal-500 hover:bg-teal-600 dark:bg-ios-teal dark:hover:bg-teal-700 focus:ring-teal-500"> {# Use primary button style #}
+   class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:bg-ios-teal dark:hover:bg-teal-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать комнату' %}
 </a>
 {% endblock %}
-
 {% block list_content %}
 <div class="mt-6">
     {% if rooms %}
         <div id="room-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {% for room in rooms %}
-                 {# Include the partial template for each room #}
                  {% include "includes/room_list_item.html" with room=room %}
             {% endfor %}
         </div>
-         {# Pagination #}
          {% if is_paginated %}
              <div class="mt-6">
                  {% include "includes/pagination.html" with page_obj=page_obj %}
@@ -44,7 +37,7 @@
             <p class="text-lg">{% trans "Нет доступных чат-комнат." %}</p>
             <p class="text-sm mt-1">{% trans "Вы можете создать новую комнату." %}</p>
             <div class="mt-4">
-                 <a href="{% url 'room:create_room' %}" class="btn-primary bg-teal-600 hover:bg-teal-700 dark:bg-ios-teal dark:hover:bg-teal-500 focus:ring-teal-500">
+                 <a href="{% url 'room:create_room' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:bg-ios-teal dark:hover:bg-teal-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
                     <i class="fas fa-plus mr-2"></i> {% trans 'Создать первую комнату' %}
                  </a>
             </div>
@@ -52,8 +45,7 @@
     {% endif %}
 </div>
 {% endblock %}
-
 {% block scripts %}
     {{ block.super }}
-    <script src="{% static 'js/room_actions.js' %}" defer></script> {# Load new JS file #}
+    <script src="{% static 'js/room_actions.js' %}" defer></script>
 {% endblock %}

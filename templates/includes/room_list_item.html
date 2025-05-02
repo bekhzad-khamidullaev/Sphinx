@@ -1,14 +1,11 @@
 {% load i18n %}
-
-{# Expects 'room' object in context #}
 {% if room.slug %}
-    <div class="room-list-item relative group"> {# Add group for dropdown hover later if needed #}
-        <a href="{% url 'room:room' room.slug %}" class="block p-4 bg-white dark:bg-dark-800 rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-dark-700 hover:border-blue-300 dark:hover:border-blue-700">
+    <div class="room-list-item relative group">
+        <a href="{% url 'room:room' room.slug %}" class="block p-3 bg-white dark:bg-dark-800 rounded-lg shadow hover:shadow-md transition-shadow border border-gray-200 dark:border-dark-700 hover:border-blue-300 dark:hover:border-blue-700 {% if current_room and current_room.slug == room.slug %} bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 ring-1 ring-blue-200 dark:ring-blue-800 {% endif %}">
             <div class="flex justify-between items-start">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1 truncate pr-6"># {{ room.name }}</h3>
-                {# Unread Indicator - Simple Dot #}
-                {% if room.has_unread %}
-                <span class="absolute top-3 right-10 flex h-2.5 w-2.5" title="{% trans 'Есть непрочитанные сообщения' %}">
+                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-1 truncate pr-6 {% if current_room and current_room.slug == room.slug %}text-blue-800 dark:text-blue-200{% endif %}"># {{ room.name }}</h3>
+                {% if room.has_unread and not current_room or (current_room and current_room.slug != room.slug) %}
+                <span class="absolute top-2 right-10 flex h-2.5 w-2.5" title="{% trans 'Есть непрочитанные сообщения' %}">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                 </span>
@@ -28,17 +25,15 @@
                 {% endif %}
             </div>
         </a>
-        {# Actions Dropdown - Positioned absolute within the relative parent #}
-         <div class="absolute top-2 right-2" x-data="{ open: false }">
-            <button @click="open = !open" class="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-full focus:outline-none" title="{% trans 'Действия' %}">
-                <i class="fas fa-ellipsis-v"></i>
+         <div class="absolute top-1 right-1" x-data="{ open: false }">
+            <button @click="open = !open" class="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-full focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity" title="{% trans 'Действия' %}">
+                <i class="fas fa-ellipsis-v fa-sm"></i>
             </button>
             <div x-show="open" @click.outside="open = false"
                  x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                  x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
                  class="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 shadow-lg rounded-md border border-gray-200 dark:border-dark-600 z-20 overflow-hidden" x-cloak>
                 <ul class="py-1 text-sm text-gray-700 dark:text-gray-300">
-                    {# Add other actions like "Details", "Leave" if applicable #}
                      <li>
                          <button type="button"
                                  data-action="archive-room"
@@ -53,9 +48,8 @@
         </div>
     </div>
 {% else %}
-    {# Fallback display for rooms without slugs #}
-    <div class="block p-4 bg-gray-100 dark:bg-dark-700 rounded-lg shadow border border-gray-300 dark:border-dark-600 opacity-70 cursor-not-allowed">
-        <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-1 truncate"># {{ room.name }}</h3>
-         <p class="text-xs text-red-500 dark:text-red-400 mt-1">{% trans "(Ошибка URL)" %}</p>
+    <div class="block p-3 bg-gray-100 dark:bg-dark-700 rounded-lg shadow border border-gray-300 dark:border-dark-600 opacity-70 cursor-not-allowed">
+        <h3 class="text-base font-semibold text-gray-600 dark:text-gray-400 mb-1 truncate"># {{ room.name }}</h3>
+         <p class="text-xs text-red-500 dark:text-red-400 mt-1">{% trans "(Ошибка: Неверный URL)" %}</p>
     </div>
 {% endif %}

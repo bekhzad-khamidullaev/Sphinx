@@ -1,9 +1,6 @@
-{% load i18n %}
-{% load app_filters %} {# Assuming url_replace is here #}
-
+{% load i18n app_filters %}
 {% if is_paginated %}
-<nav aria-label="Page navigation" class="flex items-center justify-between border-t border-gray-200 dark:border-dark-700 px-4 py-3 sm:px-6 mt-6">
-    {# --- Previous Button (Hidden on Mobile) --- #}
+<nav aria-label="{% trans 'Page navigation' %}" class="flex items-center justify-between border-t border-gray-200 dark:border-dark-700 px-4 py-3 sm:px-6 mt-6">
     <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div>
             <p class="text-sm text-gray-700 dark:text-gray-400">
@@ -14,57 +11,51 @@
         </div>
         <div>
             <span class="relative z-0 inline-flex shadow-sm rounded-md -space-x-px">
-                {# Previous Button #}
                 {% if page_obj.has_previous %}
-                    <a href="?{% url_replace page=page_obj.previous_page_number %}" {# Use keyword arg #}
-                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-700">
+                    <a href="?{% url_replace page=page_obj.previous_page_number %}"
+                       class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-700 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                         <span class="sr-only">{% trans "Предыдущая" %}</span>
-                        <i class="fas fa-chevron-left h-5 w-5"></i>
+                        <i class="fas fa-chevron-left h-4 w-4"></i>
                     </a>
                 {% else %}
-                     <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-dark-600 bg-gray-100 dark:bg-dark-700 text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                     <span class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-dark-600 bg-gray-100 dark:bg-dark-700 text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
                          <span class="sr-only">{% trans "Предыдущая" %}</span>
-                         <i class="fas fa-chevron-left h-5 w-5"></i>
+                         <i class="fas fa-chevron-left h-4 w-4"></i>
                      </span>
                 {% endif %}
-
-                {# Page Numbers #}
                  {% for i in paginator.page_range %}
                      {% if page_obj.number == i %}
                          <span aria-current="page" class="relative z-10 inline-flex items-center px-4 py-2 border border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-dark-600 text-sm font-medium text-indigo-600 dark:text-indigo-300">
                              {{ i }}
                          </span>
-                     {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %} {# Show pages around current page #}
-                         <a href="?{% url_replace page=i %}" {# Use keyword arg #}
-                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-700">
+                     {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                         <a href="?{% url_replace page=i %}"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-700 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                              {{ i }}
                          </a>
-                     {% elif i == page_obj.number|add:'-3' or i == page_obj.number|add:'3' %} {# Ellipsis #}
-                          <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-800 text-sm font-medium text-gray-700 dark:text-gray-400">...</span>
+                     {% elif i == page_obj.number|add:'-3' or i == page_obj.number|add:'3' %}
+                          <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-800 text-sm font-medium text-gray-400 dark:text-gray-500">...</span>
                      {% endif %}
                  {% endfor %}
-
-                {# Next Button #}
                 {% if page_obj.has_next %}
-                    <a href="?{% url_replace page=page_obj.next_page_number %}" {# Use keyword arg #}
-                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-700">
+                    <a href="?{% url_replace page=page_obj.next_page_number %}"
+                       class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-700 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                         <span class="sr-only">{% trans "Следующая" %}</span>
-                        <i class="fas fa-chevron-right h-5 w-5"></i>
+                        <i class="fas fa-chevron-right h-4 w-4"></i>
                     </a>
                 {% else %}
-                    <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-dark-600 bg-gray-100 dark:bg-dark-700 text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                    <span class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-dark-600 bg-gray-100 dark:bg-dark-700 text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
                         <span class="sr-only">{% trans "Следующая" %}</span>
-                        <i class="fas fa-chevron-right h-5 w-5"></i>
+                        <i class="fas fa-chevron-right h-4 w-4"></i>
                     </span>
                 {% endif %}
             </span>
         </div>
     </div>
-     {# --- Mobile Pagination --- #}
      <div class="flex-1 flex justify-between sm:hidden">
         {% if page_obj.has_previous %}
-         <a href="?{% url_replace page=page_obj.previous_page_number %}" {# Use keyword arg #}
-            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:border-dark-600 dark:text-gray-300 dark:bg-dark-800 dark:hover:bg-dark-700">
+         <a href="?{% url_replace page=page_obj.previous_page_number %}"
+            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:border-dark-600 dark:text-gray-300 dark:bg-dark-800 dark:hover:bg-dark-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
             {% trans "Назад" %}
          </a>
          {% else %}
@@ -76,8 +67,8 @@
              {{ page_obj.number }} / {{ paginator.num_pages }}
          </span>
          {% if page_obj.has_next %}
-         <a href="?{% url_replace page=page_obj.next_page_number %}" {# Use keyword arg #}
-            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:border-dark-600 dark:text-gray-300 dark:bg-dark-800 dark:hover:bg-dark-700">
+         <a href="?{% url_replace page=page_obj.next_page_number %}"
+            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:border-dark-600 dark:text-gray-300 dark:bg-dark-800 dark:hover:bg-dark-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
             {% trans "Вперед" %}
          </a>
           {% else %}

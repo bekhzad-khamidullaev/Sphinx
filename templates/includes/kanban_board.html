@@ -1,20 +1,13 @@
-{% load i18n app_filters static %}
-
+{% load static i18n app_filters %}
 <div id="kanban-board"
     class="mt-6 flex flex-nowrap overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-dark-600 scrollbar-track-transparent hidden"
     data-ajax-base-url="{{ ajax_base_url }}">
-
     {% for status, task_list in tasks_by_status.items %}
     {% with status_display_name=status_mapping|getkey:status %}
-    {# Column Wrapper #}
     <div class="kanban-column-wrapper flex-shrink-0 w-72 md:w-80" data-status="{{ status }}">
-        {# Actual Column Styling #}
         <div class="kanban-column bg-gray-100 dark:bg-dark-800 w-full h-full rounded-xl shadow-md flex flex-col max-h-[calc(100vh-220px)] border border-gray-200 dark:border-dark-700"
             data-status="{{ status }}">
-
-            {# Column Header #}
             <h3 class="text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 p-4 sticky top-0 z-10 bg-opacity-90 backdrop-blur-sm rounded-t-xl flex justify-between items-center border-b border-gray-300 dark:border-dark-600
-                    {# Conditional Backgrounds #}
                     {% if status == 'new' %}bg-gray-200 dark:bg-dark-700
                     {% elif status == 'in_progress' %}bg-yellow-100 dark:bg-yellow-900/60 border-yellow-300 dark:border-yellow-700/50 text-yellow-800 dark:text-yellow-200
                     {% elif status == 'on_hold' %}bg-blue-100 dark:bg-blue-900/60 border-blue-300 dark:border-blue-700/50 text-blue-800 dark:text-blue-200
@@ -25,46 +18,31 @@
                 <span>{{ status_display_name|default:status }}</span>
                 <span class="task-count bg-gray-500/20 dark:bg-black/20 text-gray-700 dark:text-gray-300 rounded-full px-2.5 py-0.5 text-xs font-semibold font-mono shadow-inner">{{ task_list|length }}</span>
             </h3>
-
-            {# Task Cards Container #}
             <div class="kanban-tasks space-y-3 p-4 overflow-y-auto flex-1 min-h-[600px]">
                 {% for task in task_list %}
                  {% with priority_color_class=task.priority|get_priority_color %}
                  <div id="task-{{ task.pk }}"
-                    class="kanban-task bg-white dark:bg-dark-700 rounded-lg shadow-md p-3.5 cursor-grab hover:shadow-lg border border-gray-200 dark:border-dark-600 border-l-4 {{ priority_color_class }} transition-all duration-150 hover:scale-[1.01] group flex flex-col" {# Added flex flex-col #}
+                    class="kanban-task bg-white dark:bg-dark-700 rounded-lg shadow-md p-3.5 cursor-grab hover:shadow-lg border border-gray-200 dark:border-dark-600 border-l-4 {{ priority_color_class }} transition-all duration-150 hover:scale-[1.01] group flex flex-col relative"
                     draggable="true"
                     data-task-id="{{ task.pk }}"
                     data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/"
                     data-status="{{ task.status }}">
-
-                    {# Card Content Wrapper (for flex-grow) #}
                     <div class="flex-grow">
-                        {# Top: Task Number Link & Project Link #}
                         <div class="flex justify-between items-center mb-2 text-xs">
-                            {# === CHANGED: Task Number is now a link === #}
                             <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Перейти к задаче' %} {{ task.task_number }}"
                                class="font-mono font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
                                 {{ task.task_number }}
                             </a>
-                            {# === END CHANGE === #}
                             <a href="{{ task.project.get_absolute_url }}" title="{% trans 'Проект' %}: {{ task.project.name }}" class="text-gray-500 dark:text-gray-400 hover:underline truncate ml-2 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                                 <i class="fas fa-project-diagram fa-fw mr-1 opacity-70"></i>{{ task.project.name|truncatechars:20 }}
                             </a>
                         </div>
-
-                        {# Title (Link to detail) #}
-                        {# === CHANGED: Title is now a link === #}
                         <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="block mb-3 group/title">
                              <p class="text-sm font-medium text-gray-800 dark:text-gray-100 break-words group-hover/title:text-blue-700 dark:group-hover/title:text-blue-400 transition-colors">{{ task.title }}</p>
                         </a>
-                         {# === END CHANGE === #}
-
-                        {# === NEW SECTION: Creator and Assignee === #}
                         <div class="space-y-1.5 text-xs text-gray-600 dark:text-gray-400 mb-3">
-                            {# Creator #}
                             <div class="flex items-center gap-1.5">
                                 <i class="fas fa-user-plus fa-fw text-gray-400 dark:text-gray-500" title="{% trans 'Инициатор' %}"></i>
-                                {# Assuming user model has get_absolute_url or similar #}
                                 {% if task.created_by and task.created_by.get_absolute_url %}
                                 <a href="{{ task.created_by.get_absolute_url }}" title="{% trans 'Профиль' %} {{ task.created_by.display_name|default:task.created_by.username }}" class="hover:underline hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
                                     {{ task.created_by.display_name|default:task.created_by.username }}
@@ -74,7 +52,6 @@
                                 {% endif %}
                                 <span class="text-gray-400 dark:text-gray-500 ml-auto" title="{% trans 'Дата создания' %}"><i class="far fa-calendar-plus fa-fw mr-1"></i>{{ task.created_at|date:"d.m.y" }}</span>
                             </div>
-                            {# Assignee #}
                             {% if task.assignee %}
                             <div class="flex items-center gap-1.5">
                                 <i class="fas fa-user-check fa-fw text-gray-400 dark:text-gray-500" title="{% trans 'Исполнитель' %}"></i>
@@ -93,13 +70,8 @@
                              </div>
                             {% endif %}
                         </div>
-                        {# === END NEW SECTION === #}
-
-                    </div> {# End flex-grow wrapper #}
-
-                    {# Bottom: Priority & Deadline #}
+                    </div>
                     <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-auto pt-2 border-t border-gray-100 dark:border-dark-600">
-                         {# Priority display with better icons/text #}
                         <span class="inline-flex items-center gap-1.5 font-medium {{ priority_color_class|replace:'border-l-4 border-,text-' }}" title="{% trans 'Приоритет' %}: {{ task.get_priority_display }}">
                              {% if task.priority == 1 %}<i class="fas fa-flag fa-fw text-red-500"></i> <span class="hidden sm:inline">{% trans "Высокий" %}</span>
                              {% elif task.priority == 2 %}<i class="fas fa-angle-double-up fa-fw text-orange-500"></i> <span class="hidden sm:inline">{% trans "Выше ср." %}</span>
@@ -109,38 +81,31 @@
                              {% else %}<i class="fas fa-question-circle fa-fw text-gray-400"></i> {{ task.get_priority_display }}
                              {% endif %}
                         </span>
-                        {# Deadline #}
                         {% if task.deadline %}
                         <span class="inline-flex items-center gap-1 {% if task.is_overdue %}text-red-600 dark:text-red-400 font-semibold{% else %}text-gray-500 dark:text-gray-400{% endif %}" title="{% trans 'Срок выполнения' %}">
-                            <i class="far fa-calendar-alt fa-fw"></i> {{ task.deadline|date:"d.m.y" }} {# Changed format to d.m.y #}
+                            <i class="far fa-calendar-alt fa-fw"></i> {{ task.deadline|date:"d.m.y" }}
                         </span>
                         {% endif %}
                     </div>
-
-                    {# Actions (Appear on hover) #}
-                    <div class="mt-3 pt-2 border-t border-gray-200 dark:border-dark-500 flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-2 right-2 bg-white dark:bg-dark-700 p-1 rounded-md shadow-sm"> {# Positioned absolutely for consistency #}
+                    <div class="kanban-actions absolute bottom-1 right-1 flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-white dark:bg-dark-700 p-1 rounded-md shadow-sm">
                         <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Подробнее' %}"
-                            class="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-full transition-colors">
+                            class="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 transition-colors">
                             <i class="fas fa-eye fa-fw"></i>
                         </a>
-                        {# === CHANGED: Edit link now uses a modal or separate page logic trigger === #}
                         <button type="button" data-action="edit-task" data-edit-url="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}"
-                            class="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 rounded-full transition-colors">
+                            class="p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors">
                             <i class="fas fa-edit fa-fw"></i>
                         </button>
-                        {# === END CHANGE === #}
                         <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}"
-                            data-task-name="{{ task.title|escapejs }}" {# Use title for confirm #}
+                            data-task-name="{{ task.title|escapejs }}"
                             data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" title="{% trans 'Удалить' %}"
-                            class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-full transition-colors">
+                            class="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 transition-colors">
                             <i class="fas fa-trash fa-fw"></i>
                         </button>
                     </div>
                 </div>
-                {% endwith %} {# End priority_color_class #}
+                {% endwith %}
                 {% endfor %}
-
-                {# Empty Column Message #}
                 <div class="no-tasks-message text-center text-gray-400 dark:text-gray-500 py-10 px-4 {% if task_list %}hidden{% endif %}">
                     <i class="fas fa-inbox fa-2x mb-3 opacity-50"></i>
                     <p class="text-sm italic">{% trans 'Нет задач в этой колонке' %}</p>
@@ -150,7 +115,6 @@
     </div>
     {% endwith %}
     {% empty %}
-    {# Message if no columns exist #}
     <div class="text-center text-gray-500 dark:text-gray-400 text-lg py-12 px-4 italic w-full bg-white dark:bg-dark-800 rounded-xl shadow">
         <i class="fas fa-folder-open fa-3x mb-4 text-gray-400 dark:text-gray-500"></i><br>
         {% trans 'Задачи для отображения не найдены или статусы не определены.' %}

@@ -1,18 +1,7 @@
-{% load i18n %}
-{% load app_filters %} {# Assuming url_replace is here #}
-
-{% comment %}
-Context Variables:
- - column_name: The name of the model field for sorting (e.g., 'name', 'created_at')
- - display_name: The text to display in the header (e.g., _('Name'))
- - current_sort: The current sort parameter from the request (e.g., 'name', '-created_at')
- - request: The current HttpRequest object (Available implicitly via context if tag uses takes_context=True)
- - filter_params: URL encoded string of existing filter parameters (e.g., request.GET.urlencode) - NOTE: This is not automatically passed by Django's include tag, needs explicit passing from parent if required by url_replace logic, but the current url_replace definition doesn't seem to use it directly.
-{% endcomment %}
-
+{% load i18n app_filters %}
 {% with sort_ascending=column_name sort_descending="-"|add:column_name %}
     {% if current_sort == sort_ascending %}
-        {% url_replace sort=sort_descending as next_sort_url %} {# Use keyword arg #}
+        {% url_replace sort=sort_descending as next_sort_url %}
         {% with aria_sort="ascending" sort_icon="fas fa-sort-up" %}
             <th scope="col" class="sort-header px-4 py-3.5" aria-sort="{{ aria_sort }}">
                 <a href="?{{ next_sort_url }}" class="flex items-center group text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">
@@ -22,7 +11,7 @@ Context Variables:
             </th>
         {% endwith %}
     {% elif current_sort == sort_descending %}
-        {% url_replace sort=sort_ascending as next_sort_url %} {# Use keyword arg #} {# Default to ascending next #}
+        {% url_replace sort=sort_ascending as next_sort_url %}
         {% with aria_sort="descending" sort_icon="fas fa-sort-down" %}
              <th scope="col" class="sort-header px-4 py-3.5" aria-sort="{{ aria_sort }}">
                 <a href="?{{ next_sort_url }}" class="flex items-center group text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">
@@ -32,7 +21,7 @@ Context Variables:
             </th>
         {% endwith %}
     {% else %}
-        {% url_replace sort=sort_ascending as next_sort_url %} {# Use keyword arg #}
+        {% url_replace sort=sort_ascending as next_sort_url %}
         {% with aria_sort="none" sort_icon="fas fa-sort" %}
             <th scope="col" class="sort-header px-4 py-3.5" aria-sort="{{ aria_sort }}">
                  <a href="?{{ next_sort_url }}" class="flex items-center group text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">

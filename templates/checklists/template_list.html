@@ -1,32 +1,22 @@
 {% extends 'base.html' %}
-{% load i18n static app_filters %} {# Ensure app_filters is loaded if needed #}
-
+{% load i18n static app_filters %}
 {% block title %}{% trans "Шаблоны чеклистов" %}{% endblock %}
-
 {% block list_title %}
 <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
     {% trans 'Шаблоны чеклистов' %}
 </h1>
 {% endblock %}
-
 {% block list_actions %}
-{# Desktop Actions: Grouped Buttons using Flowbite style #}
 <div class="flex items-center ml-4">
     <div class="inline-flex rounded-md shadow-xs" role="group">
-
-        {# Create Template Button (First in group) #}
         <a href="{% url 'checklists:template_create' %}"
            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
             <i class="fas fa-plus mr-2 text-indigo-500 dark:text-ios-indigo"></i> {% trans 'Создать шаблон' %}
         </a>
-
-        {# History Link Button (Middle button) #}
         <a href="{% url 'checklists:history_list' %}"
            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
             <i class="fas fa-history mr-2 text-orange-500 dark:text-ios-orange"></i> {% trans 'История' %}
         </a>
-
-        {# Reports Dropdown Button (Last in group) #}
         <button id="checklist-reports-dropdown-button" data-dropdown-toggle="checklist-reports-dropdown"
            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150" type="button">
             <i class="fas fa-chart-pie mr-2 text-green-500 dark:text-ios-green"></i>
@@ -35,8 +25,6 @@
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
             </svg>
         </button>
-
-        {# Dropdown Menu for Reports #}
         <div id="checklist-reports-dropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 border dark:border-gray-600">
             <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="checklist-reports-dropdown-button">
               <li>
@@ -45,16 +33,12 @@
               <li>
                 <a href="{% url 'checklists:report_issues' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Отчет по проблемам' %}</a>
               </li>
-              {# Add more report links here if needed #}
             </ul>
         </div>
-
     </div>
 </div>
 {% endblock %}
-
 {% block list_actions_mobile %}
-{# Mobile Actions: Create Template + History Link #}
 <a href="{% url 'checklists:template_create' %}"
    class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-indigo-500 dark:bg-ios-indigo text-white hover:bg-indigo-600 dark:hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-950 transition-all shadow">
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать шаблон' %}
@@ -64,7 +48,6 @@
     <i class="fas fa-history mr-2"></i> {% trans 'История' %}
 </a>
 {% endblock %}
-
 {% block list_content %}
 <div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
     <div class="overflow-x-auto">
@@ -79,13 +62,13 @@
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-                {% for template in templates %} {# Assumes context_object_name='templates' #}
+                {% for template in templates %}
                 <tr class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm">
                     <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                         <a href="{{ template.get_absolute_url }}" class="hover:underline text-blue-600 dark:text-blue-400">{{ template.name }} {% if template.version %}(v{{ template.version }}){% endif %}</a>
                     </td>
                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ template.category.name|default:"-" }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{{ template.item_count_agg|default:template.items.count }}</td> {# Use annotated count if available #}
+                    <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{{ template.item_count_agg|default:template.items.count }}</td>
                     <td class="px-4 py-3 text-center">
                         {% if template.is_active %}
                             <i class="fas fa-check-circle text-green-500 dark:text-ios-green" title="{% trans 'Да' %}"></i>
@@ -95,10 +78,10 @@
                     </td>
                     <td class="px-4 py-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center space-x-1">
-                            <a href="{% url 'checklists:checklist_perform' template_pk=template.pk %}" title="{% trans 'Выполнить чеклист' %}" class="p-2 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-play fa-fw"></i></a>
-                            <a href="{{ template.get_absolute_url }}" title="{% trans 'Просмотр' %}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-eye fa-fw"></i></a>
-                            <a href="{% url 'checklists:template_update' pk=template.pk %}" title="{% trans 'Редактировать' %}" class="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-edit fa-fw"></i></a>
-                            <a href="{% url 'checklists:template_delete' pk=template.pk %}" title="{% trans 'Удалить' %}" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-trash fa-fw"></i></a>
+                            <a href="{% url 'checklists:checklist_perform' template_pk=template.pk %}" title="{% trans 'Выполнить чеклист' %}" class="p-1.5 rounded-full text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-play fa-fw"></i></a>
+                            <a href="{{ template.get_absolute_url }}" title="{% trans 'Просмотр' %}" class="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-eye fa-fw"></i></a>
+                            <a href="{% url 'checklists:template_update' pk=template.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-edit fa-fw"></i></a>
+                            <a href="{% url 'checklists:template_delete' pk=template.pk %}" title="{% trans 'Удалить' %}" class="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-trash fa-fw"></i></a>
                         </div>
                     </td>
                 </tr>
@@ -116,11 +99,8 @@
         </table>
     </div>
 </div>
-{% include "includes/pagination.html" with page_obj=page_obj %} {# Use your pagination include #}
+{% include "includes/pagination.html" with page_obj=page_obj %}
 {% endblock %}
-
 {% block scripts %}
 {{ block.super }}
-{# Initialize Flowbite Dropdowns if not done globally #}
-{# <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.1/flowbite.min.js" defer></script> #}
 {% endblock %}

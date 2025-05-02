@@ -82,10 +82,43 @@ class UserCreateForm(BaseUserCreationForm):
         for field_name, field in self.fields.items():
              if 'password' in field_name: field.widget.attrs['placeholder'] = _("Пароль")
              elif field_name == 'username': field.widget.attrs['placeholder'] = _("Имя пользователя (логин)")
-             if field_name not in self.Meta.widgets and not isinstance(field.widget, (forms.PasswordInput, forms.EmailInput, forms.ClearableFileInput, forms.Select)): add_common_attrs(field)
-             elif field_name == 'department': field.widget.attrs['class'] = 'form-select select2-single'
+             # --- ИЗМЕНЕНИЕ ЗДЕСЬ: Убрали проверку self.Meta.widgets ---
+             if not isinstance(field.widget, (forms.PasswordInput, forms.EmailInput, forms.ClearableFileInput, forms.Select)):
+                 add_common_attrs(field)
+             elif field_name == 'department':
+                 # Убедимся, что класс select2-single добавлен, если это Select виджет
+                 if isinstance(field.widget, forms.Select):
+                      field.widget.attrs['class'] = 'form-select select2-single'
         self.helper = FormHelper(self); self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
-        self.helper.layout = Layout( Fieldset( _("Учетные данные"), Field("username"), Field("email"), Field("password"), Field("password_confirmation"),), Fieldset( _("Личная информация"), Field("first_name"), Field("last_name"), Field("phone_number"), Field("job_title"), Field("department"), Field("image"),))
+        # --- Обновляем Layout, чтобы явно использовать классы для виджетов Select2 ---
+        self.helper.layout = Layout(
+            Fieldset(
+                _("Учетные данные"),
+                Field("username"),
+                Field("email"),
+                # Убедись, что для полей пароля используются PasswordInput
+                Field("password"),
+                Field("password_confirmation"),
+            ),
+            Fieldset(
+                _("Личная информация"),
+                Field("first_name"),
+                Field("last_name"),
+                Field("phone_number"),
+            ),
+            Fieldset(
+                 _("Рабочая информация"),
+                 Field("job_title"),
+                 # Явно указываем класс для Select2 виджета отдела
+                 Field("department", css_class="select2-single"),
+            ),
+             Fieldset(
+                  _("Аватар"),
+                  # Для ClearableFileInput обычно не нужны доп. классы
+                  Field("image"),
+             )
+        )
+
 
     def clean_email(self):
         email = self.cleaned_data.get('email');

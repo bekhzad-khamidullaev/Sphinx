@@ -1,74 +1,62 @@
 {% extends 'base.html' %}
 {% load i18n app_filters static %}
-
 {% block title %}{% trans "Проекты" %}{% endblock %}
-
 {% block list_title %}
 <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
     {% trans 'Проекты' %}
 </h1>
 {% endblock %}
-
 {% block list_actions %}
-{# Desktop Actions: Create Project Button (Single Button Style) #}
 <div class="flex items-center ml-4">
-    {# Using a standard primary button style #}
     <a href="{% url 'tasks:project_create' %}"
-       class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
+       class="px-4 py-2 rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:bg-ios-purple dark:hover:bg-purple-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
         <i class="fas fa-plus mr-2"></i> {% trans 'Создать проект' %}
     </a>
 </div>
 {% endblock %}
-
 {% block list_actions_mobile %}
-<a href="{% url 'tasks:project_create' %}" class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-purple-500 dark:bg-ios-purple text-white hover:bg-purple-600 dark:hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:focus:ring-offset-dark-950 transition-all shadow">
+<a href="{% url 'tasks:project_create' %}" class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:bg-ios-purple dark:hover:bg-purple-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
     <i class="fas fa-plus mr-2"></i> {% trans 'Создать проект' %}
 </a>
 {% endblock %}
-
 {% block list_content %}
 <div class="mt-6 overflow-x-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
-        <thead class="bg-gray-50 dark:bg-dark-700">
+        <thead class="bg-gray-50 dark:bg-dark-700/50">
         <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            <th scope="col" class="px-4 py-3"><i class="fas fa-project-diagram fa-fw mr-1"></i>{% trans 'Название проекта' %}</th>
-            <th scope="col" class="px-4 py-3"><i class="far fa-calendar-alt fa-fw mr-1"></i>{% trans 'Дата начала' %}</th>
-            <th scope="col" class="px-4 py-3"><i class="fas fa-calendar-check fa-fw mr-1"></i>{% trans 'Дата завершения' %}</th>
-            <th scope="col" class="px-4 py-3"><i class="fas fa-tasks fa-fw mr-1"></i>{% trans 'Задач' %}</th>
-            <th scope="col" class="px-4 py-3 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия' %}</th>
+            <th scope="col" class="px-4 py-3.5"><i class="fas fa-project-diagram fa-fw mr-1"></i>{% trans 'Название проекта' %}</th>
+            <th scope="col" class="px-4 py-3.5"><i class="far fa-calendar-alt fa-fw mr-1"></i>{% trans 'Дата начала' %}</th>
+            <th scope="col" class="px-4 py-3.5"><i class="fas fa-calendar-check fa-fw mr-1"></i>{% trans 'Дата завершения' %}</th>
+            <th scope="col" class="px-4 py-3.5 text-center"><i class="fas fa-tasks fa-fw mr-1"></i>{% trans 'Задач' %}</th>
+            <th scope="col" class="px-4 py-3.5 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия' %}</th>
         </tr>
         </thead>
         <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-            {# Используем object_list или имя из context_object_name вашего ListView #}
             {% for project in object_list %}
-            <tr id="project-row-{{ project.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300">
+            <tr id="project-row-{{ project.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300">
                 <td class="px-4 py-3 whitespace-nowrap font-medium">
                      <a href="{{ project.get_absolute_url }}" class="text-blue-600 dark:text-blue-400 hover:underline">{{ project.name }}</a>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap">{{ project.start_date|date:"d.m.Y"|default:"-" }}</td>
-                <td class="px-4 py-3 whitespace-nowrap">{{ project.end_date|date:"d.m.Y"|default:"-" }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-center">{{ project.tasks.count }}</td> {# Количество задач в проекте #}
+                <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{{ project.start_date|date:"d.m.Y"|default:"-" }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{{ project.end_date|date:"d.m.Y"|default:"-" }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-center text-gray-600 dark:text-gray-400">{{ project.tasks.count }}</td>
                 <td class="px-4 py-3 text-center whitespace-nowrap">
-                    <div class="flex items-center justify-center space-x-2">
-                        {# Ссылка на просмотр (если есть project_detail) или на список задач проекта #}
-                        <a href="{{ project.get_absolute_url }}" title="{% trans 'Просмотреть задачи' %}" class="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-full transition-colors"><i class="fas fa-eye fa-fw"></i></a>
-                        <a href="{% url 'tasks:project_update' pk=project.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-600 rounded-full transition-colors focus:outline-none"><i class="fas fa-edit fa-fw"></i></a>
-                        <a href="{% url 'tasks:project_delete' pk=project.pk %}" title="{% trans 'Удалить' %}" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-full transition-colors focus:outline-none"><i class="fas fa-trash fa-fw"></i></a>
+                    <div class="flex items-center justify-center space-x-1">
+                        <a href="{{ project.get_absolute_url }}" title="{% trans 'Просмотреть задачи' %}" class="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-eye fa-fw"></i></a>
+                        <a href="{% url 'tasks:project_update' pk=project.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-edit fa-fw"></i></a>
+                        <a href="{% url 'tasks:project_delete' pk=project.pk %}" title="{% trans 'Удалить' %}" class="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-trash fa-fw"></i></a>
                     </div>
                 </td>
             </tr>
             {% empty %}
-                <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400 italic"><i class="fas fa-folder-open fa-2x mb-2 text-gray-400 dark:text-gray-500"></i><br>{% trans 'Проекты не найдены.' %}</td></tr>
+                <tr><td colspan="5" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic"><i class="fas fa-folder-open fa-3x mb-3 text-gray-300 dark:text-gray-600"></i><br>{% trans 'Проекты не найдены.' %}</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-
-{# Пагинация #}
 {% if is_paginated %}
-<div class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm">
-    {% include "includes/pagination.html" with page_obj=page_obj %} {# Используем ваш шаблон пагинации #}
+<div class="mt-6">
+    {% include "includes/pagination.html" with page_obj=page_obj %}
 </div>
 {% endif %}
-
 {% endblock %}

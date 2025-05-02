@@ -1,19 +1,16 @@
 {% extends 'base.html' %}
 {% load i18n static crispy_forms_tags %}
-
 {% block title %}{{ page_title }}{% endblock %}
-
 {% block list_title %}
 <div class="flex items-center justify-between">
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+    <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
         {{ page_title }}
     </h1>
-    <a href="{% url 'user_profiles:password_change' %}" class="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400">
-        <i class="fas fa-key mr-1"></i> {% trans "Сменить пароль" %}
+    <a href="{% url 'user_profiles:password_change' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
+        <i class="fas fa-key mr-2"></i> {% trans "Сменить пароль" %}
     </a>
 </div>
 {% endblock %}
-
 {% block list_content %}
 <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2">
@@ -21,7 +18,7 @@
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="flex items-center mb-6 pb-6 border-b border-gray-200 dark:border-dark-600">
-                    <img class="w-20 h-20 rounded-full object-cover shadow-md" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name }}">
+                    <img class="w-20 h-20 rounded-full object-cover shadow-md border border-gray-300 dark:border-dark-600" src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name }}">
                     <div class="ml-4">
                         <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ user.display_name }}</h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400">@{{ user.username }}</p>
@@ -36,7 +33,7 @@
                     </div>
                 {% endif %}
                 <div class="flex justify-end mt-6 pt-6 border-t border-gray-200 dark:border-dark-600">
-                    <button type="submit" class="px-5 py-2.5 rounded-full text-sm font-medium bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 shadow-md">
+                    <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
                         <i class="fas fa-save mr-2"></i> {% trans "Сохранить изменения" %}
                     </button>
                 </div>
@@ -55,9 +52,10 @@
                             <a href="{{ task.get_absolute_url }}" class="block">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="font-medium text-sm text-blue-600 dark:text-blue-400">#{{ task.task_number }}</span>
-                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200">
-                                        {{ task.status_display }}
-                                    </span>
+                                     <span class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if task.status == 'new' %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200{% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200{% elif task.status == 'canceled' %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through{% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200{% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200{% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
+                                        {{ task.get_status_display }}
+                                      </span>
                                 </div>
                                 <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{{ task.title }}</p>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -78,4 +76,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    {# Add crispy forms media if needed for profile form fields #}
+    {{ form.media.js }}
 {% endblock %}
