@@ -515,7 +515,7 @@ class ChecklistResultForm(forms.ModelForm):
              ))
 
         # --- 2. Process Value based on Answer Type and Clear Irrelevant Fields ---
-        correct_value_field = item.primary_value_field_name # Use model property
+        correct_value_field = instance.primary_value_field_name # Use property from the result instance << CORRECTED HERE
 
         # Handle boolean specifically as RadioSelect returns 'true'/'false' strings
         if correct_value_field == 'boolean_value' and isinstance(self.fields['boolean_value'].widget, forms.RadioSelect):
@@ -578,8 +578,10 @@ class ChecklistResultForm(forms.ModelForm):
             ]
             # Add required check from template item if you implement it: and item.is_required
             if item.answer_type in value_types_requiring_input and not value_provided:
-                  if correct_value_field and correct_value_field in self.fields:
-                      self.add_error(correct_value_field, ValidationError(
+                  # Add error to the specific input field if possible
+                  primary_field_name = instance.primary_value_field_name # Use property from model instance << CORRECTED HERE
+                  if primary_field_name and primary_field_name in self.fields:
+                      self.add_error(primary_field_name, ValidationError(
                            _('Пожалуйста, предоставьте ответ для этого пункта.'), code='value_required_for_status'
                       ))
                   else:

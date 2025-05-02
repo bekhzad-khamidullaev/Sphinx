@@ -7,6 +7,8 @@
 {% block head_extra %}
     {{ block.super }}
     {{ formset.media.css }}
+    {# Load Flatpickr CSS #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         /* Style radio buttons for better layout */
         .checklist-radio-group label {
@@ -60,14 +62,17 @@
         html.dark .checklist-radio-group input[value="na"]:checked + span { color: theme('colors.gray.400'); }
         html.dark .checklist-radio-group input[value="na"]:checked ~ label { border-color: theme('colors.dark.500'); background-color: theme('colors.dark.600');}
 
-        /* Hide elements based on status */
-        .comments-wrapper[data-status="pending"],
-        .comments-wrapper[data-status="ok"],
-        .comments-wrapper[data-status="na"] { display: none; }
+        /* Hide elements based on status using CSS data attributes */
+        .comments-wrapper:not([data-status="not_ok"]),
+        .is-corrected-wrapper:not([data-status="not_ok"]) {
+            display: none;
+        }
+         /* Ensure wrappers are block when visible */
+         .comments-wrapper[data-status="not_ok"],
+         .is-corrected-wrapper[data-status="not_ok"] {
+             display: block;
+         }
 
-        .is-corrected-wrapper[data-status="pending"],
-        .is-corrected-wrapper[data-status="ok"],
-        .is-corrected-wrapper[data-status="na"] { display: none; }
 
     </style>
 {% endblock %}
@@ -86,7 +91,7 @@
          </p>
     </div>
     <div>
-        {# Save Progress button could potentially submit the form with a specific flag #}
+        {# Maybe add a Save Progress button later if needed #}
         {# <button type="submit" form="perform-checklist-form" name="save_draft" class="btn-secondary">Сохранить черновик</button> #}
     </div>
 </div>
@@ -141,18 +146,20 @@
                  {# --- Dynamic Value Input Field --- #}
                  <div class="value-input-container ml-1 mt-2">
                       {% for field in form %}
-                          {% if field.name in form.Meta.fields and field.name not in "status,comments,is_corrected" %}
-                               {# Check if the widget for this specific field is NOT hidden #}
+                          {# CORRECTED: Only check actual value fields #}
+                          {% if field.name in 'value,numeric_value,boolean_value,date_value,datetime_value,time_value,file_attachment,media_url' %}
+                               {# Check if the widget for THIS value field is NOT hidden (set in forms.py) #}
                                {% if not field.is_hidden %}
                                    <div class="mb-2">
                                         <label for="{{ field.id_for_label }}" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">{{ field.label }}</label>
                                         {# Render the field, applying necessary classes #}
-                                        {% if field.field.widget|is_checkbox %}
+                                        {% if field.widget_type == 'checkbox' %}
                                             <label class="inline-flex items-center">
                                                  {% render_field field class+="form-checkbox h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600" %}
-                                                 {# No label text needed usually for single checkbox #}
+                                                 {# No label text needed usually for single checkbox, but you can add it if needed #}
+                                                 {# <span class="ml-2 text-sm">{{ field.label }}</span> #}
                                             </label>
-                                        {% elif field.field.widget|is_radio_select %}
+                                        {% elif field.widget_type == 'radioselect' %}
                                              <div class="checklist-radio-group flex flex-wrap gap-x-1 gap-y-1">
                                                   {% for radio in field %}
                                                        <label for="{{ radio.id_for_label }}">
@@ -161,20 +168,21 @@
                                                        </label>
                                                   {% endfor %}
                                              </div>
-                                         {% elif field.field.widget|is_select %}
+                                         {% elif field.widget_type == 'select' %}
                                              {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                                         {% elif field.field.widget|is_textarea %}
+                                         {% elif field.widget_type == 'textarea' %}
                                              {% render_field field class+="form-textarea block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" rows="2" %}
-                                         {% elif field.field.widget|is_clearable_file_input %}
+                                         {% elif field.widget_type == 'clearablefileinput' %}
                                               {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md" %}
                                               {# Display current file link if exists #}
                                               {% if form.instance and field.name == 'file_attachment' and form.instance.file_attachment %}
                                                   <div class="mt-1 text-xs">
                                                       <span class="text-gray-500 dark:text-gray-400">{% trans "Текущий" %}:</span>
-                                                      <a href="{{ form.instance.file_attachment.url }}" target="_blank" class="text-blue-600 hover:underline">{{ form.instance.file_attachment.name|cut:"checklist_files/" }}</a>
+                                                      <a href="{{ form.instance.file_attachment.url }}" target="_blank" class="text-blue-600 hover:underline">{{ form.instance.file_attachment.name|cut:"checklist_files/"|truncatechars:20 }}</a>
                                                   </div>
                                               {% endif %}
-                                         {% elif field.field.widget|is_date_input or field.field.widget|is_datetime_input or field.field.widget|is_time_input %}
+                                         {% elif field.widget_type == 'date' or field.widget_type == 'datetime-local' or field.widget_type == 'time' %}
+                                              {# Add flatpickr-input class for JS targeting #}
                                               {% render_field field class+="form-input flatpickr-input block w-auto text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
                                          {% else %} {# Default input styling #}
                                               {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
@@ -186,7 +194,9 @@
                       {% endfor %}
                  </div>
 
+
                  {# --- Comments Textarea (Conditional display handled by JS/CSS) --- #}
+                 {# Initial state set by data-status attribute #}
                  <div class="comments-wrapper mt-2" data-status="{{ form.status.value|default:'pending' }}">
                     <label for="{{ form.comments.id_for_label }}" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">{% trans "Комментарий" %}</label>
                     {% render_field form.comments class+="form-textarea block w-full text-sm rounded-md dark:bg-dark-700 dark:border-dark-600" rows="1" %}
@@ -194,6 +204,7 @@
                  </div>
 
                  {# --- Is Corrected Checkbox (Conditional display handled by JS/CSS) --- #}
+                 {# Initial state set by data-status attribute #}
                   <div class="is-corrected-wrapper mt-2" data-status="{{ form.status.value|default:'pending' }}">
                        <label for="{{ form.is_corrected.id_for_label }}" class="inline-flex items-center text-xs">
                             {% render_field form.is_corrected class+="form-checkbox h-4 w-4 mr-1.5 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600" %}
@@ -233,17 +244,23 @@
     {# Load Flatpickr JS #}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Russian locale for Flatpickr #}
+    {# Load Select2 JS if needed for any dynamic fields #}
+    {# <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script> #}
+    {# <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script> #}
+    {# <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script> #}
+
     {{ formset.media.js }}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
              // --- Initialize Flatpickr ---
-             // Add specific configs if needed (e.g., time only)
              function initPerformFlatpickr() {
                  if (typeof flatpickr !== 'undefined') {
-                     flatpickr(".flatpickr-date", { dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", locale: "ru" });
-                     flatpickr(".flatpickr-datetime", { enableTime: true, dateFormat: "Y-m-d H:i", altInput: true, altFormat: "d.m.Y H:i", locale: "ru"});
-                     flatpickr(".flatpickr-time", { enableTime: true, noCalendar: true, dateFormat: "H:i", altInput: true, altFormat: "H:i", locale: "ru"});
-                 }
+                    // Use a more specific selector if needed, e.g., within #perform-checklist-form
+                    flatpickr(".flatpickr-input[type='date']", { dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", locale: "ru" });
+                    flatpickr(".flatpickr-input[type='datetime-local']", { enableTime: true, dateFormat: "Y-m-d H:i", altInput: true, altFormat: "d.m.Y H:i", locale: "ru"});
+                    flatpickr(".flatpickr-input[type='time']", { enableTime: true, noCalendar: true, dateFormat: "H:i", altInput: true, altFormat: "H:i", locale: "ru"});
+                    // console.log("Flatpickr Initialized for perform_checklist");
+                 } else { console.warn("Flatpickr not loaded for perform_checklist.");}
              }
              initPerformFlatpickr(); // Init on load
 
@@ -255,6 +272,7 @@
 
                  if (statusGroup && (commentsWrapper || correctedWrapper)) {
                      function updateVisibility(statusValue) {
+                         // Update data-status for CSS selectors
                          if (commentsWrapper) commentsWrapper.dataset.status = statusValue;
                          if (correctedWrapper) correctedWrapper.dataset.status = statusValue;
                      }
