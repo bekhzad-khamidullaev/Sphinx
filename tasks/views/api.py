@@ -134,6 +134,7 @@ class TaskPhotoViewSet(viewsets.ModelViewSet):
 class SearchSuggestionsView(APIView):
     """
     Provides search suggestions across multiple models (Tasks, Projects).
+    Returns results in the format expected by search.js.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -148,12 +149,15 @@ class SearchSuggestionsView(APIView):
                 Q(title__icontains=query) | Q(task_number__icontains=query)
             ).select_related('project')[:limit]
             for task in tasks:
+                # --- Format for search.js ---
                 suggestions.append({
-                    'id': f'task-{task.pk}',
+                    # 'id': f'task-{task.pk}', # JS doesn't use id directly
                     'type': 'task',
-                    'value': f"#{task.task_number}: {task.title}",
-                    'label': f"Задача #{task.task_number}: {task.title} ({task.project.name})", # More descriptive label
-                    'url': task.get_absolute_url() # URL to the task detail page
+                    'title': f"#{task.task_number}: {task.title}", # Use 'title' key
+                    'context': task.project.name if task.project else _("Без проекта"), # Use 'context' key
+                    'url': task.get_absolute_url(), # Keep 'url'
+                    'icon': 'tasks', # Font Awesome icon name (without fa-)
+                    'color': 'blue', # Color hint for icon (Tailwind/iOS color name)
                 })
 
             # Search Projects (limit remaining suggestions)
@@ -161,18 +165,39 @@ class SearchSuggestionsView(APIView):
             if project_limit > 0:
                 projects = Project.objects.filter(name__icontains=query)[:project_limit]
                 for project in projects:
+                     # --- Format for search.js ---
                     suggestions.append({
-                        'id': f'project-{project.pk}',
+                        # 'id': f'project-{project.pk}',
                         'type': 'project',
-                        'value': project.name,
-                         'label': f"Проект: {project.name}",
-                        'url': project.get_absolute_url() # URL to project tasks or detail
+                        'title': project.name, # Use 'title' key
+                        'context': _("Проект"), # Use 'context' key
+                        'url': project.get_absolute_url(), # Keep 'url'
+                        'icon': 'project-diagram', # Font Awesome icon name
+                        'color': 'purple', # Color hint
                     })
 
-            # Add other models here if needed (Categories, Users etc.)
+            # Add other models here if needed (Categories, Checklists, Users etc.)
+            # Example for Checklists:
+            checklist_limit = limit - len(suggestions)
+            if checklist_limit > 0:
+                 # Import Checklist models if not already done
+                 from checklists.models import ChecklistTemplate, Checklist
+                 # Search Templates
+                 templates = ChecklistTemplate.objects.filter(
+                     name__icontains=query, is_archived=False
+                 )[:checklist_limit]
+                 for template in templates:
+                      suggestions.append({
+                           'type': 'checklist_template',
+                           'title': template.name,
+                           'context': _("Шаблон чеклиста"),
+                           'url': template.get_absolute_url(), # URL to template detail
+                           'icon': 'clipboard-list',
+                           'color': 'indigo',
+                      })
 
-        return Response(suggestions)
-
+        # --- CORRECTED RESPONSE FORMAT ---
+        return Response({'results': suggestions}) # Wrap list in 'results' key
 
 class UserAutocompleteView(APIView):
     """

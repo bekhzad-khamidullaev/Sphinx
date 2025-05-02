@@ -5,17 +5,14 @@
 
 {% block head_extra %}
     {{ block.super }}
-    {% if filterset %}{{ filterset.form.media.css }}{% endif %} {# Include filter form media CSS (for widgets like DatePicker) #}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> {# Flatpickr CSS #}
-    {# Load Select2 CSS if using it for filters #}
+    {% if filterset %}{{ filterset.form.media.css }}{% endif %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    {# Sorting icon styles #}
     <style>
-        .sort-header[aria-sort="ascending"] .fa-sort::before { content: "\f0de"; /* fa-sort-up */ }
-        .sort-header[aria-sort="descending"] .fa-sort::before { content: "\f0dd"; /* fa-sort-down */ }
+        .sort-header[aria-sort="ascending"] .fa-sort::before { content: "\f0de"; }
+        .sort-header[aria-sort="descending"] .fa-sort::before { content: "\f0dd"; }
         .sort-header[aria-sort="none"] .fa-sort { opacity: 0.3; }
         .sort-header:hover .fa-sort { opacity: 0.7; }
-        /* Select2 dark mode (add if needed) */
          html.dark .select2-container--default .select2-selection--single { background-color: theme('colors.dark.700'); border-color: theme('colors.dark.600'); }
          html.dark .select2-container--default .select2-selection--single .select2-selection__rendered { color: theme('colors.gray.300'); }
          html.dark .select2-container--default .select2-selection--single .select2-selection__arrow b { border-color: theme('colors.gray.400') transparent transparent transparent; }
@@ -33,9 +30,7 @@
 {% endblock %}
 
 {% block list_actions %}
-{# --- Desktop Filter and Actions --- #}
 <div class="flex items-center space-x-2 ml-auto">
-    {# Filter Button using AlpineJS for toggle #}
     <div x-data="{ filterOpen: sessionStorage.getItem('checklistFilterOpen') === 'true' }">
         <button @click="filterOpen = !filterOpen; sessionStorage.setItem('checklistFilterOpen', filterOpen)"
                 id="toggleFilterBtn" :aria-expanded="filterOpen" aria-controls="filter-section"
@@ -44,7 +39,6 @@
             <i id="filter-arrow" class="fas ml-2 text-xs transition-transform duration-200" :class="filterOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
     </div>
-    {# Other actions #}
     <a href="{% url 'checklists:template_list' %}" class="btn-secondary text-sm">
         <i class="fas fa-list-alt mr-1.5"></i> {% trans 'К шаблонам' %}
     </a>
@@ -55,14 +49,12 @@
 {% endblock %}
 
 {% block list_actions_mobile %}
-{# Mobile Actions #}
 <a href="{% url 'checklists:template_list' %}"
-    class="flex-1 btn-secondary text-sm"> {# Use button styles #}
+    class="flex-1 btn-secondary text-sm">
     <i class="fas fa-clipboard-list mr-2"></i> {% trans 'К шаблонам' %}
 </a>
-{# Mobile Filter Trigger (Using Flowbite Drawer - ensure Flowbite JS is loaded in base.html) #}
 <button type="button" data-drawer-target="filter-drawer-checklist" data-drawer-show="filter-drawer-checklist" data-drawer-placement="right" aria-controls="filter-drawer-checklist"
-   class="flex-1 btn-secondary text-sm"> {# Use button styles #}
+   class="flex-1 btn-secondary text-sm">
     <i class="fas fa-filter mr-2"></i> {% trans 'Фильтр' %}
 </button>
 {% endblock %}
@@ -70,210 +62,191 @@
 
 {% block list_content %}
 
-{# --- Filter Section (Desktop - Collapsible using AlpineJS) --- #}
-<div id="filter-section" class="mb-6 hidden" x-show="filterOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" x-cloak>
-    <div class="border border-gray-200 dark:border-dark-700 p-4 bg-white dark:bg-dark-800 rounded-lg shadow-md">
+<div x-data="{ filterOpen: sessionStorage.getItem('checklistFilterOpen') === 'true' }" id="filter-wrapper">
+
+    <div id="filter-section" class="mb-6 hidden" x-show="filterOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" x-cloak>
+        <div class="border border-gray-200 dark:border-dark-700 p-4 bg-white dark:bg-dark-800 rounded-lg shadow-md">
+            {% if filterset %}
+            <form method="get" action="" id="filter-form" class="space-y-4">
+                {% for key, value in request.GET.items %}
+                    {% if key != 'page' and key not in filterset.form.fields %}
+                        <input type="hidden" name="{{ key|escape }}" value="{{ value|escape }}">
+                    {% endif %}
+                {% endfor %}
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {% for field in filterset.form %}
+                          <div>
+                               <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
+                               {% if field.widget_type == 'select' or field.widget_type == 'selectmultiple' %}
+                                   {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                               {% elif field.name == 'performed_at' %}
+                                    <div class="flex space-x-2">
+                                         {% trans "От" as placeholder_from %}
+                                         {% trans "До" as placeholder_to %}
+                                         {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_from index=0 %}
+                                         {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_to index=1 %}
+                                    </div>
+                               {% elif field.widget_type == 'nullbooleanselect' %}
+                                    {% render_field field class+="form-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                               {% else %}
+                                   {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+                               {% endif %}
+                               {% if field.errors %}<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
+                          </div>
+                     {% endfor %}
+                </div>
+
+                <div class="mt-4 flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-dark-600">
+                    <a href="{% url 'checklists:history_list' %}" class="btn-secondary text-sm">{% trans "Сбросить" %}</a>
+                    <button type="submit" class="btn-primary text-sm">
+                        <i class="fas fa-search mr-2"></i> {% trans "Применить" %}
+                    </button>
+                </div>
+            </form>
+            {% else %}
+                <p class="text-gray-500 italic">{% trans "Фильтры недоступны." %}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="filter-drawer-checklist" class="fixed top-0 right-0 z-50 h-screen p-4 overflow-y-auto transition-transform translate-x-full bg-white w-80 dark:bg-gray-800" tabindex="-1" aria-labelledby="filter-drawer-checklist-label">
+        <h5 id="filter-drawer-checklist-label" class="inline-flex items-center mb-4 text-base font-semibold text-gray-500 dark:text-gray-400"><i class="fas fa-filter mr-2"></i>{% trans 'Фильтр Истории' %}</h5>
+        <button type="button" data-drawer-hide="filter-drawer-checklist" aria-controls="filter-drawer-checklist" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white" >
+           <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/></svg>
+           <span class="sr-only">{% trans "Закрыть меню" %}</span>
+        </button>
         {% if filterset %}
-        <form method="get" action="" id="filter-form" class="space-y-4">
-             {# Preserve existing query parameters like view or sort which are not part of the filter #}
+        <form method="get" action="" id="filter-form-mobile" class="space-y-4">
             {% for key, value in request.GET.items %}
-                {% if key != 'page' and key not in filterset.form.fields %}
-                    <input type="hidden" name="{{ key|escape }}" value="{{ value|escape }}">
-                {% endif %}
+                 {% if key != 'page' and key not in filterset.form.fields %}
+                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                 {% endif %}
             {% endfor %}
+             {% for field in filterset.form %}
+             {% with mobile_base_id=field.id_for_label|add:"_mobile" %}
+             <div>
+                 <label for="{{ mobile_base_id }}{% if field.name == 'performed_at' %}_0{% endif %}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
+                  {% if field.name == 'performed_at' %}
+                     <div class="space-y-2">
+                          {% trans "От" as placeholder_from_mobile %}
+                          {% trans "До" as placeholder_to_mobile %}
+                          {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_from_mobile index=0 %}
+                          {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_to_mobile index=1 %}
+                     </div>
+                  {% elif field.widget_type == 'select' or field.widget_type == 'nullbooleanselect' %}
+                      {% render_field field class+="form-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_base_id %}
+                  {% else %}
+                      {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_base_id %}
+                  {% endif %}
+             {% endwith %}
 
-            {# Render filter fields manually with widget_tweaks for more control #}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                 {% for field in filterset.form %}
-                      <div>
-                           <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
-                           {# Apply classes based on field type - CORRECTED #}
-                           {% if field.widget_type == 'select' or field.widget_type == 'selectmultiple' %}
-                               {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                           {% elif field.name == 'performed_at' %} {# Special handling for DateRangeFilter widget #}
-                                <div class="flex space-x-2">
-                                     {# Access subwidgets for DateRangeFilter #}
-                                     {% trans "От" as placeholder_from %}
-                                     {% trans "До" as placeholder_to %}
-                                     {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_from index=0 %}
-                                     {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_to index=1 %}
-                                </div>
-                           {% elif field.widget_type == 'nullbooleanselect' %}
-                                {% render_field field class+="form-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                           {% else %} {# Default input #}
-                               {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                           {% endif %}
-                           {% if field.errors %}<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
-                      </div>
-                 {% endfor %}
-            </div>
-
-            <div class="mt-4 flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-dark-600">
-                <a href="{% url 'checklists:history_list' %}" class="btn-secondary text-sm">{% trans "Сбросить" %}</a>
-                <button type="submit" class="btn-primary text-sm">
-                    <i class="fas fa-search mr-2"></i> {% trans "Применить" %}
-                </button>
+                    {% if field.help_text %}<p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>{% endif %}
+                    {% if field.errors %}<p class="text-xs text-red-500 mt-1">{{ field.errors.0 }}</p>{% endif %}
+                </div>
+            {% endfor %}
+            <div class="grid grid-cols-2 gap-4 pt-4">
+                 <a href="{% url 'checklists:history_list' %}" class="btn-secondary w-full text-center">{% trans 'Сбросить' %}</a>
+                 <button type="submit" class="btn-primary w-full">{% trans 'Применить' %}</button>
             </div>
         </form>
-        {% else %}
-            <p class="text-gray-500 italic">{% trans "Фильтры недоступны." %}</p>
         {% endif %}
-    </div>
-</div>
+     </div>
 
-{# --- Filter Drawer (Mobile - Example using Flowbite) --- #}
-{# Ensure Flowbite JS is loaded in base.html for this to work #}
-<div id="filter-drawer-checklist" class="fixed top-0 right-0 z-50 h-screen p-4 overflow-y-auto transition-transform translate-x-full bg-white w-80 dark:bg-gray-800" tabindex="-1" aria-labelledby="filter-drawer-checklist-label">
-    <h5 id="filter-drawer-checklist-label" class="inline-flex items-center mb-4 text-base font-semibold text-gray-500 dark:text-gray-400"><i class="fas fa-filter mr-2"></i>{% trans 'Фильтр Истории' %}</h5>
-    <button type="button" data-drawer-hide="filter-drawer-checklist" aria-controls="filter-drawer-checklist" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute top-2.5 end-2.5 inline-flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white" >
-       <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/></svg>
-       <span class="sr-only">{% trans "Закрыть меню" %}</span>
-    </button>
-    {% if filterset %}
-    <form method="get" action="" id="filter-form-mobile" class="space-y-4">
-        {# Preserve other params #}
-        {% for key, value in request.GET.items %}
-             {% if key != 'page' and key not in filterset.form.fields %}
-                <input type="hidden" name="{{ key }}" value="{{ value }}">
-             {% endif %}
-        {% endfor %}
-         {# Render fields one below other - Manually add classes #}
-         {% for field in filterset.form %}
-         {% with mobile_base_id=field.id_for_label|add:"_mobile" %}
-         <div>
-              {# Adjust label 'for' attribute for multi-widget fields #}
-             <label for="{{ mobile_base_id }}{% if field.name == 'performed_at' %}_0{% endif %}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ field.label }}</label>
-              {# Apply specific classes based on widget type #}
-              {% if field.name == 'performed_at' %} {# Date Range #}
-                 <div class="space-y-2">
-                      {% trans "От" as placeholder_from_mobile %}
-                      {% trans "До" as placeholder_to_mobile %}
-                      {# REMOVED id=... from render_field #}
-                      {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_from_mobile index=0 %}
-                      {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=placeholder_to_mobile index=1 %}
-                 </div>
-              {% elif field.widget_type == 'select' or field.widget_type == 'nullbooleanselect' %}
-                  {% render_field field class+="form-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_base_id %}
-              {% else %} {# Default to text input #}
-                  {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" id=mobile_base_id %}
-              {% endif %}
-         {% endwith %} {# End with mobile_base_id #}
-
-                {% if field.help_text %}<p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>{% endif %}
-                {% if field.errors %}<p class="text-xs text-red-500 mt-1">{{ field.errors.0 }}</p>{% endif %}
-            </div>
-        {% endfor %}
-        <div class="grid grid-cols-2 gap-4 pt-4">
-             <a href="{% url 'checklists:history_list' %}" class="btn-secondary w-full text-center">{% trans 'Сбросить' %}</a>
-             <button type="submit" class="btn-primary w-full">{% trans 'Применить' %}</button>
+    <div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
+         <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+                <thead class="bg-gray-50 dark:bg-dark-700/50 sticky top-0 z-10">
+                    <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        {% include 'includes/sortable_th.html' with column_name='template__name' display_name=_('Шаблон') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
+                        {% include 'includes/sortable_th.html' with column_name='performed_by__username' display_name=_('Кем выполнен') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
+                        {% include 'includes/sortable_th.html' with column_name='performed_at' display_name=_('Дата выполнения') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
+                        <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Проблемы?' %}</th>
+                         {% include 'includes/sortable_th.html' with column_name='status' display_name=_('Статус') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
+                         <th scope="col" class="px-4 py-3.5">{% trans 'Место/Точка' %}</th>
+                         <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Действия' %}</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
+                    {% for run in checklist_runs %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm">
+                        <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                            <a href="{{ run.get_absolute_url }}" class="hover:underline text-blue-600 dark:text-blue-400" title="{{ run.template.description|default:'' }}">{{ run.template.name }}</a>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ run.performed_by.display_name|default:"-" }}</td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ run.performed_at|date:"d.m.Y H:i" }}</td>
+                         <td class="px-4 py-3 text-center">
+                            {% if run.has_issues %}
+                                <i class="fas fa-exclamation-triangle text-red-500 dark:text-ios-red" title="{% trans 'Да' %}"></i>
+                            {% else %}
+                                 <i class="fas fa-check-circle text-green-500 dark:text-ios-green" title="{% trans 'Нет' %}"></i>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if run.status == 'approved' %} bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
+                                {% elif run.status == 'submitted' %} bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100
+                                {% elif run.status == 'rejected' %} bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100
+                                {% elif run.status == 'in_progress' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100
+                                {% else %} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
+                                {% endif %}">
+                                {{ run.get_status_display }}
+                              </span>
+                         </td>
+                         <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                             {{ run.location|default:"-" }}
+                             {% if run.point %}<span class="text-xs">/ {{ run.point.name }}</span>{% endif %}
+                         </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center space-x-1">
+                                <a href="{{ run.get_absolute_url }}" title="{% trans 'Просмотр результатов' %}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-eye fa-fw"></i></a>
+                                 {% if request.user.is_staff and run.status == 'submitted' %}
+                                      <a href="{% url 'checklists:checklist_status_change' pk=run.pk %}" title="{% trans 'Изменить статус (одобрить/отклонить)' %}" class="p-2 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-check-double fa-fw"></i></a>
+                                 {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-history fa-3x mb-3 text-gray-300 dark:text-gray-600"></i>
+                                <span class="text-base">{% trans "Нет записей о выполнении чеклистов." %}</span>
+                                 {% if request.GET and filterset.is_filtered %}
+                                  <a href="{% url 'checklists:history_list' %}" class="mt-2 text-sm text-blue-600 hover:underline">{% trans "Сбросить фильтры?" %}</a>
+                                  {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </form>
+    </div>
+    {% if is_paginated %}
+        <div class="mt-6">
+            {% include "includes/pagination.html" with page_obj=page_obj request=request %}
+        </div>
     {% endif %}
- </div>
 
-{# --- Main Table --- #}
-<div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
-     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
-            <thead class="bg-gray-50 dark:bg-dark-700/50 sticky top-0 z-10">
-                <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {# --- Use Sortable Headers Include --- #}
-                    {% include 'includes/sortable_th.html' with column_name='template__name' display_name=_('Шаблон') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
-                    {% include 'includes/sortable_th.html' with column_name='performed_by__username' display_name=_('Кем выполнен') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
-                    {% include 'includes/sortable_th.html' with column_name='performed_at' display_name=_('Дата выполнения') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
-                    <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Проблемы?' %}</th> {# Needs custom sorting logic #}
-                     {% include 'includes/sortable_th.html' with column_name='status' display_name=_('Статус') current_sort=current_sort request=request filter_params=request.GET.urlencode %}
-                     <th scope="col" class="px-4 py-3.5">{% trans 'Место/Точка' %}</th>
-                     <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Действия' %}</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-                {% for run in checklist_runs %} {# Context object name from view #}
-                <tr class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm">
-                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                        <a href="{{ run.get_absolute_url }}" class="hover:underline text-blue-600 dark:text-blue-400" title="{{ run.template.description|default:'' }}">{{ run.template.name }}</a>
-                    </td>
-                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ run.performed_by.display_name|default:"-" }}</td>
-                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ run.performed_at|date:"d.m.Y H:i" }}</td>
-                     <td class="px-4 py-3 text-center">
-                        {% if run.has_issues %}
-                            <i class="fas fa-exclamation-triangle text-red-500 dark:text-ios-red" title="{% trans 'Да' %}"></i>
-                        {% else %}
-                             <i class="fas fa-check-circle text-green-500 dark:text-ios-green" title="{% trans 'Нет' %}"></i>
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-3 text-center whitespace-nowrap">
-                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                            {% if run.status == 'approved' %} bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
-                            {% elif run.status == 'submitted' %} bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100
-                            {% elif run.status == 'rejected' %} bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100
-                            {% elif run.status == 'in_progress' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100
-                            {% else %} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
-                            {% endif %}">
-                            {{ run.get_status_display }}
-                          </span>
-                     </td>
-                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                         {{ run.location|default:"-" }}
-                         {% if run.point %}<span class="text-xs">/ {{ run.point.name }}</span>{% endif %}
-                     </td>
-                    <td class="px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center space-x-1">
-                            <a href="{{ run.get_absolute_url }}" title="{% trans 'Просмотр результатов' %}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-eye fa-fw"></i></a>
-                             {% if request.user.is_staff and run.status == 'submitted' %}
-                                  <a href="{% url 'checklists:checklist_status_change' pk=run.pk %}" title="{% trans 'Изменить статус (одобрить/отклонить)' %}" class="p-2 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-check-double fa-fw"></i></a>
-                             {% endif %}
-                              {# Add delete action? Requires view and permissions #}
-                             {# <a href="#" title="{% trans 'Удалить прогон' %}" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 rounded-md transition-colors"><i class="fas fa-trash fa-fw"></i></a> #}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
-                        <div class="flex flex-col items-center">
-                            <i class="fas fa-history fa-3x mb-3 text-gray-300 dark:text-gray-600"></i>
-                            <span class="text-base">{% trans "Нет записей о выполнении чеклистов." %}</span>
-                             {% if request.GET and filterset.is_filtered %} {# Suggest resetting filters if filters are active #}
-                              <a href="{% url 'checklists:history_list' %}" class="mt-2 text-sm text-blue-600 hover:underline">{% trans "Сбросить фильтры?" %}</a>
-                              {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
 </div>
-{% if is_paginated %} {# Only show pagination if needed #}
-    <div class="mt-6">
-        {# Use your updated pagination include that uses url_replace correctly #}
-        {% include "includes/pagination.html" with page_obj=page_obj request=request %} {# Pass request to pagination #}
-    </div>
-{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
 {{ block.super }}
-{# Include filter form media if date pickers etc. are used #}
 {% if filterset %}
  {{ filterset.form.media.js }}
  <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
- <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Russian locale for Flatpickr #}
- {# Load Select2 JS (ensure jQuery is loaded first) #}
+ <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
 {% endif %}
-{# Load AlpineJS if not loaded globally #}
-{# <script src="//unpkg.com/alpinejs" defer></script> #}
 
-{# Script for Flatpickr and Filter Toggle #}
 <script defer>
  document.addEventListener('DOMContentLoaded', function() {
-     // --- Initialize Select2 for Filters ---
      if (typeof $ !== 'undefined' && $.fn.select2) {
-         // Initialize selects inside the desktop filter section
         $('#filter-section .select2-basic').select2({
             theme: 'default',
             language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
@@ -281,34 +254,27 @@
             allowClear: true,
             placeholder: "{% trans 'Любой' %}",
         });
-        // Initialize selects inside the mobile filter drawer
-         $('#filter-drawer-checklist .select2-basic').select2({ // Use the correct ID if different for mobile
+         $('#filter-drawer-checklist .select2-basic').select2({
             theme: 'default',
             language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
             width: '100%',
             allowClear: true,
             placeholder: "{% trans 'Любой' %}",
         });
-        // console.log("Select2 initialized for filters.");
      } else { console.warn("jQuery or Select2 not loaded for filters."); }
 
-    // --- Flatpickr initialization ---
     if (typeof flatpickr !== 'undefined') {
-         flatpickr(".flatpickr-date", { // Target date inputs by class added in filters.py
+         flatpickr(".flatpickr-date", {
             dateFormat: "Y-m-d",
             altInput: true,
             altFormat: "d.m.Y",
             locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
          });
-         // console.log("Flatpickr initialized for filters.");
     } else {
          console.warn("Flatpickr not loaded, date filter widgets might not work correctly.");
     }
 
-    // --- Desktop Filter Toggle Logic (Uses AlpineJS from base template) ---
      if (typeof Alpine !== 'undefined') {
-          // console.log("AlpineJS detected for filter toggle.");
-          // Force open if filters are active and state is closed
            const filterBtn = document.getElementById('toggleFilterBtn');
            if (filterBtn && filterBtn.__x && filterBtn.__x.$data.filterOpen === false) {
                 const params = new URLSearchParams(window.location.search);
@@ -320,19 +286,39 @@
                     }
                 }
                 if (filtersActive) {
-                    // Dispatch event to tell Alpine to open
-                    filterBtn.dispatchEvent(new CustomEvent('click')); // Simulate click to toggle open
-                    // console.log("Filters active, attempting to open filter section via simulated click.");
+                    filterBtn.dispatchEvent(new CustomEvent('click'));
                 }
            }
      } else {
          console.warn("AlpineJS not detected, desktop filter toggle might not work.");
+         const filterBtn = document.getElementById('toggleFilterBtn');
+         const filterSection = document.getElementById('filter-section');
+         const filterArrow = document.getElementById('filter-arrow');
+         if(filterBtn && filterSection && filterArrow) {
+            const savedState = sessionStorage.getItem('checklistFilterOpen') === 'true';
+            const params = new URLSearchParams(window.location.search);
+            let filtersActive = false;
+            for (const [key, value] of params.entries()) {
+                if (key !== 'page' && key !== 'sort' && value) { filtersActive = true; break; }
+            }
+            const shouldOpen = savedState || filtersActive;
+            filterSection.classList.toggle('hidden', !shouldOpen);
+            filterBtn.setAttribute('aria-expanded', shouldOpen);
+            filterArrow.classList.toggle('fa-chevron-up', shouldOpen);
+            filterArrow.classList.toggle('fa-chevron-down', !shouldOpen);
+
+            filterBtn.addEventListener('click', () => {
+                const isHidden = filterSection.classList.toggle('hidden');
+                filterBtn.setAttribute('aria-expanded', String(!isHidden));
+                filterArrow.classList.toggle('fa-chevron-down', isHidden);
+                filterArrow.classList.toggle('fa-chevron-up', !isHidden);
+                sessionStorage.setItem('checklistFilterOpen', String(!isHidden));
+            });
+         }
      }
 
-    // --- Initialize Flowbite drawers (if used for mobile filters) ---
     if (typeof Flowbite !== 'undefined' && typeof initFlowbite === 'function') {
          initFlowbite();
-          // console.log("Flowbite initialized for mobile filter drawer.");
     } else {
         console.warn("Flowbite not detected, mobile filter drawer might not work.");
     }

@@ -32,7 +32,7 @@ from .models import (
     ChecklistPoint,
     ChecklistRunStatus,
     AnswerType,
-    ChecklistSection,  # <<< Added ChecklistSection import here
+    ChecklistSection,
 )
 from .forms import (
     ChecklistTemplateForm,
