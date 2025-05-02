@@ -6,6 +6,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
+
 
 
 from ..models import (
@@ -24,6 +26,17 @@ from ..serializers import (
 )
 # Assuming you might want permission checks later
 # from .permissions import IsOwnerOrReadOnly, IsTeamMemberOrReadOnly
+from user_profiles.models import User, Team, Department
+
+try:
+    from checklists.models import ChecklistTemplate, ChecklistRun
+except ImportError:
+    ChecklistTemplate = None
+    ChecklistRun = None
+try:
+    from room.models import Room
+except ImportError:
+    Room = None
 
 User = get_user_model()
 
@@ -135,71 +148,161 @@ class TaskPhotoViewSet(viewsets.ModelViewSet):
 
 class SearchSuggestionsView(APIView):
     """
-    Provides search suggestions across multiple models (Tasks, Projects).
+    Provides search suggestions across multiple models.
     Returns results in the format expected by search.js.
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         query = request.query_params.get('q', '').strip()
-        suggestions = []
-        limit = 10 # Limit the number of suggestions
+        all_suggestions = []
+        limit_per_model = 5 # Limit results per model type initially
+        final_limit = 10 # Final number of suggestions to return
 
-        if len(query) >= 2: # Only search if query is long enough
-            # Search Tasks
+        if len(query) >= 2:
+            # --- Search Tasks ---
             tasks = Task.objects.filter(
                 Q(title__icontains=query) | Q(task_number__icontains=query)
-            ).select_related('project')[:limit]
+            ).select_related('project')[:limit_per_model]
             for task in tasks:
-                # --- Format for search.js ---
-                suggestions.append({
-                    # 'id': f'task-{task.pk}', # JS doesn't use id directly
+                all_suggestions.append({
                     'type': 'task',
-                    'title': f"#{task.task_number}: {task.title}", # Use 'title' key
-                    'context': task.project.name if task.project else _("Без проекта"), # Use 'context' key
-                    'url': task.get_absolute_url(), # Keep 'url'
-                    'icon': 'tasks', # Font Awesome icon name (without fa-)
-                    'color': 'blue', # Color hint for icon (Tailwind/iOS color name)
+                    'title': f"#{task.task_number}: {task.title}",
+                    'context': task.project.name if task.project else _("Без проекта"),
+                    'url': task.get_absolute_url(),
+                    'icon': 'tasks', # Font Awesome icon name
+                    'color': 'blue', # Color hint
                 })
 
-            # Search Projects (limit remaining suggestions)
-            project_limit = limit - len(suggestions)
-            if project_limit > 0:
-                projects = Project.objects.filter(name__icontains=query)[:project_limit]
-                for project in projects:
-                     # --- Format for search.js ---
-                    suggestions.append({
-                        # 'id': f'project-{project.pk}',
-                        'type': 'project',
-                        'title': project.name, # Use 'title' key
-                        'context': _("Проект"), # Use 'context' key
-                        'url': project.get_absolute_url(), # Keep 'url'
-                        'icon': 'project-diagram', # Font Awesome icon name
-                        'color': 'purple', # Color hint
+            # --- Search Projects ---
+            projects = Project.objects.filter(name__icontains=query)[:limit_per_model]
+            for project in projects:
+                all_suggestions.append({
+                    'type': 'project',
+                    'title': project.name,
+                    'context': _("Проект"),
+                    'url': project.get_absolute_url(), # Assumes get_absolute_url links to project's task list
+                    'icon': 'project-diagram',
+                    'color': 'purple',
+                })
+
+            # --- Search Categories ---
+            categories = TaskCategory.objects.filter(name__icontains=query)[:limit_per_model]
+            for category in categories:
+                 # Link to task list filtered by this category
+                 category_task_list_url = reverse('tasks:task_list') + f'?category={category.pk}'
+                 all_suggestions.append({
+                     'type': 'category',
+                     'title': category.name,
+                     'context': _("Категория задач"),
+                     'url': category_task_list_url,
+                     'icon': 'folder-open', # Changed icon
+                     'color': 'teal',
+                 })
+
+            # --- Search Checklist Templates ---
+            if ChecklistTemplate:
+                templates = ChecklistTemplate.objects.filter(
+                    name__icontains=query, is_archived=False
+                )[:limit_per_model]
+                for template in templates:
+                    all_suggestions.append({
+                        'type': 'checklist_template',
+                        'title': template.name,
+                        'context': _("Шаблон чеклиста"),
+                        'url': template.get_absolute_url(),
+                        'icon': 'clipboard-list',
+                        'color': 'indigo',
                     })
 
-            # Add other models here if needed (Categories, Checklists, Users etc.)
-            # Example for Checklists:
-            checklist_limit = limit - len(suggestions)
-            if checklist_limit > 0:
-                 # Import Checklist models if not already done
-                 from checklists.models import ChecklistTemplate, Checklist
-                 # Search Templates
-                 templates = ChecklistTemplate.objects.filter(
-                     name__icontains=query, is_archived=False
-                 )[:checklist_limit]
-                 for template in templates:
-                      suggestions.append({
-                           'type': 'checklist_template',
-                           'title': template.name,
-                           'context': _("Шаблон чеклиста"),
-                           'url': template.get_absolute_url(), # URL to template detail
-                           'icon': 'clipboard-list',
-                           'color': 'indigo',
-                      })
+            # --- Search Checklist Runs ---
+            if ChecklistRun:
+                # Search by template name or performing user
+                runs = ChecklistRun.objects.filter(
+                     Q(template__name__icontains=query) | Q(performed_by__username__icontains=query) | Q(performed_by__first_name__icontains=query) | Q(performed_by__last_name__icontains=query)
+                 ).select_related('template', 'performed_by').order_by('-performed_at')[:limit_per_model]
+                for run in runs:
+                     all_suggestions.append({
+                         'type': 'checklist_run',
+                         'title': f"{_('Результаты')}: {run.template.name} ({run.performed_at.strftime('%d.%m.%y')})",
+                         'context': f"{_('Выполнен')}: {run.performed_by.display_name if run.performed_by else '-'}",
+                         'url': run.get_absolute_url(),
+                         'icon': 'history', # Or 'check-double'
+                         'color': 'gray',
+                     })
 
-        # --- CORRECTED RESPONSE FORMAT ---
-        return Response({'results': suggestions}) # Wrap list in 'results' key
+            # --- Search Users ---
+            users = User.objects.filter(
+                 Q(username__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query) | Q(email__icontains=query),
+                 is_active=True
+             ).select_related('department')[:limit_per_model]
+            for user in users:
+                 # Prefer profile view, fallback to update view if profile view doesn't exist
+                 user_url = '#'
+                 try:
+                      user_url = reverse('user_profiles:profile_view') # Assuming profile view is for the logged-in user
+                      # If you have a public profile view per user:
+                      # user_url = reverse('user_profiles:public_profile', kwargs={'username': user.username})
+                 except:
+                      try: # Fallback to update view (might need permissions)
+                          user_url = reverse('user_profiles:user_update', kwargs={'pk': user.pk})
+                      except:
+                           pass # No suitable URL found
+
+                 all_suggestions.append({
+                     'type': 'user',
+                     'title': f"{user.display_name} (@{user.username})",
+                     'context': user.job_title or _("Пользователь"),
+                     'url': user_url,
+                     'icon': 'user',
+                     'color': 'orange',
+                 })
+
+            # --- Search Teams ---
+            teams = Team.objects.filter(name__icontains=query).select_related('department')[:limit_per_model]
+            for team in teams:
+                 # Link to user list filtered by this team
+                 team_user_list_url = reverse('user_profiles:user_list') + f'?team={team.pk}'
+                 all_suggestions.append({
+                    'type': 'team',
+                    'title': team.name,
+                    'context': f"{_('Команда')} ({team.department.name if team.department else '-'})",
+                    'url': team_user_list_url, # Link to filtered user list
+                    'icon': 'users-cog',
+                    'color': 'pink',
+                 })
+
+            # --- Search Departments ---
+            departments = Department.objects.filter(name__icontains=query)[:limit_per_model]
+            for department in departments:
+                 department_user_list_url = reverse('user_profiles:user_list') + f'?department={department.pk}'
+                 all_suggestions.append({
+                     'type': 'department',
+                     'title': department.name,
+                     'context': _("Отдел"),
+                     'url': department_user_list_url, # Link to filtered user list
+                     'icon': 'building',
+                     'color': 'sky', # Using 'sky' as an alternative to 'cyan'
+                 })
+
+            # --- Search Chat Rooms ---
+            if Room:
+                rooms = Room.objects.filter(name__icontains=query)[:limit_per_model]
+                for room in rooms:
+                    all_suggestions.append({
+                        'type': 'room',
+                        'title': f"# {room.name}",
+                        'context': _("Чат комната"),
+                        'url': room.get_absolute_url(), # Assumes get_absolute_url is defined
+                        'icon': 'comments',
+                        'color': 'green',
+                    })
+
+        # Limit the final combined list
+        suggestions = all_suggestions[:final_limit]
+
+        # Return in the format expected by JS
+        return Response({'results': suggestions})
 
 class UserAutocompleteView(APIView):
     """

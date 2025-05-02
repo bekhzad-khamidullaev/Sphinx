@@ -96,9 +96,8 @@ class UserCreateForm(BaseUserCreationForm):
                 _("Учетные данные"),
                 Field("username"),
                 Field("email"),
-                # Убедись, что для полей пароля используются PasswordInput
-                Field("password"),
-                Field("password_confirmation"),
+                Field("password1"), # Правильное имя поля
+                Field("password2"), # Правильное имя поля
             ),
             Fieldset(
                 _("Личная информация"),
