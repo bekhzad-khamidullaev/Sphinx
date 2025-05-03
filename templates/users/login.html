@@ -44,7 +44,7 @@
                      {% trans 'Имя пользователя или Email' %}
                  </label>
                  <div class="mt-1">
-                     {% render_field form.username class="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder=_("Имя пользователя или Email") required=True autocomplete="username" %}
+                     {% render_field form.username class="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required=True autocomplete="username" %}
                  </div>
                  {% if form.username.errors %}
                      <p class="text-xs text-red-500 mt-1">{{ form.username.errors|first }}</p>
@@ -55,7 +55,7 @@
                       {% trans 'Пароль' %}
                  </label>
                  <div class="mt-1">
-                      {% render_field form.password class="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="••••••••" required=True autocomplete="current-password" %}
+                      {% render_field form.password class="form-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required=True autocomplete="current-password" %}
                  </div>
                   {% if form.password.errors %}
                      <p class="text-xs text-red-500 mt-1">{{ form.password.errors|first }}</p>

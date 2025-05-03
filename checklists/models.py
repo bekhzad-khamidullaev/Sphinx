@@ -107,6 +107,7 @@ class ChecklistTemplate(models.Model):
     """
     Defines the structure and properties of a checklist.
     """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255, verbose_name=_("Название шаблона"))
     description = models.TextField(blank=True, verbose_name=_("Описание"))
