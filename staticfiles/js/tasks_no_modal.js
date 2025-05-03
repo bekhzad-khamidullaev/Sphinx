@@ -571,12 +571,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Fetch and Store Status Mapping ---
         window.taskStatusMapping = {};
         try {
+            // Используем ID, указанный в json_script
             const statusMappingElement = document.getElementById('status-mapping-data');
             if (statusMappingElement) {
+                // Парсим содержимое именно этого тега
                 window.taskStatusMapping = JSON.parse(statusMappingElement.textContent);
                 console.log("Loaded status mapping:", window.taskStatusMapping);
             } else {
-                console.error("Status mapping data script tag (#status-mapping-data) not found.");
+                // Обновляем сообщение об ошибке
+                console.error("Status mapping data script tag (#status-mapping-data-payload) not found.");
             }
         } catch (e) { console.error("Error parsing status mapping data:", e); }
 

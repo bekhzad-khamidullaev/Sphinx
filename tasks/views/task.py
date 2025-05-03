@@ -66,7 +66,7 @@ class TaskListView(LoginRequiredMixin, ListView):
         # Validate sort_param
         sort_field = sort_param.lstrip('-')
         if sort_field in allowed_sort_fields:
-             self.active_queryset = filtered_qs.order_by(sort_param) # Apply requested sorting
+            self.active_queryset = filtered_qs.order_by(sort_param) # Apply requested sorting
         else:
             logger.warning(f"Attempted to sort by disallowed field: {sort_param}")
             self.active_queryset = filtered_qs.order_by('-created_at') # Fallback to default sorting
