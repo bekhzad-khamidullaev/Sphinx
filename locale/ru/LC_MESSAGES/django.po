@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-23 09:43+0500\n"
+"POT-Creation-Date: 2025-05-03 08:47+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,867 +20,5597 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: .\config\settings.py:134
-msgid "Uzbek"
-msgstr "Узбекский"
+#: checklists/admin.py:33 checklists/models.py:169
+#: templates/checklists/template_detail.html:86
+msgid "Секция"
+msgstr ""
 
-#: .\config\settings.py:135
-msgid "Русский"
-msgstr "Русский"
+#: checklists/admin.py:34
+msgid "Секции"
+msgstr ""
 
-#: .\config\settings.py:136
-msgid "English"
-msgstr "Английский"
+#: checklists/admin.py:43
+msgid "Пункт шаблона"
+msgstr ""
 
-#: .\config\settings.py:137
-msgid "Español"
-msgstr "Испанский"
+#: checklists/admin.py:44
+msgid "Пункты шаблона"
+msgstr ""
 
-#: .\config\settings.py:138
-msgid "Français"
-msgstr "Французский"
+#: checklists/admin.py:62
+msgid "Целевые объекты"
+msgstr ""
 
-#: .\tasks\admin.py:18
-msgid "Даты"
-msgstr "Даты"
+#: checklists/admin.py:65
+#, fuzzy
+#| msgid "Описание"
+msgid "Планирование"
+msgstr "Описание"
 
-#: .\tasks\admin.py:50
-msgid "Подробности"
-msgstr "Подробности"
+#: checklists/admin.py:68 checklists/admin.py:138
+msgid "Метаданные"
+msgstr ""
 
-#: .\tasks\admin.py:51
-msgid "Сроки"
-msgstr "Сроки"
+#: checklists/admin.py:97 checklists/models.py:297
+msgid "Результат пункта"
+msgstr ""
 
-#: .\tasks\admin.py:52
-msgid "Фото/Вложения"
-msgstr "Фото/Вложения"
+#: checklists/admin.py:98 checklists/models.py:298
+msgid "Результаты пунктов"
+msgstr ""
 
-#: .\tasks\admin.py:53 .\tasks\admin.py:78
-msgid "Системная информация"
-msgstr "Системная информация"
+#: checklists/admin.py:104 checklists/forms.py:398 checklists/forms.py:418
+#: checklists/forms.py:440
+msgid "Ответ"
+msgstr ""
 
-#: .\tasks\admin.py:56 .\tasks\admin.py:81
-msgid "Системная информация (только для чтения)"
-msgstr "Системная информация (только для чтения)"
+#: checklists/admin.py:128
+msgid "Связанные объекты"
+msgstr ""
 
-#: .\tasks\apps.py:7
-msgid "Tasks"
-msgstr "Задачи"
-
-#: .\tasks\forms.py:20
-msgid "Team name"
-msgstr "Название команды"
-
-#: .\tasks\forms.py:21
-msgid "Team description"
-msgstr "Описание команды"
-
-#: .\tasks\forms.py:33
-msgid "Campaign name"
-msgstr "Название кампании"
-
-#: .\tasks\forms.py:34
-msgid "Campaign description"
-msgstr "Описание кампании"
-
-#: .\tasks\forms.py:42 .\tasks\forms.py:135 .\templates\users\login.html:26
-msgid "Password"
-msgstr "Пароль"
-
-#: .\tasks\forms.py:56
-msgid "Role name"
-msgstr "Название роли"
-
-#: .\tasks\forms.py:66
-msgid "Category name"
-msgstr "Название категории"
-
-#: .\tasks\forms.py:67
-msgid "Category description"
-msgstr "Описание категории"
-
-#: .\tasks\forms.py:78
-msgid "Subcategory name"
-msgstr "Название подкатегории"
-
-#: .\tasks\forms.py:79
-msgid "Subcategory description"
-msgstr "Описание подкатегории"
-
-#: .\tasks\forms.py:92
-msgid "Task description"
-msgstr "Описание задачи"
-
-#: .\tasks\forms.py:114
-msgid "Photo description (optional)"
-msgstr "Описание фотографии (необязательно)"
-
-#: .\tasks\forms.py:128
-msgid "Username"
-msgstr "Имя пользователя"
-
-#: .\tasks\forms.py:131
-msgid "Enter username"
-msgstr "Введите имя пользователя"
-
-#: .\tasks\forms.py:138
-msgid "Enter password"
-msgstr "Введите пароль"
-
-#: .\tasks\forms.py:147
-msgid "Login"
-msgstr "Войти"
-
-#: .\tasks\models.py:23 .\templates\tasks\task_detail.html:138
-#: .\user_profiles\models.py:9
-msgid "Дата создания"
-msgstr "Дата создания"
-
-#: .\tasks\models.py:24 .\templates\tasks\task_detail.html:146
-#: .\user_profiles\models.py:10
-msgid "Дата обновления"
-msgstr "Дата обновления"
-
-#: .\tasks\models.py:36
-msgid "Название кампании"
-msgstr "Название кампании"
-
-#: .\tasks\models.py:37
-msgid "Описание кампании"
-msgstr "Описание кампании"
-
-#: .\tasks\models.py:38 .\templates\tasks\task_detail.html:106
-msgid "Дата начала"
-msgstr "Дата начала"
-
-#: .\tasks\models.py:39 .\templates\tasks\task_detail.html:114
-msgid "Дата завершения"
-msgstr "Дата завершения"
-
-#: .\tasks\models.py:45
-msgid "Дата завершения не может быть раньше даты начала."
-msgstr "Дата завершения не может быть раньше даты начала."
-
-#: .\tasks\models.py:71 .\templates\tasks\task_detail.html:34
-#: .\templates\tasks\task_list.html:34
-msgid "Кампания"
+#: checklists/admin.py:131 checklists/models.py:217
+#, fuzzy
+#| msgid "Кампания"
+msgid "Примечания"
 msgstr "Кампания"
 
-#: .\tasks\models.py:72 .\templates\base.html:90
-#: .\templates\tasks\campaign_list.html:6
-msgid "Кампании"
-msgstr "Кампании"
+#: checklists/admin.py:134
+#, fuzzy
+#| msgid "Удаление роли"
+msgid "Одобрение/Проверка"
+msgstr "Удаление роли"
 
-#: .\tasks\models.py:83
-msgid "Название категории"
-msgstr "Название категории"
+#: checklists/admin.py:155 templates/admin/tasks/app_index.html:13
+#: templates/admin/tasks/app_index.html:19
+#: templates/checklists/template_list.html:82
+#, fuzzy
+#| msgid "Просрочена"
+msgid "Просмотр"
+msgstr "Просрочена"
 
-#: .\tasks\models.py:84
-msgid "Описание категории"
-msgstr "Описание категории"
+#: checklists/admin.py:157 checklists/forms.py:450 checklists/models.py:45
+#: templates/includes/checklist_result_display.html:40
+msgid "Ссылка"
+msgstr ""
 
-#: .\tasks\models.py:91
-msgid "Категория с таким названием уже существует."
-msgstr "Категория с таким названием уже существует."
+#: checklists/apps.py:8 templates/base.html:94
+#: templates/checklists/_base_checklist.html:5
+msgid "Чеклисты"
+msgstr ""
 
-#: .\tasks\models.py:117
-msgid "Категория задач"
+#: checklists/filters.py:19 checklists/models.py:168 checklists/models.py:210
+#: templates/checklists/history_list.html:147
+#: templates/checklists/report_issues.html:45
+msgid "Шаблон"
+msgstr ""
+
+#: checklists/filters.py:20 checklists/forms.py:78
+#, fuzzy
+#| msgid "Название кампании"
+msgid "Название шаблона..."
+msgstr "Название кампании"
+
+#: checklists/filters.py:28
+#, fuzzy
+#| msgid "Категория задач"
+msgid "Категория шаблона"
 msgstr "Категория задач"
 
-#: .\tasks\models.py:118 .\templates\tasks\category_list.html:6
-msgid "Категории задач"
-msgstr "Категории задач"
+#: checklists/filters.py:35 checklists/models.py:211
+#: templates/checklists/history_list.html:148
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Кем выполнен"
+msgstr "Выполнена"
 
-#: .\tasks\models.py:127 .\templates\tasks\subcategory_list.html:28
-#: .\templates\tasks\task_detail.html:66
+#: checklists/filters.py:42
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Период выполнения"
+msgstr "Дата обновления"
+
+#: checklists/filters.py:43 tasks/forms.py:102 tasks/forms.py:107
+msgid "ГГГГ-ММ-ДД"
+msgstr ""
+
+#: checklists/filters.py:63 checklists/models.py:80 checklists/models.py:91
+#: checklists/models.py:215
+#, fuzzy
+#| msgid "Фото/Вложения"
+msgid "Местоположение"
+msgstr "Фото/Вложения"
+
+#: checklists/filters.py:71 checklists/forms.py:169 checklists/models.py:216
+#: templates/checklists/template_detail.html:101
+#: templates/includes/checklist_result_display.html:11
+msgid "Точка"
+msgstr ""
+
+#: checklists/filters.py:78
+#, fuzzy
+#| msgid "Статус задачи"
+msgid "Статус выполнения"
+msgstr "Статус задачи"
+
+#: checklists/filters.py:84
+#, fuzzy
+#| msgid "Кампания"
+msgid "Есть замечания?"
+msgstr "Кампания"
+
+#: checklists/filters.py:93
+#, fuzzy
+#| msgid "Статус задачи"
+msgid "Статус пункта (наличие)"
+msgstr "Статус задачи"
+
+#: checklists/filters.py:95
+#, fuzzy
+#| msgid "Отчет по статусам задач"
+msgid "Любой статус пункта"
+msgstr "Отчет по статусам задач"
+
+#: checklists/forms.py:52 checklists/models.py:114
+#, fuzzy
+#| msgid "Категория задач"
+msgid "Категория (из Задач)"
+msgstr "Категория задач"
+
+#: checklists/forms.py:53
+msgid "Группировка шаблонов."
+msgstr ""
+
+#: checklists/forms.py:57 tasks/filters.py:55 tasks/filters.py:91
+#: tasks/forms.py:294 tasks/models.py:112 tasks/models.py:149
+#: templates/checklists/report_summary.html:67
+#: templates/checklists/template_detail.html:11
+#: templates/checklists/template_list.html:58
+#: templates/tasks/subcategory_list.html:25
 msgid "Категория"
 msgstr "Категория"
 
-#: .\tasks\models.py:128
-msgid "Название подкатегории"
-msgstr "Название подкатегории"
+#: checklists/forms.py:57
+msgid "Модуль 'tasks' не найден."
+msgstr ""
 
-#: .\tasks\models.py:129
-msgid "Описание подкатегории"
-msgstr "Описание подкатегории"
+#: checklists/forms.py:61
+msgid "Целевое Местоположение (Общее)"
+msgstr ""
 
-#: .\tasks\models.py:136
-msgid "Подкатегория с таким названием уже существует в этой категории."
-msgstr "Подкатегория с таким названием уже существует в этой категории."
+#: checklists/forms.py:63
+msgid "Опционально: Основное местоположение для этого шаблона."
+msgstr ""
 
-#: .\tasks\models.py:162
-msgid "Подкатегория задач"
-msgstr "Подкатегория задач"
+#: checklists/forms.py:67
+msgid "Целевая Точка/Комната (Общая)"
+msgstr ""
 
-#: .\tasks\models.py:163 .\templates\tasks\subcategory_list.html:5
-msgid "Подкатегории задач"
-msgstr "Подкатегории задач"
+#: checklists/forms.py:69
+msgid "Опционально: Конкретная точка (доступно после выбора местоположения)."
+msgstr ""
 
-#: .\tasks\models.py:181
-msgid "Высокий"
-msgstr "Высокий"
-
-#: .\tasks\models.py:182
-msgid "Выше среднего"
-msgstr "Выше среднего"
-
-#: .\tasks\models.py:183
-msgid "Средний"
-msgstr "Средний"
-
-#: .\tasks\models.py:184
-msgid "Ниже среднего"
-msgstr "Ниже среднего"
-
-#: .\tasks\models.py:185
-msgid "Низкий"
-msgstr "Низкий"
-
-#: .\tasks\models.py:188
-msgid "Новая"
-msgstr "Новая"
-
-#: .\tasks\models.py:189
-msgid "В работе"
-msgstr "В работе"
-
-#: .\tasks\models.py:190
-msgid "Отложена"
-msgstr "Отложена"
-
-#: .\tasks\models.py:191
-msgid "Выполнена"
-msgstr "Выполнена"
-
-#: .\tasks\models.py:192
-msgid "Отменена"
-msgstr "Отменена"
-
-#: .\tasks\models.py:193
-msgid "Просрочена"
-msgstr "Просрочена"
-
-#: .\tasks\models.py:199
-msgid "Номер задачи"
-msgstr "Номер задачи"
-
-#: .\tasks\models.py:200
-msgid "Описание задачи"
+#: checklists/forms.py:79
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Описание назначения..."
 msgstr "Описание задачи"
 
-#: .\tasks\models.py:215
-msgid "Дата завершения не может быть раньше дедлайна."
-msgstr "Дата завершения не может быть раньше дедлайна."
-
-#: .\tasks\models.py:218
-msgid "Задача не может быть назначена одновременно на пользователя и команду."
-msgstr "Задача не может быть назначена одновременно на пользователя и команду."
-
-#: .\tasks\models.py:221
-msgid "Подкатегория не принадлежит выбранной категории."
-msgstr "Подкатегория не принадлежит выбранной категории."
-
-#: .\tasks\models.py:307 .\templates\tasks\task_list.html:33
-msgid "Задача"
-msgstr "Задача"
-
-#: .\tasks\models.py:308 .\templates\base.html:83
-#: .\templates\tasks\task_list.html:6
-msgid "Задачи"
-msgstr "Задачи"
-
-#: .\tasks\models.py:329
-msgid "Описание фотографии"
-msgstr "Описание фотографии"
-
-#: .\tasks\models.py:332
-msgid "Фотография к задаче"
-msgstr "Фотография к задаче"
-
-#: .\tasks\models.py:333
-msgid "Фотографии к задачам"
-msgstr "Фотографии к задачам"
-
-#: .\tasks\views.py:404
-msgid "Задача успешно создана!"
-msgstr "Задача успешно создана!"
-
-#: .\tasks\views.py:420
-msgid "Вы не имеете доступа к этой задаче."
-msgstr "Вы не имеете доступа к этой задаче."
-
-#: .\tasks\views.py:429
-msgid "Задача обновлена!"
-msgstr "Задача обновлена!"
-
-#: .\tasks\views.py:472
-msgid "Задача удалена!"
-msgstr "Задача удалена!"
-
-#: .\templates\auth\login.html:5
-msgid "Вход"
-msgstr "Вход"
-
-#: .\templates\auth\login.html:9
-msgid "Вход в систему"
-msgstr "Вход в систему"
-
-#: .\templates\auth\login.html:24
-msgid "Имя пользователя"
-msgstr "Имя пользователя"
-
-#: .\templates\auth\login.html:33
-msgid "Пароль"
-msgstr "Пароль"
-
-#: .\templates\auth\login.html:46
-msgid "Запомнить меня"
-msgstr "Запомнить меня"
-
-#: .\templates\auth\login.html:52
-msgid "Забыли пароль?"
-msgstr "Забыли пароль?"
-
-#: .\templates\auth\login.html:59
-msgid "Войти"
-msgstr "Войти"
-
-#: .\templates\base.html:88
-msgid "Категории"
-msgstr "Категории"
-
-#: .\templates\base.html:89
-msgid "Список задач"
-msgstr "Список задач"
-
-#: .\templates\base.html:105
-msgid "Мой профиль"
-msgstr "Мой профиль"
-
-#: .\templates\base.html:106
-msgid "Входящие"
-msgstr "Входящие"
-
-#: .\templates\base.html:108
-msgid "Админка"
-msgstr "Админка"
-
-#: .\templates\base.html:110
-msgid "Чаты"
-msgstr "Чаты"
-
-#: .\templates\base.html:122
-msgid "Выход"
-msgstr "Выход"
-
-#: .\templates\detail_base.html:10
-msgid "Детали"
-msgstr "Детали"
-
-#: .\templates\detail_base.html:18 .\templates\detail_base.html:19
-#: .\templates\tasks\task_detail.html:17
-msgid "Назад к списку"
-msgstr "Назад к списку"
-
-#: .\templates\modals\campaign_delete.html:5
-msgid "Удаление кампании"
-msgstr "Удаление кампании"
-
-#: .\templates\modals\campaign_delete.html:9
-msgid "Вы уверены, что хотите удалить кампанию"
-msgstr "Вы уверены, что хотите удалить кампанию"
-
-#: .\templates\modals\campaign_form.html:5
-#: .\templates\tasks\campaign_list.html:39
-msgid "Редактировать кампанию"
-msgstr "Редактировать кампанию"
-
-#: .\templates\modals\campaign_form.html:5
-msgid "Добавить кампанию"
-msgstr "Добавить кампанию"
-
-#: .\templates\modals\campaign_form.html:18
-#: .\templates\modals\category_form.html:18
-#: .\templates\modals\modal_task_form.html:18
-#: .\templates\modals\role_form.html:18
-#: .\templates\modals\subcategory_form.html:18
-#: .\templates\modals\team_form.html:18 .\templates\modals\user_form.html:18
-msgid "Ошибка!"
-msgstr "Ошибка!"
-
-#: .\templates\modals\campaign_form.html:18
-#: .\templates\modals\category_form.html:18
-#: .\templates\modals\modal_task_form.html:18
-#: .\templates\modals\role_form.html:18
-#: .\templates\modals\subcategory_form.html:18
-#: .\templates\modals\team_form.html:18 .\templates\modals\user_form.html:18
-msgid "Пожалуйста, исправьте ошибки ниже."
-msgstr "Пожалуйста, исправьте ошибки ниже."
-
-#: .\templates\modals\category_delete.html:5
-msgid "Удаление категории"
-msgstr "Удаление категории"
-
-#: .\templates\modals\category_delete.html:9
-msgid "Вы уверены, что хотите удалить категорию"
-msgstr "Вы уверены, что хотите удалить категорию"
-
-#: .\templates\modals\category_form.html:5
-#: .\templates\tasks\category_list.html:40
-msgid "Редактировать категорию"
-msgstr "Редактировать категорию"
-
-#: .\templates\modals\category_form.html:5
-msgid "Добавить категорию"
-msgstr "Добавить категорию"
-
-#: .\templates\modals\modal_delete_confirm_base.html:14
-msgid "Delete this item"
-msgstr "Удалить этот элемент"
-
-#: .\templates\modals\modal_delete_confirm_base.html:15
-#: .\templates\modals\role_delete.html:31
-#: .\templates\modals\subcategory_delete.html:30
-#: .\templates\modals\team_delete.html:31
-#: .\templates\tasks\campaign_list.html:49
-#: .\templates\tasks\category_list.html:50
-#: .\templates\tasks\subcategory_list.html:48
-#: .\templates\users\role_list.html:49 .\templates\users\team_list.html:56
-#: .\templates\users\user_list.html:60
-msgid "Удалить"
-msgstr "Удалить"
-
-#: .\templates\modals\modal_delete_confirm_base.html:19
-msgid "Cancel the deletion"
-msgstr "Отменить удаление"
-
-#: .\templates\modals\modal_delete_confirm_base.html:20
-#: .\templates\modals\modal_form_base.html:24
-msgid "Отмена"
-msgstr "Отмена"
-
-#: .\templates\modals\modal_form_base.html:28
-#: .\templates\modals\role_form.html:48
-#: .\templates\modals\subcategory_form.html:48
-msgid "Сохранить"
-msgstr "Сохранить"
-
-#: .\templates\modals\modal_task_delete.html:5
-msgid "Удаление задачи"
-msgstr "Удаление задачи"
-
-#: .\templates\modals\modal_task_delete.html:9
-msgid "Вы уверены, что хотите удалить задачу"
-msgstr "Вы уверены, что хотите удалить задачу"
-
-#: .\templates\modals\modal_task_form.html:5
-msgid "Редактировать задачу"
-msgstr "Редактировать задачу"
-
-#: .\templates\modals\modal_task_form.html:5
-#: .\templates\tasks\task_list.html:16
-msgid "Создать задачу"
-msgstr "Создать задачу"
-
-#: .\templates\modals\role_create.html:3
-msgid "Создание роли"
-msgstr "Создание роли"
-
-#: .\templates\modals\role_create.html:6
-msgid "Создание новой роли"
-msgstr "Создание новой роли"
-
-#: .\templates\modals\role_create.html:31 .\templates\users\role_list.html:17
-msgid "Создать роль"
-msgstr "Создать роль"
-
-#: .\templates\modals\role_delete.html:5
-msgid "Удаление роли"
-msgstr "Удаление роли"
-
-#: .\templates\modals\role_delete.html:9
-msgid "Вы уверены, что хотите удалить роль"
-msgstr "Вы уверены, что хотите удалить роль"
-
-#: .\templates\modals\role_delete.html:10
-msgid "Это действие необратимо."
-msgstr "Это действие необратимо."
-
-#: .\templates\modals\role_delete.html:28 .\templates\modals\role_form.html:45
-#: .\templates\modals\subcategory_delete.html:27
-#: .\templates\modals\subcategory_form.html:45
-#: .\templates\modals\team_delete.html:28 .\templates\modals\team_form.html:48
-#: .\templates\modals\user_delete.html:29 .\templates\modals\user_form.html:48
-msgid "Отменить"
-msgstr "Отменить"
-
-#: .\templates\modals\role_form.html:5 .\templates\users\role_list.html:39
-msgid "Редактировать роль"
-msgstr "Редактировать роль"
-
-#: .\templates\modals\role_form.html:5
-msgid "Добавить роль"
-msgstr "Добавить роль"
-
-#: .\templates\modals\subcategory_delete.html:5
-msgid "Удаление подкатегории"
-msgstr "Удаление подкатегории"
-
-#: .\templates\modals\subcategory_delete.html:9
-msgid "Вы уверены, что хотите удалить подкатегорию"
-msgstr "Вы уверены, что хотите удалить подкатегорию"
-
-#: .\templates\modals\subcategory_form.html:5
-#: .\templates\tasks\subcategory_list.html:38
-msgid "Редактировать подкатегорию"
-msgstr "Редактировать подкатегорию"
-
-#: .\templates\modals\subcategory_form.html:5
-msgid "Добавить подкатегорию"
-msgstr "Добавить подкатегорию"
-
-#: .\templates\modals\subcategory_form.html:48
-msgid "Добавить"
-msgstr "Добавить"
-
-#: .\templates\modals\team_delete.html:5
-msgid "Удаление команды"
-msgstr "Удаление команды"
-
-#: .\templates\modals\team_delete.html:9
-msgid "Вы уверены, что хотите удалить команду"
-msgstr "Вы уверены, что хотите удалить команду"
-
-#: .\templates\modals\team_delete.html:10
-#: .\templates\modals\user_delete.html:11
-msgid "Это действие нельзя будет отменить."
-msgstr "Это действие нельзя будет отменить."
-
-#: .\templates\modals\team_form.html:5 .\templates\users\team_list.html:46
-msgid "Редактировать команду"
-msgstr "Редактировать команду"
-
-#: .\templates\modals\team_form.html:5 .\templates\modals\team_form.html:51
-msgid "Добавить команду"
-msgstr "Добавить команду"
-
-#: .\templates\modals\team_form.html:51
-msgid "Обновить команду"
-msgstr "Обновить команду"
-
-#: .\templates\modals\user_delete.html:5
-msgid "Удаление пользователя"
-msgstr "Удаление пользователя"
-
-#: .\templates\modals\user_delete.html:9
-msgid "Вы уверены, что хотите удалить пользователя"
-msgstr "Вы уверены, что хотите удалить пользователя"
-
-#: .\templates\modals\user_delete.html:31 .\templates\users\user_list.html:58
-msgid "Удалить пользователя"
-msgstr "Удалить пользователя"
-
-#: .\templates\modals\user_form.html:5 .\templates\users\user_list.html:50
-msgid "Редактировать пользователя"
-msgstr "Редактировать пользователя"
-
-#: .\templates\modals\user_form.html:5 .\templates\modals\user_form.html:51
-msgid "Добавить пользователя"
-msgstr "Добавить пользователя"
-
-#: .\templates\modals\user_form.html:51
-msgid "Обновить пользователя"
-msgstr "Обновить пользователя"
-
-#: .\templates\tasks\campaign_list.html:15
-msgid "Создать новую кампанию"
-msgstr "Создать новую кампанию"
-
-#: .\templates\tasks\campaign_list.html:17
-msgid "Создать кампанию"
-msgstr "Создать кампанию"
-
-#: .\templates\tasks\campaign_list.html:41
-#: .\templates\tasks\category_list.html:42
-#: .\templates\tasks\subcategory_list.html:40
-#: .\templates\tasks\task_detail.html:14 .\templates\users\role_list.html:41
-#: .\templates\users\team_list.html:48 .\templates\users\user_list.html:52
-msgid "Редактировать"
-msgstr "Редактировать"
-
-#: .\templates\tasks\campaign_list.html:47
-msgid "Удалить кампанию"
-msgstr "Удалить кампанию"
-
-#: .\templates\tasks\campaign_list.html:56
-msgid "Нет кампаний."
-msgstr "Нет кампаний."
-
-#: .\templates\tasks\category_list.html:15
-msgid "Создать новую категорию"
-msgstr "Создать новую категорию"
-
-#: .\templates\tasks\category_list.html:17
-msgid "Создать категорию"
-msgstr "Создать категорию"
-
-#: .\templates\tasks\category_list.html:48
-msgid "Удалить категорию"
-msgstr "Удалить категорию"
-
-#: .\templates\tasks\category_list.html:57
-msgid "Нет категорий задач."
-msgstr "Нет категорий задач."
-
-#: .\templates\tasks\category_list.html:68
-msgid "Назад"
-msgstr "Назад"
-
-#: .\templates\tasks\category_list.html:73 .\templates\tasks\task_list.html:80
-msgid "Страница"
-msgstr "Страница"
-
-#: .\templates\tasks\category_list.html:73 .\templates\tasks\task_list.html:80
-msgid "из"
-msgstr "из"
-
-#: .\templates\tasks\category_list.html:79
-msgid "Вперед"
-msgstr "Вперед"
-
-#: .\templates\tasks\subcategory_list.html:13
-msgid "Создать новую подкатегорию"
-msgstr "Создать новую подкатегорию"
-
-#: .\templates\tasks\subcategory_list.html:15
-msgid "Создать подкатегорию"
-msgstr "Создать подкатегорию"
-
-#: .\templates\tasks\subcategory_list.html:46
-msgid "Удалить подкатегорию"
-msgstr "Удалить подкатегорию"
-
-#: .\templates\tasks\subcategory_list.html:55
-msgid "Нет подкатегорий задач."
-msgstr "Нет подкатегорий задач."
-
-#: .\templates\tasks\task_detail.html:24
-msgid "Информация о задаче"
-msgstr "Информация о задаче"
-
-#: .\templates\tasks\task_detail.html:27
-msgid "Подробная информация о задаче"
-msgstr "Подробная информация о задаче"
-
-#: .\templates\tasks\task_detail.html:42 .\templates\tasks\task_list.html:35
-msgid "Статус"
-msgstr "Статус"
-
-#: .\templates\tasks\task_detail.html:50
+#: checklists/forms.py:82
+msgid "ежедневно, еженедельно..."
+msgstr ""
+
+#: checklists/forms.py:87
+msgid "тег1, тег2..."
+msgstr ""
+
+#: checklists/forms.py:90 templates/checklists/template_list.html:57
+#: templates/includes/task_list_table.html:9
+#: templates/reports/active_tasks_report.html:39
+#: templates/reports/cancelled_tasks_report.html:36
+#: templates/reports/completed_tasks_report.html:36
+#: templates/reports/delay_reasons_report.html:40
+#: templates/reports/issues_report.html:36
+#: templates/reports/overdue_tasks_report.html:37
+#: templates/reports/task_duration_report.html:36
+#, fuzzy
+#| msgid "Название роли"
+msgid "Название"
+msgstr "Название роли"
+
+#: checklists/forms.py:91 checklists/models.py:74 checklists/models.py:93
+#: checklists/models.py:112 hrbot/models.py:23 tasks/forms.py:113
+#: tasks/forms.py:172 tasks/forms.py:211
+#: templates/admin/tasks/report_list.html:25
+#: templates/tasks/category_list.html:28 templates/tasks/task_detail.html:71
+#: user_profiles/models.py:43
 msgid "Описание"
 msgstr "Описание"
 
-#: .\templates\tasks\task_detail.html:58 .\templates\tasks\task_list.html:36
-msgid "Приоритет"
-msgstr "Приоритет"
+#: checklists/forms.py:92 checklists/models.py:117 hrbot/models.py:24
+#: templates/checklists/template_detail.html:15
+#: templates/checklists/template_list.html:60 templates/users/user_list.html:59
+msgid "Активен"
+msgstr ""
 
-#: .\templates\tasks\task_detail.html:74
-msgid "Подкатегория"
-msgstr "Подкатегория"
+#: checklists/forms.py:93 checklists/models.py:118
+msgid "Версия"
+msgstr ""
 
-#: .\templates\tasks\task_detail.html:82 .\user_profiles\models.py:37
-msgid "Команда"
-msgstr "Команда"
+#: checklists/forms.py:94 checklists/models.py:120
+#, fuzzy
+#| msgid "Подробности"
+msgid "Периодичность"
+msgstr "Подробности"
 
-#: .\templates\tasks\task_detail.html:90 .\user_profiles\models.py:62
-msgid "Исполнитель"
-msgstr "Исполнитель"
+#: checklists/forms.py:95 checklists/models.py:121
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "След. дата выполнения"
+msgstr "Дата обновления"
 
-#: .\templates\tasks\task_detail.html:98
-msgid "Крайний срок"
-msgstr "Крайний срок"
+#: checklists/forms.py:96 checklists/models.py:122
+msgid "Теги"
+msgstr ""
 
-#: .\templates\tasks\task_detail.html:122
-msgid "Оценка времени"
+#: checklists/forms.py:97 checklists/models.py:119
+#: templates/checklists/template_detail.html:24
+msgid "Архивирован"
+msgstr ""
+
+#: checklists/forms.py:100
+msgid "Активные шаблоны доступны для выполнения."
+msgstr ""
+
+#: checklists/forms.py:101
+msgid "Архивированные шаблоны скрываются из основного списка."
+msgstr ""
+
+#: checklists/forms.py:102
+msgid "Разделяйте теги запятыми."
+msgstr ""
+
+#: checklists/forms.py:138 checklists/models.py:140
+#, fuzzy
+#| msgid "Подкатегория не принадлежит выбранной категории."
+msgid "Выбранная точка не принадлежит указанному местоположению."
+msgstr "Подкатегория не принадлежит выбранной категории."
+
+#: checklists/forms.py:156
+msgid "№"
+msgstr ""
+
+#: checklists/forms.py:159
+msgid "Текст пункта/вопроса..."
+msgstr ""
+
+#: checklists/forms.py:160
+msgid "Текст пункта"
+msgstr ""
+
+#: checklists/forms.py:165 checklists/models.py:173
+#: templates/includes/checklist_result_display.html:14
+msgid "Тип ответа"
+msgstr ""
+
+#: checklists/forms.py:171
+msgid "Для конкр. точки"
+msgstr ""
+
+#: checklists/forms.py:174 checklists/models.py:174
+#: templates/checklists/template_detail.html:102
+#: templates/includes/checklist_result_display.html:21
+msgid "Подсказка"
+msgstr ""
+
+#: checklists/forms.py:175
+#, fuzzy
+#| msgid "Системная информация"
+msgid "Доп. информация..."
+msgstr "Системная информация"
+
+#: checklists/forms.py:176
+msgid "Отображается при выполнении."
+msgstr ""
+
+#: checklists/forms.py:179 checklists/models.py:175
+#, fuzzy
+#| msgid "Удаление команды"
+msgid "Значение по умолчанию"
+msgstr "Удаление команды"
+
+#: checklists/forms.py:180
+msgid "Напр. 'Да', 'OK', '5'..."
+msgstr ""
+
+#: checklists/forms.py:181
+msgid "Заполнится автоматически при создании чеклиста."
+msgstr ""
+
+#: checklists/forms.py:185 checklists/models.py:176
+msgid "Родительский пункт"
+msgstr ""
+
+#: checklists/forms.py:187
+msgid "Для создания вложенности."
+msgstr ""
+
+#: checklists/forms.py:217
+msgid "Выберите местоположение в шаблоне для выбора точки пункта"
+msgstr ""
+
+#: checklists/forms.py:242
+#, fuzzy
+#| msgid "Дата завершения не может быть раньше дедлайна."
+msgid "Порядок не может быть отрицательным."
+msgstr "Дата завершения не может быть раньше дедлайна."
+
+#: checklists/forms.py:258
+#, python-format
+msgid "Точка пункта не соответствует местоположению шаблона (%(loc)s)."
+msgstr ""
+
+#: checklists/forms.py:269
+msgid "Родительский пункт должен быть из того же шаблона."
+msgstr ""
+
+#: checklists/forms.py:311
+#, python-format
+msgid ""
+"Порядок '%(order)s' уже используется для другого пункта %(section_info)s в "
+"этом шаблоне."
+msgstr ""
+
+#: checklists/forms.py:313
+msgid "без секции"
+msgstr ""
+
+#: checklists/forms.py:320
+msgid "Этот порядок дублируется другим пунктом."
+msgstr ""
+
+#: checklists/forms.py:347 checklists/models.py:272
+msgid "Пункт"
+msgstr ""
+
+#: checklists/forms.py:370
+msgid "Комментарий (если Не OK)..."
+msgstr ""
+
+#: checklists/forms.py:374
+msgid "Результат"
+msgstr ""
+
+#: checklists/forms.py:375 checklists/models.py:286
+#: templates/checklists/perform_checklist.html:175
+#: templates/checklists/report_issues.html:47
+msgid "Комментарий"
+msgstr ""
+
+#: checklists/forms.py:376 checklists/models.py:290
+#: templates/includes/checklist_result_display.html:62
+msgid "Исправлено"
+msgstr ""
+
+#: checklists/forms.py:409 checklists/models.py:223 hrbot/models.py:133
+#: templates/tasks/task_detail.html:168
+#, fuzzy
+#| msgid "Оценка времени"
+msgid "Оценка"
 msgstr "Оценка времени"
 
-#: .\templates\tasks\task_detail.html:130
+#: checklists/forms.py:414 checklists/forms.py:416 checklists/forms.py:438
+#: checklists/models.py:323 checklists/models.py:329 checklists/tests.py:74
+#: templates/checklists/checklist_detail.html:101
+#: templates/checklists/history_list.html:166
+#: templates/checklists/report_issues.html:76
+#: templates/checklists/template_list.html:74
+#, fuzzy
+#| msgid "Даты"
+msgid "Да"
+msgstr "Даты"
+
+#: checklists/forms.py:414 checklists/forms.py:416 checklists/forms.py:438
+#: checklists/models.py:324 checklists/models.py:330 checklists/tests.py:76
+#: templates/checklists/checklist_detail.html:101
+#: templates/checklists/history_list.html:168
+#: templates/checklists/report_issues.html:78
+#: templates/checklists/template_list.html:76 templates/users/user_list.html:54
+msgid "Нет"
+msgstr ""
+
+#: checklists/forms.py:416 checklists/models.py:325
+msgid "Не очень"
+msgstr ""
+
+#: checklists/forms.py:422
+msgid "Число"
+msgstr ""
+
+#: checklists/forms.py:426 checklists/models.py:41 checklists/models.py:279
+#: templates/checklists/report_issues.html:44
+msgid "Дата"
+msgstr ""
+
+#: checklists/forms.py:430 checklists/models.py:42 checklists/models.py:280
+#, fuzzy
+#| msgid "Дата завершения"
+msgid "Дата и время"
+msgstr "Дата завершения"
+
+#: checklists/forms.py:434 checklists/models.py:43 checklists/models.py:281
+msgid "Время"
+msgstr ""
+
+#: checklists/forms.py:445 checklists/models.py:44 checklists/models.py:282
+#: room/admin.py:77 room/models.py:67
+msgid "Файл"
+msgstr ""
+
+#: checklists/forms.py:513 checklists/serializers.py:184
+#, python-format
+msgid "Комментарий обязателен, если статус \"%(status)s\"."
+msgstr ""
+
+#: checklists/forms.py:585 checklists/serializers.py:229
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "Пожалуйста, предоставьте ответ для этого пункта."
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: checklists/forms.py:589 checklists/serializers.py:231
+#, python-format
+msgid "Пункт \"%(item)s\" требует ответа."
+msgstr ""
+
+#: checklists/forms.py:664 checklists/models.py:220 tasks/filters.py:140
+#: tasks/models.py:154 tasks/views/report.py:327 tasks/views/report.py:348
+#: templates/checklists/history_list.html:151
+#: templates/includes/task_list_table.html:11
+#: templates/reports/active_tasks_report.html:48
+#: templates/reports/issues_report.html:45 templates/tasks/task_detail.html:53
+#: templates/users/user_list.html:31
+msgid "Статус"
+msgstr "Статус"
+
+#: checklists/forms.py:665 checklists/models.py:221
+msgid "Одобрено кем"
+msgstr ""
+
+#: checklists/forms.py:666 checklists/models.py:222
+#, fuzzy
+#| msgid "Фото/Вложения"
+msgid "Время одобрения"
+msgstr "Фото/Вложения"
+
+#: checklists/forms.py:667
+msgid "Дополнительные примечания к статусу"
+msgstr ""
+
+#: checklists/forms.py:691
+msgid "При статусе 'Одобрено' необходимо указать, кем одобрено."
+msgstr ""
+
+#: checklists/forms.py:696
+msgid "При статусе 'Отклонено' необходимо указать причину в примечаниях."
+msgstr ""
+
+#: checklists/models.py:34
+msgid "Текстовое поле"
+msgstr ""
+
+#: checklists/models.py:35
+msgid "Числовое поле"
+msgstr ""
+
+#: checklists/models.py:36
+#, fuzzy
+#| msgid "Оценка времени"
+msgid "Оценка 1–4"
+msgstr "Оценка времени"
+
+#: checklists/models.py:37
+#, fuzzy
+#| msgid "Оценка времени"
+msgid "Оценка 1–5"
+msgstr "Оценка времени"
+
+#: checklists/models.py:38
+msgid "Да / Нет"
+msgstr ""
+
+#: checklists/models.py:39
+msgid "Да / Нет / Не очень"
+msgstr ""
+
+#: checklists/models.py:40
+msgid "Да/Нет (Boolean)"
+msgstr ""
+
+#: checklists/models.py:52
+msgid "Черновик"
+msgstr ""
+
+#: checklists/models.py:53
+msgid "В процессе"
+msgstr ""
+
+#: checklists/models.py:54
+msgid "Отправлено"
+msgstr ""
+
+#: checklists/models.py:55
+msgid "Одобрено"
+msgstr ""
+
+#: checklists/models.py:56
+msgid "Отклонено"
+msgstr ""
+
+#: checklists/models.py:63
+msgid "Ожидает ответа"
+msgstr ""
+
+#: checklists/models.py:64
+msgid "OK"
+msgstr ""
+
+#: checklists/models.py:65
+msgid "Не OK"
+msgstr ""
+
+#: checklists/models.py:66
+#, fuzzy
+#| msgid "Оценка времени"
+msgid "Неприменимо"
+msgstr "Оценка времени"
+
+#: checklists/models.py:73
+#, fuzzy
+#| msgid "Название категории"
+msgid "Название Местоположения"
+msgstr "Название категории"
+
+#: checklists/models.py:75
+msgid "Родительское Местоположение"
+msgstr ""
+
+#: checklists/models.py:76 checklists/models.py:94 checklists/models.py:123
+#: checklists/models.py:224
+#, fuzzy
+#| msgid "Создатель"
+msgid "Создан"
+msgstr "Создатель"
+
+#: checklists/models.py:77 checklists/models.py:95 checklists/models.py:124
+#: checklists/models.py:225
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Обновлен"
+msgstr "Дата обновления"
+
+#: checklists/models.py:81
+#, fuzzy
+#| msgid "Фото/Вложения"
+msgid "Местоположения"
+msgstr "Фото/Вложения"
+
+#: checklists/models.py:92
+#, fuzzy
+#| msgid "Название команды"
+msgid "Название Точки/Комнаты"
+msgstr "Название команды"
+
+#: checklists/models.py:98
+msgid "Точка/Комната Чеклиста"
+msgstr ""
+
+#: checklists/models.py:99
+msgid "Точки/Комнаты Чеклистов"
+msgstr ""
+
+#: checklists/models.py:111
+#, fuzzy
+#| msgid "Название роли"
+msgid "Название шаблона"
+msgstr "Название роли"
+
+#: checklists/models.py:115
+msgid "Целевое Местоположение"
+msgstr ""
+
+#: checklists/models.py:116
+msgid "Целевая Точка/Комната"
+msgstr ""
+
+#: checklists/models.py:127 tasks/views/api.py:212
+#: templates/checklists/report_summary.html:66
+#: templates/checklists/template_detail.html:3
+msgid "Шаблон чеклиста"
+msgstr ""
+
+#: checklists/models.py:128 templates/base.html:258
+#: templates/checklists/template_list.html:3
+#: templates/checklists/template_list.html:6
+msgid "Шаблоны чеклистов"
+msgstr ""
+
+#: checklists/models.py:151
+#, fuzzy
+#| msgid "Название роли"
+msgid "Название секции"
+msgstr "Название роли"
+
+#: checklists/models.py:155
+msgid "Секция шаблона"
+msgstr ""
+
+#: checklists/models.py:156
+msgid "Секции шаблона"
+msgstr ""
+
+#: checklists/models.py:170
+msgid "Текст пункта/вопроса"
+msgstr ""
+
+#: checklists/models.py:171 hrbot/models.py:71
+msgid "Порядок"
+msgstr ""
+
+#: checklists/models.py:172
+msgid "Целевая Точка"
+msgstr ""
+
+#: checklists/models.py:180
+msgid "Пункт шаблона чеклиста"
+msgstr ""
+
+#: checklists/models.py:181
+msgid "Пункты шаблонов чеклистов"
+msgstr ""
+
+#: checklists/models.py:194
+msgid "Точка пункта не соответствует местоположению шаблона."
+msgstr ""
+
+#: checklists/models.py:197
+msgid "Секция должна принадлежать тому же шаблону, что и пункт."
+msgstr ""
+
+#: checklists/models.py:200
+msgid "Пункт не может быть родительским сам для себя."
+msgstr ""
+
+#: checklists/models.py:203
+msgid "Обнаружена простая циклическая зависимость с родительским пунктом."
+msgstr ""
+
+#: checklists/models.py:212
+#, fuzzy
+#| msgid "Дата начала"
+msgid "Дата/Время начала"
+msgstr "Дата начала"
+
+#: checklists/models.py:214
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Связанная задача"
+msgstr "Описание задачи"
+
+#: checklists/models.py:218
+#, fuzzy
+#| msgid "Дата завершения"
+msgid "Завершен"
+msgstr "Дата завершения"
+
+#: checklists/models.py:219
+#, fuzzy
+#| msgid "Дата завершения"
+msgid "Время завершения"
+msgstr "Дата завершения"
+
+#: checklists/models.py:226
+msgid "Внешняя ссылка"
+msgstr ""
+
+#: checklists/models.py:229
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Выполненный чеклист"
+msgstr "Выполнена"
+
+#: checklists/models.py:230
+msgid "Выполненные чеклисты"
+msgstr ""
+
+#: checklists/models.py:259
+#, fuzzy
+#| msgid "Подкатегория не принадлежит выбранной категории."
+msgid "Точка не принадлежит выбранному местоположению."
+msgstr "Подкатегория не принадлежит выбранной категории."
+
+#: checklists/models.py:271 templates/checklists/report_issues.html:49
+msgid "Прогон"
+msgstr ""
+
+#: checklists/models.py:276
+#, fuzzy
+#| msgid "Ответственный"
+msgid "Ответ (текст/выбор)"
+msgstr "Ответственный"
+
+#: checklists/models.py:277
+#, fuzzy
+#| msgid "Удаление задачи"
+msgid "Числовое значение"
+msgstr "Удаление задачи"
+
+#: checklists/models.py:278
+msgid "Булево значение"
+msgstr ""
+
+#: checklists/models.py:283
+msgid "Ссылка на медиа"
+msgstr ""
+
+#: checklists/models.py:287
+#, fuzzy
+#| msgid "Статус задачи"
+msgid "Статус пункта"
+msgstr "Статус задачи"
+
+#: checklists/models.py:292
+#, fuzzy
+#| msgid "Описание"
+msgid "Записано"
+msgstr "Описание"
+
+#: checklists/models.py:293
+#, fuzzy
+#| msgid "Создание роли"
+msgid "Создано кем"
+msgstr "Создание роли"
+
+#: checklists/models.py:294
+#, fuzzy
+#| msgid "Обновить команду"
+msgid "Обновлено кем"
+msgstr "Обновить команду"
+
+#: checklists/models.py:346
+#, fuzzy
+#| msgid "Нет роли"
+msgid "Нет файла"
+msgstr "Нет роли"
+
+#: checklists/views.py:65
+msgid "У вас нет прав для выполнения чеклистов."
+msgstr ""
+
+#: checklists/views.py:79
+msgid "У вас нет прав для просмотра отчетов или изменения статуса чеклистов."
+msgstr ""
+
+#: checklists/views.py:122
+msgid "Список шаблонов чеклистов"
+msgstr ""
+
+#: checklists/views.py:162
+#, python-format
+msgid "Шаблон чеклиста: %s"
+msgstr ""
+
+#: checklists/views.py:181
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Шаблон чеклиста '%(name)s' успешно создан."
+msgstr "Задача успешно создана!"
+
+#: checklists/views.py:190
+#, fuzzy
+#| msgid "Создать подкатегорию"
+msgid "Создать шаблон чеклиста"
+msgstr "Создать подкатегорию"
+
+#: checklists/views.py:287
+#, python-format
+msgid "Шаблон чеклиста '%(name)s' успешно обновлен."
+msgstr ""
+
+#: checklists/views.py:296
+#, fuzzy
+#| msgid "Редактировать роль"
+msgid "Редактировать шаблон: "
+msgstr "Редактировать роль"
+
+#: checklists/views.py:369
+#, python-format
+msgid "Шаблон чеклиста '%(name)s' успешно удален."
+msgstr ""
+
+#: checklists/views.py:378
+#, fuzzy
+#| msgid "Удалить кампанию"
+msgid "Удалить шаблон: "
+msgstr "Удалить кампанию"
+
+#: checklists/views.py:390 checklists/views.py:412
+msgid ""
+"Невозможно удалить шаблон, так как существуют связанные выполненные чеклисты."
+msgstr ""
+
+#: checklists/views.py:419
+msgid "Произошла ошибка при удалении шаблона."
+msgstr ""
+
+#: checklists/views.py:492
+msgid "Этот чеклист уже завершен."
+msgstr ""
+
+#: checklists/views.py:498 checklists/views.py:602
+#, fuzzy, python-format
+#| msgid "Выполнена"
+msgid "Выполнение: %s"
+msgstr "Выполнена"
+
+#: checklists/views.py:512
+msgid "Идентификатор чеклиста не найден."
+msgstr ""
+
+#: checklists/views.py:522
+#, fuzzy
+#| msgid "Дата завершения не может быть раньше дедлайна."
+msgid "Этот чеклист уже завершен и не может быть изменен."
+msgstr "Дата завершения не может быть раньше дедлайна."
+
+#: checklists/views.py:526
+msgid "У вас нет прав на изменение этого чеклиста."
+msgstr ""
+
+#: checklists/views.py:580
+#, python-format
+msgid "Чеклист '%(name)s' успешно завершен."
+msgstr ""
+
+#: checklists/views.py:591
+msgid "Произошла ошибка при сохранении чеклиста."
+msgstr ""
+
+#: checklists/views.py:597
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "Пожалуйста, исправьте ошибки в пунктах чеклиста."
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: checklists/views.py:649 templates/checklists/history_list.html:3
+#: templates/checklists/history_list.html:25
+msgid "История выполнения чеклистов"
+msgstr ""
+
+#: checklists/views.py:671
+msgid "У вас нет прав для просмотра этого результата чеклиста."
+msgstr ""
+
+#: checklists/views.py:716
+#, python-format
+msgid "Результаты чеклиста: %s"
+msgstr ""
+
+#: checklists/views.py:760 templates/checklists/checklist_status_form.html:3
+#: templates/checklists/checklist_status_form.html:14
+msgid "Изменить статус чеклиста"
+msgstr ""
+
+#: checklists/views.py:788
+#, fuzzy
+#| msgid "Задача обновлена!"
+msgid "Статус чеклиста обновлен."
+msgstr "Задача обновлена!"
+
+#: checklists/views.py:797
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "Ошибка при обновлении статуса. Пожалуйста, исправьте ошибки."
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: checklists/views.py:831 checklists/views.py:941
+msgid "Неверный формат начальной даты."
+msgstr ""
+
+#: checklists/views.py:838 checklists/views.py:950
+msgid "Неверный формат конечной даты."
+msgstr ""
+
+#: checklists/views.py:879 templates/checklists/report_summary.html:3
+#: templates/checklists/report_summary.html:10
+msgid "Сводный отчет по чеклистам"
+msgstr ""
+
+#: checklists/views.py:972 templates/checklists/report_issues.html:10
+#, fuzzy
+#| msgid "Отчет по статусам задач"
+msgid "Отчет по пунктам с проблемами"
+msgstr "Отчет по статусам задач"
+
+#: config/settings.py:170 config/settings_dev.py:153 templates/base.html:197
+#: templates/base.html:301
+msgid "Русский"
+msgstr "Русский"
+
+#: config/settings.py:170 config/settings_dev.py:154 templates/base.html:199
+#: templates/base.html:303
+msgid "English"
+msgstr "Английский"
+
+#: config/settings.py:170 config/settings_dev.py:155 templates/base.html:196
+#: templates/base.html:300
+msgid "Uzbek"
+msgstr "Узбекский"
+
+#: hrbot/apps.py:10
+msgid "HR Бот"
+msgstr ""
+
+#: hrbot/bot/error_handler.py:26
+msgid ""
+"⚠️ Произошла внутренняя ошибка. Мы уже уведомлены и разбираемся. Пожалуйста, "
+"попробуйте позже или начните диалог заново с /start."
+msgstr ""
+
+#: hrbot/bot/error_handler.py:32
+msgid "Произошла ошибка!"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:31
+msgid ""
+"Ошибка: Не удалось определить сообщение для ответа. Попробуйте ввести /start "
+"снова."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:40
+msgid "❌ Произошла ошибка при доступе к вашему профилю. Попробуйте позже."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:45
+msgid "⏳ Ваш аккаунт еще не подтвержден HR-отделом. Пожалуйста, ожидайте."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:52
+msgid "📝 Новая оценка"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:53
+#, fuzzy
+#| msgid "Список задач"
+msgid "🏢 Список отделов"
+msgstr "Список задач"
+
+#: hrbot/bot/handlers/common.py:53
+msgid "👥 Список сотрудников"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:54
+#, fuzzy
+#| msgid "Мой профиль"
+msgid "⚙️ Настройки профиля"
+msgstr "Мой профиль"
+
+#: hrbot/bot/handlers/common.py:54
+msgid "🌐 Выбор языка"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:55
+msgid "🔍 Поиск сотрудника"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:56
+msgid "⏹️ Завершить /stop"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:58
+msgid ""
+"👋 *Главное меню*\n"
+"Выберите действие:"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:85 hrbot/bot/handlers/profile.py:31
+msgid "⚠️ Некорректный запрос."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:93
+msgid "❌ Нет доступных опросников для проведения оценки."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:96 hrbot/bot/handlers/common.py:103
+#: hrbot/bot/handlers/common.py:110 hrbot/bot/handlers/common.py:115
+#: hrbot/bot/handlers/common.py:132 hrbot/bot/handlers/directory.py:36
+#: hrbot/bot/handlers/evaluation.py:48 hrbot/bot/handlers/profile.py:63
+#, fuzzy
+#| msgid "Назад"
+msgid "🔙 Назад"
+msgstr "Назад"
+
+#: hrbot/bot/handlers/common.py:97 hrbot/bot/handlers/evaluation.py:49
+msgid ""
+"📊 *Новая оценка*\n"
+"Выберите тип опросника:"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:102
+msgid "❌ Не удалось загрузить список отделов или отделы отсутствуют."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:104 hrbot/bot/handlers/directory.py:37
+msgid "... (еще отделы)"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:105 hrbot/bot/handlers/directory.py:38
+#, fuzzy
+#| msgid "Описание кампании"
+msgid "📋 *Отделы компании*"
+msgstr "Описание кампании"
+
+#: hrbot/bot/handlers/common.py:109
+msgid "❌ Не удалось загрузить список сотрудников или сотрудники отсутствуют."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:111 hrbot/bot/handlers/directory.py:42
+msgid "... (еще сотрудники)"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:112
+msgid "👥 *Все сотрудники*"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:115 hrbot/bot/handlers/profile.py:63
+msgid "📸 Загрузить/сменить фото"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:115 hrbot/bot/handlers/profile.py:63
+msgid "✍️ Изменить имя"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:116 hrbot/bot/handlers/profile.py:63
+#, fuzzy
+#| msgid "Мой профиль"
+msgid "⚙️ *Настройки профиля*"
+msgstr "Мой профиль"
+
+#: hrbot/bot/handlers/common.py:127
+msgid "❌ Ошибка загрузки доступных языков."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:134
+msgid "🌐 *Выберите язык интерфейса*"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:137
+msgid ""
+"🔎 Введите часть имени, фамилии, телефона или email для поиска сотрудника:"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:138
+#, fuzzy
+#| msgid "Дата завершения"
+msgid "✋ Диалог завершен."
+msgstr "Дата завершения"
+
+#: hrbot/bot/handlers/common.py:140
+#, fuzzy
+#| msgid "Название команды"
+msgid "⚠️ Неизвестная команда."
+msgstr "Название команды"
+
+#: hrbot/bot/handlers/common.py:142
+msgid "⚠️ Ошибка сети или API. Попробуйте еще раз."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:143
+msgid "⚠️ Произошла внутренняя ошибка. Попробуйте /start"
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:150
+msgid "✋ Операция прервана."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:161
+msgid "Неожиданный ввод."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:162
+msgid "Неожиданный ввод. Пожалуйста, используйте кнопки или команду /stop."
+msgstr ""
+
+#: hrbot/bot/handlers/common.py:165
+#, fuzzy
+#| msgid "Это действие необратимо."
+msgid "Действие недоступно."
+msgstr "Это действие необратимо."
+
+#: hrbot/bot/handlers/directory.py:32
+msgid "❌ В этом отделе нет сотрудников."
+msgstr ""
+
+#: hrbot/bot/handlers/directory.py:41 hrbot/bot/handlers/evaluation.py:88
+#: hrbot/bot/handlers/evaluation.py:122 hrbot/bot/handlers/evaluation.py:150
+#, fuzzy
+#| msgid "Назад к списку"
+msgid "🔙 Назад к отделам"
+msgstr "Назад к списку"
+
+#: hrbot/bot/handlers/directory.py:43
+#, python-brace-format
+msgid "👥 *Сотрудники отдела '{dept}'*"
+msgstr ""
+
+#: hrbot/bot/handlers/directory.py:45
+msgid "⚠️ Некорректный выбор отдела."
+msgstr ""
+
+#: hrbot/bot/handlers/directory.py:46 hrbot/bot/handlers/evaluation.py:92
+msgid "⚠️ Ошибка сети или API. Попробуйте выбрать отдел снова."
+msgstr ""
+
+#: hrbot/bot/handlers/directory.py:47 hrbot/bot/handlers/evaluation.py:57
+#: hrbot/bot/handlers/evaluation.py:93 hrbot/bot/handlers/evaluation.py:154
+#: hrbot/bot/handlers/language.py:36 hrbot/bot/handlers/profile.py:33
+msgid "⚠️ Внутренняя ошибка. Попробуйте /start"
+msgstr ""
+
+#: hrbot/bot/handlers/directory.py:65
+#, fuzzy
+#| msgid "Подробная информация о задаче"
+msgid "❌ Не удалось найти информацию о сотруднике."
+msgstr "Подробная информация о задаче"
+
+#: hrbot/bot/handlers/directory.py:68
+msgid "⚠️ Ошибка данных при выборе сотрудника."
+msgstr ""
+
+#: hrbot/bot/handlers/directory.py:69 hrbot/bot/handlers/directory.py:89
+#: hrbot/bot/handlers/search.py:57
+msgid "⚠️ Внутренняя ошибка при показе профиля."
+msgstr ""
+
+#: hrbot/bot/handlers/directory.py:85
+msgid "❌ Не удалось найти информацию об этом сотруднике."
+msgstr ""
+
+#: hrbot/bot/handlers/directory.py:88
+msgid "⚠️ Некорректный выбор сотрудника."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:44
+msgid "❌ Не удалось загрузить список отделов для выбора сотрудника."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:52 hrbot/bot/handlers/evaluation.py:82
+#, fuzzy
+#| msgid "Назад к списку"
+msgid "🔙 Назад к опросникам"
+msgstr "Назад к списку"
+
+#: hrbot/bot/handlers/evaluation.py:53 hrbot/bot/handlers/evaluation.py:83
+#, python-brace-format
+msgid ""
+"🏢 *Оценка (Опросник: {qset})*\n"
+"Выберите отдел сотрудника:"
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:55
+msgid "⚠️ Некорректный выбор опросника."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:56
+msgid "⚠️ Ошибка сети или API. Попробуйте выбрать опросник снова."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:74
+msgid "❌ Ошибка: опросник не был выбран. Начните оценку заново с /start."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:78
+#, python-brace-format
+msgid "❌ В отделе '{dept}' нет сотрудников. Выберите другой отдел."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:89
+#, python-brace-format
+msgid ""
+"👤 *Оценка (Отдел: {dept})*\n"
+"Выберите сотрудника:"
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:91
+msgid "⚠️ Ошибка данных. Попробуйте выбрать отдел снова."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:109
+msgid ""
+"❌ Ошибка: данные сессии оценки потеряны. Начните оценку заново с /start."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:121
+msgid "❌ Для выбранного опросника не настроены вопросы. Оценка невозможна."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:123 hrbot/bot/handlers/evaluation.py:151
+msgid ""
+"👤 *Оценка*\n"
+"Выберите сотрудника:"
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:140 hrbot/bot/handlers/evaluation.py:186
+#, fuzzy
+#| msgid "Переключить вид"
+msgid "Пропустить вопрос"
+msgstr "Переключить вид"
+
+#: hrbot/bot/handlers/evaluation.py:147
+msgid "⚠️ Ошибка данных. Попробуйте выбрать сотрудника снова."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:153
+msgid "⚠️ Ошибка сети или API. Попробуйте выбрать сотрудника снова."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:171
+msgid "❌ Ошибка: данные опроса потеряны. Начните оценку заново с /start."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:172
+#, fuzzy
+#| msgid "Дата завершения"
+msgid "Оценка уже завершена."
+msgstr "Дата завершения"
+
+#: hrbot/bot/handlers/evaluation.py:178
+msgid "⚠️ Ошибка: Некорректный вариант ответа. Попробуйте снова."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:191
+msgid "❌ Не удалось идентифицировать вас для сохранения оценки."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:196
+msgid ""
+"❌ Произошла ошибка при сохранении оценки в базу данных. Администраторы "
+"уведомлены."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:204
+#, fuzzy
+#| msgid "Задача успешно создана!"
+msgid "✅ Оценка успешно сохранена! Спасибо."
+msgstr "Задача успешно создана!"
+
+#: hrbot/bot/handlers/evaluation.py:209
+msgid "⚠️ Ошибка данных при обработке ответа."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:210
+msgid "⚠️ Ошибка сети или API. Попробуйте нажать кнопку снова."
+msgstr ""
+
+#: hrbot/bot/handlers/evaluation.py:211
+msgid "⚠️ Внутренняя ошибка при обработке ответа. Попробуйте /start"
+msgstr ""
+
+#: hrbot/bot/handlers/language.py:28
+msgid "⚠️ Выбран неподдерживаемый язык."
+msgstr ""
+
+#: hrbot/bot/handlers/language.py:30
+msgid "❌ Ошибка: не удалось найти ваш профиль для сохранения языка."
+msgstr ""
+
+#: hrbot/bot/handlers/language.py:31
+#, python-brace-format
+msgid "✅ Язык интерфейса изменён на *{lang}*."
+msgstr ""
+
+#: hrbot/bot/handlers/language.py:32
+msgid "❌ Не удалось сохранить настройку языка (ошибка сервера)."
+msgstr ""
+
+#: hrbot/bot/handlers/language.py:34
+msgid "⚠️ Некорректный выбор языка."
+msgstr ""
+
+#: hrbot/bot/handlers/language.py:35
+msgid "⚠️ Ошибка сети или API. Попробуйте выбрать язык снова."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:28
+msgid ""
+"📸 Отправьте фото, которое хотите установить как фото профиля (пожалуйста, "
+"*не* как документ)."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:29
+msgid "ваше текущее имя"
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:29
+#, python-brace-format
+msgid "✍️ Введите ваше новое имя (например, '{name}'):"
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:30
+msgid "⚠️ Неизвестная опция."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:32
+msgid "⚠️ Ошибка сети или API. Попробуйте снова."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:37
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "⚠️ Это не фото. Пожалуйста, отправьте изображение."
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: hrbot/bot/handlers/profile.py:40
+msgid "❌ Ошибка: не удалось найти ваш профиль."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:47
+msgid ""
+"⚠️ Неподдерживаемый формат файла. Пожалуйста, отправьте JPG, JPEG или PNG."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:51
+msgid "✅ Фото профиля успешно обновлено!"
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:53
+msgid "❌ Не удалось сохранить фото в вашем профиле (ошибка БД)."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:58
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "Попробуйте отправить фото еще раз."
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: hrbot/bot/handlers/profile.py:59
+msgid "⚠️ Ошибка сети при загрузке фото. Пожалуйста, попробуйте еще раз."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:60
+msgid ""
+"⚠️ Произошла ошибка на стороне Telegram при обработке фото. Попробуйте другое "
+"фото или позже."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:62
+msgid ""
+"❌ Ошибка сервера при сохранении файла изображения. Администраторы "
+"уведомлены."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:64
+msgid "⚠️ Непредвиденная ошибка при загрузке фото."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:68
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "⚠️ Пожалуйста, введите имя текстом."
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: hrbot/bot/handlers/profile.py:71
+msgid "⚠️ Имя не может быть пустым. Введите ваше имя:"
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:72
+msgid "⚠️ Имя слишком длинное (максимум 50 символов). Введите имя покороче:"
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:74
+msgid "❌ Ошибка: не удалось найти ваш профиль для сохранения имени."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:77
+#, python-brace-format
+msgid "✅ Ваше имя успешно изменено на '{name}'!"
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:78
+msgid "❌ Не удалось обновить имя из-за ошибки сохранения в базе данных."
+msgstr ""
+
+#: hrbot/bot/handlers/profile.py:79
+msgid "⚠️ Внутренняя ошибка при сохранении имени."
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:18
+msgid "⚠️ Пожалуйста, введите запрос для поиска текстом."
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:21
+msgid "⚠️ Запрос не может быть пустым. Введите имя, фамилию, телефон или email:"
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:22
+msgid "⚠️ Запрос слишком короткий (минимум 3 символа)."
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:25
+#, python-brace-format
+msgid ""
+"❌ По вашему запросу '{query}' совпадений не найдено.\n"
+"Попробуйте другой запрос или вернитесь в /start."
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:29
+msgid "🔄 Новый поиск"
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:29
+msgid "🔙 Главное меню"
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:30
+msgid "... (еще результаты)"
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:31
+#, python-brace-format
+msgid "🔍 *Результаты поиска по запросу '{query}'* ({count} найдено):"
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:33
+msgid "⚠️ Ошибка сети во время поиска. Пожалуйста, попробуйте еще раз."
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:34
+msgid "⚠️ Внутренняя ошибка сервера во время поиска. Попробуйте /start"
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:52
+msgid "❌ Ошибка: Не удалось загрузить данные выбранного сотрудника."
+msgstr ""
+
+#: hrbot/bot/handlers/search.py:56
+msgid "⚠️ Ошибка данных при выборе результата поиска."
+msgstr ""
+
+#: hrbot/bot/registration.py:95
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "Пожалуйста, отправьте фото, а не текст."
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: hrbot/bot/utils.py:82
+#, fuzzy
+#| msgid "Роль пользователя в задаче"
+msgid "❌ Ошибка: данные пользователя не найдены."
+msgstr "Роль пользователя в задаче"
+
+#: hrbot/bot/utils.py:86
+msgid "Имя не указано"
+msgstr ""
+
+#: hrbot/bot/utils.py:114
+msgid "Отдел не указан"
+msgstr ""
+
+#: hrbot/bot/utils.py:154
+msgid "⚠️ Произошла ошибка при отображении профиля."
+msgstr ""
+
+#: hrbot/models.py:22
+#, fuzzy
+#| msgid "Название роли"
+msgid "Название опросника"
+msgstr "Название роли"
+
+#: hrbot/models.py:24
+msgid "Активные опросники доступны для выбора при оценке."
+msgstr ""
+
+#: hrbot/models.py:29 hrbot/models.py:69
+msgid "Опросник"
+msgstr ""
+
+#: hrbot/models.py:30
+msgid "Опросники"
+msgstr ""
+
+#: hrbot/models.py:42
+#, fuzzy
+#| msgid "Пользователи"
+msgid "Пользователь Django"
+msgstr "Пользователи"
+
+#: hrbot/models.py:44
+msgid "Telegram ID"
+msgstr ""
+
+#: hrbot/models.py:45
+msgid "Подтвержден"
+msgstr ""
+
+#: hrbot/models.py:46
+#, fuzzy
+#| msgid "Удаление подкатегории"
+msgid "Уведомлен о подтверждении"
+msgstr "Удаление подкатегории"
+
+#: hrbot/models.py:49
+#, fuzzy
+#| msgid "Пользователи"
+msgid "Telegram Пользователь"
+msgstr "Пользователи"
+
+#: hrbot/models.py:50
+#, fuzzy
+#| msgid "Пользователи"
+msgid "Telegram Пользователи"
+msgstr "Пользователи"
+
+#: hrbot/models.py:70
+msgid "Текст вопроса"
+msgstr ""
+
+#: hrbot/models.py:77
+msgid "Варианты ответа (JSON list)"
+msgstr ""
+
+#: hrbot/models.py:78
+msgid ""
+"Список строк с вариантами ответа, например [\"Да\", \"Нет\", \"Затрудняюсь "
+"ответить\"] или [\"1\", \"2\", \"3\", \"4\", \"5\"]. Оставьте пустым для "
+"свободного ответа."
+msgstr ""
+
+#: hrbot/models.py:83
+msgid "Вопрос"
+msgstr ""
+
+#: hrbot/models.py:84
+msgid "Вопросы"
+msgstr ""
+
+#: hrbot/models.py:98
+msgid "Оценщик (TG User)"
+msgstr ""
+
+#: hrbot/models.py:101
+msgid "Имя оцениваемого (текст)"
+msgstr ""
+
+#: hrbot/models.py:109
+msgid "Сотрудник (объект User)"
+msgstr ""
+
+#: hrbot/models.py:116
+#, fuzzy
+#| msgid "Имя пользователя"
+msgid "Использованный опросник"
+msgstr "Имя пользователя"
+
+#: hrbot/models.py:125
+msgid "Роль (контекст)"
+msgstr ""
+
+#: hrbot/models.py:128
+msgid "Ответы (ID вопроса -> ответ)"
+msgstr ""
+
+#: hrbot/models.py:129
+msgid "Время оценки"
+msgstr ""
+
+#: hrbot/models.py:134
+#, fuzzy
+#| msgid "Оценка времени"
+msgid "Оценки"
+msgstr "Оценка времени"
+
+#: hrbot/signals.py:90
+msgid "✅ Ваш аккаунт подтвержден! Теперь вам доступны все функции бота."
+msgstr ""
+
+#: hrbot/signals.py:101
+msgid ""
+"Пожалуйста, отправьте команду /start, чтобы начать работу или увидеть "
+"главное меню."
+msgstr ""
+
+#: room/admin.py:26
+msgid "Участников"
+msgstr ""
+
+#: room/admin.py:29
+msgid "Архивировать выбранные комнаты"
+msgstr ""
+
+#: room/admin.py:32
+#, python-format
+msgid "%(count)d комнат было архивировано."
+msgstr ""
+
+#: room/admin.py:34
+msgid "Восстановить выбранные комнаты из архива"
+msgstr ""
+
+#: room/admin.py:37
+#, python-format
+msgid "%(count)d комнат было восстановлено."
+msgstr ""
+
+#: room/admin.py:58 room/admin.py:106 room/admin.py:144 room/models.py:65
+#: room/models.py:100 room/models.py:114 tasks/views/api.py:255
+#: templates/users/user_list.html:26 user_profiles/admin.py:249
+#: user_profiles/models.py:112 user_profiles/models.py:249
+#, fuzzy
+#| msgid "Пользователи"
+msgid "Пользователь"
+msgstr "Пользователи"
+
+#: room/admin.py:63 room/admin.py:111 room/models.py:64 room/models.py:101
+msgid "Комната"
+msgstr ""
+
+#: room/admin.py:70 room/models.py:71
+msgid "В ответ на"
+msgstr ""
+
+#: room/admin.py:84 room/models.py:66
+#, fuzzy
+#| msgid "Описание"
+msgid "Содержание"
+msgstr "Описание"
+
+#: room/admin.py:118
+#, fuzzy
+#| msgid "Удаление кампании"
+msgid "Последнее сообщение"
+msgstr "Удаление кампании"
+
+#: room/admin.py:137 room/models.py:113
+msgid "Сообщение"
+msgstr ""
+
+#: room/apps.py:8 room/models.py:30 templates/room/rooms.html:3
+#: templates/room/rooms.html:6
+msgid "Чат-комнаты"
+msgstr ""
+
+#: room/consumers.py:493 room/consumers.py:502 room/consumers.py:512
+#, fuzzy
+#| msgid "Удаление пользователя"
+msgid "[удаленный пользователь]"
+msgstr "Удаление пользователя"
+
+#: room/consumers.py:515
+msgid "[удалено]"
+msgstr ""
+
+#: room/consumers.py:521
+msgid "[не найдено]"
+msgstr ""
+
+#: room/consumers.py:524
+msgid "[ошибка загрузки ответа]"
+msgstr ""
+
+#: room/consumers.py:550
+msgid "Файл недоступен"
+msgstr ""
+
+#: room/consumers.py:580 templates/includes/message.html:25
+#: templates/includes/messages_list.html:43
+#, fuzzy
+#| msgid "Задача удалена!"
+msgid "Сообщение удалено"
+msgstr "Задача удалена!"
+
+#: room/forms.py:29
+msgid "Участники (для приватных комнат)"
+msgstr ""
+
+#: room/forms.py:30
+msgid ""
+"Выберите участников, если комната приватная (удерживайте Ctrl/Cmd для выбора "
+"нескольких)."
+msgstr ""
+
+#: room/forms.py:39
+#, fuzzy
+#| msgid "Название команды"
+msgid "Название новой комнаты..."
+msgstr "Название команды"
+
+#: room/forms.py:45 room/models.py:17
+#, fuzzy
+#| msgid "Название команды"
+msgid "Название комнаты"
+msgstr "Название команды"
+
+#: room/forms.py:46
+#, fuzzy
+#| msgid "Создать подкатегорию"
+msgid "Сделать приватной?"
+msgstr "Создать подкатегорию"
+
+#: room/forms.py:49
+msgid ""
+"Только добавленные участники смогут видеть приватную комнату и сообщения в "
+"ней."
+msgstr ""
+
+#: room/forms.py:67
+#, fuzzy
+#| msgid "Дата завершения не может быть раньше даты начала."
+msgid "Название комнаты не может быть пустым."
+msgstr "Дата завершения не может быть раньше даты начала."
+
+#: room/forms.py:81
+msgid "Для приватной комнаты необходимо выбрать хотя бы одного участника."
+msgstr ""
+
+#: room/models.py:18
+msgid "Slug (URL)"
+msgstr ""
+
+#: room/models.py:19
+msgid "Приватная?"
+msgstr ""
+
+#: room/models.py:21 tasks/admin.py:113 tasks/forms.py:598
+#: templates/reports/active_tasks_report.html:45
+#: templates/reports/completed_tasks_report.html:42
+#: templates/reports/delay_reasons_report.html:46
+#: templates/reports/issues_report.html:42
+#: templates/reports/overdue_tasks_report.html:43
+#: templates/tasks/task_detail.html:99 templates/users/team_list.html:29
+#: user_profiles/forms.py:35 user_profiles/models.py:158
+msgid "Участники"
+msgstr ""
+
+#: room/models.py:23 templates/tasks/task_detail.html:143
+#, fuzzy
+#| msgid "Создатель"
+msgid "Создана"
+msgstr "Создатель"
+
+#: room/models.py:24 templates/tasks/task_detail.html:172
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Обновлена"
+msgstr "Дата обновления"
+
+#: room/models.py:25
+msgid "В архиве?"
+msgstr ""
+
+#: room/models.py:29
+msgid "Чат-комната"
+msgstr ""
+
+#: room/models.py:68
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Добавлено"
+msgstr "Дата обновления"
+
+#: room/models.py:69 templates/includes/message.html:45
+#: templates/includes/messages_list.html:50
+#, fuzzy
+#| msgid "Редактировать"
+msgid "Отредактировано"
+msgstr "Редактировать"
+
+#: room/models.py:70
+#, fuzzy
+#| msgid "Удаление роли"
+msgid "Удалено?"
+msgstr "Удаление роли"
+
+#: room/models.py:76
+#, fuzzy
+#| msgid "Создание роли"
+msgid "Сообщение чата"
+msgstr "Создание роли"
+
+#: room/models.py:77
+msgid "Сообщения чата"
+msgstr ""
+
+#: room/models.py:93
+msgid "System"
+msgstr ""
+
+#: room/models.py:94
+msgid "[Файл]"
+msgstr ""
+
+#: room/models.py:102
+msgid "Последнее прочитанное"
+msgstr ""
+
+#: room/models.py:103
+msgid "Время последнего прочтения"
+msgstr ""
+
+#: room/models.py:107
+#, fuzzy
+#| msgid "Статус задачи"
+msgid "Статус прочтения"
+msgstr "Статус задачи"
+
+#: room/models.py:108
+#, fuzzy
+#| msgid "Статус задачи"
+msgid "Статусы прочтения"
+msgstr "Статус задачи"
+
+#: room/models.py:115
+msgid "Эмодзи"
+msgstr ""
+
+#: room/models.py:116
+#, fuzzy
+#| msgid "Создатель"
+msgid "Создано"
+msgstr "Создатель"
+
+#: room/models.py:121
+msgid "Реакция"
+msgstr ""
+
+#: room/models.py:122
+msgid "Реакции"
+msgstr ""
+
+#: room/views.py:74
+#, fuzzy
+#| msgid "Вы не имеете доступа к этой задаче."
+msgid "У вас нет доступа к этой приватной комнате."
+msgstr "Вы не имеете доступа к этой задаче."
+
+#: room/views.py:155
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Комната '%(name)s' успешно создана."
+msgstr "Задача успешно создана!"
+
+#: room/views.py:160
+msgid "Произошла ошибка при создании комнаты."
+msgstr ""
+
+#: tasks/admin.py:19 tasks/models.py:448
+#, fuzzy
+#| msgid "Фотография к задаче"
+msgid "Фотография"
+msgstr "Фотография к задаче"
+
+#: tasks/admin.py:19 templates/tasks/task_detail.html:187
+#: templates/tasks/task_detail.html:242 templates/tasks/task_form.html:69
+#, fuzzy
+#| msgid "Фотографии к задачам"
+msgid "Фотографии"
+msgstr "Фотографии к задачам"
+
+#: tasks/admin.py:21 tasks/admin.py:182
+msgid "Миниатюра"
+msgstr ""
+
+#: tasks/admin.py:24
+#, fuzzy
+#| msgid "Имя пользователя"
+msgid "Роль пользователя"
+msgstr "Имя пользователя"
+
+#: tasks/admin.py:24
+#, fuzzy
+#| msgid "Нет пользователей."
+msgid "Роли пользователей"
+msgstr "Нет пользователей."
+
+#: tasks/admin.py:30
+msgid "Даты"
+msgstr "Даты"
+
+#: tasks/admin.py:32
+#, fuzzy
+#| msgid "Количество задач"
+msgid "Кол-во задач"
+msgstr "Количество задач"
+
+#: tasks/admin.py:51
+msgid "Классификация и Статус"
+msgstr ""
+
+#: tasks/admin.py:51
+msgid "Сроки и Оценка"
+msgstr ""
+
+#: tasks/admin.py:51 tasks/admin.py:164
+msgid "Системная информация"
+msgstr "Системная информация"
+
+#: tasks/admin.py:90 templates/admin/tasks/app_index.html:12
+#: templates/admin/tasks/change_list_with_reports.html:13
+#, fuzzy
+#| msgid "Отчет по статусам задач"
+msgid "Отчеты по задачам"
+msgstr "Отчет по статусам задач"
+
+#: tasks/admin.py:114 tasks/filters.py:87 tasks/forms.py:282 tasks/models.py:83
+#: tasks/models.py:148 tasks/views/api.py:183
+#: templates/includes/kanban_board.html:36
+#: templates/includes/task_list_table.html:10
+#: templates/reports/active_tasks_report.html:42
+#: templates/reports/cancelled_tasks_report.html:39
+#: templates/reports/completed_tasks_report.html:39
+#: templates/reports/delay_reasons_report.html:43
+#: templates/reports/issues_report.html:39
+#: templates/reports/overdue_tasks_report.html:40
+msgid "Проект"
+msgstr ""
+
+#: tasks/admin.py:115 tasks/filters.py:100 tasks/models.py:163
+#: templates/reports/cancelled_tasks_report.html:42
+#: templates/tasks/task_detail.html:118
 msgid "Создатель"
 msgstr "Создатель"
 
-#: .\templates\tasks\task_list.html:21
-msgid "Переключить вид"
-msgstr "Переключить вид"
+#: tasks/admin.py:118
+msgid "Отметить выбранные задачи как 'Выполнена'"
+msgstr ""
 
-#: .\templates\tasks\task_list.html:37
-msgid "Действия"
-msgstr "Действия"
+#: tasks/admin.py:127
+#, python-brace-format
+msgid "{updated_count} задач успешно отмечены как выполненные."
+msgstr ""
 
-#: .\templates\tasks\task_list.html:70
-msgid "Нет задач."
-msgstr "Нет задач."
+#: tasks/admin.py:129
+msgid "Отметить выбранные задачи как 'В работе'"
+msgstr ""
 
-#: .\templates\tasks\task_list.html:119
-msgid "Нет задач в этом статусе"
-msgstr "Нет задач в этом статусе"
+#: tasks/admin.py:138
+#, python-brace-format
+msgid "{updated_count} задач успешно переведены в статус 'В работе'."
+msgstr ""
 
-#: .\templates\tasks\task_summary_report.html:4
-msgid "Отчет по статусам задач"
-msgstr "Отчет по статусам задач"
+#: tasks/admin.py:141
+msgid "Перейти к отчету: Просроченные задачи"
+msgstr ""
 
-#: .\templates\tasks\task_summary_report.html:7
-msgid "Сводка задач по статусам"
-msgstr "Сводка задач по статусам"
+#: tasks/admin.py:145
+#, fuzzy
+#| msgid "Нет категорий задач."
+msgid "Перейти к отчету: Активные задачи"
+msgstr "Нет категорий задач."
 
-#: .\templates\tasks\task_summary_report.html:14
-msgid "Статус задачи"
-msgstr "Статус задачи"
+#: tasks/admin.py:174 tasks/models.py:385 tasks/models.py:411
+#: tasks/models.py:446 tasks/views/report.py:348 tasks/views/task.py:138
+#: user_profiles/admin.py:48 user_profiles/admin.py:240
+#: user_profiles/models.py:242
+msgid "Задача"
+msgstr "Задача"
 
-#: .\templates\tasks\task_summary_report.html:17
-msgid "Количество задач"
-msgstr "Количество задач"
+#: tasks/admin.py:190 tasks/models.py:447
+msgid "Загрузил"
+msgstr ""
 
-#: .\templates\tasks\task_summary_report.html:40
-msgid "Нет данных для отчета."
-msgstr "Нет данных для отчета."
+#: tasks/apps.py:8
+#, fuzzy
+#| msgid "Удаление задачи"
+msgid "Управление Задачами"
+msgstr "Удаление задачи"
 
-#: .\templates\users\login.html:18
-msgid "Sign in to your account"
-msgstr "Вход в аккаунт"
-
-#: .\templates\users\login.html:22
-msgid "Your username"
-msgstr "Ваше имя пользователя"
-
-#: .\templates\users\login.html:23
-msgid "puppetmaster"
-msgstr "puppetmaster"
-
-#: .\templates\users\login.html:30
-msgid "Forgot password?"
-msgstr "Забыли пароль?"
-
-#: .\templates\users\login.html:33
-msgid "Sign in"
-msgstr "Войти"
-
-#: .\templates\users\login.html:36
-msgid "Don’t have an account yet?"
-msgstr "Еще нет аккаунта?"
-
-#: .\templates\users\login.html:36
-msgid "Sign up"
-msgstr "Зарегистрироваться"
-
-#: .\templates\users\role_list.html:6 .\user_profiles\models.py:51
-msgid "Роли"
-msgstr "Роли"
-
-#: .\templates\users\role_list.html:15
-msgid "Создать новую роль"
-msgstr "Создать новую роль"
-
-#: .\templates\users\role_list.html:47
-msgid "Удалить роль"
-msgstr "Удалить роль"
-
-#: .\templates\users\role_list.html:56
-msgid "Нет ролей."
-msgstr "Нет ролей."
-
-#: .\templates\users\team_list.html:6 .\user_profiles\models.py:38
-msgid "Команды"
-msgstr "Команды"
-
-#: .\templates\users\team_list.html:15
-msgid "Создать новую команду"
-msgstr "Создать новую команду"
-
-#: .\templates\users\team_list.html:17
-msgid "Создать команду"
-msgstr "Создать команду"
-
-#: .\templates\users\team_list.html:30
-msgid "Лидер команды"
-msgstr "Лидер команды"
-
-#: .\templates\users\team_list.html:34
-msgid "Нет лидера"
-msgstr "Нет лидера"
-
-#: .\templates\users\team_list.html:54
-msgid "Удалить команду"
-msgstr "Удалить команду"
-
-#: .\templates\users\team_list.html:63
-msgid "Нет команд."
-msgstr "Нет команд."
-
-#: .\templates\users\user_list.html:6
-msgid "Пользователи"
-msgstr "Пользователи"
-
-#: .\templates\users\user_list.html:15
-msgid "Создать нового пользователя"
-msgstr "Создать нового пользователя"
-
-#: .\templates\users\user_list.html:17
-msgid "Создать пользователя"
-msgstr "Создать пользователя"
-
-#: .\templates\users\user_list.html:34
-msgid "Email"
-msgstr "Email"
-
-#: .\templates\users\user_list.html:35 .\user_profiles\models.py:50
-msgid "Роль"
-msgstr "Роль"
-
-#: .\templates\users\user_list.html:39
-msgid "Нет роли"
-msgstr "Нет роли"
-
-#: .\templates\users\user_list.html:67
-msgid "Нет пользователей."
-msgstr "Нет пользователей."
-
-#: .\user_profiles\models.py:31
-msgid "Название команды"
-msgstr "Название команды"
-
-#: .\user_profiles\models.py:34
-msgid "Описание команды"
-msgstr "Описание команды"
-
-#: .\user_profiles\models.py:47
-msgid "Название роли"
+#: tasks/filters.py:30 tasks/forms.py:112 tasks/models.py:36
+#: templates/tasks/project_list.html:27
+#, fuzzy
+#| msgid "Название роли"
+msgid "Название проекта"
 msgstr "Название роли"
 
-#: .\user_profiles\models.py:63
-msgid "Наблюдатель"
-msgstr "Наблюдатель"
+#: tasks/filters.py:31
+msgid "Найти проект..."
+msgstr ""
 
-#: .\user_profiles\models.py:64
+#: tasks/filters.py:40 tasks/forms.py:171 tasks/models.py:95
+#: templates/tasks/category_list.html:27
+msgid "Название категории"
+msgstr "Название категории"
+
+#: tasks/filters.py:41
+#, fuzzy
+#| msgid "Удалить категорию"
+msgid "Найти категорию..."
+msgstr "Удалить категорию"
+
+#: tasks/filters.py:50 tasks/forms.py:201 tasks/forms.py:210
+#: tasks/models.py:113
+msgid "Название подкатегории"
+msgstr "Название подкатегории"
+
+#: tasks/filters.py:51
+#, fuzzy
+#| msgid "Удалить подкатегорию"
+msgid "Найти подкатегорию..."
+msgstr "Удалить подкатегорию"
+
+#: tasks/filters.py:67 templates/base.html:279
+msgid "Поиск"
+msgstr ""
+
+#: tasks/filters.py:68
+#, fuzzy
+#| msgid "Название кампании"
+msgid "Номер, название, описание..."
+msgstr "Название кампании"
+
+#: tasks/filters.py:71
+msgid "Срок не ранее"
+msgstr ""
+
+#: tasks/filters.py:75
+msgid "Срок не позднее"
+msgstr ""
+
+#: tasks/filters.py:79
+#, fuzzy
+#| msgid "Создание роли"
+msgid "Создана после"
+msgstr "Создание роли"
+
+#: tasks/filters.py:83
+#, fuzzy
+#| msgid "Создание роли"
+msgid "Создана до"
+msgstr "Создание роли"
+
+#: tasks/filters.py:96 tasks/forms.py:305 tasks/models.py:150
+msgid "Подкатегория"
+msgstr "Подкатегория"
+
+#: tasks/filters.py:108 tasks/forms.py:334 tasks/forms.py:408
+#: templates/tasks/task_detail.html:103 user_profiles/models.py:232
 msgid "Ответственный"
 msgstr "Ответственный"
 
-#: .\user_profiles\models.py:71
+#: tasks/filters.py:116 templates/includes/kanban_board.html:57
+#: templates/reports/employee_workload_report.html:30
+#: templates/reports/team_performance_report.html:30
+#: user_profiles/models.py:233
+msgid "Исполнитель"
+msgstr "Исполнитель"
+
+#: tasks/filters.py:124 user_profiles/models.py:234
+msgid "Наблюдатель"
+msgstr "Наблюдатель"
+
+#: tasks/filters.py:134
+msgid "Участник (любая роль)"
+msgstr ""
+
+#: tasks/filters.py:145 tasks/forms.py:272 tasks/models.py:155
+#: templates/includes/kanban_board.html:75
+#: templates/includes/task_list_table.html:12
+#: templates/reports/active_tasks_report.html:30
+#: templates/tasks/task_detail.html:61
+msgid "Приоритет"
+msgstr "Приоритет"
+
+#: tasks/forms.py:92
+#, fuzzy
+#| msgid "Название роли"
+msgid "Введите название проекта"
+msgstr "Название роли"
+
+#: tasks/forms.py:97
+msgid "Добавьте описание целей и задач проекта (необязательно)"
+msgstr ""
+
+#: tasks/forms.py:114 tasks/forms.py:540 tasks/models.py:38 tasks/models.py:158
+#: templates/tasks/project_list.html:28
+msgid "Дата начала"
+msgstr "Дата начала"
+
+#: tasks/forms.py:115 tasks/models.py:39 tasks/models.py:161
+#: templates/reports/completed_tasks_report.html:45
+#: templates/tasks/project_list.html:29
+msgid "Дата завершения"
+msgstr "Дата завершения"
+
+#: tasks/forms.py:119
+msgid "Укажите уникальное и понятное название для этого проекта."
+msgstr ""
+
+#: tasks/forms.py:120
+msgid "Дата, когда планируется или фактически начались работы по проекту."
+msgstr ""
+
+#: tasks/forms.py:121
+msgid "Планируемая или фактическая дата завершения всех работ по проекту."
+msgstr ""
+
+#: tasks/forms.py:144 tasks/models.py:48 tasks/models.py:178
+msgid "Дата завершения не может быть раньше даты начала."
+msgstr "Дата завершения не может быть раньше даты начала."
+
+#: tasks/forms.py:145
+#, fuzzy
+#| msgid "Дата завершения не может быть раньше даты начала."
+msgid "Дата начала не может быть позже даты завершения."
+msgstr "Дата завершения не может быть раньше даты начала."
+
+#: tasks/forms.py:162
+#, fuzzy
+#| msgid "Название категории"
+msgid "Название категории задач"
+msgstr "Название категории"
+
+#: tasks/forms.py:167
+msgid "Краткое описание назначения категории (необязательно)"
+msgstr ""
+
+#: tasks/forms.py:187
+#, fuzzy
+#| msgid "Создать категорию"
+msgid "Родительская категория"
+msgstr "Создать категорию"
+
+#: tasks/forms.py:189
+#, fuzzy
+#| msgid "Вы уверены, что хотите удалить категорию"
+msgid "Выберите родительскую категорию..."
+msgstr "Вы уверены, что хотите удалить категорию"
+
+#: tasks/forms.py:192
+#, fuzzy
+#| msgid "Подкатегория не принадлежит выбранной категории."
+msgid "Выберите категорию, к которой относится эта подкатегория."
+msgstr "Подкатегория не принадлежит выбранной категории."
+
+#: tasks/forms.py:206
+msgid "Краткое описание назначения подкатегории (необязательно)"
+msgstr ""
+
+#: tasks/forms.py:220
+#, fuzzy
+#| msgid "Подкатегория с таким названием уже существует в этой категории."
+msgid "Подкатегория с таким названием уже существует в выбранной категории."
+msgstr "Подкатегория с таким названием уже существует в этой категории."
+
+#: tasks/forms.py:234 tasks/models.py:152
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Название задачи"
+msgstr "Описание задачи"
+
+#: tasks/forms.py:238
+msgid "Введите краткое и понятное название задачи"
+msgstr ""
+
+#: tasks/forms.py:240
+msgid "Основное название, которое будет отображаться в списках задач."
+msgstr ""
+
+#: tasks/forms.py:243 tasks/models.py:153
+msgid "Описание задачи"
+msgstr "Описание задачи"
+
+#: tasks/forms.py:248
+msgid ""
+"Добавьте подробное описание задачи: что нужно сделать, шаги выполнения, "
+"критерии приемки, полезные ссылки и т.д."
+msgstr ""
+
+#: tasks/forms.py:250
+msgid "Предоставьте всю необходимую информацию для выполнения задачи."
+msgstr ""
+
+#: tasks/forms.py:253 tasks/models.py:156
+#: templates/includes/kanban_board.html:85
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Срок выполнения"
+msgstr "Выполнена"
+
+#: tasks/forms.py:260
+msgid "Укажите дату и время, к которому задача должна быть завершена."
+msgstr ""
+
+#: tasks/forms.py:263
+msgid "Планируемое время"
+msgstr ""
+
+#: tasks/forms.py:265
+msgid ""
+"Оценка времени в формате 'Xd Yh Zm' (или 'Xд Yч Zм'). Например: 1d 2h 30m, "
+"2ч 15м, 45m."
+msgstr ""
+
+#: tasks/forms.py:268
+msgid "Напр., 2h 30m"
+msgstr ""
+
+#: tasks/forms.py:277
+#, fuzzy
+#| msgid "Редактировать задачу"
+msgid "Укажите важность задачи."
+msgstr "Редактировать задачу"
+
+#: tasks/forms.py:288
+msgid "Выберите проект (необязательно)..."
+msgstr ""
+
+#: tasks/forms.py:291
+msgid "Свяжите задачу с конкретным проектом, если применимо."
+msgstr ""
+
+#: tasks/forms.py:299
+msgid "Выберите категорию (необязательно)..."
+msgstr ""
+
+#: tasks/forms.py:302
+msgid "Выберите основную категорию для классификации задачи."
+msgstr ""
+
+#: tasks/forms.py:311
+#, fuzzy
+#| msgid "Добавить категорию"
+msgid "Сначала выберите категорию..."
+msgstr "Добавить категорию"
+
+#: tasks/forms.py:314
+msgid ""
+"Выберите подкатегорию для более точной классификации (доступно после выбора "
+"категории)."
+msgstr ""
+
+#: tasks/forms.py:323
+msgid "Начните вводить имя, фамилию или email..."
+msgstr ""
+
+#: tasks/forms.py:349
+msgid "Выберите ответственного..."
+msgstr ""
+
+#: tasks/forms.py:354
+#, fuzzy
+#| msgid "Вы уверены, что хотите удалить пользователя"
+msgid "Выберите ответственного пользователя."
+msgstr "Вы уверены, что хотите удалить пользователя"
+
+#: tasks/forms.py:360 tasks/forms.py:415 templates/tasks/task_detail.html:111
+#, fuzzy
+#| msgid "Исполнитель"
+msgid "Исполнители"
+msgstr "Исполнитель"
+
+#: tasks/forms.py:373
+msgid "Выберите одного или нескольких исполнителей..."
+msgstr ""
+
+#: tasks/forms.py:378
+msgid "Выберите пользователей, которые будут выполнять работу по задаче."
+msgstr ""
+
+#: tasks/forms.py:383 tasks/forms.py:422 templates/tasks/task_detail.html:127
+#, fuzzy
+#| msgid "Наблюдатель"
+msgid "Наблюдатели"
+msgstr "Наблюдатель"
+
+#: tasks/forms.py:396
+msgid "Выберите наблюдателей (необязательно)..."
+msgstr ""
+
+#: tasks/forms.py:401
+msgid ""
+"Выберите пользователей, которые будут получать уведомления об изменениях в "
+"этой задаче."
+msgstr ""
+
+#: tasks/forms.py:412
+msgid ""
+"Функционал выбора пользователя недоступен (модуль user_profiles не найден)."
+msgstr ""
+
+#: tasks/forms.py:419 tasks/forms.py:426
+#, fuzzy
+#| msgid "Роли пользователей в задачах"
+msgid "Функционал выбора пользователей недоступен."
+msgstr "Роли пользователей в задачах"
+
+#: tasks/forms.py:541
+msgid "Дата, когда планируется начать работу над задачей."
+msgstr ""
+
+#: tasks/forms.py:566
+msgid "Детали и классификация"
+msgstr ""
+
+#: tasks/forms.py:585
+msgid "Сроки и оценка"
+msgstr ""
+
+#: tasks/forms.py:645
+msgid ""
+"Неверный формат времени. Используйте комбинацию 'Xd Yh Zm' (или 'Xд Yч Zм'). "
+"Примеры: '1d 2h 30m', '2ч', '45м'."
+msgstr ""
+
+#: tasks/forms.py:665
+#, fuzzy
+#| msgid "Подкатегория не принадлежит выбранной категории."
+msgid "Нельзя выбрать подкатегорию без выбора родительской категории."
+msgstr "Подкатегория не принадлежит выбранной категории."
+
+#: tasks/forms.py:668
+#, fuzzy
+#| msgid "Подкатегория не принадлежит выбранной категории."
+msgid "Выбранная подкатегория не принадлежит выбранной категории."
+msgstr "Подкатегория не принадлежит выбранной категории."
+
+#: tasks/forms.py:676
+#, fuzzy
+#| msgid "Дата завершения не может быть раньше даты начала."
+msgid "Срок выполнения (дата) не может быть раньше даты начала."
+msgstr "Дата завершения не может быть раньше даты начала."
+
+#: tasks/forms.py:677
+#, fuzzy
+#| msgid "Дата завершения не может быть раньше дедлайна."
+msgid "Дата начала не может быть позже срока выполнения (даты)."
+msgstr "Дата завершения не может быть раньше дедлайна."
+
+#: tasks/forms.py:691
+msgid "Ответственный пользователь не может быть одновременно исполнителем."
+msgstr ""
+
+#: tasks/forms.py:692
+#, fuzzy
+#| msgid ""
+#| "Задача не может быть назначена одновременно на пользователя и команду."
+msgid "Этот пользователь не может быть одновременно исполнителем."
+msgstr "Задача не может быть назначена одновременно на пользователя и команду."
+
+#: tasks/forms.py:696
+#, fuzzy
+#| msgid ""
+#| "Задача не может быть назначена одновременно на пользователя и команду."
+msgid "Ответственный пользователь не может быть одновременно наблюдателем."
+msgstr "Задача не может быть назначена одновременно на пользователя и команду."
+
+#: tasks/forms.py:697
+#, fuzzy
+#| msgid ""
+#| "Задача не может быть назначена одновременно на пользователя и команду."
+msgid "Этот пользователь не может быть одновременно наблюдателем."
+msgstr "Задача не может быть назначена одновременно на пользователя и команду."
+
+#: tasks/forms.py:852
+msgid "Краткое описание фото (необязательно)"
+msgstr ""
+
+#: tasks/forms.py:856
+msgid "Файл фото"
+msgstr ""
+
+#: tasks/forms.py:857
+#, fuzzy
+#| msgid "Описание фотографии"
+msgid "Описание фото"
+msgstr "Описание фотографии"
+
+#: tasks/forms.py:860
+msgid "Загрузите изображение (форматы: JPG, PNG, GIF, WebP, AVIF)."
+msgstr ""
+
+#: tasks/forms.py:877
+msgid "Введите ваш комментарий здесь..."
+msgstr ""
+
+#: tasks/forms.py:879 tasks/models.py:424
+#, fuzzy
+#| msgid "Нет команд."
+msgid "Текст комментария"
+msgstr "Нет команд."
+
+#: tasks/models.py:26 templates/includes/kanban_board.html:53
+#: templates/reports/issues_report.html:30 user_profiles/models.py:15
+msgid "Дата создания"
+msgstr "Дата создания"
+
+#: tasks/models.py:27 user_profiles/models.py:16
+msgid "Дата обновления"
+msgstr "Дата обновления"
+
+#: tasks/models.py:37
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Описание проекта"
+msgstr "Описание задачи"
+
+#: tasks/models.py:84 tasks/views/project.py:28 templates/base.html:82
+#: templates/base.html:253 templates/tasks/project_list.html:3
+#: templates/tasks/project_list.html:6
+msgid "Проекты"
+msgstr ""
+
+#: tasks/models.py:96
+msgid "Описание категории"
+msgstr "Описание категории"
+
+#: tasks/models.py:102 tasks/views/api.py:197
+msgid "Категория задач"
+msgstr "Категория задач"
+
+#: tasks/models.py:103
+msgid "Категории задач"
+msgstr "Категории задач"
+
+#: tasks/models.py:114
+msgid "Описание подкатегории"
+msgstr "Описание подкатегории"
+
+#: tasks/models.py:120
+msgid "Подкатегория задач"
+msgstr "Подкатегория задач"
+
+#: tasks/models.py:121 templates/tasks/subcategory_list.html:4
+msgid "Подкатегории задач"
+msgstr "Подкатегории задач"
+
+#: tasks/models.py:127 templates/checklists/template_detail.html:11
+#, fuzzy
+#| msgid "Категории"
+msgid "Без категории"
+msgstr "Категории"
+
+#: tasks/models.py:134 templates/includes/kanban_board.html:80
+msgid "Низкий"
+msgstr "Низкий"
+
+#: tasks/models.py:135
+msgid "Ниже среднего"
+msgstr "Ниже среднего"
+
+#: tasks/models.py:136 templates/includes/kanban_board.html:78
+msgid "Средний"
+msgstr "Средний"
+
+#: tasks/models.py:137
+msgid "Выше среднего"
+msgstr "Выше среднего"
+
+#: tasks/models.py:138 templates/includes/kanban_board.html:76
+msgid "Высокий"
+msgstr "Высокий"
+
+#: tasks/models.py:141
+msgid "Новая"
+msgstr "Новая"
+
+#: tasks/models.py:142
+msgid "В работе"
+msgstr "В работе"
+
+#: tasks/models.py:143
+msgid "Отложена"
+msgstr "Отложена"
+
+#: tasks/models.py:144
+msgid "Выполнена"
+msgstr "Выполнена"
+
+#: tasks/models.py:145
+msgid "Отменена"
+msgstr "Отменена"
+
+#: tasks/models.py:146 templates/includes/task_list_table.html:46
+msgid "Просрочена"
+msgstr "Просрочена"
+
+#: tasks/models.py:151 templates/reports/active_tasks_report.html:36
+#: templates/reports/cancelled_tasks_report.html:33
+#: templates/reports/completed_tasks_report.html:33
+#: templates/reports/delay_reasons_report.html:37
+#: templates/reports/issues_report.html:33
+#: templates/reports/overdue_tasks_report.html:34
+#: templates/reports/task_duration_report.html:33
+msgid "Номер задачи"
+msgstr "Номер задачи"
+
+#: tasks/models.py:162
+msgid "Оценка времени"
+msgstr "Оценка времени"
+
+#: tasks/models.py:173
+#, fuzzy
+#| msgid "Дата завершения не может быть раньше даты начала."
+msgid "Срок выполнения не может быть раньше даты начала."
+msgstr "Дата завершения не может быть раньше даты начала."
+
+#: tasks/models.py:183
+msgid "Подкатегория не принадлежит выбранной категории."
+msgstr "Подкатегория не принадлежит выбранной категории."
+
+#: tasks/models.py:386 tasks/views/task.py:79 templates/base.html:73
+#: templates/base.html:248 templates/tasks/task_list.html:5
+#: templates/tasks/task_list.html:9
+msgid "Задачи"
+msgstr "Задачи"
+
+#: tasks/models.py:418 templates/tasks/task_detail.html:263
+msgid "Автор"
+msgstr ""
+
+#: tasks/models.py:430
+#, fuzzy
+#| msgid "Фотография к задаче"
+msgid "Комментарий к задаче"
+msgstr "Фотография к задаче"
+
+#: tasks/models.py:431
+#, fuzzy
+#| msgid "Фотографии к задачам"
+msgid "Комментарии к задачам"
+msgstr "Фотографии к задачам"
+
+#: tasks/models.py:440 templates/tasks/task_detail.html:267
+#, fuzzy
+#| msgid "Удаление пользователя"
+msgid "Удаленный пользователь"
+msgstr "Удаление пользователя"
+
+#: tasks/models.py:449
+msgid "Описание фотографии"
+msgstr "Описание фотографии"
+
+#: tasks/models.py:452
+msgid "Фотография к задаче"
+msgstr "Фотография к задаче"
+
+#: tasks/models.py:453
+msgid "Фотографии к задачам"
+msgstr "Фотографии к задачам"
+
+#: tasks/models.py:459
+msgid "неизвестно"
+msgstr ""
+
+#: tasks/signals.py:37
+#, python-brace-format
+msgid "Задача '{task.task_number}': Выполнена"
+msgstr ""
+
+#: tasks/signals.py:39
+#, python-brace-format
+msgid ""
+"Задача '{task.task_number} ({task.project.name})' была отмечена как "
+"*Выполнена*.\n"
+"\n"
+msgstr ""
+
+#: tasks/signals.py:69 tasks/views/task.py:181
+msgid "Аноним"
+msgstr ""
+
+#: tasks/views/ajax.py:33
+#, fuzzy
+#| msgid "Вы не имеете доступа к этой задаче."
+msgid "У вас нет прав на изменение статуса этой задачи."
+msgstr "Вы не имеете доступа к этой задаче."
+
+#: tasks/views/ajax.py:37
+msgid "Ожидается JSON (application/json)"
+msgstr ""
+
+#: tasks/views/ajax.py:45
+msgid "Неверный формат JSON"
+msgstr ""
+
+#: tasks/views/ajax.py:51
+#, fuzzy, python-format
+#| msgid "Нет задач в этом статусе"
+msgid "Недопустимый статус: %s"
+msgstr "Нет задач в этом статусе"
+
+#: tasks/views/ajax.py:56
+#, fuzzy
+#| msgid "Статус задачи"
+msgid "Статус не изменился."
+msgstr "Статус задачи"
+
+#: tasks/views/ajax.py:94
+#, fuzzy
+#| msgid "Задача успешно создана!"
+msgid "Статус задачи успешно обновлен"
+msgstr "Задача успешно создана!"
+
+#: tasks/views/ajax.py:106
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Ошибка при сохранении задачи."
+msgstr "Описание задачи"
+
+#: tasks/views/api.py:171
+#, fuzzy
+#| msgid "Мой профиль"
+msgid "Без проекта"
+msgstr "Мой профиль"
+
+#: tasks/views/api.py:282 templates/users/team_list.html:28
+#: templates/users/user_list.html:29 user_profiles/admin.py:109
+#: user_profiles/admin.py:219 user_profiles/forms.py:47
+#: user_profiles/forms.py:73 user_profiles/forms.py:132
+#: user_profiles/forms.py:160 user_profiles/models.py:46
+#: user_profiles/models.py:86 user_profiles/models.py:166
+msgid "Отдел"
+msgstr ""
+
+#: tasks/views/api.py:295
+#, fuzzy
+#| msgid "Нет команд."
+msgid "Чат комната"
+msgstr "Нет команд."
+
+#: tasks/views/category.py:27 templates/tasks/category_list.html:3
+#: templates/tasks/category_list.html:6
+#, fuzzy
+#| msgid "Категории задач"
+msgid "Категории Задач"
+msgstr "Категории задач"
+
+#: tasks/views/category.py:36
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Категория '%(name)s' успешно создана."
+msgstr "Задача успешно создана!"
+
+#: tasks/views/category.py:40
+#, fuzzy
+#| msgid "Создание новой роли"
+msgid "Создание новой категории"
+msgstr "Создание новой роли"
+
+#: tasks/views/category.py:41 templates/tasks/category_list.html:13
+#: templates/tasks/category_list.html:19
+msgid "Создать категорию"
+msgstr "Создать категорию"
+
+#: tasks/views/category.py:57
+#, python-format
+msgid "Категория '%(name)s' успешно обновлена."
+msgstr ""
+
+#: tasks/views/category.py:61
+#, fuzzy
+#| msgid "Редактировать категорию"
+msgid "Редактирование категории"
+msgstr "Редактировать категорию"
+
+#: tasks/views/category.py:62 tasks/views/project.py:62 tasks/views/task.py:312
+#: templates/checklists/template_form.html:96
+#: templates/users/user_profile.html:37
+#, fuzzy
+#| msgid "Добавить кампанию"
+msgid "Сохранить изменения"
+msgstr "Добавить кампанию"
+
+#: tasks/views/category.py:81 templates/tasks/category_confirm_delete.html:3
+msgid "Удаление категории"
+msgstr "Удаление категории"
+
+#: tasks/views/category.py:87
+#, python-format
+msgid "Категория '%(name)s' была успешно удалена."
+msgstr ""
+
+#: tasks/views/project.py:36
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Проект '%(name)s' успешно создан."
+msgstr "Задача успешно создана!"
+
+#: tasks/views/project.py:40
+#, fuzzy
+#| msgid "Создание новой роли"
+msgid "Создание нового проекта"
+msgstr "Создание новой роли"
+
+#: tasks/views/project.py:41 templates/tasks/project_list.html:13
+#: templates/tasks/project_list.html:19
+#, fuzzy
+#| msgid "Создать роль"
+msgid "Создать проект"
+msgstr "Создать роль"
+
+#: tasks/views/project.py:57
+#, python-format
+msgid "Проект '%(name)s' успешно обновлен."
+msgstr ""
+
+#: tasks/views/project.py:61
+#, fuzzy
+#| msgid "Редактировать роль"
+msgid "Редактирование проекта"
+msgstr "Редактировать роль"
+
+#: tasks/views/project.py:82 templates/tasks/project_confirm_delete.html:3
+#, fuzzy
+#| msgid "Удаление роли"
+msgid "Удаление проекта"
+msgstr "Удаление роли"
+
+#: tasks/views/project.py:89
+#, python-format
+msgid "Проект '%(name)s' и все связанные задачи были успешно удалены."
+msgstr ""
+
+#: tasks/views/report.py:39 tasks/views/report.py:40
+msgid "Администрирование Sphinx"
+msgstr ""
+
+#: tasks/views/report.py:55
+#, fuzzy
+#| msgid "Категория задач"
+msgid "Экспорт задач в Excel"
+msgstr "Категория задач"
+
+#: tasks/views/report.py:120
+msgid "Произошла ошибка при экспорте в Excel: "
+msgstr ""
+
+#: tasks/views/report.py:126 templates/reports/completed_tasks_report.html:9
+#, fuzzy
+#| msgid "Удаление задачи"
+msgid "Отчет: Завершенные задачи"
+msgstr "Удаление задачи"
+
+#: tasks/views/report.py:160
+#, fuzzy
+#| msgid "Отчет по статусам задач"
+msgid "Отчет: Просроченные задачи"
+msgstr "Отчет по статусам задач"
+
+#: tasks/views/report.py:191
+#, fuzzy
+#| msgid "Отчет по статусам задач"
+msgid "Отчет: Активные задачи"
+msgstr "Отчет по статусам задач"
+
+#: tasks/views/report.py:222
+msgid "Отчет: Производительность исполнителей"
+msgstr ""
+
+#: tasks/views/report.py:247
+msgid "Отчет: Загрузка исполнителей"
+msgstr ""
+
+#: tasks/views/report.py:273
+#, fuzzy
+#| msgid "Отчет по статусам задач"
+msgid "Отчет: ABC-анализ задач"
+msgstr "Отчет по статусам задач"
+
+#: tasks/views/report.py:296
+msgid "Отчет: Соблюдение SLA"
+msgstr ""
+
+#: tasks/views/report.py:318
+msgid "График: Прогресс выполнения задач"
+msgstr ""
+
+#: tasks/views/report.py:327 templates/reports/abc_analysis_report.html:33
+#: templates/reports/sla_report.html:33
+#: templates/tasks/task_summary_report.html:17
+msgid "Количество задач"
+msgstr "Количество задач"
+
+#: tasks/views/report.py:328
+msgid "Ошибка при генерации графика."
+msgstr ""
+
+#: tasks/views/report.py:329
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет данных для построения графика."
+msgstr "Нет данных для отчета."
+
+#: tasks/views/report.py:337 templates/reports/gantt_chart.html:31
+msgid "Диаграмма Ганта"
+msgstr ""
+
+#: tasks/views/report.py:348 templates/tasks/task_detail.html:148
+#, fuzzy
+#| msgid "Дата начала"
+msgid "Начало"
+msgstr "Дата начала"
+
+#: tasks/views/report.py:348 templates/includes/task_list_table.html:13
+#: templates/reports/active_tasks_report.html:33
+#: templates/reports/delay_reasons_report.html:34
+#: templates/reports/overdue_tasks_report.html:31
+#: templates/tasks/task_detail.html:154
+#, fuzzy
+#| msgid "Сроки"
+msgid "Срок"
+msgstr "Сроки"
+
+#: tasks/views/report.py:351
+msgid "Ошибка при генерации диаграммы Ганта."
+msgstr ""
+
+#: tasks/views/report.py:352
+msgid ""
+"Нет данных для построения диаграммы Ганта (требуется дата начала и срок)."
+msgstr ""
+
+#: tasks/views/report.py:360
+msgid "Отчет: Длительность выполнения задач"
+msgstr ""
+
+#: tasks/views/report.py:392
+msgid "Отчет: Возможные баги/дефекты"
+msgstr ""
+
+#: tasks/views/report.py:413
+msgid "Отчет: Просроченные задачи (для анализа причин)"
+msgstr ""
+
+#: tasks/views/report.py:428
+msgid ""
+"Примечание: Для анализа причин задержки рекомендуется добавить "
+"соответствующее поле в модель Задачи."
+msgstr ""
+
+#: tasks/views/report.py:435
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Отчет: Отмененные задачи"
+msgstr "Описание задачи"
+
+#: tasks/views/report.py:455
+msgid "Отчет"
+msgstr ""
+
+#: tasks/views/report.py:460
+#, fuzzy
+#| msgid "Количество задач"
+msgid "Сводный отчет по задачам"
+msgstr "Количество задач"
+
+#: tasks/views/subcategory.py:24
+#, fuzzy
+#| msgid "Нет подкатегорий задач."
+msgid "Список Подкатегорий Задач"
+msgstr "Нет подкатегорий задач."
+
+#: tasks/views/subcategory.py:32
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Подкатегория '%(name)s' успешно создана!"
+msgstr "Задача успешно создана!"
+
+#: tasks/views/subcategory.py:37
+#, fuzzy
+#| msgid "Создать подкатегорию"
+msgid "Создать Подкатегорию"
+msgstr "Создать подкатегорию"
+
+#: tasks/views/subcategory.py:38 user_profiles/views.py:209
+#: user_profiles/views.py:322
+#, fuzzy
+#| msgid "Создатель"
+msgid "Создать"
+msgstr "Создатель"
+
+#: tasks/views/subcategory.py:51
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Подкатегория '%(name)s' успешно обновлена!"
+msgstr "Задача успешно создана!"
+
+#: tasks/views/subcategory.py:57
+#, fuzzy, python-format
+#| msgid "Редактировать подкатегорию"
+msgid "Редактировать Подкатегорию: %s"
+msgstr "Редактировать подкатегорию"
+
+#: tasks/views/subcategory.py:58 templates/users/team_form.html:28
+#: templates/users/user_form.html:19 user_profiles/views.py:239
+#: user_profiles/views.py:348
+msgid "Сохранить"
+msgstr "Сохранить"
+
+#: tasks/views/subcategory.py:70
+#, fuzzy
+#| msgid "Подкатегория задач"
+msgid "Подкатегория удалена!"
+msgstr "Подкатегория задач"
+
+#: tasks/views/subcategory.py:76
+#, fuzzy, python-format
+#| msgid "Удалить подкатегорию"
+msgid "Удалить Подкатегорию: %s"
+msgstr "Удалить подкатегорию"
+
+#: tasks/views/task.py:121
+#, fuzzy
+#| msgid "Вы не имеете доступа к этой задаче."
+msgid "У вас нет прав для просмотра этой задачи."
+msgstr "Вы не имеете доступа к этой задаче."
+
+#: tasks/views/task.py:164
+msgid "У вас нет прав для добавления комментария."
+msgstr ""
+
+#: tasks/views/task.py:166
+#, fuzzy
+#| msgid "Нет роли"
+msgid "Нет прав."
+msgstr "Нет роли"
+
+#: tasks/views/task.py:197
+#, fuzzy
+#| msgid "Задача успешно создана!"
+msgid "Комментарий успешно добавлен."
+msgstr "Задача успешно создана!"
+
+#: tasks/views/task.py:202
+msgid "Произошла ошибка при сохранении комментария."
+msgstr ""
+
+#: tasks/views/task.py:211
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "Пожалуйста, исправьте ошибки в форме комментария."
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: tasks/views/task.py:233 templates/tasks/task_form.html:32
+#, fuzzy
+#| msgid "Создание новой роли"
+msgid "Создание новой задачи"
+msgstr "Создание новой роли"
+
+#: tasks/views/task.py:234 templates/tasks/task_list.html:21
+#: templates/tasks/task_list.html:76
+msgid "Создать задачу"
+msgstr "Создать задачу"
+
+#: tasks/views/task.py:262
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Задача '%(number)s' успешно создана."
+msgstr "Задача успешно создана!"
+
+#: tasks/views/task.py:300
+#, fuzzy
+#| msgid "Вы не имеете доступа к этой задаче."
+msgid "У вас нет прав для редактирования этой задачи."
+msgstr "Вы не имеете доступа к этой задаче."
+
+#: tasks/views/task.py:311
+#, fuzzy
+#| msgid "Редактировать задачу"
+msgid "Редактирование задачи"
+msgstr "Редактировать задачу"
+
+#: tasks/views/task.py:340
+#, python-format
+msgid "Ошибка при удалении фото %(id)s."
+msgstr ""
+
+#: tasks/views/task.py:352
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Задача '%(number)s' успешно обновлена."
+msgstr "Задача успешно создана!"
+
+#: tasks/views/task.py:381
+#, fuzzy
+#| msgid "Вы не имеете доступа к этой задаче."
+msgid "У вас нет прав для удаления этой задачи."
+msgstr "Вы не имеете доступа к этой задаче."
+
+#: tasks/views/task.py:386 templates/tasks/task_confirm_delete.html:3
+msgid "Удаление задачи"
+msgstr "Удаление задачи"
+
+#: tasks/views/task.py:394
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Задача '%(number)s' успешно удалена."
+msgstr "Задача успешно создана!"
+
+#: tasks/views/task.py:398
+msgid "Произошла ошибка при удалении задачи."
+msgstr ""
+
+#: tasks/views/task.py:414
+msgid "У вас нет прав для выполнения этого действия над задачей."
+msgstr ""
+
+#: tasks/views/task.py:425 tasks/views/task.py:437
+#, python-format
+msgid "Задача '%(num)s' отмечена как выполненная."
+msgstr ""
+
+#: tasks/views/task.py:427
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Задача '%(num)s' уже была выполнена."
+msgstr "Задача успешно создана!"
+
+#: tasks/views/task.py:431 tasks/views/task.py:443
+#, python-format
+msgid "Задача '%(num)s' взята в работу."
+msgstr ""
+
+#: tasks/views/task.py:433
+#, python-format
+msgid "Невозможно начать выполнение задачи '%(num)s' в текущем статусе."
+msgstr ""
+
+#: tasks/views/task.py:440
+#, python-format
+msgid "Задача '%(num)s' возвращена в работу."
+msgstr ""
+
+#: tasks/views/task.py:450
+msgid "Ошибка при сохранении изменений задачи."
+msgstr ""
+
+#: templates/admin/tasks/app_index.html:9
+#: templates/checklists/history_list.html:42
+#: templates/checklists/template_list.html:23
+msgid "Отчеты"
+msgstr ""
+
+#: templates/admin/tasks/app_index.html:18
+#: templates/admin/tasks/report_list.html:34
+#, fuzzy
+#| msgid "Просрочена"
+msgid "Просроченные задачи"
+msgstr "Просрочена"
+
+#: templates/admin/tasks/change_list_with_reports.html:23
+msgid "Экспорт в Excel"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:11
+#: templates/reports/abc_analysis_report.html:12
+#: templates/reports/active_tasks_report.html:12
+#: templates/reports/cancelled_tasks_report.html:12
+#: templates/reports/completed_tasks_report.html:13
+#: templates/reports/delay_reasons_report.html:12
+#: templates/reports/employee_workload_report.html:12
+#: templates/reports/gantt_chart.html:17
+#: templates/reports/issues_report.html:12
+#: templates/reports/overdue_tasks_report.html:13
+#: templates/reports/sla_report.html:12
+#: templates/reports/task_duration_report.html:12
+#: templates/reports/task_progress_chart.html:12
+#: templates/reports/task_summary_report.html:12
+#: templates/reports/team_performance_report.html:12
+msgid "Home"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:20
+msgid "Выберите необходимый отчет из списка ниже:"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:25
+#, fuzzy
+#| msgid "Название роли"
+msgid "Название отчета"
+msgstr "Название роли"
+
+#: templates/admin/tasks/report_list.html:30
+#, fuzzy
+#| msgid "Удаление задачи"
+msgid "Завершенные задачи (30 дн)"
+msgstr "Удаление задачи"
+
+#: templates/admin/tasks/report_list.html:31
+msgid "Задачи, выполненные за последние 30 дней."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:35
+msgid "Задачи, срок выполнения которых истек."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:38
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Активные задачи"
+msgstr "Описание задачи"
+
+#: templates/admin/tasks/report_list.html:39
+msgid "Задачи в статусах 'Новая', 'В работе', 'Отложена'."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:42
+msgid "Производительность исполнителей"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:43
+msgid "Количество завершенных задач по исполнителям."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:46
+#, fuzzy
+#| msgid "Исполнитель"
+msgid "Загрузка исполнителей"
+msgstr "Исполнитель"
+
+#: templates/admin/tasks/report_list.html:47
+msgid "Количество активных задач по исполнителям."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:50
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Длительность выполнения"
+msgstr "Дата обновления"
+
+#: templates/admin/tasks/report_list.html:51
+msgid "Фактическое время выполнения завершенных задач."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:54
+msgid "ABC-анализ по приоритетам"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:55
+msgid "Распределение задач по группам приоритета."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:58
+#: templates/reports/sla_report.html:30
+#, fuzzy
+#| msgid "Создание роли"
+msgid "Соблюдение SLA"
+msgstr "Создание роли"
+
+#: templates/admin/tasks/report_list.html:59
+msgid "Процент задач, выполненных в установленный срок."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:62
+msgid "Возможные баги/дефекты"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:63
+msgid "Задачи, содержащие ключевые слова ошибок."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:66
+msgid "Просроченные (для анализа)"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:67
+#, fuzzy
+#| msgid "Список задач"
+msgid "Список просроченных задач."
+msgstr "Список задач"
+
+#: templates/admin/tasks/report_list.html:70
+#, fuzzy
+#| msgid "Удаление задачи"
+msgid "Отмененные задачи"
+msgstr "Удаление задачи"
+
+#: templates/admin/tasks/report_list.html:71
+#, fuzzy
+#| msgid "Список задач"
+msgid "Список отмененных задач."
+msgstr "Список задач"
+
+#: templates/admin/tasks/report_list.html:74
+#, fuzzy
+#| msgid "Сводка задач по статусам"
+msgid "График: Прогресс по статусам"
+msgstr "Сводка задач по статусам"
+
+#: templates/admin/tasks/report_list.html:75
+#, fuzzy
+#| msgid "Сводка задач по статусам"
+msgid "Гистограмма распределения задач по статусам."
+msgstr "Сводка задач по статусам"
+
+#: templates/admin/tasks/report_list.html:78
+msgid "График: Диаграмма Ганта"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:79
+#, fuzzy
+#| msgid "Подробная информация о задаче"
+msgid "Временная диаграмма выполнения задач."
+msgstr "Подробная информация о задаче"
+
+#: templates/admin/tasks/report_list.html:82 templates/base.html:109
+#: templates/checklists/report_issues.html:16
+#: templates/checklists/template_list.html:31
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Сводный отчет"
+msgstr "Нет данных для отчета."
+
+#: templates/admin/tasks/report_list.html:83
+msgid "Общая сводка по задачам (требует настройки)."
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:87
+#: templates/reports/active_tasks_report.html:83
+#: templates/reports/completed_tasks_report.html:78
+#: templates/reports/gantt_chart.html:44
+#: templates/reports/overdue_tasks_report.html:80
+#: templates/reports/task_progress_chart.html:36
+#: templates/reports/task_summary_report.html:40
+msgid "Экспорт всех задач в Excel"
+msgstr ""
+
+#: templates/admin/tasks/report_list.html:88
+msgid "Выгрузить все задачи в формате XLSX."
+msgstr ""
+
+#: templates/base.html:79
+#, fuzzy
+#| msgid "Список задач"
+msgid "Список Задач"
+msgstr "Список задач"
+
+#: templates/base.html:85 templates/base.html:243
+msgid "Категории"
+msgstr "Категории"
+
+#: templates/base.html:100
+msgid "Шаблоны"
+msgstr ""
+
+#: templates/base.html:103
+#, fuzzy
+#| msgid "Выполнена"
+msgid "История выполнения"
+msgstr "Выполнена"
+
+#: templates/base.html:110 templates/checklists/report_summary.html:15
+#: templates/checklists/template_list.html:34
+#, fuzzy
+#| msgid "Отчет по статусам задач"
+msgid "Отчет по проблемам"
+msgstr "Отчет по статусам задач"
+
+#: templates/base.html:119 templates/base.html:268
+#: templates/users/user_list.html:3 templates/users/user_list.html:6
+#: user_profiles/models.py:113 user_profiles/views.py:195
+msgid "Пользователи"
+msgstr "Пользователи"
+
+#: templates/base.html:125
+#, fuzzy
+#| msgid "Нет пользователей."
+msgid "Список пользователей"
+msgstr "Нет пользователей."
+
+#: templates/base.html:128 templates/base.html:273
+#: templates/users/team_list.html:3 templates/users/team_list.html:6
+#: templates/users/user_list.html:30 user_profiles/models.py:172
+#: user_profiles/views.py:308
+msgid "Команды"
+msgstr "Команды"
+
+#: templates/base.html:144 templates/base.html:279
+msgid "Поиск..."
+msgstr ""
+
+#: templates/base.html:144
+msgid "Универсальный поиск"
+msgstr ""
+
+#: templates/base.html:154
+msgid "User profile photo"
+msgstr ""
+
+#: templates/base.html:174 templates/base.html:285 user_profiles/views.py:55
+msgid "Мой профиль"
+msgstr "Мой профиль"
+
+#: templates/base.html:179 templates/base.html:289
+msgid "Чаты"
+msgstr "Чаты"
+
+#: templates/base.html:185 templates/base.html:293
+msgid "Админка"
+msgstr "Админка"
+
+#: templates/base.html:193 templates/base.html:297
+msgid "Language"
+msgstr ""
+
+#: templates/base.html:209 templates/base.html:310
+#, fuzzy
+#| msgid "Системная информация"
+msgid "Темная тема"
+msgstr "Системная информация"
+
+#: templates/base.html:210 templates/base.html:311
+msgid "Светлая тема"
+msgstr ""
+
+#: templates/base.html:217 templates/base.html:316
+msgid "Выход"
+msgstr "Выход"
+
+#: templates/base.html:263
+msgid "История чеклистов"
+msgstr ""
+
+#: templates/base.html:343
+#, fuzzy
+#| msgid "Вход в систему"
+msgid "Требуется вход в систему."
+msgstr "Вход в систему"
+
+#: templates/base.html:352
+msgid "All Rights Reserved"
+msgstr ""
+
+#: templates/base.html:356
+msgid "Privacy Policy"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:4
+#: templates/checklists/checklist_detail.html:26
+msgid "Результаты чеклиста"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:32
+#, fuzzy, python-format
+#| msgid "Выполнена"
+msgid "Выполнен: %(user)s в %(time)s"
+msgstr "Выполнена"
+
+#: templates/checklists/checklist_detail.html:39
+#: templates/checklists/report_issues.html:19
+#: templates/checklists/report_summary.html:18
+#, fuzzy
+#| msgid "Категории"
+msgid "К истории"
+msgstr "Категории"
+
+#: templates/checklists/checklist_detail.html:43
+#: templates/includes/task_list_table.html:38
+#, fuzzy
+#| msgid "Нет задач в этом статусе"
+msgid "Изменить статус"
+msgstr "Нет задач в этом статусе"
+
+#: templates/checklists/checklist_detail.html:52
+msgid "Одобрение / Отклонение чеклиста"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:62
+#: templates/checklists/checklist_status_form.html:59
+#: templates/checklists/perform_checklist.html:198
+#: templates/checklists/template_confirm_delete.html:34
+#: templates/checklists/template_form.html:92
+#: templates/room/create_room.html:78
+#: templates/tasks/category_confirm_delete.html:22
+#: templates/tasks/category_form.html:31
+#: templates/tasks/project_confirm_delete.html:22
+#: templates/tasks/project_form.html:32
+#: templates/tasks/task_confirm_delete.html:21
+#: templates/tasks/task_form.html:196
+#: templates/users/password_change_form.html:17
+#: templates/users/team_confirm_delete.html:21
+#: templates/users/team_form.html:25
+#: templates/users/user_confirm_delete.html:25
+#: templates/users/user_form.html:16
+msgid "Отмена"
+msgstr "Отмена"
+
+#: templates/checklists/checklist_detail.html:63
+#: templates/checklists/checklist_status_form.html:63
+#, fuzzy
+#| msgid "Сохранить"
+msgid "Сохранить статус"
+msgstr "Сохранить"
+
+#: templates/checklists/checklist_detail.html:69
+#, fuzzy
+#| msgid "Системная информация"
+msgid "Общая информация"
+msgstr "Системная информация"
+
+#: templates/checklists/checklist_detail.html:71
+msgid "Шаблон:"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:72
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Выполнен:"
+msgstr "Выполнена"
+
+#: templates/checklists/checklist_detail.html:73
+#, fuzzy
+#| msgid "Статус"
+msgid "Статус:"
+msgstr "Статус"
+
+#: templates/checklists/checklist_detail.html:86
+#, fuzzy
+#| msgid "Дата начала"
+msgid "Время начала:"
+msgstr "Дата начала"
+
+#: templates/checklists/checklist_detail.html:87
+#, fuzzy
+#| msgid "Дата завершения"
+msgid "Время завершения:"
+msgstr "Дата завершения"
+
+#: templates/checklists/checklist_detail.html:88
+msgid "Одобрено:"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:90
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Связанная задача:"
+msgstr "Описание задачи"
+
+#: templates/checklists/checklist_detail.html:93
+#, fuzzy
+#| msgid "Фото/Вложения"
+msgid "Местоположение:"
+msgstr "Фото/Вложения"
+
+#: templates/checklists/checklist_detail.html:96
+msgid "Точка:"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:98
+#, fuzzy
+#| msgid "Оценка времени"
+msgid "Оценка:"
+msgstr "Оценка времени"
+
+#: templates/checklists/checklist_detail.html:99
+msgid "Есть проблемы?"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:105
+msgid "Общие примечания:"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:110
+msgid "Результаты по пунктам"
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:116
+#: templates/checklists/checklist_detail.html:120
+msgid "Нет результатов для этого прогона."
+msgstr ""
+
+#: templates/checklists/checklist_detail.html:191
+#: templates/checklists/checklist_status_form.html:93
+#, fuzzy
+#| msgid "Удаление пользователя"
+msgid "Выберите пользователя..."
+msgstr "Удаление пользователя"
+
+#: templates/checklists/checklist_status_form.html:22
+#, fuzzy
+#| msgid "Назад к списку"
+msgid "Назад к просмотру"
+msgstr "Назад к списку"
+
+#: templates/checklists/checklist_status_form.html:85
+#, fuzzy
+#| msgid "Приоритет"
+msgid "Выберите..."
+msgstr "Приоритет"
+
+#: templates/checklists/history_list.html:34
+msgid "Фильтры"
+msgstr ""
+
+#: templates/checklists/history_list.html:39
+#: templates/checklists/history_list.html:49
+msgid "К шаблонам"
+msgstr ""
+
+#: templates/checklists/history_list.html:53
+msgid "Фильтр"
+msgstr ""
+
+#: templates/checklists/history_list.html:75
+#: templates/checklists/history_list.html:120
+msgid "От"
+msgstr ""
+
+#: templates/checklists/history_list.html:76
+#: templates/checklists/history_list.html:121
+msgid "До"
+msgstr ""
+
+#: templates/checklists/history_list.html:90
+#: templates/checklists/history_list.html:136
+#: templates/checklists/report_issues.html:35
+#: templates/checklists/report_summary.html:34
+msgid "Сбросить"
+msgstr ""
+
+#: templates/checklists/history_list.html:92
+#: templates/checklists/history_list.html:137
+#: templates/checklists/report_issues.html:34
+#: templates/checklists/report_summary.html:33
+#, fuzzy
+#| msgid "Отменить"
+msgid "Применить"
+msgstr "Отменить"
+
+#: templates/checklists/history_list.html:97
+msgid "Фильтры недоступны."
+msgstr ""
+
+#: templates/checklists/history_list.html:102
+msgid "Фильтр Истории"
+msgstr ""
+
+#: templates/checklists/history_list.html:105
+#, fuzzy
+#| msgid "Запомнить меня"
+msgid "Закрыть меню"
+msgstr "Запомнить меня"
+
+#: templates/checklists/history_list.html:149
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Дата выполнения"
+msgstr "Дата обновления"
+
+#: templates/checklists/history_list.html:150
+msgid "Проблемы?"
+msgstr ""
+
+#: templates/checklists/history_list.html:152
+msgid "Место/Точка"
+msgstr ""
+
+#: templates/checklists/history_list.html:153
+#: templates/checklists/template_list.html:61
+#: templates/includes/room_list_item.html:29
+#: templates/includes/task_list_table.html:15
+#: templates/tasks/category_list.html:30 templates/tasks/project_list.html:31
+#: templates/users/team_list.html:30 templates/users/user_list.html:32
+msgid "Действия"
+msgstr "Действия"
+
+#: templates/checklists/history_list.html:188
+msgid "Просмотр результатов"
+msgstr ""
+
+#: templates/checklists/history_list.html:190
+msgid "Изменить статус (одобрить/отклонить)"
+msgstr ""
+
+#: templates/checklists/history_list.html:200
+msgid "Нет записей о выполнении чеклистов."
+msgstr ""
+
+#: templates/checklists/history_list.html:202
+msgid "Сбросить фильтры?"
+msgstr ""
+
+#: templates/checklists/history_list.html:237
+#: templates/checklists/history_list.html:244
+msgid "Любой"
+msgstr ""
+
+#: templates/checklists/perform_checklist.html:4
+#: templates/checklists/perform_checklist.html:86
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Выполнение чеклиста"
+msgstr "Выполнена"
+
+#: templates/checklists/perform_checklist.html:92
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Выполняет"
+msgstr "Выполнена"
+
+#: templates/checklists/perform_checklist.html:92
+#, fuzzy
+#| msgid "Дата начала"
+msgid "Время начала"
+msgstr "Дата начала"
+
+#: templates/checklists/perform_checklist.html:159
+msgid "Текущий"
+msgstr ""
+
+#: templates/checklists/perform_checklist.html:193
+msgid "В этом шаблоне нет пунктов для выполнения."
+msgstr ""
+
+#: templates/checklists/perform_checklist.html:201
+msgid "Завершить чеклист"
+msgstr ""
+
+#: templates/checklists/report_issues.html:3
+msgid "Отчет по проблемам в чеклистах"
+msgstr ""
+
+#: templates/checklists/report_issues.html:12
+msgid "Список всех пунктов, отмеченных как 'Не ОК' при выполнении чеклистов."
+msgstr ""
+
+#: templates/checklists/report_issues.html:26
+#: templates/checklists/report_summary.html:25
+#, fuzzy
+#| msgid "Дата начала"
+msgid "Начальная дата"
+msgstr "Дата начала"
+
+#: templates/checklists/report_issues.html:30
+#: templates/checklists/report_summary.html:29
+msgid "Конечная дата"
+msgstr ""
+
+#: templates/checklists/report_issues.html:46
+msgid "Проблемный пункт"
+msgstr ""
+
+#: templates/checklists/report_issues.html:48
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Выполнил"
+msgstr "Выполнена"
+
+#: templates/checklists/report_issues.html:50
+msgid "Исправлено?"
+msgstr ""
+
+#: templates/checklists/report_issues.html:72
+#, fuzzy
+#| msgid "Просрочена"
+msgid "Просмотр прогона"
+msgstr "Просрочена"
+
+#: templates/checklists/report_issues.html:86
+msgid "Не найдено пунктов чеклистов с проблемами за выбранный период."
+msgstr ""
+
+#: templates/checklists/report_summary.html:39
+#, fuzzy
+#| msgid "Описание подкатегории"
+msgid "Общие показатели за период"
+msgstr "Описание подкатегории"
+
+#: templates/checklists/report_summary.html:42
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Всего выполнено"
+msgstr "Выполнена"
+
+#: templates/checklists/report_summary.html:46
+#, fuzzy
+#| msgid "Кампания"
+msgid "С замечаниями"
+msgstr "Кампания"
+
+#: templates/checklists/report_summary.html:50
+#, fuzzy, python-format
+#| msgid "Нет кампаний."
+msgid "%% без замечаний"
+msgstr "Нет кампаний."
+
+#: templates/checklists/report_summary.html:68
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Выполнено"
+msgstr "Выполнена"
+
+#: templates/checklists/report_summary.html:69
+msgid "С проблемами"
+msgstr ""
+
+#: templates/checklists/report_summary.html:70
+#, python-format
+msgid "%% без проблем"
+msgstr ""
+
+#: templates/checklists/report_summary.html:94
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет данных для отчета за выбранный период."
+msgstr "Нет данных для отчета."
+
+#: templates/checklists/success.html:6
+msgid "Успешно"
+msgstr ""
+
+#: templates/checklists/success.html:15
+#, fuzzy
+#| msgid "Это действие необратимо."
+msgid "Действие выполнено"
+msgstr "Это действие необратимо."
+
+#: templates/checklists/success.html:16
+msgid "Пользователь успешно подтверждён HR-отделом."
+msgstr ""
+
+#: templates/checklists/template_confirm_delete.html:3
+#: templates/checklists/template_confirm_delete.html:6
+#, fuzzy
+#| msgid "Удаление пользователя"
+msgid "Удаление шаблона чеклиста"
+msgstr "Удаление пользователя"
+
+#: templates/checklists/template_confirm_delete.html:12
+#, fuzzy, python-format
+#| msgid "Вы уверены, что хотите удалить подкатегорию"
+msgid ""
+"\n"
+"        Вы уверены, что хотите удалить шаблон чеклиста "
+"<strong>\"%(template_name)s\"</strong>?\n"
+"        "
+msgstr "Вы уверены, что хотите удалить подкатегорию"
+
+#: templates/checklists/template_confirm_delete.html:18
+#, fuzzy
+#| msgid "Описание"
+msgid "Внимание!"
+msgstr "Описание"
+
+#: templates/checklists/template_confirm_delete.html:20
+#, python-format
+msgid ""
+"Существует %(counter)s выполненный чеклист на основе этого шаблона. Удаление "
+"шаблона НЕВОЗМОЖНО. Сначала удалите связанные прогоны или архивируйте шаблон."
+msgid_plural ""
+"Существуют %(counter)s выполненных чеклистов на основе этого шаблона. "
+"Удаление шаблона НЕВОЗМОЖНО. Сначала удалите связанные прогоны или "
+"архивируйте шаблон."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
+
+#: templates/checklists/template_confirm_delete.html:28
+#: templates/tasks/category_confirm_delete.html:17
+#: templates/tasks/project_confirm_delete.html:17
+#: templates/tasks/task_confirm_delete.html:16
+#: templates/users/team_confirm_delete.html:16
+#: templates/users/user_confirm_delete.html:19
+#, fuzzy
+#| msgid "Это действие нельзя будет отменить."
+msgid "Это действие нельзя будет отменить!"
+msgstr "Это действие нельзя будет отменить."
+
+#: templates/checklists/template_confirm_delete.html:38
+#, fuzzy
+#| msgid "Удалить кампанию"
+msgid "Да, удалить шаблон"
+msgstr "Удалить кампанию"
+
+#: templates/checklists/template_detail.html:19
+#: templates/users/user_list.html:61
+#, fuzzy
+#| msgid "Редактировать"
+msgid "Неактивен"
+msgstr "Редактировать"
+
+#: templates/checklists/template_detail.html:32
+#, fuzzy
+#| msgid "Исполнитель"
+msgid "Выполнить"
+msgstr "Исполнитель"
+
+#: templates/checklists/template_detail.html:36
+#: templates/checklists/template_list.html:83
+#: templates/includes/kanban_board.html:95 templates/includes/message.html:54
+#: templates/includes/task_list_table.html:72
+#: templates/tasks/category_list.html:43 templates/tasks/project_list.html:46
+#: templates/tasks/subcategory_list.html:37 templates/tasks/task_detail.html:22
+#: templates/users/team_list.html:42 templates/users/user_list.html:66
+msgid "Редактировать"
+msgstr "Редактировать"
+
+#: templates/checklists/template_detail.html:40
+msgid "К списку шаблонов"
+msgstr ""
+
+#: templates/checklists/template_detail.html:44
+#: templates/checklists/template_list.html:84
+#: templates/includes/kanban_board.html:101 templates/includes/message.html:55
+#: templates/includes/task_list_table.html:73
+#: templates/tasks/category_list.html:44 templates/tasks/project_list.html:47
+#: templates/tasks/subcategory_list.html:45 templates/tasks/task_detail.html:28
+#: templates/users/team_list.html:43 templates/users/user_list.html:68
+msgid "Удалить"
+msgstr "Удалить"
+
+#: templates/checklists/template_detail.html:52
+#: templates/checklists/template_form.html:36 user_profiles/forms.py:144
+#, fuzzy
+#| msgid "Системная информация"
+msgid "Основная информация"
+msgstr "Системная информация"
+
+#: templates/checklists/template_detail.html:54
+msgid "UUID:"
+msgstr ""
+
+#: templates/checklists/template_detail.html:55
+msgid "Целевое Местоположение:"
+msgstr ""
+
+#: templates/checklists/template_detail.html:56
+msgid "Целевая Точка:"
+msgstr ""
+
+#: templates/checklists/template_detail.html:57
+#, fuzzy
+#| msgid "Подробности"
+msgid "Периодичность:"
+msgstr "Подробности"
+
+#: templates/checklists/template_detail.html:58
+msgid "След. дата:"
+msgstr ""
+
+#: templates/checklists/template_detail.html:60
+msgid "Теги:"
+msgstr ""
+
+#: templates/checklists/template_detail.html:73
+#, fuzzy
+#| msgid "Описание"
+msgid "Описание:"
+msgstr "Описание"
+
+#: templates/checklists/template_detail.html:74
+#, fuzzy
+#| msgid "Создатель"
+msgid "Создан:"
+msgstr "Создатель"
+
+#: templates/checklists/template_detail.html:75
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Обновлен:"
+msgstr "Дата обновления"
+
+#: templates/checklists/template_detail.html:79
+#: templates/checklists/template_form.html:73
+msgid "Пункты чеклиста"
+msgstr ""
+
+#: templates/checklists/template_detail.html:90
+msgid "Пункты без секции"
+msgstr ""
+
+#: templates/checklists/template_detail.html:100
+#: templates/includes/checklist_result_display.html:16
+#, fuzzy
+#| msgid "из"
+msgid "Тип"
+msgstr "из"
+
+#: templates/checklists/template_detail.html:103
+msgid "По умолч."
+msgstr ""
+
+#: templates/checklists/template_detail.html:104
+#, fuzzy
+#| msgid "Создатель"
+msgid "Родитель"
+msgstr "Создатель"
+
+#: templates/checklists/template_detail.html:119
+msgid "В этой секции нет пунктов."
+msgstr ""
+
+#: templates/checklists/template_detail.html:124
+msgid "В этом шаблоне пока нет пунктов."
+msgstr ""
+
+#: templates/checklists/template_form.html:4
+msgid "Форма шаблона чеклиста"
+msgstr ""
+
+#: templates/checklists/template_form.html:85
+#, fuzzy
+#| msgid "Добавить роль"
+msgid "Добавить пункт"
+msgstr "Добавить роль"
+
+#: templates/checklists/template_form.html:88
+msgid ""
+"Пустые строки будут проигнорированы. Нажмите иконку корзины для удаления."
+msgstr ""
+
+#: templates/checklists/template_form.html:96
+#: templates/checklists/template_list.html:14
+#: templates/checklists/template_list.html:44
+#, fuzzy
+#| msgid "Создать роль"
+msgid "Создать шаблон"
+msgstr "Создать роль"
+
+#: templates/checklists/template_form.html:192
+#: templates/checklists/template_form.html:208
+#, fuzzy
+#| msgid "Обновить команду"
+msgid "Восстановить пункт"
+msgstr "Обновить команду"
+
+#: templates/checklists/template_form.html:192
+#: templates/includes/formset_item.html:37
+#, fuzzy
+#| msgid "Удалить роль"
+msgid "Удалить пункт"
+msgstr "Удалить роль"
+
+#: templates/checklists/template_form.html:220
+msgid "--- Сначала выберите местоположение ---"
+msgstr ""
+
+#: templates/checklists/template_form.html:221
+msgid "--------- Выберите точку ---------"
+msgstr ""
+
+#: templates/checklists/template_form.html:222
+msgid "--- Точек не найдено ---"
+msgstr ""
+
+#: templates/checklists/template_form.html:223
+msgid "--- Ошибка загрузки ---"
+msgstr ""
+
+#: templates/checklists/template_list.html:18
+#: templates/checklists/template_list.html:48
+#, fuzzy
+#| msgid "Категория"
+msgid "История"
+msgstr "Категория"
+
+#: templates/checklists/template_list.html:59
+msgid "Пунктов"
+msgstr ""
+
+#: templates/checklists/template_list.html:81
+#, fuzzy
+#| msgid "Исполнитель"
+msgid "Выполнить чеклист"
+msgstr "Исполнитель"
+
+#: templates/checklists/template_list.html:93
+msgid "Шаблоны чеклистов не найдены."
+msgstr ""
+
+#: templates/includes/checklist_result_display.html:9
+msgid "Точка проверки"
+msgstr ""
+
+#: templates/includes/checklist_result_display.html:19
+msgid "Подсказка к вопросу"
+msgstr ""
+
+#: templates/includes/form_errors.html:6
+#, fuzzy
+#| msgid "Пожалуйста, исправьте ошибки ниже."
+msgid "Пожалуйста, исправьте ошибки:"
+msgstr "Пожалуйста, исправьте ошибки ниже."
+
+#: templates/includes/form_errors.html:14
+msgid "Общие ошибки набора форм:"
+msgstr ""
+
+#: templates/includes/form_errors.html:30
+#, python-format
+msgid "Общая ошибка в строке #%(count)s:"
+msgstr ""
+
+#: templates/includes/form_errors.html:37
+#, python-format
+msgid "Строка #%(count)s - %(label)s:"
+msgstr ""
+
+#: templates/includes/kanban_board.html:32
+#, fuzzy
+#| msgid "Фотография к задаче"
+msgid "Перейти к задаче"
+msgstr "Фотография к задаче"
+
+#: templates/includes/kanban_board.html:45
+#: templates/includes/task_list_table.html:14
+msgid "Инициатор"
+msgstr ""
+
+#: templates/includes/kanban_board.html:47
+#: templates/includes/kanban_board.html:59
+#, fuzzy
+#| msgid "Мой профиль"
+msgid "Профиль"
+msgstr "Мой профиль"
+
+#: templates/includes/kanban_board.html:68
+#, fuzzy
+#| msgid "Исполнитель"
+msgid "Исполнитель не назначен"
+msgstr "Исполнитель"
+
+#: templates/includes/kanban_board.html:69
+msgid "Не назначен"
+msgstr ""
+
+#: templates/includes/kanban_board.html:77
+#, fuzzy
+#| msgid "Выше среднего"
+msgid "Выше ср."
+msgstr "Выше среднего"
+
+#: templates/includes/kanban_board.html:79
+#, fuzzy
+#| msgid "Ниже среднего"
+msgid "Ниже ср."
+msgstr "Ниже среднего"
+
+#: templates/includes/kanban_board.html:91
+#: templates/includes/task_list_table.html:71
+#, fuzzy
+#| msgid "Подробности"
+msgid "Подробнее"
+msgstr "Подробности"
+
+#: templates/includes/kanban_board.html:111
+#, fuzzy
+#| msgid "Нет задач в этом статусе"
+msgid "Нет задач в этой колонке"
+msgstr "Нет задач в этом статусе"
+
+#: templates/includes/kanban_board.html:120
+msgid "Задачи для отображения не найдены или статусы не определены."
+msgstr ""
+
+#: templates/includes/message.html:13 templates/includes/messages_list.html:7
+msgid "Перейти к сообщению"
+msgstr ""
+
+#: templates/includes/message.html:14
+msgid "В ответ"
+msgstr ""
+
+#: templates/includes/message.html:16 templates/includes/messages_list.html:11
+#, fuzzy
+#| msgid "Задача удалена!"
+msgid "[сообщение удалено]"
+msgstr "Задача удалена!"
+
+#: templates/includes/message.html:17
+msgid "Файл:"
+msgstr ""
+
+#: templates/includes/message.html:51
+#, fuzzy
+#| msgid "Редактировать"
+msgid "Реагировать"
+msgstr "Редактировать"
+
+#: templates/includes/message.html:52
+#, fuzzy
+#| msgid "Ответственный"
+msgid "Ответить"
+msgstr "Ответственный"
+
+#: templates/includes/messages.html:48
+msgid "Закрыть"
+msgstr ""
+
+#: templates/includes/messages_list.html:33
+msgid "Прикрепленное изображение"
+msgstr ""
+
+#: templates/includes/messages_list.html:59 templates/room/room.html:80
+msgid "Сообщений пока нет. Начните диалог!"
+msgstr ""
+
+#: templates/includes/pagination.html:3
+msgid "Page navigation"
+msgstr ""
+
+#: templates/includes/pagination.html:7
+#, python-format
+msgid ""
+"\n"
+"                Показано с <span class=\"font-medium\">%(first)s</span> по "
+"<span class=\"font-medium\">%(last)s</span> из <span class=\"font-"
+"medium\">%(count)s</span> записей\n"
+"                "
+msgstr ""
+
+#: templates/includes/pagination.html:17 templates/includes/pagination.html:22
+msgid "Предыдущая"
+msgstr ""
+
+#: templates/includes/pagination.html:43 templates/includes/pagination.html:48
+msgid "Следующая"
+msgstr ""
+
+#: templates/includes/pagination.html:59 templates/includes/pagination.html:63
+msgid "Назад"
+msgstr "Назад"
+
+#: templates/includes/pagination.html:72 templates/includes/pagination.html:76
+msgid "Вперед"
+msgstr "Вперед"
+
+#: templates/includes/room_list_item.html:8
+msgid "Есть непрочитанные сообщения"
+msgstr ""
+
+#: templates/includes/room_list_item.html:15
+msgid "Приватная"
+msgstr ""
+
+#: templates/includes/room_list_item.html:15
+msgid "Публичная"
+msgstr ""
+
+#: templates/includes/room_list_item.html:17
+#, python-format
+msgid "%(participant_count)s участник"
+msgid_plural "%(participant_count)s участников"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
+
+#: templates/includes/room_list_item.html:24
+#, fuzzy
+#| msgid "Нет ролей."
+msgid "Нет сообщений"
+msgstr "Нет ролей."
+
+#: templates/includes/room_list_item.html:43 templates/room/room.html:57
+#, fuzzy
+#| msgid "Редактировать"
+msgid "Архивировать"
+msgstr "Редактировать"
+
+#: templates/includes/room_list_item.html:53
+msgid "(Ошибка: Неверный URL)"
+msgstr ""
+
+#: templates/includes/task_list_table.html:48
+msgid "Задача просрочена. Изменение статуса невозможно без продления срока."
+msgstr ""
+
+#: templates/includes/task_list_table.html:81
+#, fuzzy
+#| msgid "Задача обновлена!"
+msgid "Задачи не найдены."
+msgstr "Задача обновлена!"
+
+#: templates/reports/abc_analysis_report.html:22
+msgid "Группировка задач по приоритетам: A (Высокий), B (Средний), C (Низкий)."
+msgstr ""
+
+#: templates/reports/abc_analysis_report.html:30
+#, fuzzy
+#| msgid "Приоритет"
+msgid "Группа приоритета"
+msgstr "Приоритет"
+
+#: templates/reports/abc_analysis_report.html:30
+#: templates/reports/active_tasks_report.html:30
+#: templates/reports/cancelled_tasks_report.html:30
+#: templates/reports/completed_tasks_report.html:45
+#: templates/reports/delay_reasons_report.html:34
+#: templates/reports/employee_workload_report.html:33
+#: templates/reports/issues_report.html:30
+#: templates/reports/overdue_tasks_report.html:31
+#: templates/reports/task_duration_report.html:30
+#: templates/reports/team_performance_report.html:33
+msgid "Remove from sorting"
+msgstr ""
+
+#: templates/reports/abc_analysis_report.html:41
+#, fuzzy
+#| msgid "Высокий"
+msgid "A (Высокий)"
+msgstr "Высокий"
+
+#: templates/reports/abc_analysis_report.html:42
+#, fuzzy
+#| msgid "Средний"
+msgid "B (Средний)"
+msgstr "Средний"
+
+#: templates/reports/abc_analysis_report.html:43
+#, fuzzy
+#| msgid "Низкий"
+msgid "C (Низкий)"
+msgstr "Низкий"
+
+#: templates/reports/abc_analysis_report.html:50
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет задач для анализа."
+msgstr "Нет данных для отчета."
+
+#: templates/reports/active_tasks_report.html:22
+msgid "Отчет по задачам со статусами 'Новая', 'В работе' или 'Отложена'."
+msgstr ""
+
+#: templates/reports/active_tasks_report.html:72
+#, fuzzy
+#| msgid "Нет категорий задач."
+msgid "Нет активных задач."
+msgstr "Нет категорий задач."
+
+#: templates/reports/cancelled_tasks_report.html:22
+msgid "Отчет по задачам, которые были отменены."
+msgstr ""
+
+#: templates/reports/cancelled_tasks_report.html:30
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Дата отмены (обновления)"
+msgstr "Дата обновления"
+
+#: templates/reports/cancelled_tasks_report.html:61
+#, fuzzy
+#| msgid "Нет категорий задач."
+msgid "Нет отмененных задач."
+msgstr "Нет категорий задач."
+
+#: templates/reports/completed_tasks_report.html:23
+#, python-format
+msgid ""
+"\n"
+"        Отчет по задачам, завершенным в период с %(start_date)s по "
+"%(end_date)s.\n"
+"        "
+msgstr ""
+
+#: templates/reports/completed_tasks_report.html:67
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет завершенных задач за этот период."
+msgstr "Нет данных для отчета."
+
+#: templates/reports/delay_reasons_report.html:25
+msgid ""
+"Список просроченных задач. Добавьте поле 'причина задержки' в модель Task "
+"для полноценного анализа."
+msgstr ""
+
+#: templates/reports/delay_reasons_report.html:49
+#: templates/reports/overdue_tasks_report.html:46
+msgid "Текущий статус"
+msgstr ""
+
+#: templates/reports/delay_reasons_report.html:75
+#: templates/reports/overdue_tasks_report.html:69
+#, fuzzy
+#| msgid "Нет подкатегорий задач."
+msgid "Нет просроченных задач."
+msgstr "Нет подкатегорий задач."
+
+#: templates/reports/employee_workload_report.html:22
+msgid ""
+"Отчет по количеству активных (незавершенных) задач, назначенных "
+"пользователям с ролью 'Исполнитель'."
+msgstr ""
+
+#: templates/reports/employee_workload_report.html:33
+#, fuzzy
+#| msgid "Категория задач"
+msgid "Активных задач"
+msgstr "Категория задач"
+
+#: templates/reports/employee_workload_report.html:46
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет данных о загрузке исполнителей."
+msgstr "Нет данных для отчета."
+
+#: templates/reports/gantt_chart.html:38
+msgid "Не удалось сгенерировать диаграмму Ганта."
+msgstr ""
+
+#: templates/reports/issues_report.html:22
+msgid ""
+"Отчет по задачам, в названии или описании которых содержатся ключевые слова, "
+"указывающие на возможные ошибки или дефекты."
+msgstr ""
+
+#: templates/reports/issues_report.html:68
+msgid "Не найдено задач, похожих на баги/дефекты."
+msgstr ""
+
+#: templates/reports/overdue_tasks_report.html:23
+msgid ""
+"Отчет по задачам, срок выполнения которых истек и которые не были завершены "
+"или отменены."
+msgstr ""
+
+#: templates/reports/sla_report.html:22
+msgid ""
+"Отчет по количеству задач, выполненных в срок (SLA Met) и с нарушением срока "
+"(SLA Not Met)."
+msgstr ""
+
+#: templates/reports/sla_report.html:42
+#, fuzzy
+#| msgid "Выполнена"
+msgid "Выполнено в срок"
+msgstr "Выполнена"
+
+#: templates/reports/sla_report.html:44
+msgid "Срок нарушен"
+msgstr ""
+
+#: templates/reports/sla_report.html:52
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет данных для анализа SLA."
+msgstr "Нет данных для отчета."
+
+#: templates/reports/task_duration_report.html:22
+msgid ""
+"Отчет по фактической длительности выполнения завершенных задач (от даты "
+"начала до даты завершения)."
+msgstr ""
+
+#: templates/reports/task_duration_report.html:30
+#, fuzzy
+#| msgid "Подробности"
+msgid "Длительность"
+msgstr "Подробности"
+
+#: templates/reports/task_duration_report.html:61
+#, fuzzy
+#| msgid "Нет подкатегорий задач."
+msgid "Нет данных о длительности задач."
+msgstr "Нет подкатегорий задач."
+
+#: templates/reports/task_progress_chart.html:27
+#, fuzzy
+#| msgid "Сводка задач по статусам"
+msgid "График распределения задач по статусам"
+msgstr "Сводка задач по статусам"
+
+#: templates/reports/task_progress_chart.html:28
+#, fuzzy
+#| msgid "Подкатегория задач"
+msgid "График прогресса задач"
+msgstr "Подкатегория задач"
+
+#: templates/reports/task_progress_chart.html:31
+msgid "Не удалось сгенерировать график."
+msgstr ""
+
+#: templates/reports/task_summary_report.html:22
+#, fuzzy
+#| msgid "Подробная информация о задаче"
+msgid "Сводная информация по задачам."
+msgstr "Подробная информация о задаче"
+
+#: templates/reports/task_summary_report.html:29
+#, fuzzy
+#| msgid "Номер задачи"
+msgid "Пример данных"
+msgstr "Номер задачи"
+
+#: templates/reports/task_summary_report.html:34
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет данных для сводного отчета."
+msgstr "Нет данных для отчета."
+
+#: templates/reports/team_performance_report.html:22
+msgid ""
+"Отчет по количеству завершенных задач, сгруппированный по пользователям с "
+"ролью 'Исполнитель'."
+msgstr ""
+
+#: templates/reports/team_performance_report.html:33
+#, fuzzy
+#| msgid "Количество задач"
+msgid "Завершено задач"
+msgstr "Количество задач"
+
+#: templates/reports/team_performance_report.html:47
+msgid "Нет данных о производительности исполнителей."
+msgstr ""
+
+#: templates/room/create_room.html:4 templates/room/create_room.html:11
+#: templates/room/room.html:26
+#, fuzzy
+#| msgid "Создать новую команду"
+msgid "Создать новую комнату"
+msgstr "Создать новую команду"
+
+#: templates/room/create_room.html:72
+msgid "Выбор участников доступен только для приватных комнат."
+msgstr ""
+
+#: templates/room/create_room.html:81 templates/room/rooms.html:12
+#: templates/room/rooms.html:18
+#, fuzzy
+#| msgid "Создать команду"
+msgid "Создать комнату"
+msgstr "Создать команду"
+
+#: templates/room/room.html:4
+#, fuzzy
+#| msgid "Чаты"
+msgid "Чат"
+msgstr "Чаты"
+
+#: templates/room/room.html:25
+msgid "Комнаты"
+msgstr ""
+
+#: templates/room/room.html:34
+#, fuzzy
+#| msgid "Нет команд."
+msgid "Нет других комнат."
+msgstr "Нет команд."
+
+#: templates/room/room.html:43
+#, fuzzy
+#| msgid "Добавить команду"
+msgid "Действия с комнатой"
+msgstr "Добавить команду"
+
+#: templates/room/room.html:69
+msgid "в сети"
+msgstr ""
+
+#: templates/room/room.html:70
+msgid "Загрузка..."
+msgstr ""
+
+#: templates/room/room.html:87
+#, fuzzy
+#| msgid "Ответственный"
+msgid "Ответ на:"
+msgstr "Ответственный"
+
+#: templates/room/room.html:97
+#, fuzzy
+#| msgid "Переключить вид"
+msgid "Прикрепить файл"
+msgstr "Переключить вид"
+
+#: templates/room/room.html:101
+msgid "Введите сообщение..."
+msgstr ""
+
+#: templates/room/room.html:104 templates/tasks/task_detail.html:311
+#, fuzzy
+#| msgid "Добавить"
+msgid "Отправить"
+msgstr "Добавить"
+
+#: templates/room/rooms.html:37
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет доступных чат-комнат."
+msgstr "Нет данных для отчета."
+
+#: templates/room/rooms.html:38
+#, fuzzy
+#| msgid "Создать новую команду"
+msgid "Вы можете создать новую комнату."
+msgstr "Создать новую команду"
+
+#: templates/room/rooms.html:41
+#, fuzzy
+#| msgid "Создать новую команду"
+msgid "Создать первую комнату"
+msgstr "Создать новую команду"
+
+#: templates/tasks/category_confirm_delete.html:12
+#, fuzzy, python-format
+#| msgid "Вы уверены, что хотите удалить категорию"
+msgid ""
+"\n"
+"        Вы уверены, что хотите удалить категорию "
+"<strong>\"%(category_name)s\"</strong>?\n"
+"        "
+msgstr "Вы уверены, что хотите удалить категорию"
+
+#: templates/tasks/category_confirm_delete.html:16
+msgid ""
+"Внимание: Все подкатегории и задачи, связанные с этой категорией, могут быть "
+"затронуты (в зависимости от настроек on_delete в моделях)."
+msgstr ""
+
+#: templates/tasks/category_confirm_delete.html:25
+#, fuzzy
+#| msgid "Удалить категорию"
+msgid "Да, удалить категорию"
+msgstr "Удалить категорию"
+
+#: templates/tasks/category_form.html:3
+#, fuzzy
+#| msgid "Подкатегория"
+msgid "Форма категории"
+msgstr "Подкатегория"
+
+#: templates/tasks/category_form.html:20 templates/tasks/project_form.html:21
+#: templates/tasks/task_form.html:52
+msgid "Общая ошибка формы:"
+msgstr ""
+
+#: templates/tasks/category_form.html:36
+#, fuzzy
+#| msgid "Добавить категорию"
+msgid "Сохранить категорию"
+msgstr "Добавить категорию"
+
+#: templates/tasks/category_list.html:29 templates/tasks/project_list.html:30
+#, fuzzy
+#| msgid "Задача"
+msgid "Задач"
+msgstr "Задача"
+
+#: templates/tasks/category_list.html:49
+#, fuzzy
+#| msgid "Категории задач"
+msgid "Категории не найдены."
+msgstr "Категории задач"
+
+#: templates/tasks/project_confirm_delete.html:12
+#, fuzzy, python-format
+#| msgid "Вы уверены, что хотите удалить роль"
+msgid ""
+"\n"
+"        Вы уверены, что хотите удалить проект <strong>\"%(project_name)s\"</"
+"strong>?\n"
+"        "
+msgstr "Вы уверены, что хотите удалить роль"
+
+#: templates/tasks/project_confirm_delete.html:16
+msgid "Внимание: Все задачи, связанные с этим проектом, также будут удалены!"
+msgstr ""
+
+#: templates/tasks/project_confirm_delete.html:25
+#, fuzzy
+#| msgid "Удалить подкатегорию"
+msgid "Да, удалить проект и все его задачи"
+msgstr "Удалить подкатегорию"
+
+#: templates/tasks/project_form.html:3
+#, fuzzy
+#| msgid "Мой профиль"
+msgid "Форма проекта"
+msgstr "Мой профиль"
+
+#: templates/tasks/project_form.html:37
+#, fuzzy
+#| msgid "Сохранить"
+msgid "Сохранить проект"
+msgstr "Сохранить"
+
+#: templates/tasks/project_list.html:45
+#, fuzzy
+#| msgid "Номер задачи"
+msgid "Просмотреть задачи"
+msgstr "Номер задачи"
+
+#: templates/tasks/project_list.html:52
+msgid "Проекты не найдены."
+msgstr ""
+
+#: templates/tasks/subcategory_list.html:11
+msgid "Создать новую подкатегорию"
+msgstr "Создать новую подкатегорию"
+
+#: templates/tasks/subcategory_list.html:13
+msgid "Создать подкатегорию"
+msgstr "Создать подкатегорию"
+
+#: templates/tasks/subcategory_list.html:35
+msgid "Редактировать подкатегорию"
+msgstr "Редактировать подкатегорию"
+
+#: templates/tasks/subcategory_list.html:43
+msgid "Удалить подкатегорию"
+msgstr "Удалить подкатегорию"
+
+#: templates/tasks/subcategory_list.html:53
+msgid "Нет подкатегорий задач."
+msgstr "Нет подкатегорий задач."
+
+#: templates/tasks/task_confirm_delete.html:12
+#, fuzzy, python-format
+#| msgid "Вы уверены, что хотите удалить задачу"
+msgid ""
+"\n"
+"        Вы уверены, что хотите удалить задачу <strong>#%(task_number)s "
+"\"%(task_title)s\"</strong>?\n"
+"        "
+msgstr "Вы уверены, что хотите удалить задачу"
+
+#: templates/tasks/task_confirm_delete.html:24
+#: templates/users/team_confirm_delete.html:24
+#: templates/users/user_confirm_delete.html:29
+#, fuzzy
+#| msgid "Удалить"
+msgid "Да, удалить"
+msgstr "Удалить"
+
+#: templates/tasks/task_detail.html:4
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Детали задачи"
+msgstr "Описание задачи"
+
+#: templates/tasks/task_detail.html:14
+#, python-format
+msgid "Проект: %(project_name)s"
+msgstr ""
+
+#: templates/tasks/task_detail.html:33
+#, fuzzy
+#| msgid "Назад к списку"
+msgid "К списку"
+msgstr "Назад к списку"
+
+#: templates/tasks/task_detail.html:83
+#, fuzzy
+#| msgid "Категория"
+msgid "Категоризация"
+msgstr "Категория"
+
+#: templates/tasks/task_detail.html:85
+#, fuzzy
+#| msgid "Категория"
+msgid "Категория:"
+msgstr "Категория"
+
+#: templates/tasks/task_detail.html:86
+#, fuzzy
+#| msgid "Подкатегория"
+msgid "Подкатегория:"
+msgstr "Подкатегория"
+
+#: templates/tasks/task_detail.html:116
+msgid "Не назначены"
+msgstr ""
+
+#: templates/tasks/task_detail.html:124
+msgid "Неизвестен"
+msgstr ""
+
+#: templates/tasks/task_detail.html:139
+msgid "Сроки"
+msgstr "Сроки"
+
+#: templates/tasks/task_detail.html:162
+#, fuzzy
+#| msgid "Дата завершения"
+msgid "Завершена"
+msgstr "Дата завершения"
+
+#: templates/tasks/task_detail.html:195
+#, fuzzy
+#| msgid "Фотография к задаче"
+msgid "Фото к задаче"
+msgstr "Фотография к задаче"
+
+#: templates/tasks/task_detail.html:220
+msgid "Previous"
+msgstr ""
+
+#: templates/tasks/task_detail.html:233
+msgid "Next"
+msgstr ""
+
+#: templates/tasks/task_detail.html:244
+#, fuzzy
+#| msgid "Описание фотографии"
+msgid "Нет прикрепленных фотографий."
+msgstr "Описание фотографии"
+
+#: templates/tasks/task_detail.html:253
+msgid "Комментарии"
+msgstr ""
+
+#: templates/tasks/task_detail.html:269 templates/users/user_profile.html:62
+#, fuzzy
+#| msgid "Назад"
+msgid "назад"
+msgstr "Назад"
+
+#: templates/tasks/task_detail.html:275
+msgid "Комментариев пока нет."
+msgstr ""
+
+#: templates/tasks/task_detail.html:290
+msgid "Введите ваш комментарий..."
+msgstr ""
+
+#: templates/tasks/task_detail.html:316
+#, fuzzy
+#| msgid "Вы не имеете доступа к этой задаче."
+msgid "Вы не можете добавлять комментарии к этой задаче."
+msgstr "Вы не имеете доступа к этой задаче."
+
+#: templates/tasks/task_detail.html:337
+msgid "только что"
+msgstr ""
+
+#: templates/tasks/task_detail.html:338
+#, fuzzy
+#| msgid "Назад"
+msgid "сек. назад"
+msgstr "Назад"
+
+#: templates/tasks/task_detail.html:339
+#, fuzzy
+#| msgid "Назад"
+msgid "мин. назад"
+msgstr "Назад"
+
+#: templates/tasks/task_detail.html:340
+#, fuzzy
+#| msgid "Назад"
+msgid "ч. назад"
+msgstr "Назад"
+
+#: templates/tasks/task_detail.html:341
+msgid "вчера"
+msgstr ""
+
+#: templates/tasks/task_detail.html:342
+#, fuzzy
+#| msgid "Назад"
+msgid "д. назад"
+msgstr "Назад"
+
+#: templates/tasks/task_detail.html:343
+msgid "Неизвестный"
+msgstr ""
+
+#: templates/tasks/task_detail.html:344
+#, fuzzy
+#| msgid "Дата завершения не может быть раньше даты начала."
+msgid "Комментарий не может быть пустым."
+msgstr "Дата завершения не может быть раньше даты начала."
+
+#: templates/tasks/task_detail.html:345
+msgid "Отправка..."
+msgstr ""
+
+#: templates/tasks/task_detail.html:346
+msgid "Произошла ошибка при добавлении комментария."
+msgstr ""
+
+#: templates/tasks/task_detail.html:347
+msgid "Ошибка сети при отправке комментария."
+msgstr ""
+
+#: templates/tasks/task_detail.html:348
+msgid "Комментарий добавлен."
+msgstr ""
+
+#: templates/tasks/task_detail.html:349
+msgid "Новый комментарий от"
+msgstr ""
+
+#: templates/tasks/task_detail.html:350
+#, fuzzy
+#| msgid "Ошибка!"
+msgid "Ошибка WebSocket:"
+msgstr "Ошибка!"
+
+#: templates/tasks/task_form.html:5
+#, fuzzy
+#| msgid "Номер задачи"
+msgid "Форма задачи"
+msgstr "Номер задачи"
+
+#: templates/tasks/task_form.html:30
+#, fuzzy, python-format
+#| msgid "Редактировать задачу"
+msgid "Редактирование задачи #%(number)s"
+msgstr "Редактировать задачу"
+
+#: templates/tasks/task_form.html:78
+#, fuzzy
+#| msgid "Описание фотографии"
+msgid "Ошибка загрузки фотографий:"
+msgstr "Описание фотографии"
+
+#: templates/tasks/task_form.html:110
+msgid "Просмотреть полное изображение"
+msgstr ""
+
+#: templates/tasks/task_form.html:114
+msgid "Текущее фото"
+msgstr ""
+
+#: templates/tasks/task_form.html:120
+msgid "Отметить для удаления"
+msgstr ""
+
+#: templates/tasks/task_form.html:127
+msgid "Загрузите новый файл, чтобы заменить."
+msgstr ""
+
+#: templates/tasks/task_form.html:202
+#, fuzzy
+#| msgid "Создать задачу"
+msgid "Сохранить задачу"
+msgstr "Создать задачу"
+
+#: templates/tasks/task_form.html:295 templates/tasks/task_form.html:479
+msgid "Выберите значение..."
+msgstr ""
+
+#: templates/tasks/task_form.html:327
+#, fuzzy
+#| msgid "Название подкатегории"
+msgid "Загрузка подкатегорий..."
+msgstr "Название подкатегории"
+
+#: templates/tasks/task_form.html:328
+#, fuzzy
+#| msgid "Добавить подкатегорию"
+msgid "Выберите подкатегорию..."
+msgstr "Добавить подкатегорию"
+
+#: templates/tasks/task_form.html:329
+msgid "Ошибка загрузки"
+msgstr ""
+
+#: templates/tasks/task_form.html:330
+#, fuzzy
+#| msgid "Редактировать подкатегорию"
+msgid "Нет доступных подкатегорий"
+msgstr "Редактировать подкатегорию"
+
+#: templates/tasks/task_form.html:331
+#, fuzzy
+#| msgid "Добавить категорию"
+msgid "Сначала выберите категорию"
+msgstr "Добавить категорию"
+
+#: templates/tasks/task_list.html:25 templates/tasks/task_list.html:80
+#: templates/tasks/task_list.html:83
+msgid "Канбан"
+msgstr ""
+
+#: templates/tasks/task_list.html:25 templates/tasks/task_list.html:81
+#, fuzzy
+#| msgid "Список задач"
+msgid "Список"
+msgstr "Список задач"
+
+#: templates/tasks/task_list.html:27
+#, fuzzy
+#| msgid "Вход"
+msgid "Вид"
+msgstr "Вход"
+
+#: templates/tasks/task_list.html:36
+msgid "Колонки"
+msgstr ""
+
+#: templates/tasks/task_list.html:49
+#, fuzzy
+#| msgid "Создать роль"
+msgid "Показать все"
+msgstr "Создать роль"
+
+#: templates/tasks/task_summary_report.html:4
+msgid "Отчет по статусам задач"
+msgstr "Отчет по статусам задач"
+
+#: templates/tasks/task_summary_report.html:7
+msgid "Сводка задач по статусам"
+msgstr "Сводка задач по статусам"
+
+#: templates/tasks/task_summary_report.html:14
+msgid "Статус задачи"
+msgstr "Статус задачи"
+
+#: templates/tasks/task_summary_report.html:40
+msgid "Нет данных для отчета."
+msgstr "Нет данных для отчета."
+
+#: templates/users/login.html:7
+msgid "Sphinx - Task Management System - Login"
+msgstr ""
+
+#: templates/users/login.html:22
+msgid "Вход"
+msgstr "Вход"
+
+#: templates/users/login.html:27
+msgid "Sphinx Логотип"
+msgstr ""
+
+#: templates/users/login.html:29
+#, fuzzy
+#| msgid "Вход в систему"
+msgid "Вход в аккаунт"
+msgstr "Вход в систему"
+
+#: templates/users/login.html:44 templates/users/login.html:47
+#: user_profiles/forms.py:212
+#, fuzzy
+#| msgid "Имя пользователя"
+msgid "Имя пользователя или Email"
+msgstr "Имя пользователя"
+
+#: templates/users/login.html:55 user_profiles/forms.py:83
+#: user_profiles/forms.py:213
+msgid "Пароль"
+msgstr "Пароль"
+
+#: templates/users/login.html:66
+msgid "Войти"
+msgstr "Войти"
+
+#: templates/users/login.html:72
+msgid "Забыли пароль?"
+msgstr "Забыли пароль?"
+
+#: templates/users/login.html:75
+#, fuzzy
+#| msgid "Нет команд."
+msgid "Нет аккаунта?"
+msgstr "Нет команд."
+
+#: templates/users/login.html:77
+#, fuzzy
+#| msgid "Редактировать"
+msgid "Зарегистрироваться"
+msgstr "Редактировать"
+
+#: templates/users/password_change_done.html:13 user_profiles/views.py:92
+#, fuzzy
+#| msgid "Задача успешно создана!"
+msgid "Ваш пароль был успешно изменен."
+msgstr "Задача успешно создана!"
+
+#: templates/users/password_change_done.html:16
+#, fuzzy
+#| msgid "Мой профиль"
+msgid "Вернуться в профиль"
+msgstr "Мой профиль"
+
+#: templates/users/password_change_form.html:11
+msgid ""
+"Пожалуйста, введите свой старый пароль, затем введите новый пароль дважды."
+msgstr ""
+
+#: templates/users/password_change_form.html:20
+#: templates/users/user_profile.html:10
+#, fuzzy
+#| msgid "Удалить роль"
+msgid "Сменить пароль"
+msgstr "Удалить роль"
+
+#: templates/users/team_confirm_delete.html:3
+msgid "Удаление команды"
+msgstr "Удаление команды"
+
+#: templates/users/team_confirm_delete.html:12
+#, fuzzy, python-format
+#| msgid "Вы уверены, что хотите удалить команду"
+msgid ""
+"\n"
+"        Вы уверены, что хотите удалить команду <strong>\"%(team_name)s\"</"
+"strong>?\n"
+"        "
+msgstr "Вы уверены, что хотите удалить команду"
+
+#: templates/users/team_form.html:4
+#, fuzzy
+#| msgid "Лидер команды"
+msgid "Форма команды"
+msgstr "Лидер команды"
+
+#: templates/users/team_form.html:17 templates/users/user_profile.html:31
+#, fuzzy
+#| msgid "Ошибка!"
+msgid "Ошибка формы:"
+msgstr "Ошибка!"
+
+#: templates/users/team_list.html:12 templates/users/team_list.html:18
+#: user_profiles/views.py:321
+msgid "Создать команду"
+msgstr "Создать команду"
+
+#: templates/users/team_list.html:26 user_profiles/forms.py:54
+#: user_profiles/models.py:144
+msgid "Название команды"
+msgstr "Название команды"
+
+#: templates/users/team_list.html:27
+#, fuzzy
+#| msgid "Нет лидера"
+msgid "Лидер"
+msgstr "Нет лидера"
+
+#: templates/users/team_list.html:48
+msgid "Команды не найдены."
+msgstr ""
+
+#: templates/users/user_confirm_delete.html:12
+#, fuzzy, python-format
+#| msgid "Вы уверены, что хотите удалить пользователя"
+msgid ""
+"\n"
+"        Вы уверены, что хотите удалить пользователя <strong>%(username)s</"
+"strong>?\n"
+"        "
+msgstr "Вы уверены, что хотите удалить пользователя"
+
+#: templates/users/user_confirm_delete.html:17
+msgid "Внимание: Вы пытаетесь удалить свой собственный аккаунт!"
+msgstr ""
+
+#: templates/users/user_list.html:12 templates/users/user_list.html:18
+msgid "Добавить пользователя"
+msgstr "Добавить пользователя"
+
+#: templates/users/user_list.html:27 user_profiles/forms.py:68
+msgid "Email"
+msgstr "Email"
+
+#: templates/users/user_list.html:28 user_profiles/forms.py:72
+#: user_profiles/forms.py:159 user_profiles/models.py:73
+#, fuzzy
+#| msgid "Подробности"
+msgid "Должность"
+msgstr "Подробности"
+
+#: templates/users/user_list.html:70
+#, fuzzy
+#| msgid "Удалить роль"
+msgid "Нельзя удалить себя"
+msgstr "Удалить роль"
+
+#: templates/users/user_list.html:76
+#, fuzzy
+#| msgid "Пользователи"
+msgid "Пользователи не найдены."
+msgstr "Пользователи"
+
+#: templates/users/user_profile.html:46
+#, fuzzy
+#| msgid "Категория задач"
+msgid "История задач"
+msgstr "Категория задач"
+
+#: templates/users/user_profile.html:62
+msgid "Проект:"
+msgstr ""
+
+#: templates/users/user_profile.html:62
+#, fuzzy
+#| msgid "Дата обновления"
+msgid "Обновлено:"
+msgstr "Дата обновления"
+
+#: templates/users/user_profile.html:74
+#, fuzzy
+#| msgid "Нет данных для отчета."
+msgid "Нет задач для отображения в истории."
+msgstr "Нет данных для отчета."
+
+#: user_profiles/admin.py:19
+#, fuzzy
+#| msgid "Удаление команды"
+msgid "Членство в команде"
+msgstr "Удаление команды"
+
+#: user_profiles/admin.py:20
+#, fuzzy
+#| msgid "Удаление команды"
+msgid "Членства в командах"
+msgstr "Удаление команды"
+
+#: user_profiles/admin.py:33
+#, fuzzy
+#| msgid "Номер задачи"
+msgid "Роль в задаче"
+msgstr "Номер задачи"
+
+#: user_profiles/admin.py:34
+#, fuzzy
+#| msgid "Количество задач"
+msgid "Роли в задачах"
+msgstr "Количество задач"
+
+#: user_profiles/admin.py:73 user_profiles/admin.py:87
+msgid "Personal info"
+msgstr ""
+
+#: user_profiles/admin.py:74 user_profiles/admin.py:88
+msgid "Organization"
+msgstr ""
+
+#: user_profiles/admin.py:75
+msgid "Permissions"
+msgstr ""
+
+#: user_profiles/admin.py:76
+msgid "Important dates"
+msgstr ""
+
+#: user_profiles/admin.py:125
+msgid "Сотрудники"
+msgstr ""
+
+#: user_profiles/admin.py:138
+msgid "Кол-во сотрудников"
+msgstr ""
+
+#: user_profiles/admin.py:153
+msgid "всего"
+msgstr ""
+
+#: user_profiles/admin.py:155
+msgid "Сотрудники (первые 20)"
+msgstr ""
+
+#: user_profiles/admin.py:163 user_profiles/models.py:33
+msgid "Вышестоящий отдел"
+msgstr ""
+
+#: user_profiles/admin.py:172
+#, fuzzy
+#| msgid "Исполнитель"
+msgid "Руководитель"
+msgstr "Исполнитель"
+
+#: user_profiles/admin.py:188
+#, fuzzy
+#| msgid "Удаление команды"
+msgid "Участники команды"
+msgstr "Удаление команды"
+
+#: user_profiles/admin.py:201
+msgid "Кол-во участников"
+msgstr ""
+
+#: user_profiles/admin.py:210 user_profiles/forms.py:41
+#: user_profiles/models.py:151
+msgid "Лидер команды"
+msgstr "Лидер команды"
+
+#: user_profiles/admin.py:264
+#, fuzzy
+#| msgid "Описание задачи"
+msgid "Описание (начало)"
+msgstr "Описание задачи"
+
+#: user_profiles/forms.py:33
+msgid "Выберите участников..."
+msgstr ""
+
+#: user_profiles/forms.py:40
+#, fuzzy
+#| msgid "Нет лидера"
+msgid "Выберите лидера..."
+msgstr "Нет лидера"
+
+#: user_profiles/forms.py:46 user_profiles/forms.py:73
+#: user_profiles/forms.py:132 user_profiles/forms.py:160
+msgid "Выберите отдел..."
+msgstr ""
+
+#: user_profiles/forms.py:55
+#, fuzzy
+#| msgid "Описание команды"
+msgid "Описание команды (опционально)"
+msgstr "Описание команды"
+
+#: user_profiles/forms.py:69 user_profiles/forms.py:156
+msgid "Имя"
+msgstr ""
+
+#: user_profiles/forms.py:70 user_profiles/forms.py:157
+msgid "Фамилия"
+msgstr ""
+
+#: user_profiles/forms.py:71 user_profiles/forms.py:158
+#: user_profiles/models.py:72
+#, fuzzy
+#| msgid "Номер задачи"
+msgid "Номер телефона"
+msgstr "Номер задачи"
+
+#: user_profiles/forms.py:74 user_profiles/forms.py:115
+#: user_profiles/forms.py:161 user_profiles/forms.py:176
+#: user_profiles/models.py:75
+msgid "Аватар"
+msgstr ""
+
+#: user_profiles/forms.py:84 user_profiles/forms.py:137
+#, fuzzy
+#| msgid "Имя пользователя"
+msgid "Имя пользователя (логин)"
+msgstr "Имя пользователя"
+
+#: user_profiles/forms.py:96
+msgid "Учетные данные"
+msgstr ""
+
+#: user_profiles/forms.py:103 user_profiles/forms.py:176
+#, fuzzy
+#| msgid "Системная информация"
+msgid "Личная информация"
+msgstr "Системная информация"
+
+#: user_profiles/forms.py:109 user_profiles/forms.py:176
+#, fuzzy
+#| msgid "Системная информация"
+msgid "Рабочая информация"
+msgstr "Системная информация"
+
+#: user_profiles/forms.py:124 user_profiles/forms.py:149
+#, fuzzy
+#| msgid "Категория с таким названием уже существует."
+msgid "Пользователь с таким email уже существует."
+msgstr "Категория с таким названием уже существует."
+
+#: user_profiles/forms.py:131
+msgid "Выберите группы..."
+msgstr ""
+
+#: user_profiles/forms.py:131
+msgid "Группы прав"
+msgstr ""
+
+#: user_profiles/forms.py:144
+#, fuzzy
+#| msgid "Нет задач в этом статусе"
+msgid "Права и статус"
+msgstr "Нет задач в этом статусе"
+
+#: user_profiles/forms.py:162
+msgid "Получать уведомления по Email"
+msgstr ""
+
+#: user_profiles/forms.py:163
+#, fuzzy
+#| msgid "Задача успешно создана!"
+msgid "Задач на странице по умолчанию"
+msgstr "Задача успешно создана!"
+
+#: user_profiles/forms.py:163
+msgid "От 5 до 100"
+msgstr ""
+
+#: user_profiles/forms.py:176
+msgid "Настройки уведомлений и интерфейса"
+msgstr ""
+
+#: user_profiles/models.py:26
+#, fuzzy
+#| msgid "Название роли"
+msgid "Название отдела"
+msgstr "Название роли"
+
+#: user_profiles/models.py:41
+msgid "Руководитель отдела"
+msgstr ""
+
+#: user_profiles/models.py:47
+msgid "Отделы"
+msgstr ""
+
+#: user_profiles/models.py:70
+#, fuzzy
+#| msgid "Удаление пользователя"
+msgid "Настройки пользователя"
+msgstr "Удаление пользователя"
+
+#: user_profiles/models.py:71
+msgid "email address"
+msgstr ""
+
+#: user_profiles/models.py:88 user_profiles/models.py:222
+msgid "Роли"
+msgstr "Роли"
+
+#: user_profiles/models.py:168
+msgid "Описание команды"
+msgstr "Описание команды"
+
+#: user_profiles/models.py:171
+msgid "Команда"
+msgstr "Команда"
+
+#: user_profiles/models.py:218
+msgid "Название роли"
+msgstr "Название роли"
+
+#: user_profiles/models.py:221 user_profiles/models.py:255
+msgid "Роль"
+msgstr "Роль"
+
+#: user_profiles/models.py:267
 msgid "Роль пользователя в задаче"
 msgstr "Роль пользователя в задаче"
 
-#: .\user_profiles\models.py:72
+#: user_profiles/models.py:268
 msgid "Роли пользователей в задачах"
 msgstr "Роли пользователей в задачах"
 
-#: .\user_profiles\views.py:53
-msgid "Successfully logged in!"
-msgstr "Вход выполнен успешно!"
+#: user_profiles/views.py:46
+#, fuzzy
+#| msgid "Задача успешно создана!"
+msgid "Профиль успешно обновлен."
+msgstr "Задача успешно создана!"
 
-#: .\user_profiles\views.py:56
-msgid "Invalid credentials. Please try again!"
-msgstr "Неверные учетные данные. Пожалуйста, попробуйте еще раз!"
+#: user_profiles/views.py:100
+#, fuzzy
+#| msgid "Забыли пароль?"
+msgid "Смена пароля"
+msgstr "Забыли пароль?"
 
-#: .\user_profiles\views.py:71
-msgid "Successfully logged out!"
-msgstr "Выход выполнен успешно!"
+#: user_profiles/views.py:108
+#, fuzzy
+#| msgid "Пароль"
+msgid "Пароль изменен"
+msgstr "Пароль"
+
+#: user_profiles/views.py:147
+#, fuzzy
+#| msgid "Роль пользователя в задаче"
+msgid "Неверное имя пользователя или пароль."
+msgstr "Роль пользователя в задаче"
+
+#: user_profiles/views.py:155
+msgid "Вы успешно вышли из системы."
+msgstr ""
+
+#: user_profiles/views.py:204
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Пользователь '%(username)s' успешно создан!"
+msgstr "Задача успешно создана!"
+
+#: user_profiles/views.py:208
+msgid "Создать пользователя"
+msgstr "Создать пользователя"
+
+#: user_profiles/views.py:233
+#, fuzzy, python-format
+#| msgid "Роль пользователя в задаче"
+msgid "Данные пользователя '%(username)s' обновлены."
+msgstr "Роль пользователя в задаче"
+
+#: user_profiles/views.py:238
+#, fuzzy, python-format
+#| msgid "Редактировать пользователя"
+msgid "Редактировать пользователя: %s"
+msgstr "Редактировать пользователя"
+
+#: user_profiles/views.py:253
+#, fuzzy
+#| msgid "Пользователи"
+msgid "Пользователь удален!"
+msgstr "Пользователи"
+
+#: user_profiles/views.py:258
+#, fuzzy, python-format
+#| msgid "Удалить пользователя"
+msgid "Удалить пользователя: %s"
+msgstr "Удалить пользователя"
+
+#: user_profiles/views.py:264
+#, fuzzy
+#| msgid "Вы не имеете доступа к этой задаче."
+msgid "Вы не можете удалить свой собственный аккаунт."
+msgstr "Вы не имеете доступа к этой задаче."
+
+#: user_profiles/views.py:317
+#, fuzzy, python-format
+#| msgid "Задача успешно создана!"
+msgid "Команда '%(name)s' успешно создана!"
+msgstr "Задача успешно создана!"
+
+#: user_profiles/views.py:343
+#, python-format
+msgid "Данные команды '%(name)s' обновлены."
+msgstr ""
+
+#: user_profiles/views.py:347
+#, fuzzy, python-format
+#| msgid "Редактировать команду"
+msgid "Редактировать команду: %s"
+msgstr "Редактировать команду"
+
+#: user_profiles/views.py:362
+#, fuzzy
+#| msgid "Задача удалена!"
+msgid "Команда удалена!"
+msgstr "Задача удалена!"
+
+#: user_profiles/views.py:366
+#, fuzzy, python-format
+#| msgid "Удалить команду"
+msgid "Удалить команду: %s"
+msgstr "Удалить команду"
+
+#~ msgid "Español"
+#~ msgstr "Испанский"
+
+#~ msgid "Français"
+#~ msgstr "Французский"
+
+#~ msgid "Системная информация (только для чтения)"
+#~ msgstr "Системная информация (только для чтения)"
+
+#~ msgid "Tasks"
+#~ msgstr "Задачи"
+
+#~ msgid "Team name"
+#~ msgstr "Название команды"
+
+#~ msgid "Team description"
+#~ msgstr "Описание команды"
+
+#~ msgid "Campaign name"
+#~ msgstr "Название кампании"
+
+#~ msgid "Campaign description"
+#~ msgstr "Описание кампании"
+
+#~ msgid "Password"
+#~ msgstr "Пароль"
+
+#~ msgid "Role name"
+#~ msgstr "Название роли"
+
+#~ msgid "Category name"
+#~ msgstr "Название категории"
+
+#~ msgid "Category description"
+#~ msgstr "Описание категории"
+
+#~ msgid "Subcategory name"
+#~ msgstr "Название подкатегории"
+
+#~ msgid "Subcategory description"
+#~ msgstr "Описание подкатегории"
+
+#~ msgid "Task description"
+#~ msgstr "Описание задачи"
+
+#~ msgid "Photo description (optional)"
+#~ msgstr "Описание фотографии (необязательно)"
+
+#~ msgid "Username"
+#~ msgstr "Имя пользователя"
+
+#~ msgid "Enter username"
+#~ msgstr "Введите имя пользователя"
+
+#~ msgid "Enter password"
+#~ msgstr "Введите пароль"
+
+#~ msgid "Login"
+#~ msgstr "Войти"
+
+#~ msgid "Кампании"
+#~ msgstr "Кампании"
+
+#~ msgid "Входящие"
+#~ msgstr "Входящие"
+
+#~ msgid "Детали"
+#~ msgstr "Детали"
+
+#~ msgid "Вы уверены, что хотите удалить кампанию"
+#~ msgstr "Вы уверены, что хотите удалить кампанию"
+
+#~ msgid "Редактировать кампанию"
+#~ msgstr "Редактировать кампанию"
+
+#~ msgid "Delete this item"
+#~ msgstr "Удалить этот элемент"
+
+#~ msgid "Cancel the deletion"
+#~ msgstr "Отменить удаление"
+
+#~ msgid "Обновить пользователя"
+#~ msgstr "Обновить пользователя"
+
+#~ msgid "Создать новую кампанию"
+#~ msgstr "Создать новую кампанию"
+
+#~ msgid "Создать кампанию"
+#~ msgstr "Создать кампанию"
+
+#~ msgid "Создать новую категорию"
+#~ msgstr "Создать новую категорию"
+
+#~ msgid "Страница"
+#~ msgstr "Страница"
+
+#~ msgid "Информация о задаче"
+#~ msgstr "Информация о задаче"
+
+#~ msgid "Крайний срок"
+#~ msgstr "Крайний срок"
+
+#~ msgid "Нет задач."
+#~ msgstr "Нет задач."
+
+#~ msgid "Sign in to your account"
+#~ msgstr "Вход в аккаунт"
+
+#~ msgid "Your username"
+#~ msgstr "Ваше имя пользователя"
+
+#~ msgid "puppetmaster"
+#~ msgstr "puppetmaster"
+
+#~ msgid "Forgot password?"
+#~ msgstr "Забыли пароль?"
+
+#~ msgid "Sign in"
+#~ msgstr "Войти"
+
+#~ msgid "Don’t have an account yet?"
+#~ msgstr "Еще нет аккаунта?"
+
+#~ msgid "Sign up"
+#~ msgstr "Зарегистрироваться"
+
+#~ msgid "Создать новую роль"
+#~ msgstr "Создать новую роль"
+
+#~ msgid "Создать нового пользователя"
+#~ msgstr "Создать нового пользователя"
+
+#~ msgid "Successfully logged in!"
+#~ msgstr "Вход выполнен успешно!"
+
+#~ msgid "Invalid credentials. Please try again!"
+#~ msgstr "Неверные учетные данные. Пожалуйста, попробуйте еще раз!"
+
+#~ msgid "Successfully logged out!"
+#~ msgstr "Выход выполнен успешно!"
