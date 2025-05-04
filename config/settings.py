@@ -17,7 +17,9 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=lambda v: [s.strip() f
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=lambda v: [s.strip() for s in v.split(",")], default=[])
 
 INSTALLED_APPS = [
-    "jazzmin", "django.contrib.admin", "django.contrib.auth",
+    # "jazzmin", 
+    # 'simpleui',
+    "django.contrib.admin", "django.contrib.auth",
     "django.contrib.contenttypes", "django.contrib.sessions",
     "django.contrib.messages", "django.contrib.staticfiles",
     "channels", "corsheaders", "crispy_forms", "crispy_tailwind",
@@ -25,7 +27,8 @@ INSTALLED_APPS = [
     "rest_framework", "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist", "simple_history",
     "django_browser_reload", "django_select2", "widget_tweaks", "taggit",
-    "user_profiles", "tasks", "room", "hrbot", "checklists",
+    "user_profiles", "tasks", "room", "checklists",
+    # "hrbot",
 ]
 
 MIDDLEWARE = [
