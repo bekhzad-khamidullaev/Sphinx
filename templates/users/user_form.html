@@ -1,16 +1,30 @@
 {% extends 'base.html' %}
-{% load i18n crispy_forms_tags %}
+{% load i18n static crispy_forms_tags %} {# <-- ДОБАВЛЕН static #}
+
 {% block title %}{{ page_title }}{% endblock %}
+
 {% block list_title %}
+{# Оставляем ваш текущий стиль заголовка #}
 <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
     {{ page_title }}
 </h1>
 {% endblock %}
+
 {% block list_content %}
 <div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+
+        {# Crispy Forms отрендерит 'job_title' как <select> (если форма настроена верно) #}
         {% crispy form %}
+
+        {% if form.non_field_errors %}
+            <div class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
+                <h4 class="font-bold">{% trans "Ошибка формы:" %}</h4>
+                {% for error in form.non_field_errors %}<p class="text-sm">{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+
         <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-dark-600 mt-6">
             <a href="{% url 'user_profiles:user_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
                 {% trans 'Отмена' %}
@@ -22,6 +36,8 @@
     </form>
 </div>
 {% endblock %}
+
 {% block scripts %}
     {{ block.super }}
+    {{ form.media.js }}
 {% endblock %}
