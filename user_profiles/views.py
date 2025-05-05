@@ -30,7 +30,6 @@ from django.contrib.auth.views import PasswordChangeView, PasswordChangeDoneView
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.messages.views import SuccessMessageMixin
 from tasks.models import Task
-# user_profiles/views.py
 from .forms import TeamForm, UserCreateForm, UserUpdateForm, UserProfileEditForm, LoginForm
 
 logger = logging.getLogger(__name__)

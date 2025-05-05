@@ -1,27 +1,117 @@
 {% extends 'base.html' %}
 {% load i18n crispy_forms_tags %}
-{% block title %}{{ page_title }}{% endblock %}
-{% block list_title %}
-<h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
-    {{ page_title }}
-</h1>
-{% endblock %}
-{% block list_content %}
-<div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {% crispy form %}
-        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-dark-600 mt-6">
-            <a href="{% url 'user_profiles:user_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-                {% trans 'Отмена' %}
-            </a>
-            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-                <i class="fas fa-save mr-2"></i> {{ form_action_text|default:_("Сохранить") }}
-            </button>
-        </div>
-    </form>
+{% load static %} {# Добавлен load static на случай использования статики в base.html или здесь #}
+
+{% block title %}{{ page_title|default:_("Форма") }}{% endblock %} {# Добавлено значение по умолчанию #}
+
+{% block list_title %} {# Используем этот блок для заголовка страницы формы #}
+<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <h2 class="text-title-md2 font-bold text-black dark:text-white">
+      {{ page_title }} {# Заголовок из context view (Создать/Редактировать пользователя/команду) #}
+    </h2>
+    {# Можно добавить хлебные крошки, если нужно #}
+    {# <nav>
+      <ol class="flex items-center gap-2">
+        <li><a class="font-medium" href="{% url 'dashboard:home' %}">Dashboard /</a></li>
+        <li><a class="font-medium" href="{% if object %}{% url 'user_profiles:user_list' %}{% else %}{% url 'user_profiles:team_list' %}{% endif %}">Users or Teams /</a></li>
+        <li class="font-medium text-primary">{{ form_action_text|default:_("Form") }}</li>
+      </ol>
+    </nav> #}
 </div>
 {% endblock %}
+
+{% block list_content %} {# Основной контент формы #}
+{# Используем стили контейнера, похожие на TailAdmin Form Elements #}
+<div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+    {# Опционально: заголовок внутри карточки #}
+    {# <div class="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
+        <h3 class="font-medium text-black dark:text-white">
+            {{ page_title }}
+        </h3>
+    </div> #}
+
+    {# Оборачиваем форму в div с паддингами #}
+    <div class="p-6.5">
+        <form method="post" enctype="multipart/form-data" action=""> {# Добавлен action="" для ясности #}
+            {% csrf_token %}
+
+            {# Рендеринг формы с помощью crispy-forms-tailwind #}
+            {% crispy form %}
+
+            {# Отображение не полевых ошибок формы (non_field_errors) #}
+            {% if form.non_field_errors %}
+            <div role="alert" class="mt-4 p-4 border border-danger/50 bg-danger/10 text-danger rounded-md dark:border-danger/70 dark:bg-danger/20 dark:text-red-400">
+                <h4 class="font-bold mb-1">{% trans "Ошибка сохранения:" %}</h4>
+                {% for error in form.non_field_errors %}
+                    <p class="text-sm">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# Кнопки действий внизу формы #}
+            <div class="flex justify-end gap-3 pt-6 border-t border-stroke dark:border-strokedark mt-6">
+                 {# Кнопка Отмена - ведет на соответствующий список #}
+                 <a href="{% if 'user' in request.resolver_match.url_name %}{% url 'user_profiles:user_list' %}{% elif 'team' in request.resolver_match.url_name %}{% url 'user_profiles:team_list' %}{% else %}#{% endif %}"
+                    class="inline-flex items-center justify-center rounded-md border border-stroke dark:border-strokedark px-6 py-2.5 text-center font-medium text-black dark:text-white hover:bg-gray-100 dark:hover:bg-boxdark-2 transition active:scale-95 shadow-sm">
+                     {% trans 'Отмена' %}
+                 </a>
+                 {# Кнопка Сохранить/Создать #}
+                 <button type="submit" class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-center font-medium text-white hover:bg-opacity-90 transition active:scale-95 shadow-sm">
+                     <i class="fas fa-save mr-2"></i> {{ form_action_text|default:_("Сохранить") }}
+                 </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
 {% block scripts %}
-    {{ block.super }}
+    {{ block.super }} {# Включаем скрипты из базового шаблона #}
+
+    {# Подключаем Select2, если он используется в форме #}
+    {% if form.fields.department or form.fields.groups or form.fields.job_title or form.fields.members or form.fields.team_leader %}
+        {# Подключаем CSS Select2 #}
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        {# Подключаем jQuery (если еще не подключен в base.html) #}
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        {# Подключаем JS Select2 #}
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        {# Опционально: подключаем русификацию для Select2 #}
+        {% if LANGUAGE_CODE == 'ru' %}
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js"></script>
+        {% endif %}
+
+        <script>
+            $(document).ready(function() {
+                // Общие настройки для Select2
+                const defaultOptions = {
+                    theme: "default", // Убедитесь, что эта тема совместима с Tailwind или используйте кастомную
+                    width: '100%', // Занимать всю ширину контейнера
+                    allowClear: true, // Показывать крестик для очистки
+                    language: "{{ LANGUAGE_CODE|slice:':2'|default:'en' }}" // Устанавливаем язык
+                };
+
+                // Инициализация для всех select с классом 'select2-single'
+                try {
+                    $('.select2-single').select2({
+                        ...defaultOptions,
+                        placeholder: $(this).data('placeholder') || '{% trans "Выберите значение" %}',
+                        // minimumResultsForSearch: Infinity // Раскомментируйте, если не нужен поиск для одиночного выбора
+                    });
+                } catch (e) { console.error("Error initializing Select2 single:", e); }
+
+                // Инициализация для всех select с классом 'select2-multiple'
+                try {
+                    $('.select2-multiple').select2({
+                        ...defaultOptions,
+                        placeholder: $(this).data('placeholder') || '{% trans "Выберите одно или несколько значений" %}',
+                        closeOnSelect: false // Не закрывать список после выбора элемента
+                    });
+                } catch (e) { console.error("Error initializing Select2 multiple:", e); }
+            });
+        </script>
+    {% endif %}
+
+    {# Подключаем JS-медиа самой формы (например, для ClearableFileInput) #}
+    {{ form.media.js }}
 {% endblock %}
