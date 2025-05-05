@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "user_profiles",  # User management, teams, profiles, company structure
     "tasks",  # Core task management functionality
     "room",  # Chat/room functionality (assuming it exists)
-    "hrbot",
+    # "hrbot",
     "checklists",
     # Celery (if used for background tasks) - Uncomment if needed
     # 'celery',
