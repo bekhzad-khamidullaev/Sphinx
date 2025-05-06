@@ -1,15 +1,32 @@
+{% comment %} tasks/templates/tasks/category_form.html {% endcomment %}
 {% extends 'base.html' %}
 {% load i18n static crispy_forms_tags %}
-{% block title %}{{ page_title|default:_("Форма категории") }}{% endblock %}
+
+{% block title %}
+    {# Determine title based on instance existence #}
+    {% if form.instance.pk %}
+        {% blocktrans with name=form.instance.name %}Редактирование категории: {{ name }}{% endblocktrans %}
+    {% else %}
+        {% trans "Создание новой категории" %}
+    {% endif %}
+{% endblock %}
+
 {% block head_extra %}
     {{ block.super }}
     {{ form.media.css }}
 {% endblock %}
+
 {% block list_title %}
 <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
-    {{ page_title }}
+    {# Use the same logic as the title block for the H1 #}
+    {% if form.instance.pk %}
+        {% blocktrans with name=form.instance.name %}Редактирование категории: {{ name }}{% endblocktrans %}
+    {% else %}
+        {% trans "Создание новой категории" %}
+    {% endif %}
 </h1>
 {% endblock %}
+
 {% block list_content %}
 <div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
     <form method="post" action="" id="category-form" novalidate>
@@ -32,13 +49,19 @@
             </a>
             <button type="submit"
                     class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:bg-ios-teal dark:hover:bg-teal-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
-                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
-                {{ form_action|default:_("Сохранить категорию") }}
+                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4" aria-hidden="true"></i>
+                 {# Use if tag for the button text #}
+                 {% if form.instance.pk %}
+                     {% trans "Сохранить изменения" %}
+                 {% else %}
+                     {% trans "Создать категорию" %}
+                 {% endif %}
             </button>
         </div>
     </form>
 </div>
 {% endblock %}
+
 {% block scripts %}
     {{ block.super }}
     {{ form.media.js }}

@@ -1,3 +1,4 @@
+# tasks/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
@@ -10,43 +11,42 @@ router.register(r'projects', api.ProjectViewSet, basename='project-api')
 router.register(r'categories', api.TaskCategoryViewSet, basename='category-api')
 router.register(r'subcategories', api.TaskSubcategoryViewSet, basename='subcategory-api')
 router.register(r'tasks', api.TaskViewSet, basename='task-api')
-router.register(r'photos', api.TaskPhotoViewSet, basename='photo-api')
+router.register(r'photos', api.TaskPhotoViewSet, basename='photo-api') # Assuming TaskPhotoViewSet exists
 
 urlpatterns = [
-    # API endpoints (DRF router + custom suggestion endpoint)
     path('api/', include(router.urls)),
     path('api/search-suggestions/', api.SearchSuggestionsView.as_view(), name='search-suggestions-api'),
+    path('api/user-autocomplete/', api.UserAutocompleteView.as_view(), name='user_autocomplete'), # Moved here for consistency
 
-    # Project URLs
     path('projects/', project.ProjectListView.as_view(), name='project_list'),
     path('projects/create/', project.ProjectCreateView.as_view(), name='project_create'),
+    path('projects/<int:pk>/', project.ProjectDetailView.as_view(), name='project_detail'), # Added detail view
     path('projects/<int:pk>/update/', project.ProjectUpdateView.as_view(), name='project_update'),
     path('projects/<int:pk>/delete/', project.ProjectDeleteView.as_view(), name='project_delete'),
 
-    # Category URLs
     path('categories/', category.TaskCategoryListView.as_view(), name='category_list'),
     path('categories/create/', category.TaskCategoryCreateView.as_view(), name='category_create'),
+    path('categories/<int:pk>/', category.TaskCategoryDetailView.as_view(), name='category_detail'), # Added detail view
     path('categories/<int:pk>/update/', category.TaskCategoryUpdateView.as_view(), name='category_update'),
     path('categories/<int:pk>/delete/', category.TaskCategoryDeleteView.as_view(), name='category_delete'),
 
-    # Subcategory URLs
     path('subcategories/', subcategory.TaskSubcategoryListView.as_view(), name='subcategory_list'),
     path('subcategories/create/', subcategory.TaskSubcategoryCreateView.as_view(), name='subcategory_create'),
+    path('subcategories/<int:pk>/', subcategory.TaskSubcategoryDetailView.as_view(), name='subcategory_detail'),# Added detail view
     path('subcategories/<int:pk>/update/', subcategory.TaskSubcategoryUpdateView.as_view(), name='subcategory_update'),
     path('subcategories/<int:pk>/delete/', subcategory.TaskSubcategoryDeleteView.as_view(), name='subcategory_delete'),
+    path('ajax/load-subcategories/', ajax.load_subcategories, name='ajax_load_subcategories'), # For dependent dropdown
 
-    # Task URLs
     path('tasks/', task.TaskListView.as_view(), name='task_list'),
     path('tasks/create/', task.TaskCreateView.as_view(), name='task_create'),
     path('tasks/<int:pk>/', task.TaskDetailView.as_view(), name='task_detail'),
     path('tasks/<int:pk>/update/', task.TaskUpdateView.as_view(), name='task_update'),
     path('tasks/<int:pk>/delete/', task.TaskDeleteView.as_view(), name='task_delete'),
-    path('tasks/<int:pk>/perform/', task.TaskPerformView.as_view(), name='task_perform'),
-    path('api/user-autocomplete/', api.UserAutocompleteView.as_view(), name='user_autocomplete'),
-    # AJAX URL
+    path('tasks/<int:pk>/perform/', task.TaskPerformView.as_view(), name='task_perform'), # Assuming this view exists
     path('ajax/tasks/<int:task_id>/update-status/', ajax.update_task_status, name='ajax_update_task_status'),
+    path('tasks/<int:task_id>/add_comment/', task.add_comment_to_task, name='add_comment_to_task'), # Example comment add URL
 
-    # Report URLs
+    path('reports/', report.ReportIndexView.as_view(), name='report_index'), # Central reports page
     path('reports/export/excel/', report.export_tasks_to_excel, name='export_tasks_excel'),
     path('reports/completed/', report.completed_tasks_report, name='report_completed_tasks'),
     path('reports/overdue/', report.overdue_tasks_report, name='report_overdue_tasks'),

@@ -1,31 +1,17 @@
-<!-- tasks/templates/tasks/task_form.html -->
 {% extends 'base.html' %}
 {% load i18n crispy_forms_tags static %}
 
-{% block title %}{{ page_title|default:_("Форма задачи") }}{% endblock title %}
+{% block title %}{{ page_title|default:form.instance.pk|yesno:_("Редактирование задачи"),_("Создание новой задачи") }}{% endblock title %}
 
-{% block head_extra %} {# Place CSS/JS includes in head for proper loading order #}
-    {# Select2 Base CSS (CDN) #}
+{% block head_extra %}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    {# Optional: Select2 Theme CSS (Example: Bootstrap 5 Theme) #}
-    {# <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" /> #}
-
-    {# Flatpickr CSS (if using for date/datetime) #}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-    {# Include CSS media from Django forms (loads django-select2 CSS) #}
     {{ form.media.css }}
-    {% if photo_formset %}{{ photo_formset.media.css }}{% endif %} {# Include formset media if it exists #}
-
-    {# REMOVED THE CUSTOM <style> block for dark mode overrides #}
-    {# Rely on Tailwind classes applied via widgets and crispy-tailwind template pack #}
-
+    {% if photo_formset %}{{ photo_formset.media.css }}{% endif %}
 {% endblock head_extra %}
-
 
 {% block list_title %}
 <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
-    {# Dynamically set title based on whether editing or creating #}
     {% if object and object.pk %}
         {% blocktrans with number=object.task_number|default:object.pk %}Редактирование задачи #{{ number }}{% endblocktrans %}
     {% else %}
@@ -35,483 +21,217 @@
 {% endblock list_title %}
 
 {% block list_content %}
-{# Main container for the form with padding, background, shadow, border #}
 <div class="bg-white dark:bg-dark-800 shadow-xl rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
-
-    {# The main form tag. action="" submits to the current URL. enctype is needed for file uploads. #}
     <form method="post" action="" enctype="multipart/form-data" id="task-form" novalidate>
-        {% csrf_token %} {# Required for security #}
-
-        {# Render the main TaskForm fields using the Crispy Forms helper and layout #}
-        {# The layout defined in forms.py controls the structure here #}
+        {% csrf_token %}
         {% crispy form %}
 
-        {# Display Non-Field Errors (errors not associated with a specific field) #}
         {% if form.non_field_errors %}
         <div role="alert" class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
             <h4 class="font-bold">{% trans "Общая ошибка формы:" %}</h4>
             <ul class="list-disc list-inside text-sm mt-1">
-            {% for error in form.non_field_errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
             </ul>
         </div>
         {% endif %}
 
-        {# Visual separator before the photo formset #}
         <hr class="my-6 border-gray-200 dark:border-dark-600">
 
-        {# --- Photo Formset Section --- #}
-        {% if photo_formset %} {# Check if formset is passed to context #}
+        {% if photo_formset %}
         <fieldset>
             <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-                <i class="fa-regular fa-images mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true"></i>
-                {% trans 'Фотографии' %}
+                <i class="fa-regular fa-images mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true"></i>{% trans 'Фотографии' %}
             </legend>
-
-            {# Management form is CRITICAL for formsets to work correctly #}
             {{ photo_formset.management_form }}
-
-            {# Display Non-Form Errors for the photo formset #}
             {% if photo_formset.non_form_errors %}
             <div role="alert" class="mb-4 p-3 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
                 <h4 class="font-bold">{% trans "Ошибка загрузки фотографий:" %}</h4>
                  <ul class="list-disc list-inside text-sm mt-1">
-                {% for error in photo_formset.non_form_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
+                {% for error in photo_formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}
                 </ul>
             </div>
             {% endif %}
-
-            {# Container for individual photo forms #}
             <div id="photo-formset-container" class="space-y-4">
                 {% for photo_form in photo_formset %}
-                {# Container for a single photo form, with unique ID and error styling #}
                 <div class="photo-form p-4 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 relative transition-colors duration-150 ease-in-out {% if photo_form.errors %}border-red-500 dark:border-red-700{% endif %}" id="{{ photo_formset.prefix }}-{{ forloop.counter0 }}">
-
-                    {# Hidden fields for this specific form (e.g., ID of existing photo) #}
                     {% for hidden_field in photo_form.hidden_fields %}{{ hidden_field }}{% endfor %}
-
-                    {# Grid layout for photo upload and description fields #}
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
-
-                        {# Photo Upload Field Column #}
                         <div class="sm:col-span-4">
-                            {# Label linked to the input field #}
                             <label for="{{ photo_form.photo.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                {{ photo_form.photo.label }}
-                                {% if photo_form.photo.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+                                {{ photo_form.photo.label }}{% if photo_form.photo.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
                             </label>
-
-                             {# Display existing photo preview if editing #}
                              {% if photo_form.instance.pk and photo_form.instance.photo %}
                              <div class="mb-2 group relative w-24 h-24">
                                  <a href="{{ photo_form.instance.photo.url }}" target="_blank" title="{% trans 'Просмотреть полное изображение' %}" class="block">
-                                     {# Use thumbnail if available, otherwise fall back to full image #}
                                      {% with photo_url=photo_form.instance.photo.thumbnail.url|default:photo_form.instance.photo.url %}
-                                     <img src="{{ photo_url }}"
-                                          alt="{% trans 'Текущее фото' %}"
-                                          class="w-full h-full object-cover rounded shadow-md border border-gray-300 dark:border-dark-600">
+                                     <img src="{{ photo_url }}" alt="{% trans 'Текущее фото' %}" class="w-full h-full object-cover rounded shadow-md border border-gray-300 dark:border-dark-600">
                                      {% endwith %}
                                  </a>
-                                 {# Delete Checkbox Overlay (only if deletion is allowed) #}
                                  {% if photo_formset.can_delete and photo_form.DELETE %}
                                  <div class="absolute -top-2 -right-2 bg-white dark:bg-dark-800 rounded-full p-0.5 shadow cursor-pointer group-hover:opacity-100 opacity-75 transition-opacity" title="{% trans 'Отметить для удаления' %}">
                                      <label for="{{ photo_form.DELETE.id_for_label }}" class="flex items-center justify-center w-5 h-5 text-xs text-red-600 dark:text-red-400 cursor-pointer">
-                                         {{ photo_form.DELETE }} {# Renders <input type="checkbox" name="photos-X-DELETE"> #}
+                                         {{ photo_form.DELETE }}
                                      </label>
                                  </div>
                                  {% endif %}
                              </div>
                               <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{% trans "Загрузите новый файл, чтобы заменить." %}</p>
                              {% endif %}
-
-                            {# The actual file input field - Render using standard Django template syntax #}
                             {{ photo_form.photo }}
-
-                            {# Display help text if provided in the form #}
-                            {% if photo_form.photo.help_text %}
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ photo_form.photo.help_text|safe }}</p>
-                            {% endif %}
-
-                            {# Display errors specific to the photo field #}
-                            {% if photo_form.photo.errors %}
-                            <div class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {% for error in photo_form.photo.errors %}<p>{{ error }}</p>{% endfor %}
-                            </div>
-                            {% endif %}
-                        </div> {# End Photo Upload Field Column #}
-
-                        {# Photo Description Field Column #}
+                            {% if photo_form.photo.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ photo_form.photo.help_text|safe }}</p>{% endif %}
+                            {% if photo_form.photo.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{% for error in photo_form.photo.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                        </div>
                         <div class="sm:col-span-8">
-                            {# Label linked to the textarea #}
                              <label for="{{ photo_form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                 {{ photo_form.description.label }}
-                                 {% if photo_form.description.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+                                 {{ photo_form.description.label }}{% if photo_form.description.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
                              </label>
-
-                             {# The description textarea - Render using standard Django template syntax #}
                              {{ photo_form.description }}
-
-                             {# Display help text if provided #}
-                             {% if photo_form.description.help_text %}
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ photo_form.description.help_text|safe }}</p>
-                            {% endif %}
-
-                            {# Display errors specific to the description field #}
-                            {% if photo_form.description.errors %}
-                            <div class="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {% for error in photo_form.description.errors %}<p>{{ error }}</p>{% endfor %}
-                            </div>
-                            {% endif %}
-                        </div> {# End Photo Description Field Column #}
-
-                         {# Display any other errors for this specific photo form #}
+                             {% if photo_form.description.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ photo_form.description.help_text|safe }}</p>{% endif %}
+                            {% if photo_form.description.errors %}<div class="mt-1 text-sm text-red-600 dark:text-red-400">{% for error in photo_form.description.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                        </div>
                          {% if photo_form.non_field_errors %}
                              <div class="sm:col-span-12 mt-2 text-sm text-red-600 dark:text-red-400">
-                                 {% for error in photo_form.non_field_errors %}
-                                     <p>{{ error }}</p>
-                                 {% endfor %}
+                                 {% for error in photo_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
                              </div>
                          {% endif %}
-
-                    </div> {# End grid layout #}
-                </div> {# End single photo-form div #}
+                    </div>
+                </div>
                 {% endfor %}
-            </div> {# End photo-formset-container #}
+            </div>
+        </fieldset>
+        {% endif %}
 
-            {# Optional: Add button for dynamic form adding via JS #}
-            {# <button type="button" id="add-photo-form" class="mt-4 text-sm text-blue-600 hover:underline">{% trans '+ Добавить еще фото' %}</button> #}
-
-        </fieldset> {# End Photo Formset Section #}
-        {% endif %} {# End if photo_formset #}
-
-
-        {# --- Action Buttons Section --- #}
         <div class="flex justify-end items-center space-x-3 pt-8 mt-8 border-t border-gray-200 dark:border-dark-600">
-            {# Cancel Button (links back to task list or detail view) #}
             <a href="{% if object and object.pk %}{{ object.get_absolute_url }}{% else %}{% url 'tasks:task_list' %}{% endif %}"
                class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-dark-600 transition-colors shadow-sm">
                 {% trans 'Отмена' %}
             </a>
-            {# Submit Button #}
             <button type="submit"
                     class="px-5 py-2.5 rounded-lg text-sm font-medium bg-blue-600 dark:bg-ios-blue text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-colors shadow-md inline-flex items-center">
                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4" aria-hidden="true"></i>
-                {{ form_action|default:_("Сохранить задачу") }}
+                {{ form_action|default:form.instance.pk|yesno:_("Сохранить изменения"),_("Создать задачу") }}
             </button>
-        </div> {# End Buttons Section #}
-
-    </form> {# End Main Form #}
-</div> {# End Form Container #}
+        </div>
+    </form>
+</div>
 {% endblock list_content %}
 
-
-{% block scripts %} {# Place JavaScript at the end of the body #}
-{# --- Load JavaScript Libraries --- #}
-{# jQuery (Required by Select2 v4) #}
+{% block scripts %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
-{# Select2 JavaScript #}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
-{# Optional: Select2 Localization #}
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
-
-{# Flatpickr JS #}
+{% get_current_language as LANG_CODE %}{% get_language_info for LANG_CODE as LANG_INFO %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANG_INFO.code|slice:':2'|default:'ru' }}.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
-<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Russian locale #}
-
-{# --- Load Django Form Media --- #}
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
 {{ form.media.js }}
 {% if photo_formset %}{{ photo_formset.media.js }}{% endif %}
 
-{# --- Custom JavaScript for Form Enhancements --- #}
 <script defer>
     document.addEventListener('DOMContentLoaded', function() {
-        try { // Wrap in try...catch
+        try {
+             const flatpickrBaseConfig = { locale: "ru", allowInput: true, altInput: true };
+             const flatpickrDateConfig = { ...flatpickrBaseConfig, dateFormat: "Y-m-d", altFormat: "d.m.Y" };
+             const flatpickrDateTimeConfig = { ...flatpickrBaseConfig, enableTime: true, dateFormat: "Y-m-d H:i", altFormat: "d.m.Y H:i", time_24hr: true };
 
-             // --- Initialize Flatpickr Date/Time Pickers ---
-             const flatpickrBaseConfig = {
-                 locale: "ru",
-                 allowInput: true, // Allow manual input
-                 altInput: true, // Show user-friendly format
-             };
-             const flatpickrDateConfig = {
-                 ...flatpickrBaseConfig,
-                 dateFormat: "Y-m-d", // ISO format for date fields
-                 altFormat: "d.m.Y", // User-friendly date format
-             };
-             const flatpickrDateTimeConfig = {
-                 ...flatpickrBaseConfig,
-                 enableTime: true,
-                 dateFormat: "Y-m-d H:i", // ISO format with time (24hr)
-                 altFormat: "d.m.Y H:i", // User-friendly datetime format
-                 time_24hr: true
-             };
+             document.querySelectorAll(".flatpickr-date").forEach(el => flatpickr(el, flatpickrDateConfig));
+             document.querySelectorAll(".flatpickr-datetime").forEach(el => flatpickr(el, flatpickrDateTimeConfig));
+             document.querySelectorAll("input[type='datetime-local']:not(.flatpickr-datetime)").forEach(el => flatpickr(el, flatpickrDateTimeConfig));
+             document.querySelectorAll("input[type='date']:not(.flatpickr-date)").forEach(el => flatpickr(el, flatpickrDateConfig));
 
-             // Initialize date inputs based on the class set in TaskForm widgets
-             flatpickr(".flatpickr-date", flatpickrDateConfig);
+            const categorySelect = document.getElementById('id_category');
+            const subcategorySelect = document.getElementById('id_subcategory');
 
-             // Initialize datetime inputs based on the class set in TaskForm widgets
-             flatpickr(".flatpickr-datetime", flatpickrDateTimeConfig);
+            if (categorySelect && subcategorySelect) {
+                const $subcategory = $(subcategorySelect);
+                const initialSubcategoryVal = $subcategory.val();
+                const placeholders = {
+                    loading: '{% trans "Загрузка..." %}', select: $subcategory.data('placeholder') || '{% trans "Выберите..." %}',
+                    error: '{% trans "Ошибка" %}', empty: '{% trans "Нет вариантов" %}', chooseCat: '{% trans "Сначала категория" %}'
+                };
+                const select2BaseOpts = { width: '100%', allowClear: !subcategorySelect.required, language: "{{ LANG_INFO.code|slice:':2'|default:'ru' }}", placeholder: placeholders.loading, dropdownParent: $subcategory.parent() };
 
-             // Target specifically the HTML5 datetime-local inputs if flatpickr class isn't applied
-             document.querySelectorAll("input[type='datetime-local']").forEach(el => {
-                 if (!el.classList.contains('flatpickr-datetime')) { // Avoid double init
-                     flatpickr(el, flatpickrDateTimeConfig);
-                 }
-             });
-             document.querySelectorAll("input[type='date']").forEach(el => {
-                  if (!el.classList.contains('flatpickr-date')) { // Avoid double init
-                      flatpickr(el, flatpickrDateConfig);
-                  }
-             });
+                function updateSubcats() {
+                    const catId = categorySelect.value;
+                    subcategorySelect.disabled = true;
+                    if ($.fn.select2 && $subcategory.hasClass("select2-hidden-accessible")) $subcategory.select2('destroy');
+                    $subcategory.empty();
+                    if ($.fn.select2) $subcategory.select2(select2BaseOpts); else subcategorySelect.innerHTML = `<option value="">${placeholders.loading}</option>`;
 
-
-             // --- Initialize Select2 Widgets ---
-             // django-select2 initializes automatically via form media.
-             // If using standard Select2 without django-select2, initialize here:
-             /*
-             if ($.fn.select2) {
-                 $('.select2-single-widget').select2({ // Use class defined in TaskForm widgets
-                      theme: "default", // Or your theme
-                      width: '100%',
-                      allowClear: true, // Or check field.required
-                      language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
-                 });
-                 $('.select2-multiple-widget').select2({ // Use class defined in TaskForm widgets
-                     theme: "default",
-                     width: '100%',
-                     language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
-                 });
-                 // Initialize ModelSelect2 widgets if NOT using django-select2
-                 $('.model-select2-widget').each(function() {
-                     const $el = $(this);
-                     $el.select2({
-                         theme: "default",
-                         width: '100%',
-                         allowClear: !$el.prop('required'),
-                         language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
-                         placeholder: $el.data('placeholder') || '{% trans "Выберите значение..." %}',
-                         ajax: {
-                             url: $el.data('ajax--url'), // Get URL from data attribute
-                             dataType: 'json',
-                             delay: 250,
-                             data: function (params) {
-                                 return { q: params.term, page: params.page };
-                             },
-                             processResults: function (data, params) {
-                                 params.page = params.page || 1;
-                                 return {
-                                     results: data.results, // Adjust if your API structure differs
-                                     pagination: { more: data.more }
-                                 };
-                             },
-                             cache: true
-                         },
-                         minimumInputLength: $el.data('minimum-input-length') || 0,
-                     });
-                 });
-             } else { console.warn("Select2 jQuery plugin not loaded."); }
-             */
-
-            // --- Dependent Category -> Subcategory Dropdown Logic ---
-            const categorySelectElement = document.getElementById('id_category');
-            const subcategorySelectElement = document.getElementById('id_subcategory');
-
-            if (categorySelectElement && subcategorySelectElement) {
-                const subcategoryJQuery = $(subcategorySelectElement);
-                const initialSubcategoryValue = subcategoryJQuery.val(); // Store initial value
-
-                // --- Define Placeholder Texts ---
-                const placeholderLoading = '{% trans "Загрузка подкатегорий..." %}';
-                const placeholderSelect = subcategoryJQuery.data('placeholder') || '{% trans "Выберите подкатегорию..." %}';
-                const placeholderError = '{% trans "Ошибка загрузки" %}';
-                const placeholderEmpty = '{% trans "Нет доступных подкатегорий" %}';
-                const placeholderChooseCategory = '{% trans "Сначала выберите категорию" %}';
-
-                // --- Function to Update Subcategory Options ---
-                function updateSubcategories() {
-                    const selectedCategoryId = categorySelectElement.value;
-
-                    // Determine base options for Select2 re-initialization
-                    const subCategorySelect2BaseOptions = {
-                        width: '100%',
-                        allowClear: !subcategorySelectElement.required,
-                        language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
-                        placeholder: placeholderLoading, // Start with loading state
-                        // Ensure dropdown appears correctly if inside complex layouts
-                        dropdownParent: subcategoryJQuery.parent(),
-                    };
-
-                    // Reset subcategory: disable, clear options, set loading placeholder
-                    subcategorySelectElement.disabled = true;
-                    if ($.fn.select2 && subcategoryJQuery.hasClass("select2-hidden-accessible")) {
-                        subcategoryJQuery.select2('destroy'); // Destroy first
-                    }
-                    subcategoryJQuery.empty(); // Clear options for both Select2 and standard select
-
-                    if ($.fn.select2) {
-                        subcategoryJQuery.select2(subCategorySelect2BaseOptions);
+                    if (catId) {
+                        const apiUrl = `{% url 'tasks:subcategory-api-list' %}?category=${catId}`; // Ensure this URL is correct
+                        $.getJSON(apiUrl).done(function(resp) {
+                            const data = resp.results || resp;
+                            subcategorySelect.disabled = false;
+                            const options = Array.isArray(data) ? data.map(item => ({ id: item.id, text: item.name })) : [];
+                            let currentPlaceholder = options.length > 0 ? placeholders.select : placeholders.empty;
+                            select2BaseOpts.placeholder = currentPlaceholder;
+                            if ($.fn.select2) {
+                                if ($subcategory.hasClass("select2-hidden-accessible")) $subcategory.select2('destroy');
+                                $subcategory.empty().select2({ ...select2BaseOpts, data: options });
+                            } else {
+                                subcategorySelect.innerHTML = ''; const defaultOpt = new Option(currentPlaceholder, "", true, true); defaultOpt.disabled = true; subcategorySelect.add(defaultOpt);
+                                if (options.length > 0) options.forEach(opt => subcategorySelect.add(new Option(opt.text, opt.id)));
+                            }
+                            if (initialSubcategoryVal && options.some(opt => opt.id == initialSubcategoryVal)) setTimeout(() => $subcategory.val(initialSubcategoryVal).trigger('change'), 50);
+                            else $subcategory.val(null).trigger('change');
+                        }).fail(function() {
+                            subcategorySelect.disabled = true; select2BaseOpts.placeholder = placeholders.error;
+                            if ($.fn.select2) { if ($subcategory.hasClass("select2-hidden-accessible")) $subcategory.select2('destroy'); $subcategory.empty().select2(select2BaseOpts); }
+                            else subcategorySelect.innerHTML = `<option value="">${placeholders.error}</option>`;
+                            $subcategory.val(null).trigger('change');
+                        });
                     } else {
-                        subcategorySelectElement.innerHTML = `<option value="">${placeholderLoading}</option>`;
+                        subcategorySelect.disabled = true; select2BaseOpts.placeholder = placeholders.chooseCat;
+                        if ($.fn.select2) { if ($subcategory.hasClass("select2-hidden-accessible")) $subcategory.select2('destroy'); $subcategory.empty().select2(select2BaseOpts); }
+                        else subcategorySelect.innerHTML = `<option value="">${placeholders.chooseCat}</option>`;
+                        $subcategory.val(null).trigger('change');
                     }
-                    // subcategoryJQuery.val(null).trigger('change'); // Don't trigger change yet
+                }
+                categorySelect.addEventListener('change', updateSubcats);
+                setTimeout(updateSubcats, 300); // Initial load, delay for Select2
+            }
 
-                    // Fetch if category selected
-                    if (selectedCategoryId) {
-                        // Use the correct API endpoint name from your urls.py
-                        const apiUrl = `{% url 'tasks:subcategory-api-list' %}?category=${selectedCategoryId}`;
-                        console.debug("Fetching subcategories from:", apiUrl);
+            // Project-dependent user fields
+            const projectSelectField = document.getElementById('id_project');
+            const userSelectors = ['#id_responsible_user', '#id_executors', '#id_watchers'];
 
-                        $.getJSON(apiUrl)
-                            .done(function(response) {
-                                const data = response.results || response; // Adapt to your API structure
-                                console.debug("Subcategories data received:", data);
-                                subcategorySelectElement.disabled = false; // Enable
-
-                                const optionsData = Array.isArray(data) ? data.map(item => ({
-                                    id: item.id,
-                                    text: item.name
-                                })) : [];
-
-                                let currentPlaceholder = optionsData.length > 0 ? placeholderSelect : placeholderEmpty;
-                                subCategorySelect2BaseOptions.placeholder = currentPlaceholder; // Update placeholder for re-init
-
-                                // Reinitialize Select2 (or standard select) with new data
-                                if ($.fn.select2) {
-                                     if (subcategoryJQuery.hasClass("select2-hidden-accessible")) subcategoryJQuery.select2('destroy'); // Destroy if exists
-                                     subcategoryJQuery.empty().select2({ // Clear again just in case, then init
-                                        ...subCategorySelect2BaseOptions,
-                                        data: optionsData
-                                    });
-                                } else { // Fallback standard select
-                                     subcategorySelectElement.innerHTML = ''; // Clear loading/previous options
-                                     const defaultOption = new Option(currentPlaceholder, "", true, true); // Placeholder option
-                                     defaultOption.disabled = true; // Make placeholder unselectable
-                                     subcategorySelectElement.add(defaultOption);
-                                     if (optionsData.length > 0) {
-                                         optionsData.forEach(opt => subcategorySelectElement.add(new Option(opt.text, opt.id)));
-                                     }
-                                }
-
-                                // Restore Initial Value (with slight delay)
-                                if (initialSubcategoryValue && optionsData.some(opt => opt.id == initialSubcategoryValue)) {
-                                    setTimeout(() => {
-                                         subcategoryJQuery.val(initialSubcategoryValue).trigger('change');
-                                         console.debug("Restored initial subcategory value:", initialSubcategoryValue);
-                                    }, 50);
-                                } else {
-                                    // Explicitly set to null if initial value not found or no options
-                                    subcategoryJQuery.val(null).trigger('change');
-                                }
-                            })
-                            .fail(function(jqXHR, textStatus, errorThrown) { // Error handling
-                                console.error("Error loading subcategories:", textStatus, errorThrown, jqXHR.responseText);
-                                subcategorySelectElement.disabled = true;
-                                subCategorySelect2BaseOptions.placeholder = placeholderError;
-                                if ($.fn.select2) {
-                                     if (subcategoryJQuery.hasClass("select2-hidden-accessible")) subcategoryJQuery.select2('destroy');
-                                     subcategoryJQuery.empty().select2(subCategorySelect2BaseOptions);
-                                } else {
-                                     subcategorySelectElement.innerHTML = `<option value="">${placeholderError}</option>`;
-                                }
-                                subcategoryJQuery.val(null).trigger('change');
-                            });
-                    } else { // No category selected
-                        subcategorySelectElement.disabled = true;
-                        subCategorySelect2BaseOptions.placeholder = placeholderChooseCategory;
-                        if ($.fn.select2) {
-                             if (subcategoryJQuery.hasClass("select2-hidden-accessible")) subcategoryJQuery.select2('destroy');
-                             subcategoryJQuery.empty().select2(subCategorySelect2BaseOptions);
-                        } else {
-                              subcategorySelectElement.innerHTML = `<option value="">${placeholderChooseCategory}</option>`;
+            function updateUserAjaxUrls() {
+                const projectId = projectSelectField ? projectSelectField.value : null;
+                userSelectors.forEach(selector => {
+                    const $field = $(selector);
+                    if ($field.length) {
+                        let originalUrl = $field.data('ajax--url-original');
+                        if (!originalUrl) {
+                            originalUrl = $field.data('ajax--url') || $field.attr('data-ajax--url');
+                            $field.data('ajax--url-original', originalUrl);
                         }
-                         subcategoryJQuery.val(null).trigger('change');
+                        if (originalUrl) {
+                            const newUrl = new URL(originalUrl, window.location.origin);
+                            if (projectId) newUrl.searchParams.set('project', projectId); else newUrl.searchParams.delete('project');
+                            $field.data('ajax--url', newUrl.href).attr('data-ajax--url', newUrl.href);
+                            if ($field.hasClass('select2-hidden-accessible')) $field.select2('destroy'); // Destroy to re-init with new URL by django-select2 or custom
+                            // django-select2 should re-init. If custom:
+                            // $field.select2({...}); // with updated ajax.url
+                        }
                     }
-                } // End updateSubcategories
+                });
+                 // django-select2 usually handles re-initialization.
+                 // If it doesn't, trigger re-initialization explicitly, for example,
+                 // by calling the django-select2 initialization function or a custom one.
+                 // This might require a small delay if project field change also uses Select2.
+                 setTimeout(function() {
+                     if (typeof django !== 'undefined' && django.jQuery && django.jQuery.fn.djangoSelect2) {
+                         django.jQuery('.django-select2').djangoSelect2();
+                     }
+                 }, 100);
+            }
+            if (projectSelectField) {
+                $(projectSelectField).on('change', updateUserAjaxUrls);
+                setTimeout(updateUserAjaxUrls, 300); // Initial call
+            }
 
-                // Add event listener
-                categorySelectElement.addEventListener('change', updateSubcategories);
-
-                // Initial trigger on load (needs delay for Select2 init)
-                setTimeout(updateSubcategories, 400);
-
-            } else { console.warn("Category or Subcategory select element not found."); }
 
         } catch (error) { console.error("Task form script error:", error); }
-    }); // End DOMContentLoaded
-</script>
-<script defer>
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        const projectSelect = document.getElementById('id_project');
-        const userFields = [
-            '#id_responsible_user', 
-            '#id_executors', 
-            '#id_watchers'
-        ];
-
-        function updateUserFieldsProjectFilter() {
-            const selectedProjectId = projectSelect ? projectSelect.value : null;
-
-            userFields.forEach(selector => {
-                const field = document.querySelector(selector);
-                if (field && field.dataset.ajaxUrlOriginal === undefined) {
-                    field.dataset.ajaxUrlOriginal = field.dataset.ajaxUrl || field.getAttribute('data-ajax--url');
-                }
-                if (field && field.dataset.ajaxUrlOriginal) {
-                    const baseUrl = new URL(field.dataset.ajaxUrlOriginal, window.location.origin);
-                    if (selectedProjectId) {
-                        baseUrl.searchParams.set('project', selectedProjectId);
-                    } else {
-                        baseUrl.searchParams.delete('project');
-                    }
-                    field.setAttribute('data-ajax--url', baseUrl.href);
-
-                    // Reinitialize Select2 for updated URL
-                    if ($(field).hasClass('select2-hidden-accessible')) {
-                        $(field).select2('destroy');
-                    }
-                    $(field).select2({
-                        width: '100%',
-                        allowClear: !field.required,
-                        placeholder: field.dataset.placeholder || '{% trans "Выберите значение..." %}',
-                        ajax: {
-                            url: baseUrl.href,
-                            dataType: 'json',
-                            delay: 250,
-                            data: function (params) {
-                                return {
-                                    q: params.term,
-                                    page: params.page
-                                };
-                            },
-                            processResults: function (data, params) {
-                                params.page = params.page || 1;
-                                return {
-                                    results: data.results,
-                                    pagination: { more: data.more }
-                                };
-                            },
-                            cache: true
-                        },
-                        minimumInputLength: field.dataset.minimumInputLength || 1,
-                        language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
-                        dropdownParent: $(field).parent()
-                    });
-                }
-            });
-        }
-
-        if (projectSelect) {
-            projectSelect.addEventListener('change', updateUserFieldsProjectFilter);
-            // Initial call in case project is pre-filled
-            setTimeout(updateUserFieldsProjectFilter, 400);
-        }
-    } catch (error) {
-        console.error('Project-dependent user fields initialization error:', error);
-    }
-});
+    });
 </script>
 {% endblock scripts %}

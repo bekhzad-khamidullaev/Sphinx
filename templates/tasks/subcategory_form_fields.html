@@ -1,5 +1,8 @@
-<!-- tasks/templates/tasks/subcategory_form_fields.html -->
-{% load crispy_forms_tags %}
-<div class="space-y-4">
-  {{ form|crispy }}
+{% load crispy_forms_tags i18n %}
+
+{# This template snippet is intended to be included in a modal or a form page. #}
+{# It assumes 'form' (TaskSubcategoryForm instance) is in the context. #}
+
+<div class="space-y-4 p-1"> {# Added small padding for aesthetics in modal #}
+  {% crispy form %}
 </div>

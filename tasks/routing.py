@@ -1,25 +1,28 @@
+# tasks/routing.py
+# -*- coding: utf-8 -*-
+
 from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    # Задачи — без параметров
-    re_path(r'^ws/tasks/$', consumers.TaskConsumer.as_asgi()),
+    # Task list and individual task updates (can be combined or separate)
+    re_path(r'^ws/tasks/$', consumers.TaskConsumer.as_asgi()), # For general task list updates
+    re_path(r'^ws/tasks/(?P<task_id>\d+)/$', consumers.TaskConsumer.as_asgi()), # For specific task updates
 
-    # Обновления задач — без параметров
-    re_path(r'^ws/task_updates/$', consumers.TaskConsumer.as_asgi()),
+    # Generic consumer for various model updates if a single group is used per model type
+    # Example: /ws/updates/projects/ or /ws/updates/projects/project_123/
+    re_path(r'^ws/updates/(?P<group_name_prefix>\w+)/$', consumers.ModelUpdateConsumerBase.as_asgi()),
+    re_path(r'^ws/updates/(?P<group_name_prefix>\w+)/(?P<group_identifier>\w+)/$', consumers.ModelUpdateConsumerBase.as_asgi()),
 
-    # Generic обновления по группе — обязательно с именем группы
-    re_path(r'^ws/generic/(?P<group>\w+)/$', consumers.GenericConsumer.as_asgi()),
+    # Specific model consumers (can use ModelUpdateConsumerBase or be custom)
+    re_path(r'^ws/projects/$', consumers.ProjectConsumer.as_asgi()), # List updates
+    # re_path(r'^ws/project/(?P<group_identifier>\d+)/$', consumers.ProjectConsumer.as_asgi()), # Specific project
 
-    # Проекты — без параметров
-    re_path(r'^ws/projects/$', consumers.ProjectConsumer.as_asgi()),
-
-    # Команды — без параметров
+    re_path(r'^ws/categories/$', consumers.CategoryConsumer.as_asgi()),
+    re_path(r'^ws/subcategories/$', consumers.SubcategoryConsumer.as_asgi()),
     re_path(r'^ws/teams/$', consumers.TeamConsumer.as_asgi()),
+    re_path(r'^ws/users/$', consumers.UserConsumer.as_asgi()), # General user list or specific user updates
 
-    # Пользователи — без параметров
-    re_path(r'^ws/users/$', consumers.UserConsumer.as_asgi()),
-
-    # Комментарии к задачам — с ID задачи
+    # Comments for a specific task
     re_path(r'^ws/tasks/(?P<task_id>\d+)/comments/$', consumers.TaskCommentConsumer.as_asgi()),
 ]

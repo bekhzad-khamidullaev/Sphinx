@@ -1,16 +1,32 @@
 {% extends 'base.html' %}
 {% load i18n static crispy_forms_tags %}
-{% block title %}{{ page_title|default:_("Форма проекта") }}{% endblock %}
+
+{% block title %}
+    {# Determine title based on instance existence #}
+    {% if form.instance.pk %}
+        {% blocktrans with name=form.instance.name %}Редактирование проекта: {{ name }}{% endblocktrans %}
+    {% else %}
+        {% trans "Создание нового проекта" %}
+    {% endif %}
+{% endblock %}
+
 {% block head_extra %}
     {{ block.super }}
     {{ form.media.css }}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 {% endblock %}
+
 {% block list_title %}
 <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
-    {{ page_title }}
+    {# Use the same logic as the title block for the H1 #}
+    {% if form.instance.pk %}
+        {% blocktrans with name=form.instance.name %}Редактирование проекта: {{ name }}{% endblocktrans %}
+    {% else %}
+        {% trans "Создание нового проекта" %}
+    {% endif %}
 </h1>
 {% endblock %}
+
 {% block list_content %}
 <div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
     <form method="post" action="" id="project-form" novalidate>
@@ -33,24 +49,30 @@
              </a>
              <button type="submit"
                      class="px-4 py-2 rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:bg-ios-purple dark:hover:bg-purple-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
-                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
-                 {{ form_action|default:_("Сохранить проект") }}
+                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4" aria-hidden="true"></i>
+                 {# Also use if tag for the button text #}
+                 {% if form.instance.pk %}
+                     {% trans "Сохранить изменения" %}
+                 {% else %}
+                     {% trans "Создать проект" %}
+                 {% endif %}
              </button>
          </div>
     </form>
 </div>
 {% endblock %}
+
 {% block scripts %}
     {{ block.super }}
     {{ form.media.js }}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Make sure this path is correct #}
     <script defer>
       document.addEventListener('DOMContentLoaded', function() {
         try {
-          flatpickr(".flatpickr-date", {
+          flatpickr(".flatpickr-date", { // Ensure this class is on your date inputs
             dateFormat: "Y-m-d",
-            locale: "ru",
+            locale: "ru", // Make sure the locale file is loaded
             allowInput: true,
             altInput: true,
             altFormat: "d.m.Y",

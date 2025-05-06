@@ -1,14 +1,13 @@
 # tasks/views/category.py
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.messages.views import SuccessMessageMixin
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.contrib import messages
 from ..models import TaskCategory
 from ..forms import TaskCategoryForm
-from ..filters import TaskCategoryFilter # Assuming filter exists
-
+from ..filters import TaskCategoryFilter
+from .mixins import SuccessMessageMixin # Using Django's built-in
 
 class TaskCategoryListView(LoginRequiredMixin, ListView):
     model = TaskCategory
@@ -17,7 +16,7 @@ class TaskCategoryListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = super().get_queryset().prefetch_related('tasks', 'subcategories') # Optimize
+        queryset = super().get_queryset().prefetch_related('tasks', 'subcategories')
         self.filterset = TaskCategoryFilter(self.request.GET, queryset=queryset)
         return self.filterset.qs.distinct()
 
@@ -27,6 +26,17 @@ class TaskCategoryListView(LoginRequiredMixin, ListView):
         context['page_title'] = _('Категории Задач')
         return context
 
+class TaskCategoryDetailView(LoginRequiredMixin, DetailView):
+    model = TaskCategory
+    template_name = "tasks/category_detail.html"
+    context_object_name = "category"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = _("Детали категории") + f": {self.object.name}"
+        context['subcategories'] = self.object.subcategories.all()
+        context['tasks_count'] = self.object.tasks.count()
+        return context
 
 class TaskCategoryCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = TaskCategory
@@ -41,20 +51,13 @@ class TaskCategoryCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView
         context['form_action'] = _('Создать категорию')
         return context
 
-    # Optional: Permission check
-    # def dispatch(self, request, *args, **kwargs):
-    #     if not request.user.has_perm('tasks.add_taskcategory'):
-    #         messages.error(request, _("У вас нет прав для создания категорий."))
-    #         return self.handle_no_permission()
-    #     return super().dispatch(request, *args, **kwargs)
-
-
 class TaskCategoryUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     model = TaskCategory
     form_class = TaskCategoryForm
     template_name = 'tasks/category_form.html'
     success_url = reverse_lazy('tasks:category_list')
     success_message = _("Категория '%(name)s' успешно обновлена.")
+    context_object_name = 'category'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -62,19 +65,11 @@ class TaskCategoryUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView
         context['form_action'] = _('Сохранить изменения')
         return context
 
-    # Optional: Permission check
-    # def dispatch(self, request, *args, **kwargs):
-    #     if not request.user.has_perm('tasks.change_taskcategory'):
-    #         messages.error(request, _("У вас нет прав для редактирования этой категории."))
-    #         return self.handle_no_permission()
-    #     return super().dispatch(request, *args, **kwargs)
-
-
-class TaskCategoryDeleteView(LoginRequiredMixin, DeleteView): # SuccessMessageMixin doesn't work well here
+class TaskCategoryDeleteView(LoginRequiredMixin, DeleteView):
     model = TaskCategory
     template_name = 'tasks/category_confirm_delete.html'
     success_url = reverse_lazy('tasks:category_list')
-    context_object_name = 'category' # More specific name for template
+    context_object_name = 'category'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -86,10 +81,3 @@ class TaskCategoryDeleteView(LoginRequiredMixin, DeleteView): # SuccessMessageMi
         response = super().form_valid(form)
         messages.success(self.request, _("Категория '%(name)s' была успешно удалена.") % {'name': category_name})
         return response
-
-    # Optional: Permission check
-    # def dispatch(self, request, *args, **kwargs):
-    #     if not request.user.has_perm('tasks.delete_taskcategory'):
-    #          messages.error(request, _("У вас нет прав для удаления этой категории."))
-    #          return self.handle_no_permission()
-    #     return super().dispatch(request, *args, **kwargs)

@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load i18n app_filters %}
+{% load static i18n app_filters %}
 
 {% block title %}{% trans 'Задачи' %}{% endblock %}
 
@@ -11,111 +10,92 @@
 {% endblock %}
 
 {% block list_actions %}
-{# Desktop Actions #}
-<div class="flex items-center ml-4 space-x-3"> {# Outer container with spacing #}
-
-    {# Group for Create and View Toggle Buttons #}
+<div class="flex items-center ml-4 space-x-3">
     <div class="inline-flex rounded-md shadow-xs" role="group">
         <a href="{% url 'tasks:task_create' %}"
            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
-            <i class="fas fa-plus mr-2 text-blue-500 dark:text-ios-blue"></i> {% trans 'Создать задачу' %}
+            <i class="fas fa-plus mr-2 text-blue-500 dark:text-ios-blue" aria-hidden="true"></i> {% trans 'Создать задачу' %}
         </a>
         <button type="button" id="toggleViewBtn"
-           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border-y border-e border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150"
            aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
-             <i id="viewIcon" class="fas fa-columns mr-2"></i>
-             <span id="viewText">{% trans 'Вид' %}</span>
+             <i id="viewIcon" class="fas fa-columns mr-2" aria-hidden="true"></i>
+             <span id="viewText">{% trans 'Канбан' %}</span> {# Default to Kanban view text #}
         </button>
     </div>
 
-    {# Column Toggle Dropdown (Separate Button - Styled like Flowbite Checkbox Dropdown Button) #}
-    {# This button itself should only be visible when Kanban is active - handled by JS #}
-    <div id="column-toggle-dropdown" class="relative hidden">
-        <button id="dropdownCheckboxButton" data-dropdown-toggle="dropdownColumnCheckbox" {# Changed ID and toggle target #}
+    <div id="column-toggle-dropdown" class="relative hidden"> {# Hidden by default, shown by JS for Kanban #}
+        <button id="dropdownCheckboxButton" data-dropdown-toggle="dropdownColumnCheckbox"
            class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" type="button">
-            <i class="fas fa-columns mr-2"></i> {% trans 'Колонки' %}
+            <i class="fas fa-eye-slash mr-2" aria-hidden="true"></i> {% trans 'Колонки' %}
             <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
             </svg>
         </button>
-
-        {# Dropdown menu - Styled like Flowbite Checkbox Dropdown Menu #}
-        <div id="dropdownColumnCheckbox" {# Changed ID to match toggle target #}
-            class="z-50 hidden w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 border dark:border-gray-600">
+        <div id="dropdownColumnCheckbox" class="z-50 hidden w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 border dark:border-gray-600">
             <ul class="p-3 space-y-3 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownCheckboxButton">
                 <li>
-                    <button type="button" id="resetHiddenColumnsBtn"
-                        class="flex items-center w-full text-left text-blue-600 dark:text-blue-400 hover:underline focus:outline-none">
-                         <i class="fas fa-eye mr-2"></i> {% trans 'Показать все' %}
+                    <button type="button" id="resetHiddenColumnsBtn" class="flex items-center w-full text-left text-blue-600 dark:text-blue-400 hover:underline focus:outline-none">
+                         <i class="fas fa-eye mr-2" aria-hidden="true"></i> {% trans 'Показать все' %}
                     </button>
                 </li>
-                <hr class="border-gray-200 dark:border-gray-600 !my-2"> {# Adjusted margin #}
-                {% for status, _ in status_mapping.items %}
-                {% with status_display_name=status_mapping|getkey:status %}
+                <hr class="border-gray-200 dark:border-gray-600 !my-2">
+                {% for status_val, status_name in status_mapping.items %}
                 <li>
                     <div class="flex items-center">
-                        <input id="checkbox-column-{{ status }}" type="checkbox" value="{{ status }}"
+                        <input id="checkbox-column-{{ status_val }}" type="checkbox" value="{{ status_val }}"
                            class="toggle-column-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                           data-status="{{ status }}" checked>
-                        <label for="checkbox-column-{{ status }}" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer">{{ status_display_name|default:status }}</label>
+                           data-status="{{ status_val }}" checked>
+                        <label for="checkbox-column-{{ status_val }}" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer">{{ status_name }}</label>
                     </div>
                 </li>
-                {% endwith %}
                 {% endfor %}
             </ul>
         </div>
-    </div>{# End Column Toggle Wrapper #}
-
+    </div>
 </div>
 {% endblock %}
 
 {% block list_actions_mobile %}
-{# Mobile Actions #}
-<a href="{% url 'tasks:task_create' %}"
-    class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
-    <i class="fas fa-plus mr-2"></i> {% trans 'Создать задачу' %}
+<a href="{% url 'tasks:task_create' %}" class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
+    <i class="fas fa-plus mr-2" aria-hidden="true"></i> {% trans 'Создать задачу' %}
 </a>
-<button type="button" id="toggleViewBtnMobile"
-    class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center"
-    aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}"
-    data-list-text="{% trans 'Список' %}">
-    <i id="viewIconMobile" class="fas fa-columns mr-2"></i>
+<button type="button" id="toggleViewBtnMobile" class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center"
+    aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
+    <i id="viewIconMobile" class="fas fa-columns mr-2" aria-hidden="true"></i>
     <span id="viewTextMobile">{% trans 'Канбан' %}</span>
 </button>
 {% endblock %}
 
 {% block list_content %}
-
 {% get_current_language as LANGUAGE_CODE %}
-{% with ajax_base_url="/"|add:LANGUAGE_CODE|add:"/core/ajax/tasks/" %} {# Ensure correct AJAX base URL #}
+{% url 'tasks:ajax_update_task_status' task_id=0 as base_ajax_url_template %}
+{% with ajax_base_url=base_ajax_url_template|slice:":-1" %}
 
-<!-- Канбан-доска -->
 {% include 'includes/kanban_board.html' %}
-
-<!-- Горизонтальный список -->
 {% include 'includes/task_list_table.html' %}
 
-{% endwith %} {# End of with ajax_base_url #}
+{% endwith %}
 
-<!-- Пагинация (отображается только для вида "Список") -->
 {% if page_obj and page_obj.paginator.num_pages > 1 %}
-<div id="pagination" class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm hidden"> {# Hidden by default, shown by JS #}
-    {% include "includes/pagination.html" with page_obj=page_obj %} {# Use your standard pagination template #}
+<div id="pagination" class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm hidden">
+    {% include "includes/pagination.html" with page_obj=page_obj %}
 </div>
 {% endif %}
 
-<!-- Скрытый элемент для передачи status_mapping в JS -->
 <script id="status-mapping-data" type="application/json">
-    {{ status_mapping|json_script:"status-mapping-data-payload" }}
+    {{ status_mapping_json|safe }}
 </script>
-
-
+<script id="task-list-config" type="application/json">
+    {
+        "initialView": "{{ request.COOKIES.task_view_mode|default:'kanban' }}",
+        "updateStatusUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_update_task_status' task_id=0 %}{% endfilter %}"
+    }
+</script>
 {% endblock %}
 
 {% block scripts %}
-{{ block.super }} {# Include scripts from base template #}
+{{ block.super }}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-{# Ensure sweetalert2 is loaded if you use it for deletes #}
-{# <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script> #}
 <script src="{% static 'js/tasks_no_modal.js' %}" defer></script>
 {% endblock %}

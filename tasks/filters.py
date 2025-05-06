@@ -1,6 +1,7 @@
 # tasks/filters.py
+# -*- coding: utf-8 -*-
 
-import logging # Добавим логгер
+import logging
 import django_filters
 from django import forms
 from django.db.models import Q
@@ -8,26 +9,22 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 
 from .models import Task, Project, TaskCategory, TaskSubcategory
-from user_profiles.models import Team, User, TaskUserRole # Убедитесь, что все импорты верны
+from user_profiles.models import TaskUserRole
 
-logger = logging.getLogger(__name__) # Инициализация логгера
+logger = logging.getLogger(__name__)
+User = get_user_model()
 
-# --- Базовый класс фильтра ---
 class BaseFilter(django_filters.FilterSet):
     def __init__(self, *args, **kwargs):
         self.render_form = kwargs.pop('render_form', True)
         super().__init__(*args, **kwargs)
         if not self.render_form:
-            self.form.fields = {}
+            for field in self.form.fields.values():
+                field.widget = forms.HiddenInput() # Or just remove them: self.form.fields = {}
 
-    class Meta:
-        abstract = True
-
-# --- Фильтры для других моделей ---
 class ProjectFilter(BaseFilter):
     name = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label=_('Название проекта'),
+        lookup_expr='icontains', label=_('Название проекта'),
         widget=forms.TextInput(attrs={'placeholder': _('Найти проект...')})
     )
     class Meta:
@@ -36,8 +33,7 @@ class ProjectFilter(BaseFilter):
 
 class TaskCategoryFilter(BaseFilter):
     name = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label=_('Название категории'),
+        lookup_expr='icontains', label=_('Название категории'),
         widget=forms.TextInput(attrs={'placeholder': _('Найти категорию...')})
     )
     class Meta:
@@ -46,25 +42,20 @@ class TaskCategoryFilter(BaseFilter):
 
 class TaskSubcategoryFilter(BaseFilter):
     name = django_filters.CharFilter(
-        lookup_expr='icontains',
-        label=_('Название подкатегории'),
+        lookup_expr='icontains', label=_('Название подкатегории'),
         widget=forms.TextInput(attrs={'placeholder': _('Найти подкатегорию...')})
     )
     category = django_filters.ModelChoiceFilter(
-        queryset=TaskCategory.objects.all(),
-        label=_('Категория'),
+        queryset=TaskCategory.objects.all(), label=_('Категория'),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     class Meta:
         model = TaskSubcategory
         fields = ['name', 'category']
 
-
-# --- Основной фильтр для Task ---
 class TaskFilter(BaseFilter):
     q = django_filters.CharFilter(
-        method='search_filter',
-        label=_('Поиск'),
+        method='search_filter', label=_('Поиск'),
         widget=forms.TextInput(attrs={'placeholder': _('Номер, название, описание...')})
     )
     deadline_after = django_filters.DateFilter(
@@ -100,43 +91,32 @@ class TaskFilter(BaseFilter):
         queryset=User.objects.filter(is_active=True).order_by('username'), label=_('Создатель'),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-
-    # --- ИСПРАВЛЕНИЕ ЗДЕСЬ: Убираем 'extra' из определений фильтров ---
     responsible = django_filters.ModelChoiceFilter(
         queryset=User.objects.filter(is_active=True).order_by('username'),
-        field_name='user_roles__user',
         label=_('Ответственный'),
-        method='filter_by_role', # Используем кастомный метод
-        # АРГУМЕНТ 'extra' УДАЛЕН
+        method='filter_by_role',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     executor = django_filters.ModelChoiceFilter(
         queryset=User.objects.filter(is_active=True).order_by('username'),
-        field_name='user_roles__user',
         label=_('Исполнитель'),
         method='filter_by_role',
-        # АРГУМЕНТ 'extra' УДАЛЕН
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     watcher = django_filters.ModelChoiceFilter(
          queryset=User.objects.filter(is_active=True).order_by('username'),
-         field_name='user_roles__user',
          label=_('Наблюдатель'),
          method='filter_by_role',
-         # АРГУМЕНТ 'extra' УДАЛЕН
          widget=forms.Select(attrs={'class': 'form-select'})
      )
-    # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
     participant = django_filters.ModelChoiceFilter(
         queryset=User.objects.filter(is_active=True).order_by('username'),
-        field_name='user_roles__user',
+        field_name='user_roles__user', # Direct filtering if any role matches
         label=_('Участник (любая роль)'),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-
     status = django_filters.ChoiceFilter(
-        choices=Task.StatusChoices.choices, # Используем правильные choices
+        choices=Task.StatusChoices.choices,
         label=_('Статус'),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
@@ -165,11 +145,10 @@ class TaskFilter(BaseFilter):
             Q(description__icontains=value)
         ).distinct()
 
-    # --- ИСПРАВЛЕНИЕ ЗДЕСЬ: Обновляем метод для работы без 'extra' ---
     def filter_by_role(self, queryset, name, value):
          """
-         Кастомный метод для фильтрации по пользователю с определенной ролью.
-         Определяет роль на основе имени фильтра ('responsible', 'executor', 'watcher').
+         Filters tasks where the given user (value) has a specific role,
+         determined by the filter's name ('responsible', 'executor', 'watcher').
          """
          role_to_filter = None
          if name == 'responsible':
@@ -179,14 +158,9 @@ class TaskFilter(BaseFilter):
          elif name == 'watcher':
              role_to_filter = TaskUserRole.RoleChoices.WATCHER
          else:
-             # Если метод вызван для другого фильтра (не должно быть), не фильтруем
              logger.warning(f"filter_by_role called with unexpected filter name: {name}")
-             return queryset
+             return queryset # Or raise an error
 
-         # Фильтруем задачи, если пользователь выбран (value - это ID пользователя)
-         if value:
-             # Фильтруем по пользователю и определенной роли
+         if value: # value is the User instance (or PK) selected in the filter
              return queryset.filter(user_roles__user=value, user_roles__role=role_to_filter).distinct()
-         # Если пользователь не выбран, не применяем фильтр по роли
-         return queryset
-     # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+         return queryset # If no user is selected, don't filter by this role criteria

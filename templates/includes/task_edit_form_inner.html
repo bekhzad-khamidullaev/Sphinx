@@ -1,0 +1,27 @@
+{% comment %} tasks/templates/includes/task_edit_form_inner.html (example, if used by HTMX modal) {% endcomment %}
+{% load crispy_forms_tags i18n %}
+
+<form id="edit-task-inner-form" method="post" action="{% if task_id %}{% url 'tasks:task_update' pk=task_id %}{% else %}{% url 'tasks:task_create' %}{% endif %}" enctype="multipart/form-data" {% if task_id %}data-task-id="{{ task_id }}"{% endif %}>
+    {% csrf_token %}
+    {% crispy task_form %} {# Assuming task_form is the TaskForm instance #}
+
+    {# You might include photo_formset here if editing photos in the modal #}
+    {% comment %}
+    {% if photo_formset %}
+        {{ photo_formset.management_form }}
+        <fieldset>
+            <legend>{% trans "Фотографии" %}</legend>
+            {% for photo_form in photo_formset %}
+                <div class="photo-form-item">
+                    {{ photo_form|crispy }}
+                </div>
+            {% endfor %}
+        </fieldset>
+    {% endif %}
+    {% endcomment %}
+
+     <div class="flex justify-end space-x-2 mt-6 pt-4 border-t border-gray-200 dark:border-dark-600">
+        <button type="button" id="cancel-edit-modal-btn" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm" onclick="closeModal('taskEditModal')">{% trans "Отмена" %}</button> {# Assuming generic closeModal function #}
+        <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">{% trans "Сохранить изменения" %}</button>
+    </div>
+</form>
