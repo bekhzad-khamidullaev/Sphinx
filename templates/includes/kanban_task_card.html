@@ -1,0 +1,115 @@
+{% load i18n app_filters static %}
+{% with priority_color_class=task.priority|get_priority_tailwind_color %}
+<div id="task-{{ task.pk }}"
+    class="kanban-task bg-white dark:bg-dark-700 rounded-lg shadow-md p-3.5 cursor-grab hover:shadow-lg border border-gray-200 dark:border-dark-600 border-l-4 {{ priority_color_class }} transition-all duration-150 hover:scale-[1.01] group flex flex-col relative"
+    draggable="true" {# Для HTML Drag&Drop API #}
+    data-task-id="{{ task.pk }}"
+    {# data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" #} {# URL для удаления #}
+    data-status="{{ task.status }}"> {# Текущий статус #}
+
+    {# Основное содержимое карточки #}
+    <div class="flex-grow">
+        <div class="flex justify-between items-center mb-2 text-xs">
+            <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Перейти к задаче' %} {{ task.task_number }}"
+               class="font-mono font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
+                {{ task.task_number }}
+            </a>
+             {# Ссылка на проект #}
+             {% if task.project %}
+             <a href="{{ task.project.get_absolute_url }}" title="{% trans 'Проект' %}: {{ task.project.name }}" class="text-gray-500 dark:text-gray-400 hover:underline truncate ml-2 hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-ellipsis overflow-hidden whitespace-nowrap max-w-[100px]">
+                 <i class="fas fa-project-diagram fa-fw mr-1 opacity-70"></i>{{ task.project.name }}
+             </a>
+             {% endif %}
+        </div>
+        {# Заголовок задачи #}
+        <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="block mb-2 group/title">
+             <p class="text-sm font-medium text-gray-800 dark:text-gray-100 break-words group-hover/title:text-blue-700 dark:group-hover/title:text-blue-400 transition-colors">{{ task.title }}</p>
+        </a>
+        {# Дополнительная информация (создатель, исполнитель и т.д.) #}
+        <div class="space-y-1.5 text-xs text-gray-600 dark:text-gray-400 mb-3">
+            {# Создатель #}
+            <div class="flex items-center gap-1.5">
+                <i class="fas fa-user-plus fa-fw text-gray-400 dark:text-gray-500" title="{% trans 'Инициатор' %}"></i>
+                {% if task.created_by %}
+                {# Ссылка на профиль, если есть #}
+                <span title="{{ task.created_by.display_name|default:task.created_by.username }}">
+                    {{ task.created_by.display_name|default:task.created_by.username|truncatechars:15 }}
+                </span>
+                {% else %}<span>-</span>{% endif %}
+                 {# Дата создания #}
+                <span class="text-gray-400 dark:text-gray-500 ml-auto" title="{% trans 'Дата создания' %}">
+                    <i class="far fa-calendar-plus fa-fw mr-1"></i>{{ task.created_at|date:"d.m.y" }}
+                </span>
+            </div>
+            {# Исполнитель (Пример, если есть поле assignee или через роли) #}
+            {% with executors=task.get_executors %} {# Используем метод модели #}
+            {% if executors %}
+            <div class="flex items-center gap-1.5">
+                <i class="fas fa-user-check fa-fw text-gray-400 dark:text-gray-500" title="{% trans 'Исполнители' %}"></i>
+                <span title="{% for ex in executors %}{{ ex.display_name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                     {{ executors.0.display_name|truncatechars:15 }}{% if executors|length > 1 %} +{{ executors|length|add:"-1" }}{% endif %}
+                </span>
+            </div>
+            {% else %}
+             <div class="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 italic">
+                 <i class="fas fa-user-times fa-fw" title="{% trans 'Исполнитель не назначен' %}"></i>
+                 <span>{% trans 'Не назначен' %}</span>
+             </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+    {# Нижняя часть карточки: Приоритет и Срок #}
+    <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-auto pt-2 border-t border-gray-100 dark:border-dark-600">
+        {# Приоритет #}
+        <span class="inline-flex items-center gap-1.5 font-medium {{ priority_color_class|replace_str:'border-l-4 border-,text-' }}" title="{% trans 'Приоритет' %}: {{ task.get_priority_display }}">
+             {% if task.priority == task.TaskPriority.HIGH %}<i class="fas fa-flag fa-fw text-red-500"></i>
+             {% elif task.priority == task.TaskPriority.MEDIUM_HIGH %}<i class="fas fa-angle-double-up fa-fw text-orange-500"></i>
+             {% elif task.priority == task.TaskPriority.MEDIUM %}<i class="fas fa-equals fa-fw text-yellow-500"></i>
+             {% elif task.priority == task.TaskPriority.MEDIUM_LOW %}<i class="fas fa-angle-double-down fa-fw text-blue-500"></i>
+             {% elif task.priority == task.TaskPriority.LOW %}<i class="fas fa-angle-down fa-fw text-green-500"></i>
+             {% else %}<i class="fas fa-question-circle fa-fw text-gray-400"></i>
+             {% endif %}
+              {# <span class="hidden sm:inline">{{ task.get_priority_display|truncatechars:10 }}</span> #} {# Скрываем текст на маленьких экранах, если нужно #}
+        </span>
+        {# Срок #}
+        {% if task.deadline %}
+        <span class="inline-flex items-center gap-1 {% if task.is_overdue %}text-red-600 dark:text-red-400 font-semibold{% else %}text-gray-500 dark:text-gray-400{% endif %}" title="{% trans 'Срок выполнения' %}">
+            <i class="far fa-calendar-alt fa-fw"></i> {{ task.deadline|date:"d.m.y" }}
+        </span>
+        {% endif %}
+    </div>
+    {# Действия при наведении #}
+    <div class="kanban-actions absolute bottom-1 right-1 flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-white dark:bg-dark-700 p-1 rounded-md shadow-sm">
+        {# Ссылка на детали #}
+        <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Подробнее' %}"
+            class="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 transition-colors">
+            <i class="fas fa-eye fa-fw"></i>
+        </a>
+        {# Кнопка редактирования #}
+         {% if task.has_permission %} {# Проверяем, есть ли метод #}
+             {% if task.has_permission %} {# Проверяем, есть ли метод #}
+                 {% if task.has_permission|call:"request.user,'change'" %} {# Вызываем метод #}
+                    <a href="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}"
+                        class="p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors">
+                        <i class="fas fa-edit fa-fw"></i>
+                    </a>
+                 {% endif %}
+             {% endif %}
+         {% endif %}
+        {# Кнопка удаления (использует JS для подтверждения) #}
+         {% if task.has_permission %} {# Проверяем, есть ли метод #}
+             {% if task.has_permission %} {# Проверяем, есть ли метод #}
+                 {% if task.has_permission|call:"request.user,'delete'" %} {# Вызываем метод #}
+                    <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}"
+                        data-task-name="{{ task.title|escapejs }}" {# Для сообщения подтверждения #}
+                        title="{% trans 'Удалить' %}"
+                        class="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 transition-colors">
+                        <i class="fas fa-trash fa-fw"></i>
+                    </button>
+                 {% endif %}
+             {% endif %}
+         {% endif %}
+    </div>
+</div>
+{% endwith %}

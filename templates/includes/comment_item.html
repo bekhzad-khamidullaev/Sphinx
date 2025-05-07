@@ -1,0 +1,24 @@
+{% load static i18n %}
+<div class="flex space-x-3 comment-item" id="comment-{{ comment.id }}">
+    {# Аватар автора #}
+    <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
+        src="{% if comment.author.userprofile.image %}{{ comment.author.userprofile.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
+        alt="{{ comment.author.display_name|default:_('Автор') }}">
+    {# Тело комментария #}
+    <div class="flex-1 bg-gray-50 dark:bg-dark-700 p-3 rounded-lg border border-gray-100 dark:border-dark-600">
+        <div class="flex justify-between items-center mb-1">
+            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                {% if comment.author.get_absolute_url %}
+                    <a href="{{ comment.author.get_absolute_url }}" class="hover:underline">{{ comment.author.display_name|default:_("Удаленный пользователь") }}</a>
+                {% else %}
+                    {{ comment.author.display_name|default:_("Удаленный пользователь") }}
+                {% endif %}
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-500"
+                title="{{ comment.created_at|date:'d.m.Y H:i:s' }}">{{ comment.created_at|timesince }} {% trans "назад" %}</span>
+        </div>
+        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ comment.text }}</p>
+        {# Действия с комментарием (если нужно: ответить, удалить, редактировать) #}
+        {# <div class="mt-1 text-xs"> ... </div> #}
+    </div>
+</div>

@@ -1,0 +1,60 @@
+{% load i18n static widget_tweaks %}
+{# Секция комментариев #}
+<div id="comments-section" class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8 scroll-mt-20"> {# scroll-mt для корректного якоря #}
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+        <i class="fas fa-comments mr-2 text-gray-500 dark:text-gray-400"></i>{% trans 'Комментарии' %}
+        <span id="comment-count" class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">({{ comments_list|length }})</span>
+    </h3>
+
+    {# Список комментариев #}
+    <div id="comment-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-dark-600 scrollbar-track-transparent mb-6">
+        {% for comment in comments_list %}
+            {% include "includes/comment_item.html" with comment=comment user=request.user %}
+        {% empty %}
+        <p id="no-comments-message" class="text-gray-500 dark:text-gray-400 italic text-sm text-center py-4">{% trans "Комментариев пока нет." %}</p>
+        {% endfor %}
+    </div>
+
+    {# Форма добавления нового комментария #}
+    {% if can_add_comment %}
+    <div id="comment-form-section"> {# Якорь для ошибок формы #}
+        <form id="comment-form" method="post" action="{% url 'tasks:task_detail' pk=task.pk %}#comment-form-section" class="mt-4">
+            {% csrf_token %}
+            <div class="flex space-x-3 items-start">
+                {# Аватар текущего пользователя #}
+                <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
+                    src="{% if request.user.userprofile.image %}{{ request.user.userprofile.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
+                    alt="{{ request.user.display_name }}">
+                <div class="flex-1">
+                    {# Поле ввода текста комментария #}
+                    {% trans "Введите ваш комментарий..." as comment_placeholder %}
+                    {% render_field comment_form.text class+="form-textarea block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-dark-600 dark:border-dark-500 dark:text-gray-200 sm:text-sm" rows="3" placeholder=comment_placeholder aria-label=_("Текст комментария") %}
+
+                    {# Ошибки поля #}
+                    <div id="comment-text-errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {% if comment_form.text.errors %}
+                        {% for error in comment_form.text.errors %} {{ error }} {% endfor %}
+                        {% endif %}
+                    </div>
+                    {# Ошибки формы (не поля) #}
+                    <div id="comment-non-field-errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {% if comment_form.non_field_errors %}
+                        {% for error in comment_form.non_field_errors %} {{ error }} {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {# Кнопка отправки #}
+            <div class="flex justify-end mt-2">
+                <button type="submit"
+                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition duration-150 ease-in-out disabled:opacity-50">
+                    <i class="fas fa-paper-plane mr-2"></i> {% trans 'Отправить' %}
+                </button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <p class="text-gray-500 dark:text-gray-400 italic text-sm">{% trans "Вы не можете добавлять комментарии к этой задаче." %}</p>
+    {% endif %}
+</div>
+{# --- Конец секции комментариев --- #}

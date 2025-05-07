@@ -8,369 +8,296 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 
-
-
-from ..models import (
-    Project,
-    TaskCategory,
-    TaskSubcategory,
-    Task,
-    TaskPhoto,
-)
+from ..models import (Project, TaskCategory, TaskSubcategory, Task, TaskPhoto)
 from ..serializers import (
-    ProjectSerializer,
-    TaskCategorySerializer,
-    TaskSubcategorySerializer,
-    TaskSerializer,
-    TaskPhotoSerializer,
+    ProjectSerializer, TaskCategorySerializer, TaskSubcategorySerializer,
+    TaskSerializer, TaskPhotoSerializer
 )
-# Assuming you might want permission checks later
-# from .permissions import IsOwnerOrReadOnly, IsTeamMemberOrReadOnly
-from user_profiles.models import User, Team, Department
+# user_profiles.models импортируются здесь для SearchSuggestionsView и UserAutocompleteView
+# Убедитесь, что они доступны и User модель определена корректно.
+from user_profiles.models import User, Team, Department # Assuming availability
 
-try:
-    from checklists.models import ChecklistTemplate, ChecklistRun
-except ImportError:
-    ChecklistTemplate = None
-    ChecklistRun = None
-try:
-    from room.models import Room
-except ImportError:
-    Room = None
+# Optional imports, handled gracefully
+try: from checklists.models import ChecklistTemplate, ChecklistRun
+except ImportError: ChecklistTemplate, ChecklistRun = None, None
+try: from room.models import Room
+except ImportError: Room = None
 
 User = get_user_model()
 
-
-# --------------------------------------------------------------------------
-# Model ViewSets for Standard CRUD Operations
-# --------------------------------------------------------------------------
-
 class ProjectViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows projects to be viewed or edited.
-    """
-    queryset = Project.objects.annotate(
-        task_count=Count('tasks') # Add task count for potentially richer API responses
-    ).order_by('name')
+    queryset = Project.objects.annotate(task_count=Count('tasks')).order_by('name')
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated] # Example: Only logged-in users
+    permission_classes = [permissions.IsAuthenticated] # Заменить на более гранулярные права
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['start_date', 'end_date'] # Fields for exact filtering
-    search_fields = ['name', 'description'] # Fields for full-text search
+    filterset_fields = ['start_date', 'end_date'] # Добавить другие поля по необходимости
+    search_fields = ['name', 'description']
     ordering_fields = ['name', 'start_date', 'end_date', 'created_at', 'task_count']
-    ordering = ['name'] # Default ordering
-
+    ordering = ['name']
 
 class TaskCategoryViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows task categories to be viewed or edited.
-    """
-    queryset = TaskCategory.objects.all().order_by('name')
+    queryset = TaskCategory.objects.annotate(
+        task_count=Count('tasks'),
+        subcategory_count=Count('subcategories')
+    ).order_by('name')
     serializer_class = TaskCategorySerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
-    ordering_fields = ['name', 'created_at']
+    ordering_fields = ['name', 'created_at', 'task_count', 'subcategory_count']
     ordering = ['name']
 
-
 class TaskSubcategoryViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows task subcategories to be viewed or edited.
-    """
-    queryset = TaskSubcategory.objects.select_related('category').order_by('category__name', 'name')
+    queryset = TaskSubcategory.objects.select_related('category').annotate(
+        task_count=Count('tasks')
+    ).order_by('category__name', 'name')
     serializer_class = TaskSubcategorySerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'category__name'] # Filter by category ID or name
+    # Use 'category' (PK) for filtering from Task form's dependent dropdown AJAX
+    filterset_fields = ['category', 'category__name']
     search_fields = ['name', 'description', 'category__name']
-    ordering_fields = ['name', 'category__name', 'created_at']
+    ordering_fields = ['name', 'category__name', 'created_at', 'task_count']
     ordering = ['category__name', 'name']
 
-    # Example: Dynamic queryset based on category_id URL parameter
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     category_id = self.request.query_params.get('category_id')
-    #     if category_id:
-    #         queryset = queryset.filter(category_id=category_id)
-    #     return queryset
+    # Оставляем list метод для поддержки параметра 'select2', если он используется веб-фронтендом
+    def list(self, request, *args, **kwargs):
+        category_id = request.query_params.get('category') # Фильтрация по category_id
+        select2_request = request.query_params.get('select2', 'false').lower() == 'true'
+
+        queryset = self.filter_queryset(self.get_queryset())
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+
+        # Если это запрос для Select2, не используем пагинацию DRF, возвращаем плоский список
+        if select2_request:
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data) # Возвращаем список напрямую
+
+        # Стандартная пагинация для API
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows tasks to be viewed or edited.
-    Includes filtering, searching, and ordering.
-    """
-    # Optimize queryset by selecting/prefetching related fields frequently used
     queryset = Task.objects.select_related(
-        'project', 'category', 'subcategory', 'created_by'#, 'assignee', 'team' # Uncomment if these fields exist
+        'project', 'category', 'subcategory', 'created_by'
     ).prefetch_related(
-        'photos', 'user_roles__user' # Prefetch photos and users involved
+        'photos', 'user_roles__user' # user_roles - related_name из TaskUserRole
     ).order_by('-created_at')
     serializer_class = TaskSerializer
-    permission_classes = [permissions.IsAuthenticated] # Add more specific permissions if needed
+    permission_classes = [permissions.IsAuthenticated] # Заменить на кастомные права
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    # Use TaskFilter for more complex filtering defined in filters.py
-    # filterset_class = TaskFilter # Uncomment if using TaskFilter class
-    # Or define simple fields here:
-    filterset_fields = ['project', 'category', 'subcategory', 'status', 'priority', 'created_by', 'deadline', 'start_date', 'completion_date']
-    search_fields = ['task_number', 'title', 'description', 'project__name', 'created_by__username'] # Add fields from related models
+    # filterset_class = TaskAPIFilter # Можно создать отдельный класс фильтра для API
+    filterset_fields = { # Более гибкая настройка фильтров
+        'project': ['exact'],
+        'category': ['exact'],
+        'subcategory': ['exact'],
+        'status': ['exact', 'in'],
+        'priority': ['exact', 'in', 'gte', 'lte'],
+        'created_by': ['exact'],
+        'deadline': ['exact', 'gte', 'lte', 'isnull'],
+        'start_date': ['exact', 'gte', 'lte'],
+        'completion_date': ['exact', 'gte', 'lte', 'isnull'],
+        # Для фильтрации по ролям пользователей (если TaskUserRole существует):
+        # 'user_roles__user': ['exact'],
+        # 'user_roles__role': ['exact'],
+    }
+    search_fields = ['task_number', 'title', 'description', 'project__name', 'created_by__username']
     ordering_fields = ['task_number', 'title', 'status', 'priority', 'deadline', 'start_date', 'completion_date', 'created_at', 'project__name']
-    ordering = ['-created_at'] # Default ordering
+    ordering = ['-created_at']
 
-    # Optionally override perform_create to set the creator automatically
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+    # perform_create уже есть, устанавливает created_by
+    # def perform_create(self, serializer):
+    #     serializer.save(created_by=self.request.user)
 
-    # Optionally override perform_update or perform_destroy for permission checks or logging
+    # Можно добавить кастомные actions, например, для изменения статуса
+    # from rest_framework.decorators import action
+    # @action(detail=True, methods=['post'], permission_classes=[IsTaskParticipantOrAdmin]) # Нужен кастомный permission
+    # def set_status(self, request, pk=None):
+    #     task = self.get_object()
+    #     new_status = request.data.get('status')
+    #     if not new_status or new_status not in dict(Task.StatusChoices.choices).keys():
+    #         return Response({'error': 'Invalid status provided'}, status=status.HTTP_400_BAD_REQUEST)
+    #     task.status = new_status
+    #     task.save(update_fields=['status', 'updated_at']) # completion_date обновится в model.save()
+    #     return Response(TaskSerializer(task, context={'request': request}).data)
 
 
 class TaskPhotoViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows task photos to be viewed or edited.
-    """
     queryset = TaskPhoto.objects.select_related('task', 'uploaded_by').order_by('-created_at')
     serializer_class = TaskPhotoSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated] # Кастомные права: может ли пользователь добавлять/удалять фото к этой задаче
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['task', 'uploaded_by']
     ordering_fields = ['created_at', 'task__task_number']
     ordering = ['-created_at']
 
-    # Override perform_create to set the uploader automatically
-    def perform_create(self, serializer):
-        serializer.save(uploaded_by=self.request.user)
+    # perform_create уже есть, устанавливает uploaded_by
+    # def perform_create(self, serializer):
+    #     serializer.save(uploaded_by=self.request.user)
 
-
-# --------------------------------------------------------------------------
-# Custom API Views (Example: Search Suggestions, User Autocomplete)
-# --------------------------------------------------------------------------
-
+# Представление для глобального поиска (Search Bar)
 class SearchSuggestionsView(APIView):
-    """
-    Provides search suggestions across multiple models.
-    Returns results in the format expected by search.js.
-    """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         query = request.query_params.get('q', '').strip()
-        all_suggestions = []
-        limit_per_model = 5 # Limit results per model type initially
-        final_limit = 10 # Final number of suggestions to return
+        suggestions = []
+        limit = 5 # Лимит на каждый тип результата
 
-        if len(query) >= 2:
-            # --- Search Tasks ---
+        if len(query) >= 2: # Минимальная длина запроса
+            # Задачи
             tasks = Task.objects.filter(
                 Q(title__icontains=query) | Q(task_number__icontains=query)
-            ).select_related('project')[:limit_per_model]
-            for task in tasks:
-                all_suggestions.append({
-                    'type': 'task',
-                    'title': f"#{task.task_number}: {task.title}",
-                    'context': task.project.name if task.project else _("Без проекта"),
-                    'url': task.get_absolute_url(),
-                    'icon': 'tasks', # Font Awesome icon name
-                    'color': 'blue', # Color hint
-                })
+            ).select_related('project')[:limit]
+            suggestions.extend([
+                { 'type': 'task',
+                  'title': f"#{t.task_number}: {t.title}",
+                  'context': t.project.name if t.project else '',
+                  'url': t.get_absolute_url(), # URL для веб-версии
+                  'api_url': reverse('tasks:task-api-detail', kwargs={'pk': t.pk}, request=request), # URL для API
+                  'icon': 'tasks', 'color': 'blue'} for t in tasks
+            ])
 
-            # --- Search Projects ---
-            projects = Project.objects.filter(name__icontains=query)[:limit_per_model]
-            for project in projects:
-                all_suggestions.append({
-                    'type': 'project',
-                    'title': project.name,
-                    'context': _("Проект"),
-                    'url': project.get_absolute_url(), # Assumes get_absolute_url links to project's task list
-                    'icon': 'project-diagram',
-                    'color': 'purple',
-                })
+            # Проекты
+            projects = Project.objects.filter(name__icontains=query)[:limit]
+            suggestions.extend([
+                { 'type': 'project', 'title': p.name, 'context': _("Проект"),
+                  'url': p.get_absolute_url(),
+                  'api_url': reverse('tasks:project-api-detail', kwargs={'pk': p.pk}, request=request),
+                  'icon': 'project-diagram', 'color': 'purple'} for p in projects
+            ])
 
-            # --- Search Categories ---
-            categories = TaskCategory.objects.filter(name__icontains=query)[:limit_per_model]
-            for category in categories:
-                 # Link to task list filtered by this category
-                 category_task_list_url = reverse('tasks:task_list') + f'?category={category.pk}'
-                 all_suggestions.append({
-                     'type': 'category',
-                     'title': category.name,
-                     'context': _("Категория задач"),
-                     'url': category_task_list_url,
-                     'icon': 'folder-open', # Changed icon
-                     'color': 'teal',
-                 })
+            # Категории
+            cats = TaskCategory.objects.filter(name__icontains=query)[:limit]
+            suggestions.extend([
+                { 'type': 'category', 'title': c.name, 'context': _("Категория"),
+                  'url': reverse('tasks:task_list') + f'?category={c.pk}',
+                  'api_url': reverse('tasks:category-api-detail', kwargs={'pk': c.pk}, request=request),
+                  'icon': 'folder-open', 'color': 'teal'} for c in cats
+            ])
+            
+            # Пользователи (если user_profiles подключен)
+            if User:
+                users = User.objects.filter(
+                    Q(username__icontains=query) | Q(first_name__icontains=query) |
+                    Q(last_name__icontains=query) | Q(email__icontains=query),
+                    is_active=True
+                )[:limit]
+                suggestions.extend([
+                    {'type': 'user',
+                     'title': f"{u.display_name} (@{u.username})",
+                     'context': u.job_title or '',
+                     # 'url': u.get_absolute_url(), # Если есть профиль пользователя
+                     # 'api_url': reverse('user-api-detail', kwargs={'pk': u.pk}, request=request), # Если есть API для User
+                     'icon': 'user', 'color': 'orange'} for u in users
+                ])
 
-            # --- Search Checklist Templates ---
+            # Команды (если user_profiles.Team подключен)
+            if Team:
+                teams = Team.objects.filter(name__icontains=query)[:limit]
+                suggestions.extend([
+                    {'type': 'team', 'title': t.name, 'context': _("Команда"),
+                    #  'url': reverse('user_profiles:user_list') + f'?team={t.pk}', # Пример URL
+                    #  'api_url': reverse('team-api-detail', kwargs={'pk': t.pk}, request=request), # Если есть API для Team
+                     'icon': 'users-cog', 'color': 'pink'} for t in teams
+                ])
+            
+            # Отделы (если user_profiles.Department подключен)
+            if Department:
+                depts = Department.objects.filter(name__icontains=query)[:limit]
+                suggestions.extend([
+                    {'type': 'department', 'title': d.name, 'context': _("Отдел"),
+                    #  'url': reverse('user_profiles:user_list') + f'?department={d.pk}', # Пример URL
+                    #  'api_url': reverse('department-api-detail', kwargs={'pk': d.pk}, request=request), # Если есть API для Department
+                     'icon': 'building', 'color': 'sky'} for d in depts
+                ])
+
+            # Чек-листы (если подключены)
             if ChecklistTemplate:
-                templates = ChecklistTemplate.objects.filter(
-                    name__icontains=query, is_archived=False
-                )[:limit_per_model]
-                for template in templates:
-                    all_suggestions.append({
-                        'type': 'checklist_template',
-                        'title': template.name,
-                        'context': _("Шаблон чеклиста"),
-                        'url': template.get_absolute_url(),
-                        'icon': 'clipboard-list',
-                        'color': 'indigo',
-                    })
+                 templates = ChecklistTemplate.objects.filter(name__icontains=query, is_archived=False)[:limit]
+                 suggestions.extend([{'type': 'checklist_template', 'title': t.name, 'context': _("Шаблон чек-листа"),
+                                    #   'url': t.get_absolute_url(),
+                                    #   'api_url': reverse('checklist-template-api-detail', kwargs={'pk': t.pk}, request=request),
+                                      'icon': 'clipboard-list', 'color': 'indigo'} for t in templates])
 
-            # --- Search Checklist Runs ---
             if ChecklistRun:
-                # Search by template name or performing user
                 runs = ChecklistRun.objects.filter(
-                     Q(template__name__icontains=query) | Q(performed_by__username__icontains=query) | Q(performed_by__first_name__icontains=query) | Q(performed_by__last_name__icontains=query)
-                 ).select_related('template', 'performed_by').order_by('-performed_at')[:limit_per_model]
-                for run in runs:
-                     all_suggestions.append({
-                         'type': 'checklist_run',
-                         'title': f"{_('Результаты')}: {run.template.name} ({run.performed_at.strftime('%d.%m.%y')})",
-                         'context': f"{_('Выполнен')}: {run.performed_by.display_name if run.performed_by else '-'}",
-                         'url': run.get_absolute_url(),
-                         'icon': 'history', # Or 'check-double'
-                         'color': 'gray',
-                     })
-
-            # --- Search Users ---
-            users = User.objects.filter(
-                 Q(username__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query) | Q(email__icontains=query),
-                 is_active=True
-             ).select_related('department')[:limit_per_model]
-            for user in users:
-                 # Prefer profile view, fallback to update view if profile view doesn't exist
-                 user_url = '#'
-                 try:
-                      user_url = reverse('user_profiles:profile_view') # Assuming profile view is for the logged-in user
-                      # If you have a public profile view per user:
-                      # user_url = reverse('user_profiles:public_profile', kwargs={'username': user.username})
-                 except:
-                      try: # Fallback to update view (might need permissions)
-                          user_url = reverse('user_profiles:user_update', kwargs={'pk': user.pk})
-                      except:
-                           pass # No suitable URL found
-
-                 all_suggestions.append({
-                     'type': 'user',
-                     'title': f"{user.display_name} (@{user.username})",
-                     'context': user.job_title or _("Пользователь"),
-                     'url': user_url,
-                     'icon': 'user',
-                     'color': 'orange',
-                 })
-
-            # --- Search Teams ---
-            teams = Team.objects.filter(name__icontains=query).select_related('department')[:limit_per_model]
-            for team in teams:
-                 # Link to user list filtered by this team
-                 team_user_list_url = reverse('user_profiles:user_list') + f'?team={team.pk}'
-                 all_suggestions.append({
-                    'type': 'team',
-                    'title': team.name,
-                    'context': f"{_('Команда')} ({team.department.name if team.department else '-'})",
-                    'url': team_user_list_url, # Link to filtered user list
-                    'icon': 'users-cog',
-                    'color': 'pink',
-                 })
-
-            # --- Search Departments ---
-            departments = Department.objects.filter(name__icontains=query)[:limit_per_model]
-            for department in departments:
-                 department_user_list_url = reverse('user_profiles:user_list') + f'?department={department.pk}'
-                 all_suggestions.append({
-                     'type': 'department',
-                     'title': department.name,
-                     'context': _("Отдел"),
-                     'url': department_user_list_url, # Link to filtered user list
-                     'icon': 'building',
-                     'color': 'sky', # Using 'sky' as an alternative to 'cyan'
-                 })
-
-            # --- Search Chat Rooms ---
+                    Q(template__name__icontains=query) | Q(performed_by__username__icontains=query)
+                ).select_related('template', 'performed_by').order_by('-performed_at')[:limit]
+                suggestions.extend([{'type': 'checklist_run',
+                                     'title': f"{r.template.name} ({r.performed_at:%d.%m.%y})",
+                                     'context': f"{_('Выполнен')}: {r.performed_by.display_name if r.performed_by else '-'}",
+                                    #  'url': r.get_absolute_url(),
+                                    #  'api_url': reverse('checklist-run-api-detail', kwargs={'pk': r.pk}, request=request),
+                                     'icon': 'history', 'color': 'gray'} for r in runs])
+            
+            # Чаты/комнаты (если подключены)
             if Room:
-                rooms = Room.objects.filter(name__icontains=query)[:limit_per_model]
-                for room in rooms:
-                    all_suggestions.append({
-                        'type': 'room',
-                        'title': f"# {room.name}",
-                        'context': _("Чат комната"),
-                        'url': room.get_absolute_url(), # Assumes get_absolute_url is defined
-                        'icon': 'comments',
-                        'color': 'green',
-                    })
+                rooms = Room.objects.filter(name__icontains=query)[:limit]
+                suggestions.extend([{'type': 'room', 'title': f"# {r.name}", 'context': _("Чат"),
+                                    #  'url': r.get_absolute_url(),
+                                    #  'api_url': reverse('room-api-detail', kwargs={'pk': r.pk}, request=request),
+                                     'icon': 'comments', 'color': 'green'} for r in rooms])
 
-        # Limit the final combined list
-        suggestions = all_suggestions[:final_limit]
+        return Response({'results': suggestions[:10]}) # Ограничиваем общее количество результатов
 
-        # Return in the format expected by JS
-        return Response({'results': suggestions})
-
+# Представление для автокомплита пользователей (для Select2 в формах)
 class UserAutocompleteView(APIView):
-    """
-    Provides user suggestions for autocomplete widgets (like Select2).
-    Matches the endpoint expected by 'tasks:user_autocomplete'.
-    Supports optional filtering by project.
-    """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         query = request.query_params.get('q', '').strip()
-        project_id = request.query_params.get('project')  # <-- Добавлено для фильтрации по проекту
+        project_id = request.query_params.get('project') # Для фильтрации по участникам проекта
         page = int(request.query_params.get('page', 1))
-        page_size = 20  # Number of results per page for Select2 pagination
+        page_size = 20 # Стандартный размер страницы для Select2
 
         results = []
-        more = False
+        more = False # Флаг для Select2, есть ли еще страницы
 
-        if len(query) >= 1:  # Minimum characters to trigger search
-            # Build the filter dynamically
+        if len(query) >= 1: # Минимальная длина запроса для автокомплита
             search_filter = (
                 Q(username__icontains=query) |
                 Q(first_name__icontains=query) |
                 Q(last_name__icontains=query) |
                 Q(email__icontains=query)
             )
-            # Query only active users
             queryset = User.objects.filter(is_active=True).filter(search_filter)
 
-            # 🔥 Фильтрация по проекту если задан
+            # Пример фильтрации по участникам проекта (требует модели связи Project <-> User/Team)
             if project_id:
-                # Если у юзеров есть прямая связь на проект — раскомментировать:
-                # queryset = queryset.filter(project_id=project_id)
+                try:
+                    project = Project.objects.get(pk=project_id)
+                    # Это пример, адаптируйте под вашу структуру связи проекта с пользователями/командами
+                    # Например, если проект связан с командами, а команды с пользователями:
+                    # team_ids = project.teams.values_list('id', flat=True)
+                    # queryset = queryset.filter(teams__id__in=team_ids).distinct()
+                    # Или если у задач есть TaskUserRole:
+                    # user_ids_in_project_tasks = TaskUserRole.objects.filter(task__project_id=project_id).values_list('user_id', flat=True).distinct()
+                    # queryset = queryset.filter(id__in=user_ids_in_project_tasks)
+                    pass # Замените на вашу логику фильтрации по проекту
+                except Project.DoesNotExist:
+                    queryset = queryset.none() # Проект не найден, возвращаем пустой результат
 
-                # Или если через профиль или роли, надо написать свою логику
-                # Пока оставлю как пример без изменений, тебе нужно здесь дописать
-                pass
 
-            # Calculate pagination offsets
+            # Пагинация для Select2
             start_index = (page - 1) * page_size
             end_index = start_index + page_size
-
-            # Get total count for pagination check
+            
             total_count = queryset.count()
             if total_count > end_index:
-                more = True  # Indicate there are more pages
+                more = True
 
-            # Get the users for the current page
             users = queryset.order_by('username')[start_index:end_index]
+            results = [{'id': user.pk, 'text': user.display_name or user.username} for user in users]
 
-            # Format results for Select2 AJAX
-            results = [
-                {
-                    'id': user.pk,
-                    'text': user.display_name or user.username,
-                }
-                for user in users
-            ]
-
-        # Select2 AJAX response format: { results: [...], pagination: { more: true/false } }
         return Response({
             'results': results,
             'pagination': {'more': more}
         })
-# Note: Ensure that the URL patterns are set up to route to these views correctly.
-# You may need to adjust the import paths based on your project structure.
-# Also, consider adding error handling and logging as needed.
-# This is a basic structure. You can expand upon it based on your specific requirements.
-# --------------------------------------------------------------------------
-# End of file
-# tasks/views/api.py

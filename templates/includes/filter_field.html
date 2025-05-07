@@ -1,0 +1,33 @@
+{% load widget_tweaks i18n %}
+<div>
+    {% if field.widget_type != 'checkboxselectmultiple' and field.widget_type != 'radioselect' and field.widget_type != 'checkboxinput' %}
+        <label for="{{ field.id_for_label }}" class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+            {{ field.label }}
+        </label>
+    {% endif %}
+
+    {% if field.widget_type == 'checkboxselectmultiple' %}
+         {# Особое отображение для чекбоксов #}
+         <fieldset>
+            <legend class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">{{ field.label }}</legend>
+            <div class="grid grid-cols-2 gap-2 mt-1">
+                {% for choice in field %}
+                <div class="flex items-center">
+                    {{ choice.tag }} {# Рендерит input #}
+                    <label for="{{ choice.id_for_label }}" class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ choice.choice_label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </fieldset>
+    {% elif field.widget_type == 'select' or field.widget_type == 'selectmultiple' %}
+        {% render_field field class+="form-select filter-select block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
+    {% elif field.widget_type == 'dateinput' %}
+         {% render_field field class+="form-input flatpickr-date-filter block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=field.label %}
+    {% else %}
+        {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=field.label %}
+    {% endif %}
+
+    {% if field.errors %}
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>
+    {% endif %}
+</div>

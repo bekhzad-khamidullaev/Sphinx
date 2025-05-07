@@ -1,0 +1,45 @@
+{% load i18n %}
+{# Кнопки для Desktop #}
+<div class="inline-flex rounded-md shadow-sm" role="group">
+    <a href="{% url 'tasks:task_create' %}"
+       class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
+        <i class="fas fa-plus mr-2 text-blue-500 dark:text-ios-blue"></i> {% trans 'Создать задачу' %}
+    </a>
+    <button type="button" id="toggleViewBtn"
+       class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150"
+       aria-pressed="false" data-current-view="list"> {# JS будет менять data-current-view #}
+         <i id="viewIcon" class="fas fa-columns mr-2"></i>
+         <span id="viewText">{% trans 'Канбан' %}</span>
+    </button>
+     {# Кнопка настройки колонок (изначально скрыта) #}
+     <button type="button" id="columnToggleButton" data-dropdown-toggle="columnToggleDropdown"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150 hidden"> {# Скрыта по умолчанию #}
+          <i class="fas fa-sliders-h mr-2"></i> {% trans 'Колонки' %}
+         <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+         </svg>
+     </button>
+</div>
+
+{# Выпадающий список для настройки колонок (использует Flowbite data-dropdown-toggle) #}
+<div id="columnToggleDropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-56 dark:bg-gray-700 dark:divide-gray-600 border dark:border-gray-600">
+    <div class="p-3">
+        <button type="button" id="resetHiddenColumnsBtn"
+            class="flex items-center w-full text-left text-sm text-blue-600 dark:text-blue-400 hover:underline focus:outline-none mb-2">
+             <i class="fas fa-eye mr-2"></i> {% trans 'Показать все колонки' %}
+        </button>
+        <hr class="border-gray-200 dark:border-gray-600">
+    </div>
+    <ul class="p-3 space-y-3 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="columnToggleButton">
+        {% for status_code, status_name in status_choices_for_kanban %}
+        <li>
+            <div class="flex items-center">
+                <input id="checkbox-column-{{ status_code }}" type="checkbox" value="{{ status_code }}"
+                   class="toggle-column-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
+                   data-status="{{ status_code }}" checked>
+                <label for="checkbox-column-{{ status_code }}" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer">{{ status_name }}</label>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>

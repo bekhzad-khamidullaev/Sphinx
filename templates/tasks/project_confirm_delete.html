@@ -9,20 +9,24 @@
 {% block list_content %}
 <div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6 max-w-lg mx-auto">
     <p class="text-gray-700 dark:text-gray-300 mb-4">
-        {% blocktrans with project_name=object.name %}
+        {% blocktrans with project_name=project.name %}
         Вы уверены, что хотите удалить проект <strong>"{{ project_name }}"</strong>?
         {% endblocktrans %}
     </p>
-    <p class="text-yellow-600 dark:text-yellow-400 font-semibold mb-6">{% trans "Внимание: Все задачи, связанные с этим проектом, также будут удалены!" %}</p>
-    <p class="text-red-600 dark:text-red-400 font-semibold mb-6">{% trans "Это действие нельзя будет отменить!" %}</p>
+    <p class="text-yellow-600 dark:text-yellow-400 font-semibold mb-6 text-sm">
+        <i class="fas fa-exclamation-triangle mr-1"></i> {% trans "Внимание: Все задачи, связанные с этим проектом, также будут удалены!" %}
+    </p>
+    <p class="text-red-600 dark:text-red-400 font-semibold mb-6 text-sm">
+         <i class="fas fa-skull-crossbones mr-1"></i> {% trans "Это действие нельзя будет отменить!" %}
+    </p>
     <form method="post" action="">
         {% csrf_token %}
         <div class="flex justify-end space-x-3">
             <a href="{% url 'tasks:project_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-                {% trans 'Отмена' %}
+                <i class="fas fa-times mr-2"></i> {% trans 'Отмена' %}
             </a>
-            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-ios-red dark:hover:bg-red-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-                <i class="fas fa-trash mr-2"></i> {% trans 'Да, удалить проект и все его задачи' %}
+            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-ios-red dark:hover:bg-red-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
+                <i class="fas fa-trash mr-2"></i> {% trans 'Да, удалить проект и задачи' %}
             </button>
         </div>
     </form>

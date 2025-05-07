@@ -1,121 +1,126 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load i18n app_filters %}
+{% load static i18n app_filters widget_tweaks %}
 
-{% block title %}{% trans 'Задачи' %}{% endblock %}
+{% block title %}{{ page_title|default:_("Задачи") }}{% endblock %}
 
-{% block list_title %}
-<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
-    {% trans 'Задачи' %}
-</h1>
+{% block head_extra %}
+    {{ block.super }}
+    {# Подключаем стили для Select2 и Flatpickr, если фильтр их использует #}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    {{ filterset.form.media.css }} {# Медиа формы фильтра #}
+    {# Стили для drag-and-drop (если используются кастомные) #}
+    <style>
+        .kanban-tasks.sortable-ghost { background-color: rgba(79, 70, 229, 0.1); border: 2px dashed rgba(79, 70, 229, 0.5); }
+        .kanban-task.sortable-drag { opacity: 0.7; transform: rotate(1deg); }
+        .kanban-column-wrapper.hidden-column { display: none; }
+    </style>
 {% endblock %}
 
-{% block list_actions %}
-{# Desktop Actions #}
-<div class="flex items-center ml-4 space-x-3"> {# Outer container with spacing #}
 
-    {# Group for Create and View Toggle Buttons #}
-    <div class="inline-flex rounded-md shadow-xs" role="group">
-        <a href="{% url 'tasks:task_create' %}"
-           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
-            <i class="fas fa-plus mr-2 text-blue-500 dark:text-ios-blue"></i> {% trans 'Создать задачу' %}
-        </a>
-        <button type="button" id="toggleViewBtn"
-           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150"
-           aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
-             <i id="viewIcon" class="fas fa-columns mr-2"></i>
-             <span id="viewText">{% trans 'Вид' %}</span>
-        </button>
+{% block list_title %}
+<div class="flex items-center justify-between flex-wrap gap-4">
+    <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
+        {{ page_title }}
+    </h1>
+    {# Действия для Desktop #}
+    <div class="hidden sm:flex items-center space-x-3">
+        {% include "tasks/includes/task_list_actions_desktop.html" %}
     </div>
-
-    {# Column Toggle Dropdown (Separate Button - Styled like Flowbite Checkbox Dropdown Button) #}
-    {# This button itself should only be visible when Kanban is active - handled by JS #}
-    <div id="column-toggle-dropdown" class="relative hidden">
-        <button id="dropdownCheckboxButton" data-dropdown-toggle="dropdownColumnCheckbox" {# Changed ID and toggle target #}
-           class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" type="button">
-            <i class="fas fa-columns mr-2"></i> {% trans 'Колонки' %}
-            <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
-            </svg>
-        </button>
-
-        {# Dropdown menu - Styled like Flowbite Checkbox Dropdown Menu #}
-        <div id="dropdownColumnCheckbox" {# Changed ID to match toggle target #}
-            class="z-50 hidden w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 border dark:border-gray-600">
-            <ul class="p-3 space-y-3 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownCheckboxButton">
-                <li>
-                    <button type="button" id="resetHiddenColumnsBtn"
-                        class="flex items-center w-full text-left text-blue-600 dark:text-blue-400 hover:underline focus:outline-none">
-                         <i class="fas fa-eye mr-2"></i> {% trans 'Показать все' %}
-                    </button>
-                </li>
-                <hr class="border-gray-200 dark:border-gray-600 !my-2"> {# Adjusted margin #}
-                {% for status, _ in status_mapping.items %}
-                {% with status_display_name=status_mapping|getkey:status %}
-                <li>
-                    <div class="flex items-center">
-                        <input id="checkbox-column-{{ status }}" type="checkbox" value="{{ status }}"
-                           class="toggle-column-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                           data-status="{{ status }}" checked>
-                        <label for="checkbox-column-{{ status }}" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer">{{ status_display_name|default:status }}</label>
-                    </div>
-                </li>
-                {% endwith %}
-                {% endfor %}
-            </ul>
-        </div>
-    </div>{# End Column Toggle Wrapper #}
-
 </div>
 {% endblock %}
 
 {% block list_actions_mobile %}
-{# Mobile Actions #}
-<a href="{% url 'tasks:task_create' %}"
-    class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
-    <i class="fas fa-plus mr-2"></i> {% trans 'Создать задачу' %}
-</a>
-<button type="button" id="toggleViewBtnMobile"
-    class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center"
-    aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}"
-    data-list-text="{% trans 'Список' %}">
-    <i id="viewIconMobile" class="fas fa-columns mr-2"></i>
-    <span id="viewTextMobile">{% trans 'Канбан' %}</span>
-</button>
+    {# Действия для Mobile #}
+    <div class="flex sm:hidden space-x-3 w-full">
+         {% include "tasks/includes/task_list_actions_mobile.html" %}
+    </div>
 {% endblock %}
 
 {% block list_content %}
+{# --- Форма Фильтра --- #}
+<div x-data="{ open: false }" class="mb-6">
+    <button @click="open = !open" type="button" class="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600">
+         <span>
+            <i class="fas fa-filter mr-2"></i> {% trans "Фильтры и Поиск" %}
+            <span class="ml-2 px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200">{{ request.GET|length }}</span> {# Показывает количество активных фильтров #}
+        </span>
+        <i class="fas" :class="{ 'fa-chevron-down': !open, 'fa-chevron-up': open }"></i>
+    </button>
+    <div x-show="open" x-transition class="mt-2 p-4 bg-gray-50 dark:bg-dark-700 rounded-lg border dark:border-dark-600 shadow-inner">
+        <form method="get" action="" id="task-filter-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+            {# Рендерим каждое поле фильтра #}
+            <div class="lg:col-span-2">{% include "includes/filter_field.html" with field=filterset.form.q %}</div>
+            <div>{% include "includes/filter_field.html" with field=filterset.form.project %}</div>
+            <div>{% include "includes/filter_field.html" with field=filterset.form.status %}</div>
+            <div>{% include "includes/filter_field.html" with field=filterset.form.priority %}</div>
+            <div>{% include "includes/filter_field.html" with field=filterset.form.responsible %}</div>
+            <div>{% include "includes/filter_field.html" with field=filterset.form.executor %}</div>
+            <div>{% include "includes/filter_field.html" with field=filterset.form.created_by %}</div>
+            <div>{% include "includes/filter_field.html" with field=filterset.form.deadline_after %}</div>
+            <div>{% include "includes/filter_field.html" with field=filterset.form.deadline_before %}</div>
+            {# Другие поля фильтра... #}
+            {# <div>{% include "includes/filter_field.html" with field=filterset.form.category %}</div> #}
+            {# <div>{% include "includes/filter_field.html" with field=filterset.form.subcategory %}</div> #}
 
-{% get_current_language as LANGUAGE_CODE %}
-{% with ajax_base_url="/"|add:LANGUAGE_CODE|add:"/core/ajax/tasks/" %} {# Ensure correct AJAX base URL #}
-
-<!-- Канбан-доска -->
-{% include 'includes/kanban_board.html' %}
-
-<!-- Горизонтальный список -->
-{% include 'includes/task_list_table.html' %}
-
-{% endwith %} {# End of with ajax_base_url #}
-
-<!-- Пагинация (отображается только для вида "Список") -->
-{% if page_obj and page_obj.paginator.num_pages > 1 %}
-<div id="pagination" class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm hidden"> {# Hidden by default, shown by JS #}
-    {% include "includes/pagination.html" with page_obj=page_obj %} {# Use your standard pagination template #}
+            {# Кнопки управления фильтром #}
+            <div class="lg:col-span-4 flex justify-end space-x-2 mt-2">
+                <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-ios-blue dark:hover:bg-blue-500 shadow-sm inline-flex items-center">
+                    <i class="fas fa-search mr-1"></i> {% trans 'Найти' %}
+                </button>
+                <a href="{% url 'tasks:task_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 hover:bg-gray-100 dark:hover:bg-dark-500 shadow-sm inline-flex items-center">
+                     <i class="fas fa-eraser mr-1"></i> {% trans 'Сбросить' %}
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
-{% endif %}
+{# --- Конец Формы Фильтра --- #}
 
-<!-- Скрытый элемент для передачи status_mapping в JS -->
-<script id="status-mapping-data" type="application/json">
-    {{ status_mapping|json_script:"status-mapping-data-payload" }}
+
+{# Контейнер для переключения видов #}
+<div id="task-view-container">
+    {# Канбан-доска (включена через include) #}
+    {% include 'includes/kanban_board.html' %}
+
+    {# Таблица задач (включена через include) #}
+    {% include 'includes/task_list_table.html' with tasks_list=tasks page_obj=page_obj status_choices=status_mapping_json status_mapping=status_mapping current_sort=current_sort is_paginated=is_paginated %}
+
+    {# Пагинация (отображается только для вида "Список" через JS) #}
+    {% if is_paginated %}
+    <div id="pagination-container" class="mt-6 hidden"> {# Скрыт по умолчанию #}
+        {% include "includes/pagination.html" with page_obj=page_obj %}
+    </div>
+    {% endif %}
+</div> {# Конец task-view-container #}
+
+{# Скрытые данные для JS #}
+<div id="task-list-data" class="hidden"
+     data-ws-url="{% url 'ws:tasks_list' %}" {# Пример URL для WebSocket #}
+     data-update-status-url-template="{% url 'tasks:ajax_update_task_status' task_id=0 %}">
+</div>
+<script id="status-mapping-script-data" type="application/json">
+    {{ status_mapping_json|safe }}
 </script>
-
+ <script id="status-choices-script-data" type="application/json">
+     {{ status_choices_for_kanban|json_script:"status-choices-payload" }}
+ </script>
 
 {% endblock %}
 
 {% block scripts %}
-{{ block.super }} {# Include scripts from base template #}
+{{ block.super }}
+{# Зависимости #}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
+{# SortableJS для Drag-and-Drop #}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-{# Ensure sweetalert2 is loaded if you use it for deletes #}
-{# <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script> #}
-<script src="{% static 'js/tasks_no_modal.js' %}" defer></script>
+{# Медиа формы фильтра #}
+{{ filterset.form.media.js }}
+{# Основной JS для страницы списка задач #}
+<script src="{% static 'js/task_list_manager.js' %}" defer></script> {# Вынесен в отдельный файл #}
 {% endblock %}

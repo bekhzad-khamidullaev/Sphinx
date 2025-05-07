@@ -1,36 +1,33 @@
+# config/settings.py
 import logging
 from pathlib import Path
 import os
 from django.utils.translation import gettext_lazy as _
-from decouple import config
 from datetime import timedelta
-from dotenv import load_dotenv
+import sys # For checking if running tests
 
-
-# --- Logging Setup ---
+# --- Basic Setup ---
+BASE_DIR = Path(__file__).resolve().parent.parent
 logger = logging.getLogger(__name__)
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(os.path.join(BASE_DIR, ".env"))
-# --- Basic Django Settings ---
-SECRET_KEY = config(
-    "DJANGO_SECRET_KEY",
-    default="django-insecure-t)onh@=0&bs0eghf!lv8w8==&(4^atr-44z!=xsac_4a6$^^+8",
-)  # Use environment variable or default
-DEBUG = config("DEBUG", default=True, cast=bool)
-# DEBUG = os.environ.get('DEBUG', '0') == '1' # Читаем из .env (0 или 1)
+# --- Security ---
+# WARNING: Keep the secret key used in production secret!
+# Generate a new secret key for production.
+# For development, a fixed key is acceptable but not recommended for shared repos.
+SECRET_KEY = "django-insecure-development-key-@replace-me-in-prod@!"
 
-ALLOWED_HOSTS = config(
-    "ALLOWED_HOSTS", default="*", cast=lambda v: [s.strip() for s in v.split(",")]
-)
-# ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,10.10.137.120').split(',')
+# DEBUG = True in development, False in production.
+# Use an environment variable in production for safety.
+DEBUG = True # Set to False in production!
 
-# SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-key-for-dev')
+# Define allowed hosts. '*' is dangerous in production.
+# Use specific domain names and IP addresses for production.
+ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", "10.10.137.120"] # Adjust for your dev environment/prod
+
 # --- Application Definition ---
 INSTALLED_APPS = [
     # Django Core Apps
-    "jazzmin",
+    "jazzmin", # Should be listed before 'django.contrib.admin'
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -38,56 +35,46 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third-Party Apps
-    "channels",  # For WebSockets
-    "corsheaders",  # For Cross-Origin Resource Sharing
-    "crispy_forms",  # For better form rendering
-    "crispy_tailwind",  # Tailwind template pack for crispy-forms
-    "django_filters",  # For filtering querysets
-    "drf_yasg",  # For API documentation (Swagger/ReDoc)
-    "encrypted_model_fields",  # For encrypting specific model fields (ensure key is set)
-    "rest_framework",  # For building APIs
-    "rest_framework_simplejwt",  # For JWT authentication
-    "rest_framework_simplejwt.token_blacklist",  # For JWT token blacklisting
-    "simple_history",  # For model history tracking
-    "django_browser_reload",  # For auto-reloading in development
+    "channels",
+    "corsheaders",
+    "crispy_forms",
+    "crispy_tailwind",
+    "django_filters",
+    "drf_yasg",
+    "encrypted_model_fields", # Ensure FIELD_ENCRYPTION_KEY is set
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "simple_history",
+    "django_browser_reload", # Development only
     "django_select2",
     "widget_tweaks",
     'taggit',
     # Your Project Apps
-    "user_profiles",  # User management, teams, profiles, company structure
-    "tasks",  # Core task management functionality
-    "room",  # Chat/room functionality (assuming it exists)
-    # "hrbot",
+    "user_profiles",
+    "tasks",
+    "room",
+    # "hrbot", # Uncomment if used
     "checklists",
-    # Celery (if used for background tasks) - Uncomment if needed
+    # Celery (Uncomment if used)
     # 'celery',
-    # 'django_celery_beat', # For scheduled tasks
-    # 'django_celery_results', # To store task results
+    # 'django_celery_beat',
+    # 'django_celery_results',
 ]
-
-# Telegram Bot Token
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-
-# HR Chat ID
-HR_TELEGRAM_CHAT_ID = os.environ.get("HR_TELEGRAM_CHAT_ID")
-
-# TELEGRAM_BOT_TOKEN = "7822648522:AAGegzZBgQpSNm06aN-ycWH1-Dncuyd0xn4"
-
-BITRIX24_WEBHOOK = "https://yourdomain.bitrix24.ru/rest/ВАШ_WEBHOOK"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # Optimal static file serving
+    "whitenoise.middleware.WhiteNoiseMiddleware", # For serving static files efficiently
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # Place before CommonMiddleware
-    "django.middleware.locale.LocaleMiddleware",  # Crucial for i18n
+    "corsheaders.middleware.CorsMiddleware", # Place early, especially before CommonMiddleware
+    "django.middleware.locale.LocaleMiddleware", # Crucial for i18n
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "simple_history.middleware.HistoryRequestMiddleware",  # For history tracking
-    "django_browser_reload.middleware.BrowserReloadMiddleware",  # Dev only
+    "simple_history.middleware.HistoryRequestMiddleware",
+    "django_browser_reload.middleware.BrowserReloadMiddleware", # Development only
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -97,7 +84,7 @@ ASGI_APPLICATION = "config.asgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],  # Use Path object
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -105,149 +92,136 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "django.template.context_processors.i18n",  # For language support
+                "django.template.context_processors.i18n",
+                # Add your custom context processors here if any
             ],
         },
     },
 ]
 
 # --- Database ---
-# Default to SQLite for simplicity, override with environment variables for production
+# Default to SQLite for development. Use environment variables for production.
 DATABASES = {
-    "default": {
-        "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.environ.get("SQL_DATABASE", BASE_DIR / "db.sqlite3"),
-        # Следующие параметры используются только если ENGINE не sqlite3
-        # 'USER': os.environ.get('SQL_USER'),
-        # 'PASSWORD': os.environ.get('SQL_PASSWORD'),
-        # 'HOST': os.environ.get('SQL_HOST'),
-        # 'PORT': os.environ.get('SQL_PORT', ''),
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        # Add 'TEST' config if using a separate test database
+        # 'TEST': {
+        #     'NAME': BASE_DIR / 'test_db.sqlite3',
+        # },
     }
 }
-
+# Example for PostgreSQL (use environment variables in production):
 # DATABASES = {
 #     'default': {
-#         'ENGINE': config('DATABASE_ENGINE', default='django.db.backends.sqlite3'),
-#         'NAME': config('DATABASE_NAME', default=BASE_DIR / 'db.sqlite3'),
-#         # Add other connection parameters (USER, PASSWORD, HOST, PORT) if using PostgreSQL/MySQL
-#         # 'USER': config('DATABASE_USER', default=''),
-#         # 'PASSWORD': config('DATABASE_PASSWORD', default=''),
-#         # 'HOST': config('DATABASE_HOST', default=''),
-#         # 'PORT': config('DATABASE_PORT', default=''),
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'your_db_name',
+#         'USER': 'your_db_user',
+#         'PASSWORD': 'your_db_password',
+#         'HOST': 'localhost', # Or your DB host
+#         'PORT': '5432',
 #     }
 # }
 
 # --- Password Validation ---
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 # --- Internationalization ---
-LANGUAGE_CODE = config("LANGUAGE_CODE", default="ru")  # Default to Russian
+LANGUAGE_CODE = "ru" # Default to Russian for development
 LANGUAGES = [
     ("ru", _("Русский")),
     ("en", _("English")),
     ("uz", _("Uzbek")),
-    # Add other languages as needed
-    # ('es', _('Español')),
-    # ('fr', _('Français')),
 ]
 LOCALE_PATHS = [BASE_DIR / "locale"]
 USE_I18N = True
-USE_TZ = True  # Use timezone-aware datetimes
-TIME_ZONE = config("TIME_ZONE", default="UTC")  # Default to UTC, can be overridden
+USE_TZ = True # Recommended for handling timezones correctly
+TIME_ZONE = "Asia/Tashkent" # Set your specific timezone for development/production
 
 # --- Static Files & Media ---
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"  # Directory for collectstatic
-STATICFILES_DIRS = [
-    BASE_DIR / "static"
-]  # Directory for static files during development
-STATICFILES_STORAGE = (
-    "whitenoise.storage.CompressedManifestStaticFilesStorage"  # For efficient serving
-)
+STATIC_ROOT = BASE_DIR / "staticfiles" # For collectstatic in production
+STATICFILES_DIRS = [BASE_DIR / "static"] # For development server
+# Use WhiteNoise storage for compression and manifest (good for production)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"  # Directory for user-uploaded files
+MEDIA_ROOT = BASE_DIR / "media"
 
 # --- Default Primary Key ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Authentication ---
-AUTH_USER_MODEL = "user_profiles.User"  # Custom user model
+AUTH_USER_MODEL = "user_profiles.User"
 LOGIN_URL = "user_profiles:login"
-LOGIN_REDIRECT_URL = "tasks:task_list"  # Where to redirect after login
-LOGOUT_REDIRECT_URL = "user_profiles:login"  # Where to redirect after logout
+LOGIN_REDIRECT_URL = "tasks:task_list" # Redirect after successful login
+LOGOUT_REDIRECT_URL = "user_profiles:login" # Redirect after logout
 
 # --- Channels (WebSockets) ---
+# Use InMemoryChannelLayer for development. Use Redis in production.
 CHANNEL_LAYERS = {
     "default": {
-        # Use Redis in production for scalability
-        "BACKEND": config(
-            "CHANNEL_LAYER_BACKEND", default="channels.layers.InMemoryChannelLayer"
-        ),
-        # Example Redis config (uncomment and configure if using Redis):
-        # "CONFIG": {
-        #     "hosts": [config('REDIS_URL', default="redis://127.0.0.1:6379/1")],
-        # },
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
+# Example Redis config for production:
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [os.environ.get('REDIS_URL', "redis://127.0.0.1:6379/1")],
+#         },
+#     },
+# }
 
 # --- Celery (Background Tasks) ---
 # Uncomment and configure if using Celery
-# CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-# CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+# CELERY_BROKER_URL = 'redis://localhost:6379/0' # Example using Redis
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 # CELERY_ACCEPT_CONTENT = ['json']
 # CELERY_TASK_SERIALIZER = 'json'
 # CELERY_RESULT_SERIALIZER = 'json'
 # CELERY_TIMEZONE = TIME_ZONE
-# CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler' # If using scheduled tasks
+# CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler' # For scheduled tasks
 
 # --- Crispy Forms ---
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["tailwind"]
 CRISPY_TEMPLATE_PACK = "tailwind"
+
 # --- REST Framework ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",  # JWT preferred
-        "rest_framework.authentication.SessionAuthentication",  # For browsable API
-        "rest_framework.authentication.TokenAuthentication",  # Optional: Basic token auth
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication", # Useful for Browsable API
+        # "rest_framework.authentication.TokenAuthentication", # Less common now
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly"  # Default policy
+        # More restrictive default - require authentication for most actions
+        "rest_framework.permissions.IsAuthenticated",
+        # Or keep it more open initially:
+        # "rest_framework.permissions.IsAuthenticatedOrReadOnly"
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": config(
-        "REST_PAGE_SIZE", default=20, cast=int
-    ),  # Configurable page size
+    "PAGE_SIZE": 25, # Default page size for API results
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
-    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema",  # For OpenAPI schema generation
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema",
 }
 
 # --- Simple JWT ---
 SIMPLE_JWT = {
-    # Теперь timedelta будет распознана
-    "ACCESS_TOKEN_LIFETIME": timedelta(
-        minutes=config("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", default=60, cast=int)
-    ),
-    "REFRESH_TOKEN_LIFETIME": timedelta(
-        days=config("JWT_REFRESH_TOKEN_LIFETIME_DAYS", default=1, cast=int)
-    ),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60), # Access token valid for 1 hour
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),    # Refresh token valid for 1 week
     "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
+    "BLACKLIST_AFTER_ROTATION": True, # Requires `rest_framework_simplejwt.token_blacklist` app
     "UPDATE_LAST_LOGIN": True,
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
+    "SIGNING_KEY": SECRET_KEY, # Uses Django's SECRET_KEY by default
     "VERIFYING_KEY": None,
-    "AUDIENCE": None,
-    "ISSUER": None,
-    "JWK_URL": None,
-    "LEEWAY": 0,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
@@ -255,165 +229,240 @@ SIMPLE_JWT = {
     "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
-    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
     "JTI_CLAIM": "jti",
     "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-    "SLIDING_TOKEN_LIFETIME": timedelta(
-        minutes=config("JWT_SLIDING_TOKEN_LIFETIME_MINUTES", default=5, cast=int)
-    ),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(
-        days=config("JWT_SLIDING_TOKEN_REFRESH_LIFETIME_DAYS", default=1, cast=int)
-    ),
+    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5), # Not typically used with rotate/blacklist
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
 # --- DRF-YASG (Swagger/ReDoc) ---
 SWAGGER_SETTINGS = {
     "SECURITY_DEFINITIONS": {
-        "Bearer": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header",
-            "description": 'JWT token (add "Bearer " prefix, e.g., "Bearer ey...")',
-        }
+        "Bearer": { "type": "apiKey", "name": "Authorization", "in": "header", "description": 'Prefix with "Bearer ", e.g., "Bearer ey..."', }
     },
-    "USE_SESSION_AUTH": False,  # Prefer JWT for API docs
-    "JSON_EDITOR": True,
+    "USE_SESSION_AUTH": False, # Prefer JWT for API docs
+    "DEFAULT_AUTO_SCHEMA_CLASS": "drf_yasg.inspectors.SwaggerAutoSchema",
+    "DEFAULT_INFO": "config.urls.api_info", # Point to API info object in urls.py
 }
 REDOC_SETTINGS = {
-    "LAZY_RENDERING": False,
+    "LAZY_RENDERING": False, # Render Redoc immediately
 }
 
 # --- CORS Headers ---
-# Allow all origins in development, restrict in production
-CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=DEBUG, cast=bool)
-# If CORS_ALLOW_ALL_ORIGINS is False, specify allowed origins:
-# CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='', cast=lambda v: [s.strip() for s in v.split(',')])
-# CORS_ALLOW_CREDENTIALS = True # If you need to send cookies across domains
+# Allow all origins for development. Restrict in production.
+CORS_ALLOW_ALL_ORIGINS = DEBUG # True in debug, False otherwise
+# If False, use:
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000", # Example React frontend
+#     "http://127.0.0.1:3000",
+#     "https://your-production-frontend.com",
+# ]
+# CORS_ALLOW_CREDENTIALS = True # If frontend needs to send cookies (e.g., session)
 
 # --- Logging ---
+# Simplified logging for development, more robust for production
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "level": "DEBUG",  # Show DEBUG messages in console during development
-            "formatter": "simple",
-        },
-        "file": {
-            "level": "INFO",  # Log INFO and higher to file
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "django_debug.log",  # Log file path
-            "formatter": "verbose",
-        },
-    },
     "formatters": {
-        "verbose": {
-            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
-            "style": "{",
-        },
-        "simple": {
-            "format": "{levelname} {message}",
-            "style": "{",
-        },
+        "verbose": { "format": "{levelname} {asctime} {module}:{lineno} {message}", "style": "{", },
+        "simple": { "format": "{levelname} {message}", "style": "{", },
+    },
+    "handlers": {
+        "console": { "class": "logging.StreamHandler", "level": "DEBUG" if DEBUG else "INFO", "formatter": "simple", },
+        "file": { "level": "INFO", "class": "logging.handlers.RotatingFileHandler", "filename": BASE_DIR / "logs/django.log", "maxBytes": 1024 * 1024 * 5, "backupCount": 2, "formatter": "verbose", }, # 5MB file, 2 backups
     },
     "loggers": {
-        "django": {
-            "handlers": ["console", "file"],
-            "level": "INFO",  # Default Django logging level
-            "propagate": False,
-        },
-        "checklists": {  # Your app's logger
-            "handlers": ["console", "file"],
-            "level": "DEBUG",  # Capture DEBUG messages from your app
-            "propagate": False,
-        },
-        # Add other app loggers if needed
+        "django": { "handlers": ["console", "file"], "level": "INFO", "propagate": False, },
+        "django.request": { "handlers": ["file"], "level": "WARNING", "propagate": False, }, # Log errors/warnings for requests to file
+        "tasks": { "handlers": ["console", "file"], "level": "DEBUG" if DEBUG else "INFO", "propagate": False, },
+        "user_profiles": { "handlers": ["console", "file"], "level": "DEBUG" if DEBUG else "INFO", "propagate": False, },
+        "checklists": { "handlers": ["console", "file"], "level": "DEBUG" if DEBUG else "INFO", "propagate": False, },
+        "room": { "handlers": ["console", "file"], "level": "DEBUG" if DEBUG else "INFO", "propagate": False, },
+        "channels": { "handlers": ["console"], "level": "INFO", }, # Channels logging
     },
-    "root": {  # Catch-all for other logs
-        "handlers": ["console"],
-        "level": "INFO",
-    },
+    "root": { "handlers": ["console"], "level": "INFO", },
 }
 
 # Ensure logs directory exists
 log_dir = BASE_DIR / "logs"
 log_dir.mkdir(exist_ok=True)
 
-# --- Security Settings (Important for Production) ---
-# Set these via environment variables in production
-SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=not DEBUG, cast=bool)
-CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=not DEBUG, cast=bool)
-SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=not DEBUG, cast=bool)
-SECURE_HSTS_SECONDS = config(
-    "SECURE_HSTS_SECONDS", default=0 if DEBUG else 31536000, cast=int
-)  # 1 year HSTS
-SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
-    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=not DEBUG, cast=bool
-)
-SECURE_HSTS_PRELOAD = config("SECURE_HSTS_PRELOAD", default=not DEBUG, cast=bool)
-SECURE_CONTENT_TYPE_NOSNIFF = config(
-    "SECURE_CONTENT_TYPE_NOSNIFF", default=True, cast=bool
-)
-SECURE_BROWSER_XSS_FILTER = config("SECURE_BROWSER_XSS_FILTER", default=True, cast=bool)
-X_FRAME_OPTIONS = config("X_FRAME_OPTIONS", default="DENY")
+# --- Security Settings ---
+# Use sensible defaults for development, override with env vars for production
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 0 if DEBUG else 31536000 # 0 for dev, 1 year for prod
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = "DENY"
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # If behind a proxy handling SSL
 
-# --- Email Settings (Example using console backend for development) ---
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
-)
-# For production, use SMTP or a service like SendGrid, Mailgun, etc.
-# EMAIL_HOST = config('EMAIL_HOST', default='smtp.example.com')
-# EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-# EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-# EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-# EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
-# DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='webmaster@localhost')
+# --- Email Settings ---
+# Console backend for development is easiest
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.example.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your-email@example.com'
+# EMAIL_HOST_PASSWORD = 'your-password'
+DEFAULT_FROM_EMAIL = "webmaster@localhost" # Change for production
 
 # --- Caching ---
-# Use LocMemCache for development, Redis or Memcached for production
-CACHE_TIMEOUT = config(
-    "CACHE_TIMEOUT", default=300, cast=int
-)  # Default cache timeout in seconds
+# LocMemCache is fine for development
+CACHE_TIMEOUT = 300 # Default cache timeout in seconds
 CACHES = {
     "default": {
-        "BACKEND": config(
-            "CACHE_BACKEND", default="django.core.cache.backends.locmem.LocMemCache"
-        ),
-        "LOCATION": config(
-            "CACHE_LOCATION", default="unique-snowflake"
-        ),  # Meaningful for LocMem, connection string for others
-        # Example Redis cache:
-        # "BACKEND": "django_redis.cache.RedisCache",
-        # "LOCATION": config('REDIS_URL', default="redis://127.0.0.1:6379/2"),
-        # "OPTIONS": {
-        #     "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        # }
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-sphinx-cache",
     }
 }
+
 # --- Field Encryption Key ---
-# IMPORTANT: Keep this key secret and backed up! Losing it means losing data.
-# Generate a strong key using: from cryptography.fernet import Fernet; Fernet.generate_key()
-FIELD_ENCRYPTION_KEY = config(
-    "FIELD_ENCRYPTION_KEY", default="_3HZU7uFwNYQw0n_7r1BFgwPU52Xs2N16uQUrJvPdUM="
-)  # Provide a default or require env var
+# WARNING: Generate a strong, unique key for production and keep it secret!
+# Use: from cryptography.fernet import Fernet; Fernet.generate_key()
+# Store it securely, e.g., in environment variables or a secrets manager.
+# This default key is INSECURE and ONLY for development illustration.
+FIELD_ENCRYPTION_KEY = "_3HZU7uFwNYQw0n_7r1BFgwPU52Xs2N16uQUrJvPdUM="
 
 # --- Messages Framework ---
 MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"
 from django.contrib.messages import constants as messages_constants
-
 MESSAGE_TAGS = {
-    messages_constants.DEBUG: "debug",
-    messages_constants.INFO: "info",
-    messages_constants.SUCCESS: "success",
-    messages_constants.WARNING: "warning",
-    messages_constants.ERROR: "danger",  # Use 'danger' for Bootstrap compatibility
+    messages_constants.DEBUG: "debug", # gray
+    messages_constants.INFO: "info",   # blue
+    messages_constants.SUCCESS: "success", # green
+    messages_constants.WARNING: "warning", # yellow
+    messages_constants.ERROR: "danger",   # red
 }
 
 # --- Telegram Bot Settings (Optional) ---
-# TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default=None)
+# Load from environment or define directly (not recommended for secrets)
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN") # Get from environment
+HR_TELEGRAM_CHAT_ID = os.environ.get("HR_TELEGRAM_CHAT_ID") # Get from environment
+# Example direct definition (for testing ONLY, replace with env vars):
+# TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+# HR_TELEGRAM_CHAT_ID = "YOUR_HR_CHAT_ID_HERE"
+
+# --- Bitrix24 Webhook (Optional) ---
+BITRIX24_WEBHOOK = os.environ.get("BITRIX24_WEBHOOK") # Get from environment
+# Example: BITRIX24_WEBHOOK = "https://yourdomain.bitrix24.ru/rest/1/yoursecretwebhookcode/"
 
 # --- Other Custom Settings ---
-SITE_URL = config(
-    "SITE_URL", default="http://127.0.0.1:8000"
-)  # Used for generating absolute URLs in emails/notifications
+SITE_URL = "http://127.0.0.1:8000" # Base URL for links in emails etc. Change for production.
+
+# --- Testing specific settings ---
+# Ensure tests run with a separate in-memory database if needed
+if 'test' in sys.argv:
+    logger.info("Applying test-specific settings...")
+    DATABASES['default'] = {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}
+    PASSWORD_HASHERS = ('django.contrib.auth.hashers.MD5PasswordHasher',) # Faster hashing for tests
+    # Disable unnecessary middleware for tests if needed
+    # Example: remove 'django_browser_reload.middleware.BrowserReloadMiddleware'
+    # DEBUG = False # Often tests run better with DEBUG=False
+
+
+# --- WebSocket Enabled Flag for Templates ---
+# This can be controlled by DEBUG or a specific setting
+WEBSOCKET_ENABLED = DEBUG # Enable WebSockets in development
+
+# --- Django Select2 ---
+SELECT2_CACHE_BACKEND = "default" # Use the default Django cache
+# SELECT2_JS = "//cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js" # CDN example
+# SELECT2_CSS = "//cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css"
+
+# --- Jazzmin Admin Theme Settings (Optional) ---
+JAZZMIN_SETTINGS = {
+    "site_title": "Sphinx Admin",
+    "site_header": "Sphinx",
+    "site_brand": "Sphinx Tasks",
+    "site_logo": "img/logo.png", # Path relative to STATICFILES_DIRS or app's static dir
+    "login_logo": "img/logo.png",
+    "welcome_sign": "Welcome to Sphinx Admin",
+    "copyright": "Sphinx Ltd.",
+    "search_model": ["user_profiles.User", "tasks.Task", "tasks.Project"], # Models for global admin search
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"model": "user_profiles.User"},
+        {"app": "tasks"},
+        {"app": "checklists"},
+        {"app": "room"},
+        # {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
+    ],
+    "usermenu_links": [
+        # {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
+        {"model": "user_profiles.user"}
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "order_with_respect_to": ["auth", "user_profiles", "tasks", "checklists", "room"], # Order apps
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "user_profiles.User": "fas fa-user-tie",
+        "user_profiles.Team": "fas fa-users-cog",
+        "user_profiles.Department": "fas fa-building",
+        "tasks.Task": "fas fa-tasks",
+        "tasks.Project": "fas fa-project-diagram",
+        "tasks.TaskCategory": "fas fa-folder-open",
+        "tasks.TaskSubcategory": "fas fa-stream",
+        "tasks.TaskComment": "far fa-comment-dots",
+        "tasks.TaskPhoto": "far fa-image",
+        "checklists.ChecklistTemplate": "fas fa-clipboard-list",
+        "checklists.ChecklistRun": "fas fa-clipboard-check",
+        "room.Room": "fas fa-comments",
+        "room.Message": "far fa-comment-alt",
+        # Add more icons as needed
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-dot-circle",
+    "related_modal_active": False,
+    "custom_css": "css/jazzmin_custom.css", # Optional custom CSS
+    "custom_js": None,
+    "show_ui_builder": DEBUG, # Show UI builder only in debug
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs",
+        "tasks.Task": "collapsible", # Example override
+    },
+    "language_chooser": True, # Enable language dropdown in admin
+}
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-teal", # Example: "navbar-indigo" or False
+    "accent": "accent-primary",
+    "navbar": "navbar-white navbar-light", # Example: "navbar-dark navbar-primary"
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": True,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary", # Example: "sidebar-light-indigo"
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default", # "flatly", "cerulean", "cosmo", "lumen", "simplex", "darkly"
+    "dark_mode_theme": "darkly", # Theme to use in dark mode
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
+}

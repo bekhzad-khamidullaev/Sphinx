@@ -1,24 +1,12 @@
 {% extends "admin/change_list.html" %}
 {% load i18n %}
 
-{% block object-tools-items %} {# Используем этот блок для добавления элементов #}
-    {{ block.super }} {# Стандартные кнопки (Добавить) #}
-
-    {# Ссылка на страницу отчетов #}
-    <li>
-      {% url 'admin:tasks_task_reports' as reports_list_url %}
-      <a href="{{ reports_list_url }}" class="viewlink">
-        <i class="fas fa-chart-bar mr-1"></i> {% comment %}{% static 'admin/img/icon-viewlink.svg' %}{% endcomment %} {# Используем иконку, если доступна #}
-        {% trans "Отчеты по задачам" %}
-      </a>
-    </li>
-
-    {# Ссылка на экспорт #}
-    <li>
-      {% url 'admin:tasks_task_report_export_excel' as export_url %}
-      <a href="{{ export_url }}" class="addlink">
-         <i class="fas fa-file-excel mr-1"></i> {% comment %}{% static 'admin/img/icon-addlink.svg' %}{% endcomment %}
-         {% trans "Экспорт в Excel" %}
-      </a>
-    </li>
+{% block object-tools-items %}
+  {{ block.super }}
+  <li>
+    {% url opts|admin_urlname:'report_index' as report_url %}
+    <a href="{{ report_url }}" class="viewsitelink">
+      <i class="fas fa-chart-bar mr-1"></i> {% trans "Отчеты по задачам" %}
+    </a>
+  </li>
 {% endblock %}

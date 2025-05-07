@@ -1,57 +1,80 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load i18n static app_filters widget_tweaks %}
+
+{% block title %}{{ page_title|default:_("Подкатегории Задач") }}{% endblock %}
+
 {% block list_title %}
-    {% trans 'Подкатегории задач' %}
+<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
+    {{ page_title }}
+</h1>
 {% endblock %}
+
 {% block list_actions %}
-    <button
-        hx-get="{% url 'tasks:modal_create_subcategory' %}"
-        hx-target="#modal-content"
-        class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center ml-3"
-        aria-label="{% trans 'Создать новую подкатегорию' %}"
-    >
-        <i class="fas fa-plus mr-2"></i> {% trans 'Создать подкатегорию' %}
-    </button>
+<div class="flex items-center ml-4">
+    <a href="{% url 'tasks:subcategory_create' %}"
+       class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
+        <i class="fas fa-plus-circle mr-2"></i> {% trans 'Создать подкатегорию' %}
+    </a>
+</div>
 {% endblock %}
+
 {% block list_content %}
-    <ul id="subcategory-list" role="list" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for subcategory in subcategories %}
-        <li id="subcategory-{{ subcategory.pk }}" class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 overflow-hidden">
-            <div class="px-4 py-4 sm:px-6">
-                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
-                    {{ subcategory.name }}
-                </h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-                    <strong>{% trans 'Категория' %}:</strong> {{ subcategory.category.name }}<br>
-                    {{ subcategory.description|truncatechars:100 }}
-                </p>
-            </div>
-            <div class="border-t border-gray-200 dark:border-dark-600">
-                <div class="bg-gray-50 dark:bg-dark-700/50 px-4 py-3 sm:px-6 flex justify-end space-x-2">
-                    <button
-                        hx-get="{% url 'tasks:modal_update_subcategory' subcategory.pk %}"
-                        hx-target="#modal-content"
-                        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center"
-                        aria-label="{% trans 'Редактировать подкатегорию' %}"
-                    >
-                        <i class="fas fa-edit mr-2"></i> {% trans 'Редактировать' %}
-                    </button>
-                    <button
-                        hx-get="{% url 'tasks:modal_delete_subcategory' subcategory.pk %}"
-                        hx-target="#modal-content"
-                        class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-ios-red dark:hover:bg-red-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center"
-                        aria-label="{% trans 'Удалить подкатегорию' %}"
-                    >
-                         <i class="fas fa-trash mr-2"></i> {% trans 'Удалить' %}
-                    </button>
-                </div>
-            </div>
-        </li>
-        {% empty %}
-        <li class="text-center text-gray-500 dark:text-gray-400 py-10 col-span-full">
-             <i class="fas fa-list-alt fa-3x mb-3 text-gray-300 dark:text-gray-600"></i><br>
-            <span class="text-lg">{% trans 'Нет подкатегорий задач.' %}</span>
-        </li>
-        {% endfor %}
-    </ul>
+{# --- Фильтр --- #}
+{# <div class="mb-6 p-4 bg-gray-50 dark:bg-dark-700 rounded-lg border dark:border-dark-600"> #}
+{#     <form method="get" action="" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"> #}
+{#         {% for field in filter.form %} {# Используем filter.form из FilterView #} #}
+{#             {% include "includes/filter_field.html" with field=field %} #}
+{#         {% endfor %} #}
+{#         <div class="md:col-start-4 flex justify-end space-x-2"> #}
+{#              <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-ios-blue dark:hover:bg-blue-500 shadow-sm"> #}
+{#                 <i class="fas fa-filter mr-1"></i> {% trans 'Применить' %} #}
+{#             </button> #}
+{#             <a href="{% url 'tasks:subcategory_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-600 border border-gray-300 dark:border-dark-500 hover:bg-gray-100 dark:hover:bg-dark-500 shadow-sm"> #}
+{#                 {% trans 'Сброс' %} #}
+{#             </a> #}
+{#         </div> #}
+{#     </form> #}
+{# </div> #}
+
+<div class="mt-6 overflow-x-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+        <thead class="bg-gray-50 dark:bg-dark-700/50">
+        <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th scope="col" class="px-4 py-3.5"><i class="fas fa-stream fa-fw mr-1"></i>{% trans 'Название подкатегории' %}</th>
+            <th scope="col" class="px-4 py-3.5"><i class="fas fa-folder fa-fw mr-1"></i>{% trans 'Категория' %}</th>
+            <th scope="col" class="px-4 py-3.5"><i class="fas fa-tasks fa-fw mr-1"></i>{% trans 'Задач' %}</th>
+             <th scope="col" class="px-4 py-3.5"><i class="far fa-calendar-plus fa-fw mr-1"></i>{% trans 'Создана' %}</th>
+            <th scope="col" class="px-4 py-3.5 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия' %}</th>
+        </tr>
+        </thead>
+        <tbody id="subcategory-list-tbody" class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
+            {% for subcategory in subcategories %} {# Используем subcategories из context_object_name #}
+            <tr id="subcategory-row-{{ subcategory.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300">
+                <td class="px-4 py-3 whitespace-nowrap font-medium">
+                     <a href="{% url 'tasks:subcategory_detail' pk=subcategory.pk %}" class="text-blue-600 dark:text-blue-400 hover:underline">{{ subcategory.name }}</a>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <a href="{% url 'tasks:category_detail' pk=subcategory.category.pk %}" class="text-gray-600 dark:text-gray-400 hover:underline">{{ subcategory.category.name }}</a>
+                </td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ subcategory.task_count }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">{{ subcategory.created_at|date:"d.m.Y H:i" }}</td>
+                <td class="px-4 py-3 text-center whitespace-nowrap">
+                    <div class="flex items-center justify-center space-x-1">
+                        <a href="{% url 'tasks:subcategory_detail' pk=subcategory.pk %}" title="{% trans 'Просмотреть' %}" class="p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-eye fa-fw"></i></a>
+                        <a href="{% url 'tasks:subcategory_update' pk=subcategory.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-edit fa-fw"></i></a>
+                        <a href="{% url 'tasks:subcategory_delete' pk=subcategory.pk %}" title="{% trans 'Удалить' %}" class="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-trash fa-fw"></i></a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+                <tr><td colspan="5" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic"><i class="fas fa-folder-open fa-3x mb-3 text-gray-300 dark:text-gray-600"></i><br>{% trans 'Подкатегории не найдены.' %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if is_paginated %}
+<div class="mt-6">
+    {% include "includes/pagination.html" with page_obj=page_obj %}
+</div>
+{% endif %}
 {% endblock %}

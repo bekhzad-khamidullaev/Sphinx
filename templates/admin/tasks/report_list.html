@@ -1,94 +1,64 @@
 {% extends "admin/base_site.html" %}
-{% load i18n admin_urls %}
-
-{% block coltype %}colM{% endblock %}
-{% block bodyclass %}{{ block.super }} app-tasks model-task report-list{% endblock %}
-
-{% block content_title %}<h1>{{ title }}</h1>{% endblock %}
+{% load i18n %}
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
 <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
-› <a href="{% url 'admin:app_list' app_label='tasks' %}">{{ opts.app_config.verbose_name }}</a>
+› <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
 › <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
 › {{ title }}
 </div>
 {% endblock %}
 
+{% block content_title %}<h1>{{ title }}</h1>{% endblock %}
+
 {% block content %}
 <div id="content-main">
-    <p class="mb-4">{% trans "Выберите необходимый отчет из списка ниже:" %}</p>
-
-    <div class="module">
-        <table id="result_list" class="w-full"> {# Используем таблицу для выравнивания #}
-            <thead>
-                <tr><th>{% trans "Название отчета" %}</th><th>{% trans "Описание" %}</th></tr>
-            </thead>
-             <tbody>
-                {# Генерируем строки для каждого отчета #}
-                <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.completed }}">{% trans "Завершенные задачи (30 дн)" %}</a></td>
-                    <td>{% trans "Задачи, выполненные за последние 30 дней." %}</td>
-                </tr>
-                <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.overdue }}">{% trans "Просроченные задачи" %}</a></td>
-                    <td>{% trans "Задачи, срок выполнения которых истек." %}</td>
-                </tr>
-                <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.active }}">{% trans "Активные задачи" %}</a></td>
-                    <td>{% trans "Задачи в статусах 'Новая', 'В работе', 'Отложена'." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.performance }}">{% trans "Производительность исполнителей" %}</a></td>
-                    <td>{% trans "Количество завершенных задач по исполнителям." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.workload }}">{% trans "Загрузка исполнителей" %}</a></td>
-                    <td>{% trans "Количество активных задач по исполнителям." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.duration }}">{% trans "Длительность выполнения" %}</a></td>
-                    <td>{% trans "Фактическое время выполнения завершенных задач." %}</td>
-                </tr>
-                <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.abc }}">{% trans "ABC-анализ по приоритетам" %}</a></td>
-                    <td>{% trans "Распределение задач по группам приоритета." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.sla }}">{% trans "Соблюдение SLA" %}</a></td>
-                    <td>{% trans "Процент задач, выполненных в установленный срок." %}</td>
-                </tr>
-                <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.issues }}">{% trans "Возможные баги/дефекты" %}</a></td>
-                    <td>{% trans "Задачи, содержащие ключевые слова ошибок." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.delay_reasons }}">{% trans "Просроченные (для анализа)" %}</a></td>
-                    <td>{% trans "Список просроченных задач." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.cancelled }}">{% trans "Отмененные задачи" %}</a></td>
-                    <td>{% trans "Список отмененных задач." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.chart_progress }}">{% trans "График: Прогресс по статусам" %}</a></td>
-                    <td>{% trans "Гистограмма распределения задач по статусам." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.chart_gantt }}">{% trans "График: Диаграмма Ганта" %}</a></td>
-                    <td>{% trans "Временная диаграмма выполнения задач." %}</td>
-                </tr>
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.summary }}">{% trans "Сводный отчет" %}</a></td>
-                    <td>{% trans "Общая сводка по задачам (требует настройки)." %}</td>
-                </tr>
-                 {# Отдельно кнопка экспорта #}
-                 <tr class="{% cycle 'row1' 'row2' %}">
-                    <td><a href="{{ report_urls.export_excel }}" class="button">{% trans "Экспорт всех задач в Excel" %}</a></td>
-                    <td>{% trans "Выгрузить все задачи в формате XLSX." %}</td>
-                </tr>
-             </tbody>
-        </table>
-    </div>
+  <p>{% trans "Выберите доступный отчет:" %}</p>
+  <ul class="object-tools report-links">
+      {% for name, url in report_urls.items %}
+          {% if url %}
+            {# Generate a more user-friendly name #}
+            {% trans name|capfirst|replace:"_" as report_title %}
+             {% if name == 'export_excel' %}
+                <li><a href="{{ url }}" class="addlink"><i class="fas fa-file-excel mr-1"></i> Экспорт в Excel</a></li>
+             {% elif name == 'completed' %}
+                 <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-check-circle mr-1"></i> Завершенные</a></li>
+            {% elif name == 'overdue' %}
+                 <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-exclamation-triangle mr-1"></i> Просроченные</a></li>
+             {% elif name == 'active' %}
+                 <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-tasks mr-1"></i> Активные</a></li>
+             {% elif name == 'performance' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-chart-line mr-1"></i> Производительность</a></li>
+             {% elif name == 'workload' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-users-cog mr-1"></i> Загрузка</a></li>
+            {% elif name == 'abc' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-sort-amount-down-alt mr-1"></i> ABC-анализ</a></li>
+             {% elif name == 'sla' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-history mr-1"></i> Соблюдение SLA</a></li>
+            {% elif name == 'duration' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="far fa-clock mr-1"></i> Длительность</a></li>
+             {% elif name == 'issues' %}
+                   <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-bug mr-1"></i> Возможные баги</a></li>
+             {% elif name == 'delay_reasons' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-hourglass-half mr-1"></i> Причины задержки</a></li>
+             {% elif name == 'cancelled' %}
+                 <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-times-circle mr-1"></i> Отмененные</a></li>
+            {% elif name == 'chart_progress' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-chart-bar mr-1"></i> График: Прогресс</a></li>
+            {% elif name == 'chart_gantt' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-chart-gantt mr-1"></i> Диаграмма Ганта</a></li>
+             {% elif name == 'summary' %}
+                  <li><a href="{{ url }}" class="viewsitelink"><i class="fas fa-clipboard-list mr-1"></i> Сводка по статусам</a></li>
+             {% else %}
+                <li><a href="{{ url }}" class="viewsitelink">{{ report_title }}</a></li>
+             {% endif %}
+          {% endif %}
+      {% endfor %}
+  </ul>
 </div>
+<style>
+    .report-links li { margin-bottom: 5px; }
+    .report-links i { min-width: 1.2em; text-align: center; }
+</style>
 {% endblock %}

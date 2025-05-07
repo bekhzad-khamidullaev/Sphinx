@@ -1,0 +1,40 @@
+{% load i18n app_filters %}
+<dl class="space-y-2 text-sm">
+    <div class="flex justify-between">
+        <dt class="text-gray-500 dark:text-gray-400">{% trans 'Создана' %}:</dt>
+        <dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.created_at|date:"d.m.Y H:i" }}</dd>
+    </div>
+    {% if task.start_date %}
+    <div class="flex justify-between">
+        <dt class="text-gray-500 dark:text-gray-400">{% trans 'Начало' %}:</dt>
+        <dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.start_date|date:"d.m.Y" }}</dd>
+    </div>
+    {% endif %}
+    {% if task.deadline %}
+    <div class="flex justify-between">
+        <dt class="text-gray-500 dark:text-gray-400 {% if task.is_overdue %}text-red-500 dark:text-red-400 font-semibold{% endif %}">{% trans 'Срок' %}:</dt>
+        <dd class="font-medium {% if task.is_overdue %}text-red-600 dark:text-red-400{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+            {{ task.deadline|date:"d.m.Y H:i" }}
+            {% if task.is_overdue %}(<i class="fas fa-exclamation-triangle"></i> {% trans "просрочено" %}){% endif %}
+        </dd>
+    </div>
+    {% endif %}
+    {% if task.completion_date %}
+    <div class="flex justify-between">
+        <dt class="text-gray-500 dark:text-gray-400 {% if task.status == task.StatusChoices.COMPLETED %}text-green-600 dark:text-green-400{% endif %}">{% trans 'Завершена' %}:</dt>
+        <dd class="font-medium {% if task.status == task.StatusChoices.COMPLETED %}text-green-700 dark:text-green-300{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+            {{ task.completion_date|date:"d.m.Y H:i" }}
+        </dd>
+    </div>
+    {% endif %}
+    {% if task.estimated_time %}
+    <div class="flex justify-between">
+        <dt class="text-gray-500 dark:text-gray-400">{% trans 'Оценка' %}:</dt>
+        <dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.estimated_time|timedelta_to_hm_str }}</dd> {# Используем фильтр #}
+    </div>
+    {% endif %}
+    <div class="flex justify-between">
+        <dt class="text-gray-500 dark:text-gray-400">{% trans 'Обновлена' %}:</dt>
+        <dd class="text-gray-700 dark:text-gray-300 font-medium" title="{{ task.updated_at|date:'d.m.Y H:i:s' }}">{{ task.updated_at|timesince }} {% trans "назад" %}</dd>
+    </div>
+</dl>

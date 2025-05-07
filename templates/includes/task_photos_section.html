@@ -1,0 +1,30 @@
+{% load i18n static %}
+{% if photos %}
+<div class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+        <i class="fas fa-images mr-2 text-gray-500"></i>{% trans 'Фотографии' %} ({{ photos.count }})
+    </h3>
+    {# Карусель или сетка изображений #}
+    {# Пример с простой сеткой #}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {% for photo in photos %}
+        <a href="{{ photo.photo.url }}" data-fancybox="task-photos" data-caption="{{ photo.description|default:'' }}" class="group block relative aspect-square overflow-hidden rounded-lg shadow-md border border-gray-200 dark:border-dark-600 hover:shadow-xl transition-shadow">
+             {# Используем easy-thumbnails, если настроено #}
+             {% load thumbnail %}
+             {% thumbnail photo.photo 300x300 crop="center" as thumb %}
+                 <img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" loading="lazy" alt="{{ photo.description|default:_('Фото к задаче') }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+             {% empty %}
+                 <img src="{{ photo.photo.url }}" loading="lazy" alt="{{ photo.description|default:_('Фото к задаче') }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+             {% endthumbnail %}
+            {# Оверлей с описанием #}
+            {% if photo.description %}
+             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                 <p class="text-xs text-white truncate">{{ photo.description }}</p>
+             </div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {# Можно добавить ссылку на fancybox или другую галерею #}
+</div>
+{% endif %}

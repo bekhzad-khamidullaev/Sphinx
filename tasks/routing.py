@@ -1,25 +1,26 @@
+# tasks/routing.py
+# -*- coding: utf-8 -*-
+
 from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    # Задачи — без параметров
-    re_path(r'^ws/tasks/$', consumers.TaskConsumer.as_asgi()),
+    # Обновления для списков моделей
+    re_path(r'^ws/tasks_list/$', consumers.TaskConsumer.as_asgi()), # Для общего списка задач
+    re_path(r'^ws/projects_list/$', consumers.ProjectConsumer.as_asgi()),
+    re_path(r'^ws/categories_list/$', consumers.CategoryConsumer.as_asgi()),
+    re_path(r'^ws/subcategories_list/$', consumers.SubcategoryConsumer.as_asgi()),
 
-    # Обновления задач — без параметров
-    re_path(r'^ws/task_updates/$', consumers.TaskConsumer.as_asgi()),
+    # Обновления для конкретных экземпляров моделей (например, для детальных страниц)
+    re_path(r'^ws/tasks/(?P<task_id>\d+)/updates/$', consumers.TaskConsumer.as_asgi()),
+    re_path(r'^ws/projects/(?P<project_id>\d+)/updates/$', consumers.ProjectConsumer.as_asgi()),
+    re_path(r'^ws/categories/(?P<category_id>\d+)/updates/$', consumers.CategoryConsumer.as_asgi()),
+    re_path(r'^ws/subcategories/(?P<subcategory_id>\d+)/updates/$', consumers.SubcategoryConsumer.as_asgi()),
 
-    # Generic обновления по группе — обязательно с именем группы
-    re_path(r'^ws/generic/(?P<group>\w+)/$', consumers.GenericConsumer.as_asgi()),
-
-    # Проекты — без параметров
-    re_path(r'^ws/projects/$', consumers.ProjectConsumer.as_asgi()),
-
-    # Команды — без параметров
-    re_path(r'^ws/teams/$', consumers.TeamConsumer.as_asgi()),
-
-    # Пользователи — без параметров
-    re_path(r'^ws/users/$', consumers.UserConsumer.as_asgi()),
-
-    # Комментарии к задачам — с ID задачи
+    # Комментарии для конкретной задачи
     re_path(r'^ws/tasks/(?P<task_id>\d+)/comments/$', consumers.TaskCommentConsumer.as_asgi()),
+
+    # Общий потребитель, если используется (менее предпочтительно для типизированных обновлений)
+    # re_path(r'^ws/updates/(?P<group_name_prefix>\w+)/$', consumers.ModelUpdateConsumerBase.as_asgi()),
+    # re_path(r'^ws/updates/(?P<group_name_prefix>\w+)/(?P<group_identifier>\w+)/$', consumers.ModelUpdateConsumerBase.as_asgi()),
 ]

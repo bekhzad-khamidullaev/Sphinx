@@ -1,0 +1,62 @@
+{% load i18n static %}
+<ul class="space-y-4 text-sm">
+    {# Ответственный #}
+    {% if responsible_users %}
+    <li>
+        <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span>
+        {% for user in responsible_users %}
+        <a href="{{ user.get_absolute_url }}" class="flex items-center mt-1 group" title="{% trans 'Профиль:' %} {{ user.display_name }}">
+            <img src="{% if user.userprofile.image %}{{ user.userprofile.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+            <span class="text-gray-700 dark:text-gray-300 truncate group-hover:underline">{{ user.display_name }}</span>
+        </a>
+        {% endfor %}
+    </li>
+    {% endif %}
+
+    {# Исполнители #}
+    {% if executors %}
+    <li>
+        <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span>
+        {% for user in executors %}
+        <a href="{{ user.get_absolute_url }}" class="flex items-center mt-1 group" title="{% trans 'Профиль:' %} {{ user.display_name }}">
+            <img src="{% if user.userprofile.image %}{{ user.userprofile.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+            <span class="text-gray-700 dark:text-gray-300 truncate group-hover:underline">{{ user.display_name }}</span>
+        </a>
+        {% empty %}
+            <span class="text-gray-400 italic">{% trans 'Не назначены' %}</span>
+        {% endfor %}
+    </li>
+    {% endif %}
+
+    {# Создатель #}
+    <li>
+        <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Создатель' %}</span>
+        <div class="flex items-center mt-1 {% if creator.get_absolute_url %}group{% endif %}">
+            {% if creator %}
+                <img src="{% if creator.userprofile.image %}{{ creator.userprofile.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+                {% if creator.get_absolute_url %}
+                <a href="{{ creator.get_absolute_url }}" class="text-gray-700 dark:text-gray-300 truncate group-hover:underline" title="{% trans 'Профиль:' %} {{ creator.display_name }}">
+                    {{ creator.display_name }}
+                </a>
+                {% else %}
+                <span class="text-gray-700 dark:text-gray-300 truncate">{{ creator.display_name }}</span>
+                {% endif %}
+            {% else %}
+                <span class="text-gray-400 italic">{% trans 'Неизвестен' %}</span>
+            {% endif %}
+        </div>
+    </li>
+
+    {# Наблюдатели #}
+    {% if watchers %}
+    <li>
+        <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span>
+        {% for user in watchers %}
+         <a href="{{ user.get_absolute_url }}" class="flex items-center mt-1 group" title="{% trans 'Профиль:' %} {{ user.display_name }}">
+            <img src="{% if user.userprofile.image %}{{ user.userprofile.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+            <span class="text-gray-700 dark:text-gray-300 truncate group-hover:underline">{{ user.display_name }}</span>
+        </a>
+        {% endfor %}
+    </li>
+    {% endif %}
+</ul>

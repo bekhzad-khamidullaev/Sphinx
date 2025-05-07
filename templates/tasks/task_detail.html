@@ -1,7 +1,33 @@
 {% extends 'base.html' %}
-{% load i18n app_filters static %}
+{% load i18n app_filters static widget_tweaks %}
 
 {% block title %}{{ page_title|default:_("Детали задачи") }}{% endblock %}
+
+{% block head_extra %}
+    {{ block.super }}
+    {# CSS для карусели (если используется Flowbite или аналог) #}
+    {# <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" /> #}
+    {# CSS формы комментария (если есть специфичные стили) #}
+    {{ comment_form.media.css }}
+    <style>
+        /* Стили для подсветки блока комментария при переходе по якорю */
+        :target {
+            animation: highlight 1.5s ease-out;
+        }
+        @keyframes highlight {
+            from { background-color: rgba(255, 255, 0, 0.5); }
+            to { background-color: transparent; }
+        }
+        .comment-item:target .dark\:bg-dark-700 {
+             animation: highlight-dark 1.5s ease-out;
+        }
+         @keyframes highlight-dark {
+            from { background-color: rgba(79, 70, 229, 0.3); } /* Tailwind indigo-500 with alpha */
+            to { background-color: rgb(30 41 59 / var(--tw-bg-opacity)); } /* bg-slate-800 or dark-700 */
+        }
+
+    </style>
+{% endblock %}
 
 {% block list_title %}
 {# Заголовок страницы деталей задачи #}
@@ -11,7 +37,11 @@
             <span class="text-gray-400 dark:text-gray-500 mr-2">#{{ task.task_number }}</span> {{ task.title }}
         </h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {% blocktrans with project_name=task.project.name %}Проект: {{ project_name }}{% endblocktrans %}
+             {% if task.project %}
+                {% blocktrans with project_name=task.project.name project_url=task.project.get_absolute_url %}
+                Проект: <a href="{{ project_url }}" class="hover:underline">{{ project_name }}</a>
+                {% endblocktrans %}
+             {% endif %}
         </p>
     </div>
     {# Кнопки действий #}
@@ -39,37 +69,67 @@
 {% block list_content %}
 {# Основной контейнер контента #}
 <div id="task-detail-container"
-    class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 mt-6"
+    class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6"
     data-task-id="{{ task.pk }}"> {# ID задачи для JS #}
 
     {# Сетка для основного контента и боковой панели #}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        {# Левая колонка: Основная информация о задаче #}
-        <div class="md:col-span-2 space-y-6">
-            {# Статус и Приоритет #}
-            <div class="flex flex-wrap gap-4 items-center">
-                <div>
-                    <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Статус' %}</span>
-                    <span
-                        class="status-badge px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
-                        {% if task.status == 'new' %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200{% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200{% elif task.status == 'canceled' %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through{% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200{% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200{% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
-                        {{ task.get_status_display|default:task.status }}
-                    </span>
-                </div>
-                <div>
-                    <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Приоритет' %}</span>
-                    <p class="text-gray-800 dark:text-gray-100 font-medium text-sm">{{ task.get_priority_display }}</p>
-                </div>
+        {# Левая (основная) колонка #}
+        <div class="lg:col-span-2 space-y-6">
+            {# Статус и Приоритет + Кнопки быстрых действий #}
+            <div class="flex flex-wrap gap-4 items-center justify-between">
+                 <div class="flex flex-wrap gap-4 items-center">
+                     <div>
+                        <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Статус' %}</span>
+                        <span id="task-status-badge"
+                            class="status-badge px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
+                            {% if task.status == 'new' %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200{% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200{% elif task.status == 'canceled' %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through{% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200{% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200{% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
+                            {{ task.get_status_display|default:task.status }}
+                        </span>
+                     </div>
+                     <div>
+                         <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Приоритет' %}</span>
+                         <p class="text-gray-800 dark:text-gray-100 font-medium text-sm">
+                             {% with priority_color_class=task.priority|get_priority_tailwind_color %}
+                                 <i class="fas fa-flag mr-1 {{ priority_color_class|replace_str:'border-l-4 border-,text-' }}"></i> {{ task.get_priority_display }}
+                             {% endwith %}
+                         </p>
+                     </div>
+                 </div>
+                 {# Кнопки быстрых действий (если есть права) #}
+                  {% if can_change_status %}
+                  <div class="flex space-x-2 flex-shrink-0">
+                     {% if task.status == task.StatusChoices.NEW or task.status == task.StatusChoices.ON_HOLD %}
+                         <a href="{% url 'tasks:task_perform' pk=task.pk %}?action=start_progress" class="px-3 py-1.5 rounded-full text-xs font-medium text-white bg-yellow-500 hover:bg-yellow-600 dark:bg-ios-yellow dark:text-black dark:hover:bg-yellow-400 transition shadow-sm inline-flex items-center" title="{% trans 'Взять в работу' %}">
+                             <i class="fas fa-play mr-1"></i> {% trans 'В работу' %}
+                         </a>
+                     {% endif %}
+                     {% if task.status == task.StatusChoices.IN_PROGRESS %}
+                         <a href="{% url 'tasks:task_perform' pk=task.pk %}?action=put_on_hold" class="px-3 py-1.5 rounded-full text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 dark:bg-ios-blue dark:hover:bg-blue-400 transition shadow-sm inline-flex items-center" title="{% trans 'Отложить' %}">
+                             <i class="fas fa-pause mr-1"></i> {% trans 'Отложить' %}
+                         </a>
+                         <a href="{% url 'tasks:task_perform' pk=task.pk %}?action=complete" class="px-3 py-1.5 rounded-full text-xs font-medium text-white bg-green-500 hover:bg-green-600 dark:bg-ios-green dark:hover:bg-green-400 transition shadow-sm inline-flex items-center" title="{% trans 'Завершить задачу' %}">
+                             <i class="fas fa-check-circle mr-1"></i> {% trans 'Завершить' %}
+                         </a>
+                     {% endif %}
+                      {% if task.status == task.StatusChoices.COMPLETED %}
+                          <a href="{% url 'tasks:task_perform' pk=task.pk %}?action=reopen" class="px-3 py-1.5 rounded-full text-xs font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 dark:bg-dark-600 dark:text-gray-300 dark:hover:bg-dark-500 transition shadow-sm inline-flex items-center" title="{% trans 'Вернуть в работу' %}">
+                              <i class="fas fa-undo mr-1"></i> {% trans 'В работу' %}
+                          </a>
+                      {% endif %}
+                  </div>
+                 {% endif %}
             </div>
 
             {# Описание #}
             {% if task.description %}
             <div>
-                <h3
-                    class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">
-                    {% trans 'Описание' %}</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">
+                    {% trans 'Описание' %}
+                </h3>
                 <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 mt-3">
+                    {# Используем safe, если уверены в чистоте HTML, иначе linebreaksbr #}
                     {{ task.description|linebreaksbr }}
                 </div>
             </div>
@@ -78,12 +138,19 @@
             {# Категория/Подкатегория #}
             {% if task.category or task.subcategory %}
             <div>
-                <h3
-                    class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">
-                    {% trans 'Категоризация' %}</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">
+                    {% trans 'Категоризация' %}
+                </h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-3">
-                    {% if task.category %}{% trans 'Категория:' %} <span class="font-medium">{{ task.category.name }}</span>{% if task.subcategory %} / {% endif %}{% endif %}
-                    {% if task.subcategory %}{% trans 'Подкатегория:' %} <span class="font-medium">{{ task.subcategory.name }}</span>{% endif %}
+                    {% if task.category %}
+                        {% trans 'Категория:' %}
+                        <a href="{{ task.category.get_absolute_url }}" class="font-medium hover:underline">{{ task.category.name }}</a>
+                        {% if task.subcategory %} / {% endif %}
+                    {% endif %}
+                    {% if task.subcategory %}
+                        {% trans 'Подкатегория:' %}
+                        <a href="{{ task.subcategory.get_absolute_url }}" class="font-medium hover:underline">{{ task.subcategory.name }}</a>
+                    {% endif %}
                 </p>
             </div>
             {% endif %}
@@ -91,265 +158,49 @@
         </div> {# Конец левой колонки #}
 
         {# Правая колонка: Боковая панель #}
-        <div
-            class="space-y-6 border-t md:border-t-0 md:border-l border-gray-200 dark:border-dark-700 pt-6 md:pt-0 md:pl-8">
+        <aside class="space-y-6 border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-dark-700 pt-6 lg:pt-0 lg:pl-8">
             {# Участники #}
             <div>
                 <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">
                     <i class="fas fa-users mr-2 text-gray-500 dark:text-gray-400"></i>{% trans 'Участники' %}
                 </h3>
-                <ul class="space-y-4">
-                    {% if responsible_users %}<li> <span
-                            class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span> {% for user in responsible_users %}<div
-                            class="flex items-center mt-1"> <img
-                                src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
-                                alt="{{ user.display_name }}"
-                                class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"> <span
-                                class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span>
-                        </div>{% endfor %}</li>{% endif %}
-                    {% if executors %}<li><span
-                            class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span> {% for user in executors %}<div class="flex items-center mt-1"> <img
-                                src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
-                                alt="{{ user.display_name }}"
-                                class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span
-                                class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span>
-                        </div> {% empty %} <span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span>
-                        {% endfor %}</li>{% endif %}
-                    <li><span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Создатель' %}</span>
-                        <div class="flex items-center mt-1"> {% if task.created_by %}<img
-                                src="{% if task.created_by.image %}{{ task.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
-                                alt="{{ task.created_by.display_name }}"
-                                class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span
-                                class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ task.created_by.display_name }}</span> {% else %} <span
-                                class="text-sm text-gray-400 italic">{% trans 'Неизвестен' %}</span> {% endif %}</div>
-                    </li>
-                    {% if watchers %}<li><span
-                            class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span> {% for user in watchers %}<div class="flex items-center mt-1"> <img
-                                src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
-                                alt="{{ user.display_name }}"
-                                class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span
-                                class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name }}</span>
-                        </div>{% endfor %}</li>{% endif %}
-                </ul>
+                 {% include "tasks/includes/task_participants.html" with responsible_users=responsible_users_list executors=executors_list watchers=watchers_list creator=task.created_by %}
             </div>
 
             {# Даты #}
             <div>
                 <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                    <i class="far fa-calendar-alt mr-2 text-gray-500 dark:text-gray-400"></i>{% trans 'Сроки' %}
+                    <i class="far fa-calendar-alt mr-2 text-gray-500 dark:text-gray-400"></i>{% trans 'Сроки и Оценка' %}
                 </h3>
-                <dl class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">{% trans 'Создана' %}:</dt>
-                        <dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.created_at|date:"d.m.Y H:i" }}
-                        </dd>
-                    </div>
-                    {% if task.start_date %}<div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">{% trans 'Начало' %}:</dt>
-                        <dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.start_date|date:"d.m.Y" }}</dd>
-                    </div>{% endif %}
-                    {% if task.deadline %}<div class="flex justify-between">
-                        <dt
-                            class="text-gray-500 dark:text-gray-400 {% if task.is_overdue %}text-red-500 dark:text-red-400{% endif %}">
-                            {% trans 'Срок' %}:</dt>
-                        <dd
-                            class="font-medium {% if task.is_overdue %}text-red-600 dark:text-red-400{% else %}text-gray-700 dark:text-gray-300{% endif %}">
-                            {{ task.deadline|date:"d.m.Y H:i" }}</dd>
-                    </div>{% endif %}
-                    {% if task.completion_date %}<div class="flex justify-between">
-                        <dt
-                            class="text-gray-500 dark:text-gray-400 {% if task.status == task.StatusChoices.COMPLETED %}text-green-600 dark:text-green-400{% endif %}">
-                            {% trans 'Завершена' %}:</dt>
-                        <dd
-                            class="font-medium {% if task.status == task.StatusChoices.COMPLETED %}text-green-700 dark:text-green-300{% else %}text-gray-700 dark:text-gray-300{% endif %}">
-                            {{ task.completion_date|date:"d.m.Y H:i" }}</dd>
-                    </div>{% endif %}
-                    {% if task.estimated_time %}<div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">{% trans 'Оценка' %}:</dt>
-                        <dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.estimated_time }}</dd>
-                    </div>{% endif %}
-                    <div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">{% trans 'Обновлена' %}:</dt>
-                        <dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.updated_at|date:"d.m.Y H:i" }}
-                        </dd>
-                    </div>
-                </dl>
+                 {% include "tasks/includes/task_dates.html" with task=task %}
             </div>
-        </div> {# Конец правой колонки #}
+        </aside> {# Конец правой колонки #}
 
     </div> {# Конец основной сетки #}
 
-    {# --- Карусель фотографий (если есть фото) --- #}
-    {% with photos=task.photos.all %} {# Убедитесь, что related_name='photos' или передайте photos в контексте #}
-    {% if photos %}
-    <div class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-            <i class="fas fa-images mr-2 text-gray-500"></i>{% trans 'Фотографии' %} ({{ photos.count }})
-        </h3>
-        <div id="task-photo-carousel" class="relative w-full max-w-2xl mx-auto" data-carousel="slide">
-            <div
-                class="relative overflow-hidden rounded-lg h-64 md:h-96 bg-gray-200 dark:bg-dark-700 flex items-center justify-center shadow-inner">
-                {% for photo in photos %}
-                <div class="hidden duration-700 ease-in-out" data-carousel-item {% if forloop.first %}data-active{% endif %}>
-                    <img src="{{ photo.photo.url }}" class="block max-w-full max-h-full object-contain mx-auto p-2"
-                        alt="{{ photo.description|default:_('Фото к задаче') }}">
-                </div>
-                {% endfor %}
-            </div>
-            {% if photos.count > 1 %}
-            {# Индикаторы #}
-            <div class="absolute z-30 flex space-x-3 -translate-x-1/2 bottom-5 left-1/2">
-                {% for photo in photos %}
-                <button type="button"
-                    class="w-3 h-3 rounded-full bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-400 aria-[current=true]:bg-gray-900 dark:aria-[current=true]:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-dark-800"
-                    aria-current="{% if forloop.first %}true{% else %}false{% endif %}"
-                    aria-label="Slide {{ forloop.counter }}" data-carousel-slide-to="{{ forloop.counter0 }}"></button>
-                {% endfor %}
-            </div>
-            {# Кнопки Назад/Вперед #}
-            <button type="button"
-                class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
-                data-carousel-prev>
-                <span
-                    class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/30 dark:bg-white/30 group-hover:bg-black/50 dark:group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-                    <svg class="w-5 h-5 text-white dark:text-gray-800" aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M5 1 1 5l4 4" />
-                    </svg>
-                    <span class="sr-only">{% trans "Previous" %}</span>
-                </span>
-            </button>
-            <button type="button"
-                class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
-                data-carousel-next>
-                <span
-                    class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-black/30 dark:bg-white/30 group-hover:bg-black/50 dark:group-hover:bg-white/50 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-                    <svg class="w-5 h-5 text-white dark:text-gray-800" aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="m1 9 4-4-4-4" />
-                    </svg>
-                    <span class="sr-only">{% trans "Next" %}</span>
-                </span>
-            </button>
-            {% endif %}
-        </div>
-    </div>
-    {% else %}
-    <div class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-            <i class="fas fa-images mr-2 text-gray-500"></i>{% trans 'Фотографии' %}
-        </h3>
-        <p class="text-gray-500 dark:text-gray-400 italic text-sm">{% trans 'Нет прикрепленных фотографий.' %}</p>
-    </div>
-    {% endif %}
-    {% endwith %}
-    {# --- Конец секции фотографий --- #}
+    {# --- Фотографии --- #}
+    {% include "tasks/includes/task_photos_section.html" with photos=task.photos.all %}
 
-    {# --- СЕКЦИЯ КОММЕНТАРИЕВ --- #}
-    <div id="comments" class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-            <i class="fas fa-comments mr-2 text-gray-500"></i>{% trans 'Комментарии' %}
-            <span id="comment-count" class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ comments.count }})</span>
-        </h3>
-
-        {# Список комментариев #}
-        <div id="comment-list" class="space-y-4 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin mb-6">
-            {% for comment in comments %}
-            <div class="flex space-x-3 comment-item" id="comment-{{ comment.id }}">
-                <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
-                    src="{% if comment.author.image %}{{ comment.author.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
-                    alt="{{ comment.author.display_name|default:_('Автор') }}">
-                <div
-                    class="flex-1 bg-gray-50 dark:bg-dark-700 p-3 rounded-lg border border-gray-100 dark:border-dark-600">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ comment.author.display_name|default:_("Удаленный пользователь") }}</span>
-                        <span class="text-xs text-gray-400 dark:text-gray-500"
-                            title="{{ comment.created_at|date:'d.m.Y H:i:s' }}">{{ comment.created_at|timesince }} {% trans "назад" %}</span>
-                    </div>
-                    <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ comment.text }}</p>
-                </div>
-            </div>
-            {% empty %}
-            <p id="no-comments-message" class="text-gray-500 dark:text-gray-400 italic text-sm text-center py-4">{% trans "Комментариев пока нет." %}</p>
-            {% endfor %}
-        </div>
-
-        {# Форма добавления нового комментария #}
-        {% if can_add_comment %}
-        <form id="comment-form" method="post" action="{% url 'tasks:task_detail' pk=task.pk %}#comments" class="mt-4">
-            {% csrf_token %}
-            <div class="flex space-x-3 items-start">
-                <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
-                    src="{% if request.user.image %}{{ request.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
-                    alt="{{ request.user.display_name }}">
-                <div class="flex-1">
-                    {# Render the comment form field #}
-                    {% load widget_tweaks %} {# Make sure widget_tweaks is loaded if not already #}
-                    {% trans "Введите ваш комментарий..." as comment_placeholder %}
-                    {% render_field comment_form.text class="form-textarea mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-dark-600 dark:border-dark-500 dark:text-gray-200 sm:text-sm" rows="3" placeholder=comment_placeholder %}
-                    {# Add a character counter if needed #}
-
-                    {# Display field errors #}
-                    <div id="comment-text-errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                        {% if comment_form.text.errors %}
-                        {% for error in comment_form.text.errors %} {{ error }} {% endfor %}
-                        {% endif %}
-                    </div>
-                    {# Display non-field errors #}
-                    <div id="comment-non-field-errors" class="mt-1 text-sm text-red-600 dark:text-red-400">
-                        {% if comment_form.non_field_errors %}
-                        {% for error in comment_form.non_field_errors %} {{ error }} {% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="flex justify-end mt-2">
-                <button type="submit"
-                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition duration-150 ease-in-out disabled:opacity-50">
-                    <i class="fas fa-paper-plane mr-2"></i> {% trans 'Отправить' %}
-                </button>
-            </div>
-        </form>
-        {% else %}
-        <p class="text-gray-500 dark:text-gray-400 italic text-sm">{% trans "Вы не можете добавлять комментарии к этой задаче." %}</p>
-        {% endif %}
-    </div>
-    {# --- КОНЕЦ СЕКЦИИ КОММЕНТАРИЕВ --- #}
+    {# --- Комментарии --- #}
+    {% include "tasks/includes/task_comments_section.html" with comments=comments_list comment_form=comment_form can_add_comment=can_add_comment task=task %}
 
 </div> {# End task-detail-container #}
+
+{# Данные для JS #}
+<script id="task-detail-script-data" type="application/json">
+    {{ task_detail_json_data|safe }}
+</script>
+<script id="task-status-choices-data" type="application/json">
+    {{ status_choices_json|safe }}
+</script>
+
 {% endblock %}
 
 {% block scripts %}
 {{ block.super }}
-{# Flowbite JS for carousel (Ensure it's loaded, usually in base.html) #}
-{#
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script> #}
-
-{# --- Data for tasks_no_modal.js --- #}
-<script id="task-detail-data" type="application/json">
-        {
-            "taskId": {{ task.pk|default:'null' }},
-            "defaultAvatarUrl": "{% static 'img/user.svg' %}",
-            "currentUsername": "{{ request.user.display_name|escapejs }}",
-            "translations": {
-                "justNow": "{% trans "только что" %}",
-                "secondsAgo": "{% trans "сек. назад" %}",
-                "minutesAgo": "{% trans "мин. назад" %}",
-                "hoursAgo": "{% trans "ч. назад" %}",
-                "yesterday": "{% trans "вчера" %}",
-                "daysAgo": "{% trans "д. назад" %}",
-                "unknownUser": "{% trans "Неизвестный" %}",
-                "commentCannotBeEmpty": "{% trans "Комментарий не может быть пустым." %}",
-                "sending": "{% trans "Отправка..." %}",
-                "submitError": "{% trans "Произошла ошибка при добавлении комментария." %}",
-                "networkError": "{% trans "Ошибка сети при отправке комментария." %}",
-                "commentAdded": "{% trans "Комментарий добавлен." %}",
-                "newCommentNotification": "{% trans "Новый комментарий от" %}",
-                "websocketError": "{% trans "Ошибка WebSocket:" %}"
-            }
-        }
-    </script>
-{# Note: The actual comment JS logic is now expected in tasks_no_modal.js #}
+{# JS для карусели (например, Flowbite) #}
+{# <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script> #}
+{# JS для формы комментария и WebSocket #}
+{{ comment_form.media.js }} {# Если форма комментария использует JS #}
+<script src="{% static 'js/task_detail.js' %}" defer></script> {# Вынесен в отдельный файл #}
 {% endblock %}
