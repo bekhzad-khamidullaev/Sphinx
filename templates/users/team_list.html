@@ -1,58 +1,82 @@
 {% extends 'base.html' %}
 {% load i18n static %}
-{% block title %}{% trans "Команды" %}{% endblock %}
-{% block list_title %}
-<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
-    {% trans 'Команды' %}
-</h1>
-{% endblock %}
-{% block list_actions %}
-<div class="flex space-x-3 items-center ml-4">
-    <a href="{% url 'user_profiles:team_create' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center min-w-[150px]">
+
+{% block title %}{{ page_title|default:_("Команды") }}{% endblock %}
+
+{% block page_title_block %}
+  <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <h2 class="text-title-md2 font-bold text-black dark:text-white">
+      {{ page_title|default:_("Команды") }}
+    </h2>
+    {% if perms.user_profiles.add_team %}
+    <nav>
+      <a href="{% url 'user_profiles:team_create' %}" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 lg:px-6 transition active:scale-95 shadow-sm">
         <i class="fas fa-users-cog mr-2"></i> {% trans 'Создать команду' %}
-    </a>
-</div>
+      </a>
+    </nav>
+    {% endif %}
+  </div>
 {% endblock %}
-{% block list_actions_mobile %}
-<a href="{% url 'user_profiles:team_create' %}" class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
-    <i class="fas fa-users-cog mr-2"></i> {% trans 'Создать команду' %}
-</a>
-{% endblock %}
-{% block list_content %}
-<div class="mt-6 overflow-x-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
-        <thead class="bg-gray-50 dark:bg-dark-700/50">
-        <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            <th scope="col" class="px-4 py-3.5"><i class="fas fa-users fa-fw mr-1"></i>{% trans 'Название команды' %}</th>
-            <th scope="col" class="px-4 py-3.5"><i class="fas fa-user-tie fa-fw mr-1"></i>{% trans 'Лидер' %}</th>
-            <th scope="col" class="px-4 py-3.5"><i class="fas fa-building fa-fw mr-1"></i>{% trans 'Отдел' %}</th>
-            <th scope="col" class="px-4 py-3.5 text-center"><i class="fas fa-user-friends fa-fw mr-1"></i>{% trans 'Участники' %}</th>
-            <th scope="col" class="px-4 py-3.5 text-center"><i class="fas fa-cogs fa-fw mr-1"></i>{% trans 'Действия' %}</th>
+
+{% block content %}
+<div class="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+  <div class="max-w-full overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-boxdark-2">
+    <table class="w-full table-auto">
+      <thead>
+        <tr class="bg-gray-2 text-left dark:bg-meta-4">
+          <th class="min-w-[200px] py-4 px-4 font-medium text-black dark:text-white xl:pl-11">{% trans 'Название команды' %}</th>
+          <th class="min-w-[180px] py-4 px-4 font-medium text-black dark:text-white">{% trans 'Лидер' %}</th>
+          <th class="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">{% trans 'Отдел' %}</th>
+          <th class="min-w-[100px] py-4 px-4 font-medium text-black dark:text-white text-center">{% trans 'Участники' %}</th>
+          <th class="min-w-[150px] py-4 px-4 font-medium text-black dark:text-white">{% trans 'Создана' %}</th>
+          <th class="py-4 px-4 font-medium text-black dark:text-white text-center">{% trans 'Действия' %}</th>
         </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-            {% for team in object_list %}
-            <tr id="team-row-{{ team.pk }}" class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm text-gray-700 dark:text-gray-300">
-                <td class="px-4 py-3 whitespace-nowrap font-medium">{{ team.name }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{{ team.team_leader.display_name|default:"-" }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{{ team.department.name|default:"-" }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-center text-gray-600 dark:text-gray-400">{{ team.members.count }}</td>
-                <td class="px-4 py-3 text-center whitespace-nowrap">
-                    <div class="flex items-center justify-center space-x-1">
-                        <a href="{% url 'user_profiles:team_update' pk=team.pk %}" title="{% trans 'Редактировать' %}" class="p-1.5 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-edit fa-fw"></i></a>
-                        <a href="{% url 'user_profiles:team_delete' pk=team.pk %}" title="{% trans 'Удалить' %}" class="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-trash fa-fw"></i></a>
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-                <tr><td colspan="5" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic"><i class="fas fa-users-slash fa-3x mb-3 text-gray-300 dark:text-gray-600"></i><br>{% trans 'Команды не найдены.' %}</td></tr>
-            {% endfor %}
-        </tbody>
+      </thead>
+      <tbody>
+        {% for team_item in object_list %} {# Renamed team to team_item #}
+        <tr id="team-row-{{ team_item.pk }}">
+          <td class="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
+            <a href="{{ team_item.get_absolute_url }}" class="font-medium text-primary hover:underline dark:text-blue-400">
+                {{ team_item.name }}
+            </a>
+            {% if team_item.description %}
+                <p class="text-xs text-meta mt-0.5 truncate" title="{{ team_item.description }}">{{ team_item.description|truncatechars:50 }}</p>
+            {% endif %}
+          </td>
+          <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+            <p class="text-black dark:text-white">{{ team_item.team_leader.display_name|default:"-" }}</p>
+          </td>
+          <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+            <p class="text-black dark:text-white">{{ team_item.department.name|default:"-" }}</p>
+          </td>
+          <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark text-center">
+            <p class="text-black dark:text-white">{{ team_item.num_members|default:0 }}</p> {# Assuming num_members annotated #}
+          </td>
+          <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+            <p class="text-sm text-meta">{{ team_item.created_at|date:"d.m.Y H:i" }}</p>
+          </td>
+          <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
+            <div class="flex items-center justify-center space-x-3.5">
+              <a href="{{ team_item.get_absolute_url }}" class="hover:text-primary" title="{% trans 'Подробнее' %}"><i class="fas fa-eye"></i></a>
+              {% if perms.user_profiles.change_team %}
+              <a href="{% url 'user_profiles:team_update' pk=team_item.pk %}" class="hover:text-primary" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
+              {% endif %}
+              {% if perms.user_profiles.delete_team %}
+              <a href="{% url 'user_profiles:team_delete' pk=team_item.pk %}" class="hover:text-danger" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+            <tr><td colspan="6" class="py-10 px-4 text-center text-meta">{% trans 'Команды не найдены.' %}</td></tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
+  {% if is_paginated %}
+    <div class="py-4 px-4">
+        {% include "includes/pagination.html" with page_obj=page_obj %}
+    </div>
+  {% endif %}
 </div>
-{% if is_paginated %}
-<div class="mt-6">
-    {% include "includes/pagination.html" with page_obj=page_obj %}
-</div>
-{% endif %}
 {% endblock %}

@@ -14,14 +14,14 @@
     <div class="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
         <h3 class="font-medium text-black dark:text-white">
             {% if object %}
-                {% trans "Редактирование команды" %}: {{ object.name }}
+                {% trans "Редактирование отдела" %}: {{ object.name }}
             {% else %}
-                {% trans "Создание новой команды" %}
+                {% trans "Создание нового отдела" %}
             {% endif %}
         </h3>
     </div>
     <div class="p-6.5">
-        <form method="post" enctype="multipart/form-data"> {# enctype for future file fields if any #}
+        <form method="post">
             {% csrf_token %}
             {% crispy form %}
             {% if form.non_field_errors %}
@@ -31,7 +31,7 @@
                 </div>
             {% endif %}
             <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-stroke dark:border-strokedark">
-                <a href="{% url 'user_profiles:team_list' %}" class="flex justify-center rounded bg-gray-200 dark:bg-gray-700 px-6 py-2 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                <a href="{% url 'user_profiles:department_list' %}" class="flex justify-center rounded bg-gray-200 dark:bg-gray-700 px-6 py-2 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
                     {% trans 'Отмена' %}
                 </a>
                 <button type="submit" class="flex justify-center rounded bg-primary px-6 py-2 font-medium text-gray hover:bg-opacity-90">
@@ -59,14 +59,11 @@
                 theme: "default", width: '100%', allowClear: true,
                 language: "{{ LANGUAGE_CODE|slice:':2'|default:'en' }}"
             };
-             try {
-                $('.select2-single').each(function() {
+            try {
+                $('.select2-single').each(function() { // Assuming crispy forms adds this class or you add it via widget attrs
                     $(this).select2({ ...defaultSelect2Options, placeholder: $(this).data('placeholder') || '{% trans "Выберите..." %}' });
                 });
-                $('.select2-multiple').each(function() {
-                    $(this).select2({ ...defaultSelect2Options, placeholder: $(this).data('placeholder') || '{% trans "Выберите одно или несколько..." %}', closeOnSelect: false });
-                });
-            } catch (e) { console.error("Error initializing Select2 for team form:", e); }
+            } catch (e) { console.error("Error initializing Select2 for department form:", e); }
         });
     </script>
 {% endblock %}
