@@ -29,8 +29,10 @@ INSTALLED_APPS = [
 
     "channels",
     "corsheaders",
-    "crispy_forms",
-    "crispy_tailwind",
+    'crispy_forms',
+    'crispy_tailwind',
+    'tailwind',
+    # 'theme',    
     "django_filters",
     "drf_yasg",
     "encrypted_model_fields",
@@ -200,7 +202,7 @@ FIELD_ENCRYPTION_KEY = "_3HZU7uFwNYQw0n_7r1BFgwPU52Xs2N16uQUrJvPdUM="
 # --- Crispy Forms ---
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["tailwind"]
 CRISPY_TEMPLATE_PACK = "tailwind"
-
+# TAILWIND_APP_NAME = 'theme'
 # --- Select2 ---
 SELECT2_CACHE_BACKEND = "default"
 
@@ -216,21 +218,21 @@ MESSAGE_TAGS = {
 }
 
 # --- Логирование ---
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": False,
-#     "formatters": {
-#         "simple": {"format": "{levelname} {message}", "style": "{"},
-#     },
-#     "handlers": {
-#         "console": {"class": "logging.StreamHandler", "formatter": "simple"},
-#     },
-#     "loggers": {
-#         "django": {"handlers": ["console"], "level": "DEBUG"},
-#         "tasks": {"handlers": ["console"], "level": "DEBUG"},
-#         "checklists": {"handlers": ["console"], "level": "DEBUG"},
-#     },
-# }
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {"format": "{levelname} {message}", "style": "{"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "simple"},
+    },
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "DEBUG"},
+        "tasks": {"handlers": ["console"], "level": "DEBUG"},
+        "checklists": {"handlers": ["console"], "level": "DEBUG"},
+    },
+}
 
 # --- Тестовая БД ---
 if "test" in sys.argv:

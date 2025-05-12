@@ -357,3 +357,24 @@ def update_task_status(request, task_id):
         task.status = old_status # Откатываем статус
         return JsonResponse({'error': 'Server Error', 'message': _('Ошибка сохранения.')}, status=500)
 # ---------------------------------------------
+
+@require_POST
+@login_required
+def delete_task_ajax(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
+
+    # Optional: Check permissions
+    if not task.can_delete(request.user): # Assuming you have a can_delete method on your Task model
+        logger.warning(f"User {request.user.username} forbidden to delete task {task_id}")
+        return JsonResponse({'success': False, 'message': _('У вас нет прав на удаление этой задачи.')}, status=403)
+
+    try:
+        task_display_info = f"#{task.task_number or task.pk} '{task.title}'"
+        # Set initiator_user_id if your model's delete signal or logic needs it
+        # setattr(task, '_initiator_user_id', request.user.id)
+        task.delete()
+        logger.info(f"Task {task_display_info} AJAX deleted by {request.user.username}.")
+        return JsonResponse({'success': True, 'message': _('Задача "%(name)s" успешно удалена.') % {'name': task_display_info}})
+    except Exception as e:
+        logger.error(f"Error AJAX deleting task {task_id} by user {request.user.username}: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': _('Произошла ошибка при удалении задачи.')}, status=500)

@@ -1,9 +1,13 @@
 # tasks/templatetags/app_filters.py
 from django import template
+from django.utils.safestring import mark_safe
+import json
+from django.core.serializers.json import DjangoJSONEncoder
 import logging
 from ..models import Task
 from urllib.parse import urlencode
 import os
+
 
 register = template.Library()
 logger = logging.getLogger(__name__)
@@ -59,25 +63,61 @@ def add_attr(field, attr_string):
         return field
 
 
-@register.filter(name="get_priority_color")
-def get_priority_color(priority_value):
-    try:
-        priority_value = int(priority_value)
-    except (ValueError, TypeError):
-        return "border-gray-300 dark:border-gray-500"
+@register.filter
+def get_item(dictionary, key):
+    if hasattr(dictionary, 'get'):
+        return dictionary.get(key)
+    return None
 
-    if priority_value == Task.TaskPriority.HIGH:
-        return "border-red-500 dark:border-red-400"
-    elif priority_value == Task.TaskPriority.MEDIUM_HIGH:
-        return "border-orange-500 dark:border-orange-400"
-    elif priority_value == Task.TaskPriority.MEDIUM:
-        return "border-yellow-500 dark:border-yellow-400"
-    elif priority_value == Task.TaskPriority.MEDIUM_LOW:
-        return "border-blue-500 dark:border-blue-400"
-    elif priority_value == Task.TaskPriority.LOW:
-        return "border-green-500 dark:border-green-400"
-    else:
-        return "border-gray-300 dark:border-gray-500"
+@register.filter
+def get_priority_color(priority_value):
+    """
+    Returns a border color class based on task priority.
+    Example usage: class="border-l-4 {{ task.priority|get_priority_color }}"
+    """
+    # Assuming Task model is accessible here or you pass priority numeric value
+    # from .models import Task # Avoid direct model import in templatetags if possible
+    # Or use numeric values directly
+    if priority_value == 1: # HIGH
+        return 'border-red-500 dark:border-red-400'
+    elif priority_value == 2: # MEDIUM_HIGH
+        return 'border-orange-500 dark:border-orange-400'
+    elif priority_value == 3: # MEDIUM
+        return 'border-yellow-500 dark:border-yellow-400'
+    elif priority_value == 4: # MEDIUM_LOW
+        return 'border-blue-500 dark:border-blue-400'
+    elif priority_value == 5: # LOW
+        return 'border-green-500 dark:border-green-400'
+    return 'border-gray-300 dark:border-gray-500' # Default
+
+@register.filter
+def get_priority_border_color(priority_value):
+    if priority_value == 1: return 'border-red-500 dark:border-red-400'
+    elif priority_value == 2: return 'border-orange-500 dark:border-orange-400'
+    elif priority_value == 3: return 'border-yellow-500 dark:border-yellow-400'
+    elif priority_value == 4: return 'border-blue-500 dark:border-blue-400'
+    elif priority_value == 5: return 'border-green-500 dark:border-green-400'
+    return 'border-gray-300 dark:border-gray-500'
+
+@register.filter
+def get_priority_text_color(priority_value):
+    if priority_value == 1: return 'text-red-500 dark:text-red-400'
+    elif priority_value == 2: return 'text-orange-500 dark:text-orange-400'
+    elif priority_value == 3: return 'text-yellow-500 dark:text-yellow-400'
+    elif priority_value == 4: return 'text-blue-500 dark:text-blue-400'
+    elif priority_value == 5: return 'text-green-500 dark:text-green-400'
+    return 'text-gray-500 dark:text-gray-400'
+
+
+@register.filter(name='json_script')
+def json_script(value, element_id):
+    """
+    Safely render a Python variable as JSON in a <script> tag.
+    Encodes with DjangoJSONEncoder for date/time/decimal handling.
+    Usage: {{ mydata|json_script:"my_data_script_id" }}
+    """
+    json_data = json.dumps(value, cls=DjangoJSONEncoder)
+    return mark_safe(f'<script id="{element_id}" type="application/json">{json_data}</script>')
 
 
 @register.filter(name="replace")
