@@ -14,7 +14,7 @@ ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 # --- Установленные приложения ---
 INSTALLED_APPS = [
     # "jazzmin",
-    "simpleui",
+    # "simpleui",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

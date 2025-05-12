@@ -191,8 +191,8 @@ class TaskAdmin(admin.ModelAdmin):
         (_("Сроки и Оценка"), {"fields": (("start_date", "due_date"), "completion_date", "estimated_time"), "classes": ("collapse",)}),
         (_("Авторство и Даты"), {"fields": ("created_by_link", ("created_at", "updated_at")), "classes": ("collapse",)}),
     )
-    change_list_template = "admin/tasks/task/change_list.html"
-    change_form_template = "admin/tasks/task/change_form.html"
+    # change_list_template = "admin/tasks/task/change_list.html"
+    # change_form_template = "admin/tasks/task/change_form.html"
 
     def task_number_link(self, obj: Task):
         url = reverse('admin:tasks_task_change', args=[obj.id])
@@ -236,7 +236,7 @@ class TaskAdmin(admin.ModelAdmin):
             try: link = reverse(f"admin:{obj.created_by._meta.app_label}_{obj.created_by._meta.model_name}_change", args=[obj.created_by.pk]); return format_html('<a href="{}">{}</a>', link, obj.created_by.get_username())
             except: return obj.created_by.get_username()
         return "—"
-    created_by_link.short_description = _("Создатель"); created_by_link.admin_order_field = 'created_by__username'
+    created_by_link.short_description = _("Инициатор"); created_by_link.admin_order_field = 'created_by__username'
 
     def created_at_formatted(self, obj: Task): return obj.created_at.strftime("%d.%m.%Y %H:%M")
     created_at_formatted.short_description = _("Создана"); created_at_formatted.admin_order_field = 'created_at'

@@ -231,7 +231,7 @@ class Task(BaseModel):
     completion_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата завершения"))
     estimated_time = models.DurationField(null=True, blank=True, verbose_name=_("Оценка времени (план)"))
 
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_tasks", verbose_name=_("Создатель"), db_index=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_tasks", verbose_name=_("Инициатор"), db_index=True)
 
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks', verbose_name=_("Команда"))
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks', verbose_name=_("Отдел"))
