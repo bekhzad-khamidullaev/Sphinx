@@ -52,10 +52,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Webpack / Tailwind / Vite
-static/dist/
-static/js/
-static/css/
-static/assets/
+# static/dist/
+# static/js/
+# static/css/
+# static/assets/
 *.map
 
 # Select2
