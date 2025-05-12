@@ -8,8 +8,8 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 
-from .models import Task, Project, TaskCategory, TaskSubcategory
-from user_profiles.models import TaskUserRole
+from .models import Task, Project, TaskCategory, TaskSubcategory, TaskAssignment
+from user_profiles.models import Team, Department # Убедитесь, что этот импорт корректен
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -17,10 +17,12 @@ User = get_user_model()
 class BaseFilter(django_filters.FilterSet):
     def __init__(self, *args, **kwargs):
         self.render_form = kwargs.pop('render_form', True)
+        # Сохраняем request, если он передан, для использования в callable querysets
+        self.request = kwargs.get('request', None)
         super().__init__(*args, **kwargs)
         if not self.render_form:
             for field in self.form.fields.values():
-                field.widget = forms.HiddenInput() # Or just remove them: self.form.fields = {}
+                field.widget = forms.HiddenInput()
 
 class ProjectFilter(BaseFilter):
     name = django_filters.CharFilter(
@@ -91,27 +93,37 @@ class TaskFilter(BaseFilter):
         queryset=User.objects.filter(is_active=True).order_by('username'), label=_('Создатель'),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    team = django_filters.ModelChoiceFilter(
+        queryset=lambda request: Team.objects.all().order_by('name'),
+        label=_('Команда задачи'),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    department = django_filters.ModelChoiceFilter(
+        queryset=lambda request: Department.objects.all().order_by('name'),
+        label=_('Отдел задачи'),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
     responsible = django_filters.ModelChoiceFilter(
         queryset=User.objects.filter(is_active=True).order_by('username'),
         label=_('Ответственный'),
-        method='filter_by_role',
+        method='filter_by_assignment_role',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     executor = django_filters.ModelChoiceFilter(
         queryset=User.objects.filter(is_active=True).order_by('username'),
         label=_('Исполнитель'),
-        method='filter_by_role',
+        method='filter_by_assignment_role',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     watcher = django_filters.ModelChoiceFilter(
          queryset=User.objects.filter(is_active=True).order_by('username'),
          label=_('Наблюдатель'),
-         method='filter_by_role',
+         method='filter_by_assignment_role',
          widget=forms.Select(attrs={'class': 'form-select'})
      )
     participant = django_filters.ModelChoiceFilter(
         queryset=User.objects.filter(is_active=True).order_by('username'),
-        field_name='user_roles__user', # Direct filtering if any role matches
+        field_name='assignments__user',
         label=_('Участник (любая роль)'),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
@@ -129,7 +141,7 @@ class TaskFilter(BaseFilter):
     class Meta:
         model = Task
         fields = [
-            'q', 'status', 'priority', 'project',
+            'q', 'status', 'priority', 'project', 'team', 'department',
             'responsible', 'executor', 'watcher', 'participant',
             'category', 'subcategory', 'created_by',
             'deadline_after', 'deadline_before',
@@ -137,30 +149,18 @@ class TaskFilter(BaseFilter):
         ]
 
     def search_filter(self, queryset, name, value):
-        if not value:
-            return queryset
+        if not value: return queryset
         return queryset.filter(
             Q(task_number__icontains=value) |
             Q(title__icontains=value) |
             Q(description__icontains=value)
         ).distinct()
 
-    def filter_by_role(self, queryset, name, value):
-         """
-         Filters tasks where the given user (value) has a specific role,
-         determined by the filter's name ('responsible', 'executor', 'watcher').
-         """
+    def filter_by_assignment_role(self, queryset, name, value):
          role_to_filter = None
-         if name == 'responsible':
-             role_to_filter = TaskUserRole.RoleChoices.RESPONSIBLE
-         elif name == 'executor':
-             role_to_filter = TaskUserRole.RoleChoices.EXECUTOR
-         elif name == 'watcher':
-             role_to_filter = TaskUserRole.RoleChoices.WATCHER
-         else:
-             logger.warning(f"filter_by_role called with unexpected filter name: {name}")
-             return queryset # Or raise an error
-
-         if value: # value is the User instance (or PK) selected in the filter
-             return queryset.filter(user_roles__user=value, user_roles__role=role_to_filter).distinct()
-         return queryset # If no user is selected, don't filter by this role criteria
+         if name == 'responsible': role_to_filter = TaskAssignment.RoleChoices.RESPONSIBLE
+         elif name == 'executor': role_to_filter = TaskAssignment.RoleChoices.EXECUTOR
+         elif name == 'watcher': role_to_filter = TaskAssignment.RoleChoices.WATCHER
+         else: logger.warning(f"filter_by_assignment_role called with unexpected filter name: {name}"); return queryset
+         if value and role_to_filter: return queryset.filter(assignments__user=value, assignments__role=role_to_filter).distinct()
+         return queryset

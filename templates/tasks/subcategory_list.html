@@ -4,14 +4,12 @@
 {% block title %}{% trans "Подкатегории Задач" %}{% endblock %}
 
 {% block list_title %}
-<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
+<h1 class="text-3xl font-semibold text-gray-900 sm:text-4xl">
     {% trans 'Подкатегории Задач' %}
 </h1>
 {% endblock %}
 
 {% block list_actions %}
-    {# Example button assuming you have a modal creation view #}
-    {# Adjust hx-get and hx-target if using HTMX, or use standard link for non-HTMX #}
     <a href="{% url 'tasks:subcategory_create' %}"
         class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center ml-3"
         aria-label="{% trans 'Создать новую подкатегорию' %}"
@@ -22,8 +20,8 @@
 
 {% block list_content %}
     <ul id="subcategory-list" role="list" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for subcategory in object_list %} {# Changed from subcategories to object_list #}
-        <li id="subcategory-{{ subcategory.pk }}" class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 overflow-hidden">
+        {% for subcategory in object_list %}
+        <li id="subcategory-{{ subcategory.pk }}" class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 overflow-hidden">      
             <div class="px-4 py-4 sm:px-6">
                 <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
                     <a href="{{ subcategory.get_absolute_url }}" class="hover:underline">{{ subcategory.name }}</a>

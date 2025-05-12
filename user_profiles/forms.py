@@ -1,145 +1,185 @@
+# user_profiles/forms.py
 import logging
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Fieldset, Row, Field, Submit, HTML, Div
-from crispy_forms.bootstrap import FormActions
+from crispy_forms.layout import Layout, Fieldset, Row, Field, Div, Column # Added Column
 from django import forms
 from django.contrib.auth.models import Group
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm as BaseUserCreationForm, PasswordChangeForm
+from django.contrib.auth.forms import (
+    AuthenticationForm, UserCreationForm as BaseUserCreationForm, PasswordChangeForm as BasePasswordChangeForm
+)
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django_select2.forms import Select2Widget, Select2MultipleWidget # For Select2
 
-# Импорты моделей из текущего приложения user_profiles
 from .models import User, Team, Department, JobTitle
 
 logger = logging.getLogger(__name__)
 
-def add_common_attrs(field, placeholder=None, input_class="form-control"):
-    """Adds common CSS classes and placeholder if not already set."""
-    attrs = field.widget.attrs
-    current_classes = attrs.get('class', '')
-    # Добавляем класс только если его нет, чтобы не дублировать
-    if input_class and input_class not in current_classes.split():
-        attrs['class'] = f'{current_classes} {input_class}'.strip()
-    if placeholder and 'placeholder' not in attrs:
-        attrs["placeholder"] = placeholder
-    field.widget.attrs.update(attrs)
+# --- Tailwind CSS classes ---
+BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500 transition duration-150 ease-in-out"
+TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
+TEXTAREA_CLASSES = f"form-textarea {BASE_INPUT_CLASSES}"
+SELECT_CLASSES = f"form-select {BASE_INPUT_CLASSES}" # Base for non-Select2 selects
+CHECKBOX_CLASSES = "form-checkbox h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-dark-600 dark:border-dark-500 dark:checked:bg-indigo-500 dark:focus:ring-offset-dark-800"
+FILE_INPUT_CLASSES = "form-control block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-dark-600 dark:border-dark-500 dark:placeholder-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-dark-500 dark:file:text-gray-300 dark:hover:file:bg-dark-400 transition"
+
 
 class TeamForm(forms.ModelForm):
     members = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(is_active=True).order_by('username'),
-        widget=forms.SelectMultiple(attrs={'class': 'select2-multiple w-full', 'data-placeholder': _("Выберите участников...")}),
-        required=False,
-        label=_("Участники")
+        widget=Select2MultipleWidget(attrs={'data-placeholder': _("Выберите участников...")}),
+        required=False, label=_("Участники")
     )
     team_leader = forms.ModelChoiceField(
         queryset=User.objects.filter(is_active=True).order_by('username'),
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select select2-single w-full', 'data-placeholder': _("Выберите лидера...")}),
+        widget=Select2Widget(attrs={'data-placeholder': _("Выберите лидера...")}),
         label=_("Лидер команды")
     )
     department = forms.ModelChoiceField(
         queryset=Department.objects.all().order_by('name'),
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select select2-single w-full', 'data-placeholder': _("Выберите отдел...")}),
+        widget=Select2Widget(attrs={'data-placeholder': _("Выберите отдел...")}),
         label=_("Отдел")
     )
 
     class Meta:
         model = Team
-        fields = ["name", "team_leader", "members", "department", "description"]
+        fields = ["name", "description", "team_leader", "department", "members"]
         widgets = {
-            'name': forms.TextInput(attrs={'placeholder': _("Название команды")}),
-            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': _("Описание команды (опционально)")}),
+            'name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _("Название команды")}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': TEXTAREA_CLASSES, 'placeholder': _("Описание команды (опционально)")}),
+        }
+        labels = {
+            "name": _("Название команды"),
+            "description": _("Описание"),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        self.helper.layout = Layout(
+            Field('name', css_class="mb-4"),
+            Field('description', css_class="mb-4"),
+            Field('team_leader', css_class="mb-4"),
+            Field('department', css_class="mb-4"),
+            Field('members', css_class="mb-4"),
+        )
+
+class DepartmentForm(forms.ModelForm):
+    head = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by('username'),
+        required=False,
+        widget=Select2Widget(attrs={'data-placeholder': _("Выберите руководителя...")}),
+        label=_("Руководитель отдела")
+    )
+    parent = forms.ModelChoiceField(
+        queryset=Department.objects.all().order_by('name'), # Exclude self if editing
+        required=False,
+        widget=Select2Widget(attrs={'data-placeholder': _("Выберите вышестоящий отдел...")}),
+        label=_("Вышестоящий отдел")
+    )
+    class Meta:
+        model = Department
+        fields = ['name', 'description', 'parent', 'head']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _("Название отдела")}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': TEXTAREA_CLASSES, 'placeholder': _("Описание (опционально)")}),
+        }
+        labels = {
+            "name": _("Название отдела"),
+            "description": _("Описание"),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk: # For editing, exclude self from parent choices
+            self.fields['parent'].queryset = Department.objects.exclude(pk=self.instance.pk).order_by('name')
+        
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
+        self.helper.layout = Layout(
+            Field('name', css_class="mb-4"),
+            Field('description', css_class="mb-4"),
+            Field('parent', css_class="mb-4"),
+            Field('head', css_class="mb-4"),
+        )
+
+class JobTitleForm(forms.ModelForm):
+    class Meta:
+        model = JobTitle
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _("Название должности")}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': TEXTAREA_CLASSES, 'placeholder': _("Описание (опционально)")}),
+        }
+        labels = {
+            "name": _("Название должности"),
+            "description": _("Описание"),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
-        # Используем css_class для добавления классов к полям Select2
         self.helper.layout = Layout(
-            Field("name", css_class="mb-3"),
-            Field("team_leader", css_class="mb-3 select2-single"), # Добавлен класс
-            Field("department", css_class="mb-3 select2-single"), # Добавлен класс
-            Field("members", css_class="mb-3 select2-multiple"), # Добавлен класс
-            Field("description", css_class="mb-3"),
+            Field('name', css_class="mb-4"),
+            Field('description', css_class="mb-4"),
         )
 
+
 class UserCreateForm(BaseUserCreationForm):
-    email = forms.EmailField(required=True, label=_("Email"), widget=forms.EmailInput(attrs={'placeholder': 'your@email.com'}))
-    first_name = forms.CharField(max_length=150, required=False, label=_("Имя"))
-    last_name = forms.CharField(max_length=150, required=False, label=_("Фамилия"))
-    phone_number = forms.CharField(max_length=20, required=False, label=_("Номер телефона"))
-    # Используем ModelChoiceField для выбора существующей должности
+    email = forms.EmailField(required=True, label=_("Email"), widget=forms.EmailInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': 'your@email.com'}))
+    first_name = forms.CharField(max_length=150, required=False, label=_("Имя"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
+    last_name = forms.CharField(max_length=150, required=False, label=_("Фамилия"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
+    phone_number = forms.CharField(max_length=25, required=False, label=_("Номер телефона"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
     job_title = forms.ModelChoiceField(
-        queryset=JobTitle.objects.all().order_by('name'),
-        required=False,
-        label=_("Должность"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите должность...")})
+        queryset=JobTitle.objects.all().order_by('name'), required=False, label=_("Должность"),
+        widget=Select2Widget(attrs={'data-placeholder': _("Выберите должность...")})
     )
-    department = forms.ModelChoiceField( queryset=Department.objects.all().order_by('name'), required=False, label=_("Отдел"), widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите отдел...")}))
-    image = forms.ImageField(required=False, label=_("Аватар"), widget=forms.ClearableFileInput)
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.all().order_by('name'), required=False, label=_("Отдел"),
+        widget=Select2Widget(attrs={'data-placeholder': _("Выберите отдел...")})
+    )
+    image = forms.ImageField(required=False, label=_("Аватар"), widget=forms.ClearableFileInput(attrs={'class': FILE_INPUT_CLASSES}))
 
     class Meta(BaseUserCreationForm.Meta):
         model = User
-        fields = BaseUserCreationForm.Meta.fields + (
+        fields = BaseUserCreationForm.Meta.fields + ( # username, password1, password2 are from base
             'email', 'first_name', 'last_name', 'phone_number',
-            'job_title',
-            'department', 'image'
+            'job_title', 'department', 'image'
         )
-        widgets = {
-            'job_title': forms.Select(attrs={
-                'class': 'form-select select2-single w-full',
-                'data-placeholder': _("Выберите должность...")
-            }),
-            'department': forms.Select(attrs={
-                'class': 'form-select select2-single w-full',
-                'data-placeholder': _("Выберите отдел...")
-            }),
-             'image': forms.ClearableFileInput(),
-        }
+        # Widgets for username, password1, password2 are customized below
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Применяем общие атрибуты к полям, не имеющим явных виджетов в Meta
-        # или не являющимися специфическими (пароль, email, файл, select)
-        for field_name, field in self.fields.items():
-             if 'password' in field_name: field.widget.attrs['placeholder'] = _("Задайте пароль")
-             elif field_name == 'username': field.widget.attrs['placeholder'] = _("Имя пользователя (логин)")
-
-             # Не добавляем form-control к Select, т.к. crispy-tailwind добавит свои классы
-             if not isinstance(field.widget, (forms.PasswordInput, forms.EmailInput, forms.ClearableFileInput, forms.Select, forms.SelectMultiple)):
-                 add_common_attrs(field) # Добавим базовый класс form-control, если нужен
-
-        self.helper = FormHelper(self); self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
-        # Определяем Layout для crispy-forms-tailwind
+        self.fields['username'].widget.attrs.update({'class': TEXT_INPUT_CLASSES, 'placeholder': _("Логин")})
+        self.fields['password2'].help_text = None # Remove default help_text for password confirmation
+        for field_name in ['password1', 'password2']:
+            self.fields[field_name].widget.attrs.update({'class': TEXT_INPUT_CLASSES, 'placeholder': _("Пароль") if field_name == 'password1' else _("Повторите пароль")})
+        
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
         self.helper.layout = Layout(
-            Fieldset(
-                _("Учетные данные"),
-                Field("username"),
-                Field("email"),
-                Field("password1"), # Используем имена полей из BaseUserCreationForm
-                Field("password2"),
-                css_class="border-b border-stroke dark:border-strokedark pb-4 mb-4" # Стилизация из шаблона TailAdmin
+            Fieldset(_("Учетные данные"),
+                Field("username"), Field("email"), Field("password1"), Field("password2"),
+                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
             ),
-            Fieldset(
-                _("Личная информация"),
-                Field("first_name"),
-                Field("last_name"),
-                Field("phone_number"),
-                 css_class="border-b border-stroke dark:border-strokedark pb-4 mb-4"
+            Fieldset(_("Личная информация"),
+                Row(Column(Field("first_name"), css_class="md:w-1/2 px-2"), Column(Field("last_name"), css_class="md:w-1/2 px-2"), css_class="flex flex-wrap -mx-2 mb-4"),
+                Field("phone_number", css_class="mb-4"),
+                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
             ),
-            Fieldset(
-                 _("Рабочая информация"),
-                 Field("job_title", css_class="select2-single"), # Класс для JS
-                 Field("department", css_class="select2-single"), # Класс для JS
-                 css_class="border-b border-stroke dark:border-strokedark pb-4 mb-4"
+            Fieldset(_("Рабочая информация"),
+                Field("job_title", css_class="mb-4"), Field("department", css_class="mb-4"),
+                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
             ),
-             Fieldset(
-                  _("Аватар"),
-                  Field("image"),
-             )
-             # Кнопки будут добавлены в шаблоне
+            Fieldset(_("Аватар"), Field("image"))
         )
 
     def clean_email(self):
@@ -148,226 +188,177 @@ class UserCreateForm(BaseUserCreationForm):
             raise ValidationError(_("Пользователь с таким email уже существует."))
         return email
 
-# ==============================================================================
-# Form for User Update (for Admin/Staff)
-# ==============================================================================
+
 class UserUpdateForm(forms.ModelForm):
-    # Явно определяем поля, для которых нужны специальные виджеты или queryset
-    groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all().order_by('name'),
-        required=False,
-        widget=forms.SelectMultiple(attrs={'class': 'select2-multiple', 'data-placeholder': _("Выберите группы...")}),
-        label=_("Группы прав")
+    email = forms.EmailField(required=True, label=_("Email"), widget=forms.EmailInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': 'your@email.com'}))
+    first_name = forms.CharField(max_length=150, required=False, label=_("Имя"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
+    last_name = forms.CharField(max_length=150, required=False, label=_("Фамилия"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
+    phone_number = forms.CharField(max_length=25, required=False, label=_("Номер телефона"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
+    job_title = forms.ModelChoiceField(
+        queryset=JobTitle.objects.all().order_by('name'), required=False, label=_("Должность"),
+        widget=Select2Widget(attrs={'data-placeholder': _("Выберите должность...")})
     )
     department = forms.ModelChoiceField(
-        queryset=Department.objects.all().order_by('name'),
-        required=False,
-        label=_("Отдел"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите отдел...")})
+        queryset=Department.objects.all().order_by('name'), required=False, label=_("Отдел"),
+        widget=Select2Widget(attrs={'data-placeholder': _("Выберите отдел...")})
     )
-    job_title = forms.ModelChoiceField(
-        queryset=JobTitle.objects.all().order_by('name'),
-        required=False,
-        label=_("Должность"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите должность...")})
+    image = forms.ImageField(required=False, label=_("Аватар"), widget=forms.ClearableFileInput(attrs={'class': FILE_INPUT_CLASSES}))
+    groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.all().order_by('name'), required=False,
+        widget=Select2MultipleWidget(attrs={'data-placeholder': _("Выберите группы...")}), label=_("Группы прав")
     )
-    image = forms.ImageField(required=False, label=_("Аватар"), widget=forms.ClearableFileInput)
-    is_active = forms.BooleanField(required=False, label=_("Активен"), widget=forms.CheckboxInput()) # Упрощенный виджет
-    is_staff = forms.BooleanField(required=False, label=_("Сотрудник (доступ в админку)"), widget=forms.CheckboxInput()) # Упрощенный виджет
+    is_active = forms.BooleanField(required=False, label=_("Активен"), widget=forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}))
+    is_staff = forms.BooleanField(required=False, label=_("Сотрудник (доступ в админку)"), widget=forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}))
+
 
     class Meta:
         model = User
-        # Перечисляем все поля, которые должны быть в форме
         fields = [
             'username', 'email', 'first_name', 'last_name', 'phone_number',
             'job_title', 'department', 'image', 'is_active', 'is_staff', 'groups'
         ]
-        # Виджеты для простых полей, если нужны плейсхолдеры
-        widgets = {
-            'username': forms.TextInput(attrs={'placeholder': _("Имя пользователя (логин)")}),
-            'email': forms.EmailInput(attrs={'placeholder': 'your@email.com'}),
-            'first_name': forms.TextInput(attrs={'placeholder': _("Имя")}),
-            'last_name': forms.TextInput(attrs={'placeholder': _("Фамилия")}),
-            'phone_number': forms.TextInput(attrs={'placeholder': _("Номер телефона")}),
-            # Для ForeignKey и ManyToMany виджеты определены выше
-            # Для BooleanField и ImageField тоже определены выше
+        widgets = { # For fields not explicitly defined above
+            'username': forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _("Логин (нельзя изменить)")}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['username'].disabled = True # Username usually not changed after creation
+
         self.helper = FormHelper(self)
         self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
-        # Структурируем форму с помощью Layout и Fieldset
         self.helper.layout = Layout(
-             Fieldset( _("Основная информация"),
-                 Field('username'), Field('email'), Field('first_name'),
-                 Field('last_name'), Field('phone_number'),
-                 css_class="border-b border-stroke dark:border-strokedark pb-4 mb-4"
-             ),
-             Fieldset( _("Рабочая информация"),
-                 Field('job_title', css_class='select2-single'), # Класс для JS
-                 Field('department', css_class='select2-single'), # Класс для JS
-                 css_class="border-b border-stroke dark:border-strokedark pb-4 mb-4"
-             ),
-             Fieldset( _("Аватар"),
-                 Field('image'),
-                 css_class="border-b border-stroke dark:border-strokedark pb-4 mb-4"
-             ),
-             Fieldset( _("Права и статус"),
-                 # Оборачиваем чекбоксы для лучшего отображения с crispy-tailwind
-                 Div(Field('is_active'), css_class='mb-2'),
-                 Div(Field('is_staff'), css_class='mb-4'),
-                 Field('groups', css_class='select2-multiple'), # Класс для JS
-             ),
-             # Кнопки будут в шаблоне
+            Fieldset(_("Учетные данные (только просмотр)"),
+                Field("username"), css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+            ),
+            Fieldset(_("Контактная и личная информация"),
+                Field("email"),
+                Row(Column(Field("first_name"), css_class="md:w-1/2 px-2"), Column(Field("last_name"), css_class="md:w-1/2 px-2"), css_class="flex flex-wrap -mx-2 mb-4"),
+                Field("phone_number", css_class="mb-4"),
+                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+            ),
+            Fieldset(_("Рабочая информация"),
+                Field("job_title", css_class="mb-4"), Field("department", css_class="mb-4"),
+                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+            ),
+            Fieldset(_("Аватар"), Field("image"), css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"),
+            Fieldset(_("Права и статус"),
+                Div(Field("is_active"), css_class="mb-3"), Div(Field("is_staff"), css_class="mb-4"),
+                Field("groups")
+            )
         )
 
     def clean_email(self):
-        email = self.cleaned_data.get('email');
-        # Проверка уникальности email при редактировании (исключая текущего пользователя)
-        if email and self.instance and self.instance.pk and email.lower() != self.instance.email.lower():
+        email = self.cleaned_data.get('email')
+        if email and self.instance and self.instance.pk:
             if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
                  raise ValidationError(_("Пользователь с таким email уже существует."))
         return email
 
-class UserProfileEditForm(forms.ModelForm):
-    # Явно определяем поля, чтобы контролировать виджеты и порядок
-    first_name = forms.CharField(max_length=150, required=False, label=_("Имя"))
-    last_name = forms.CharField(max_length=150, required=False, label=_("Фамилия"))
-    phone_number = forms.CharField(max_length=20, required=False, label=_("Номер телефона"))
-    job_title = forms.ModelChoiceField( # <-- Исправлено
-        queryset=JobTitle.objects.all().order_by('name'),
-        required=False,
-        label=_("Должность"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите должность...")})
-    )
-    department = forms.ModelChoiceField(
-        queryset=Department.objects.all().order_by('name'),
-        required=False, label=_("Отдел"),
-        widget=forms.Select(attrs={'class': 'form-select select2-single', 'data-placeholder': _("Выберите отдел...")})
-    )
-    image = forms.ImageField(required=False, label=_("Аватар"), widget=forms.ClearableFileInput)
-    # Поля настроек, не связанные напрямую с моделью
-    enable_email_notifications = forms.BooleanField(
-        required=False,
-        label=_("Получать уведомления по Email"),
-        # Используем стандартный CheckboxInput, crispy-tailwind должен его стилизовать
-        widget=forms.CheckboxInput()
-    )
+
+class UserProfileEditForm(forms.ModelForm): # For user to edit their own profile
+    first_name = forms.CharField(max_length=150, required=False, label=_("Имя"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
+    last_name = forms.CharField(max_length=150, required=False, label=_("Фамилия"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
+    phone_number = forms.CharField(max_length=25, required=False, label=_("Номер телефона"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
+    image = forms.ImageField(required=False, label=_("Аватар"), widget=forms.ClearableFileInput(attrs={'class': FILE_INPUT_CLASSES}))
+    
+    # Settings fields (not directly on User model, handled in save method)
+    enable_email_notifications = forms.BooleanField(required=False, label=_("Получать уведомления по Email"), widget=forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}))
     tasks_per_page = forms.IntegerField(
-        required=False, label=_("Задач на странице по умолчанию"),
-        min_value=5, max_value=100,
-        # Используем стандартный NumberInput, crispy-tailwind стилизует
-        widget=forms.NumberInput(attrs={'placeholder': '15'}),
-        help_text=_("От 5 до 100")
+        required=False, label=_("Задач на странице по умолчанию"), min_value=5, max_value=100,
+        widget=forms.NumberInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': '15'}), help_text=_("От 5 до 100")
     )
 
     class Meta:
         model = User
-        # Поля модели, которые редактируются этой формой
-        fields = [ 'first_name', 'last_name', 'phone_number', 'job_title', 'department', 'image' ]
-        # Можно добавить виджеты для простых полей здесь, если нужны плейсхолдеры
-        widgets = {
-             'first_name': forms.TextInput(attrs={'placeholder': _("Ваше имя")}),
-             'last_name': forms.TextInput(attrs={'placeholder': _("Ваша фамилия")}),
-             'phone_number': forms.TextInput(attrs={'placeholder': _("Контактный телефон")}),
-        }
-
+        fields = ['first_name', 'last_name', 'phone_number', 'image']
+        # JobTitle and Department are usually set by admin, not by user themselves in basic profile edit.
+        # If they should be editable by user, add them here and to layout.
 
     def __init__(self, *args, **kwargs):
-        # Получаем пользователя из instance для инициализации полей настроек
-        user = kwargs.get('instance')
-        initial = kwargs.get('initial', {})
-        if user and isinstance(user.settings, dict):
-            initial['enable_email_notifications'] = user.settings.get('enable_email_notifications', True)
-            initial['tasks_per_page'] = user.settings.get('tasks_per_page', 15)
+        user_instance = kwargs.get('instance')
+        initial_data = kwargs.get('initial', {})
+        if user_instance and isinstance(user_instance.settings, dict):
+            initial_data['enable_email_notifications'] = user_instance.settings.get('enable_email_notifications', True)
+            initial_data['tasks_per_page'] = user_instance.settings.get('tasks_per_page', 15)
         else:
-            # Значения по умолчанию, если пользователя нет или settings не словарь
-            initial.setdefault('enable_email_notifications', True)
-            initial.setdefault('tasks_per_page', 15)
-        kwargs['initial'] = initial # Передаем обновленный initial
+            initial_data.setdefault('enable_email_notifications', True)
+            initial_data.setdefault('tasks_per_page', 15)
+        kwargs['initial'] = initial_data
 
         super().__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
-        # Определяем Layout, соответствующий шаблону TailAdmin
         self.helper.layout = Layout(
-             Fieldset( _("Личная информация"),
-                 Field('first_name'), Field('last_name'), Field('phone_number'),
-                 css_class='border-b border-stroke dark:border-strokedark pb-4 mb-4'), # Стиль из шаблона
-             Fieldset( _("Рабочая информация"),
-                 Field('job_title', css_class='select2-single'), # Класс для JS
-                 Field('department', css_class='select2-single'), # Класс для JS
-                 css_class='border-b border-stroke dark:border-strokedark pb-4 mb-4'),
-             Fieldset( _("Аватар"),
-                 Field('image'),
-                 css_class='border-b border-stroke dark:border-strokedark pb-4 mb-4'),
-             Fieldset( _("Настройки уведомлений и интерфейса"),
-                 # Оборачиваем чекбокс и поле числа для лучшего контроля разметки
+             Fieldset(_("Личная информация"),
+                 Row(Column(Field("first_name"), css_class="md:w-1/2 px-2"), Column(Field("last_name"), css_class="md:w-1/2 px-2"), css_class="flex flex-wrap -mx-2 mb-4"),
+                 Field("phone_number", css_class="mb-4"),
+                 css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+             ),
+             Fieldset(_("Аватар"), Field("image"), css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"),
+             Fieldset(_("Настройки уведомлений и интерфейса"),
                  Div(Field('enable_email_notifications'), css_class='mb-3'),
-                 Div(Field('tasks_per_page'), css_class='mb-3 w-full md:w-1/4'), # Ограничим ширину поля
+                 Div(Field('tasks_per_page', css_class="w-full sm:w-1/3"), css_class='mb-3'),
              )
-             # Кнопки будут в шаблоне
         )
 
     def save(self, commit=True):
-        user = super().save(commit=False) # Получаем объект пользователя без сохранения в БД
-
+        user = super().save(commit=False)
         settings_changed = False
-        # Гарантируем, что settings является словарем
-        if not isinstance(user.settings, dict):
-            user.settings = {}
+        if not isinstance(user.settings, dict): user.settings = {}
 
-        # Обрабатываем поле 'enable_email_notifications'
-        # cleaned_data содержит значение из формы, если оно было отправлено (даже False)
         if 'enable_email_notifications' in self.cleaned_data:
-            email_notif_value = self.cleaned_data['enable_email_notifications']
-            if user.settings.get('enable_email_notifications', True) != email_notif_value:
-                user.settings['enable_email_notifications'] = email_notif_value
+            new_val = self.cleaned_data['enable_email_notifications']
+            if user.settings.get('enable_email_notifications', True) != new_val:
+                user.settings['enable_email_notifications'] = new_val
                 settings_changed = True
-        # Если поле не было в форме (редко, но возможно), оставляем старое значение
-
-        # Обрабатываем поле 'tasks_per_page'
+        
         if 'tasks_per_page' in self.cleaned_data:
-             tasks_page_value = self.cleaned_data.get('tasks_per_page') # Может быть None, если поле пустое и не required
-             # Сравниваем с текущим значением (или None, если его нет)
-             if tasks_page_value is not None and user.settings.get('tasks_per_page') != tasks_page_value:
-                  user.settings['tasks_per_page'] = tasks_page_value
-                  settings_changed = True
-             elif tasks_page_value is None and 'tasks_per_page' in user.settings:
-                  # Если пользователь очистил поле, удаляем настройку (или ставим дефолт?)
-                  # Пока удалим:
-                  del user.settings['tasks_per_page']
-                  settings_changed = True
+            new_val = self.cleaned_data.get('tasks_per_page')
+            if new_val is not None and user.settings.get('tasks_per_page') != new_val:
+                user.settings['tasks_per_page'] = new_val
+                settings_changed = True
+            elif new_val is None and 'tasks_per_page' in user.settings:
+                 del user.settings['tasks_per_page']
+                 settings_changed = True
 
         if commit:
-            # Определяем, какие поля модели (из Meta.fields) изменились
             model_fields_to_update = [field for field in self.changed_data if field in self.Meta.fields]
-
-            # Если изменились настройки, добавляем поле 'settings' к списку для обновления
-            if settings_changed:
-                if 'settings' not in model_fields_to_update:
-                     model_fields_to_update.append('settings')
-
-            # Сохраняем только измененные поля
+            if settings_changed and 'settings' not in model_fields_to_update:
+                 model_fields_to_update.append('settings')
             if model_fields_to_update:
                  user.save(update_fields=model_fields_to_update)
-                 logger.info(f"User profile {user.username} updated fields: {model_fields_to_update}")
-            else:
-                 logger.info(f"User profile {user.username}: No changes detected in model fields or settings.")
+            # else: no changes to save
         return user
 
+
 class LoginForm(AuthenticationForm):
-    username = forms.CharField(widget=forms.TextInput(attrs={'placeholder': _('Имя пользователя или Email')}))
-    password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': _('Пароль')}))
+    username = forms.CharField(label=_("Имя пользователя или Email"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _('Логин или Email'), 'autofocus': True}))
+    password = forms.CharField(label=_("Пароль"), widget=forms.PasswordInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _('Пароль')}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.helper.form_tag = False
-        self.helper.disable_csrf = True
+        self.helper.form_tag = False # Form tag is in template
+        self.helper.disable_csrf = True # CSRF token in template
         self.helper.layout = Layout(
-            Field("username", css_class="mb-3"), # Используем классы Tailwind/Bootstrap по необходимости
-            Field("password", css_class="mb-3"),
-            # Кнопка рендерится в шаблоне registration/login.html
+            Field("username", css_class="mb-4"),
+            Field("password", css_class="mb-4"),
+        )
+
+class UserPasswordChangeForm(BasePasswordChangeForm):
+    old_password = forms.CharField(label=_("Старый пароль"), widget=forms.PasswordInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _("Введите старый пароль"), 'autofocus': True}))
+    new_password1 = forms.CharField(label=_("Новый пароль"), widget=forms.PasswordInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _("Введите новый пароль")}))
+    new_password2 = forms.CharField(label=_("Подтверждение нового пароля"), widget=forms.PasswordInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _("Повторите новый пароль")}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['new_password2'].help_text = None # Remove default help text
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
+        self.helper.layout = Layout(
+            Field("old_password", css_class="mb-4"),
+            Field("new_password1", css_class="mb-4"),
+            Field("new_password2", css_class="mb-4"),
         )

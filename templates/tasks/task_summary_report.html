@@ -4,7 +4,7 @@
 {% block title %}{% trans "Сводный отчет по задачам" %}{% endblock %}
 
 {% block list_title %}
-<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl text-center mb-8">
+<h1 class="text-3xl font-semibold text-gray-900 sm:text-4xl text-center mb-8">
     {% trans "Сводный отчет по задачам" %}
 </h1>
 {% endblock %}
@@ -27,12 +27,12 @@
             {% for status_tuple in report_data %} {# Assuming report_data is a list of (status_display_name, count) tuples #}
                 <tr class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150">
                     <td class="px-5 py-4 border-b border-gray-200 dark:border-dark-600 text-sm">
-                        <p class="text-gray-900 dark:text-gray-100 whitespace-no-wrap">
+                        <p class="text-gray-900 whitespace-no-wrap">
                             {{ status_tuple.0 }} {# Status display name #}
                         </p>
                     </td>
                     <td class="px-5 py-4 border-b border-gray-200 dark:border-dark-600 text-sm text-right">
-                        <p class="text-gray-900 dark:text-gray-100 whitespace-no-wrap">
+                        <p class="text-gray-900 whitespace-no-wrap">
                             {{ status_tuple.1 }} {# Task count #}
                         </p>
                     </td>

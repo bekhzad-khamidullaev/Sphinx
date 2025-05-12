@@ -1,194 +1,140 @@
-{% extends 'base.html' %} {# Наследуемся от вашего базового шаблона #}
-{% load i18n static crispy_forms_tags %} {# Загружаем необходимые теги #}
+{% extends 'base.html' %}
+{% load i18n static crispy_forms_tags app_filters %}
 
-{% block title %}{{ page_title }}{% endblock %} {# Устанавливаем заголовок страницы #}
+{% block title %}{{ page_title|default:_("Мой профиль") }}{% endblock %}
 
-{% block list_title %} {# Используем этот блок для заголовка и кнопок действий #}
+{% block page_title_block %}
   <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    {# Динамический заголовок из контекста представления #}
-    <h2 class="text-title-md2 font-bold text-black dark:text-white">
-      {{ page_title }}
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+      {{ page_title|default:_("Мой профиль") }}
     </h2>
-
-    <nav class="flex items-center gap-4">
-      {# Опционально: хлебные крошки #}
-      {# <ol class="flex items-center gap-2">
-        <li><a class="font-medium" href="{% url 'dashboard:home' %}">{% trans "Dashboard" %} /</a></li>
-        <li class="font-medium text-primary">{% trans "Profile" %}</li>
-      </ol> #}
-
-      {# Кнопка для перехода на страницу смены пароля #}
-      <a href="{% url 'user_profiles:password_change' %}" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 lg:px-6 xl:px-7 transition active:scale-95 shadow-sm whitespace-nowrap">
-          <i class="fas fa-key mr-2"></i> {% trans "Сменить пароль" %}
+    <nav class="flex items-center gap-3">
+      <a href="{% url 'user_profiles:password_change' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 dark:bg-ios-blue px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-500 lg:px-5 transition active:scale-95 shadow-sm whitespace-nowrap">
+          <i class="fas fa-key mr-2"></i> {% translate "Сменить пароль" %}
       </a>
     </nav>
   </div>
 {% endblock %}
 
-
-{% block list_content %} {# Основное содержимое страницы профиля #}
-{# Внешний контейнер с рамкой и тенью в стиле TailAdmin #}
-<div class="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-
-  {# --- Обложка профиля (статичная) --- #}
-  <div class="relative z-10 h-35 md:h-50"> {# Высота обложки #}
-    <img
-      src="{% static 'img/covers/cover-01.png' %}" {# Убедитесь, что путь к картинке верный #}
-      alt="{% trans "Обложка профиля" %}"
-      class="h-full w-full rounded-tl-sm rounded-tr-sm object-cover object-center"
-    />
-    {# Кнопка редактирования обложки убрана для простоты #}
+{% block content %}
+<div class="overflow-hidden rounded-xl border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 shadow-lg">
+  <div class="relative z-10 h-36 md:h-48 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-ios-blue dark:to-ios-indigo">
   </div>
 
-  {# --- Блок с аватаром и основной информацией --- #}
-  <div class="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
-    {# Аватар пользователя #}
-    <div class="relative z-20 mx-auto -mt-22 h-30 w-full max-w-30 rounded-full bg-white/20 p-1 backdrop-blur sm:h-36 sm:max-w-36 sm:p-2">
-       {# Отображаем аватар пользователя или заглушку #}
-       <img class="h-full w-full rounded-full object-cover"
-            src="{% if profile_user.image %}{{ profile_user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" {# Проверьте путь к 'user.svg' #}
-            alt="{{ profile_user.display_name }}">
-       {# Редактирование аватара происходит через поле 'image' в форме ниже #}
+  <div class="px-4 pb-6 text-center lg:pb-8 xl:pb-10">
+    <div class="relative z-20 mx-auto -mt-20 h-32 w-full max-w-32 rounded-full bg-white/30 dark:bg-dark-900/30 p-1.5 backdrop-blur-sm sm:h-36 sm:max-w-36 shadow-lg">
+       <img class="h-full w-full rounded-full object-cover border-2 border-white dark:border-dark-800" src="{% if profile_user.image %}{{ profile_user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ profile_user.display_name }}">
     </div>
 
-    {# Имя, username, email, должность, отдел #}
     <div class="mt-4">
-      <h3 class="mb-1.5 text-2xl font-semibold text-black dark:text-white">
-        {{ profile_user.display_name }}
-      </h3>
-      <p class="mb-1 text-sm font-medium text-gray-600 dark:text-gray-400">@{{ profile_user.username }}</p>
-      <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">{{ profile_user.email }}</p>
-      <p class="mb-3 text-sm font-medium">
+      <h3 class="mb-1.5 text-2xl font-semibold text-gray-900 dark:text-white">{{ profile_user.display_name }}</h3>
+      <p class="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">@{{ profile_user.username }}</p>
+      <p class="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">{{ profile_user.email }}</p>
+      <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
         {% if profile_user.job_title %}
-          <i class="fas fa-briefcase mr-1 opacity-70"></i> {{ profile_user.job_title.name }}
+          <i class="fas fa-briefcase mr-1.5 opacity-70"></i> {{ profile_user.job_title.name }}
         {% endif %}
         {% if profile_user.department %}
-          {% if profile_user.job_title %}<span class="mx-1">|</span>{% endif %} {# Разделитель, если есть должность #}
-          <i class="fas fa-building mr-1 opacity-70"></i> {{ profile_user.department.name }}
+          {% if profile_user.job_title %}<span class="mx-1.5 text-gray-400 dark:text-gray-600">|</span>{% endif %}
+          <i class="fas fa-building mr-1.5 opacity-70"></i> {{ profile_user.department.name }}
         {% endif %}
         {% if not profile_user.job_title and not profile_user.department %}
-            <span class="italic text-gray-500 dark:text-gray-400">{% trans "Должность/отдел не указаны" %}</span>
+            <span class="italic text-gray-500 dark:text-gray-400">{% translate "Должность/отдел не указаны" %}</span>
         {% endif %}
       </p>
     </div>
 
-    {# --- Сетка для формы редактирования и истории задач --- #}
     <div class="mx-auto mt-6 max-w-5xl">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left">
-
-            {# --- Колонка формы редактирования (2/3 ширины на LG экранах) --- #}
             <div class="lg:col-span-2">
-                <div class="rounded-sm border border-stroke bg-gray-50 dark:border-strokedark dark:bg-boxdark-2 p-6 md:p-8 shadow-sm">
-                   <h4 class="mb-5 text-xl font-semibold text-black dark:text-white">
-                     <i class="fas fa-user-edit mr-2 opacity-80"></i>{% trans "Редактирование профиля" %}
+                <div class="rounded-lg border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 p-6 shadow-md">
+                   <h4 class="mb-5 text-xl font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-dark-600 pb-3">
+                     <i class="fas fa-user-edit mr-2 opacity-80"></i>{% translate "Редактирование профиля" %}
                    </h4>
-                    {# Начало формы #}
                     <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %} {# Защита от CSRF атак #}
-
-                        {# Рендеринг полей формы с помощью crispy-forms и шаблона tailwind #}
+                        {% csrf_token %}
                         {% crispy form %}
-
-                        {# Отображение не-полевых ошибок формы #}
                         {% if form.non_field_errors %}
-                            <div role="alert" class="mt-4 p-4 border border-danger/50 bg-danger/10 text-danger rounded-md dark:border-danger/70 dark:bg-danger/20 dark:text-red-400">
-                                <h4 class="font-bold mb-1">{% trans "Ошибка сохранения:" %}</h4>
-                                {% for error in form.non_field_errors %}
-                                    <p class="text-sm">{{ error }}</p>
-                                {% endfor %}
+                            <div role="alert" class="mt-4 p-3 border border-red-300 bg-red-50 text-red-700 dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300 rounded-md">
+                                <h4 class="font-bold mb-1">{% translate "Ошибка сохранения:" %}</h4>
+                                {% for error in form.non_field_errors %}<p class="text-sm">{{ error }}</p>{% endfor %}
                             </div>
                         {% endif %}
-
-                        {# Кнопка сохранения формы #}
-                        <div class="flex justify-end mt-6 pt-5 border-t border-stroke dark:border-strokedark">
-                            <button type="submit" class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-center font-medium text-white hover:bg-opacity-90 transition active:scale-95 shadow-sm">
-                                <i class="fas fa-save mr-2"></i> {% trans "Сохранить изменения" %}
+                        <div class="flex justify-end mt-6 pt-5 border-t border-gray-200 dark:border-dark-600">
+                            <button type="submit" class="flex justify-center rounded-md bg-blue-600 dark:bg-ios-blue px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-500 shadow-sm transition active:scale-95">   
+                                <i class="fas fa-save mr-2 mt-0.5"></i> {% translate "Сохранить изменения" %}
                             </button>
                         </div>
-                    </form> {# Конец формы #}
+                    </form>
                 </div>
-            </div> {# Конец колонки формы #}
+            </div>
 
-            {# --- Колонка истории задач (1/3 ширины на LG экранах) --- #}
             <div class="lg:col-span-1">
-                <div class="rounded-sm border border-stroke bg-gray-50 dark:border-strokedark dark:bg-boxdark-2 p-6 shadow-sm">
-                  <h4 class="mb-4 text-lg font-semibold text-black dark:text-white">
-                    <i class="fas fa-history mr-2 opacity-80"></i>{% trans 'История задач' %}
+                <div class="rounded-lg border border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 p-6 shadow-md">
+                  <h4 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-dark-600 pb-3">
+                    <i class="fas fa-history mr-2 opacity-80"></i>{% translate 'История задач' %}
                   </h4>
-                  {# Проверяем, есть ли задачи в истории #}
                   {% if task_history_page.object_list %}
-                      {# Список задач с прокруткой #}
-                      <ul class="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-dark-600 scrollbar-track-transparent">
+                      <ul class="space-y-3 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-dark-600 scrollbar-track-transparent">
                           {% for task in task_history_page.object_list %}
-                              <li class="p-3 rounded-md border border-stroke dark:border-strokedark hover:bg-gray-100 dark:hover:bg-dark-700 transition">
-                                  {# Ссылка на страницу задачи #}
+                              <li class="p-3 rounded-md border border-gray-100 dark:border-dark-600 bg-gray-50 dark:bg-dark-700/50 hover:shadow-sm transition">
                                   <a href="{{ task.get_absolute_url }}" class="block">
                                       <div class="flex justify-between items-center mb-1">
-                                          {# Номер задачи #}
-                                          <span class="font-medium text-sm text-primary dark:text-blue-400 hover:underline">#{{ task.task_number }}</span>
-                                          {# Статус задачи с условной стилизацией #}
-                                          <span class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full
-                                              {% if task.status == 'new' %}bg-gray-200 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200{% elif task.status == 'on_hold' %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200{% elif task.status == 'canceled' %}bg-gray-200 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through{% elif task.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200{% elif task.status == 'overdue' %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200{% else %}bg-gray-200 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
-                                              {{ task.get_status_display }}
-                                          </span>
+                                          <span class="font-medium text-sm text-blue-600 dark:text-blue-400 hover:underline">#{{ task.task_number|default:task.id }}</span>
+                                          {% include "tasks/includes/status_badge_condensed.html" with status=task.status %}
                                       </div>
-                                      {# Заголовок задачи #}
-                                      <p class="text-sm font-medium text-black dark:text-white truncate" title="{{ task.title }}">{{ task.title }}</p>
-                                      {# Дополнительная информация: проект и время обновления #}
+                                      <p class="text-sm font-medium text-gray-800 dark:text-white truncate" title="{{ task.title }}">{{ task.title }}</p>    
                                       <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                          {% trans "Проект:" %} {{ task.project.name }} | {% trans "Обновлено:" %} {{ task.updated_at|timesince }} {% trans "назад" %}
+                                          {% if task.project %}{% trans "Проект:" %} {{ task.project.name }} | {% endif %}
+                                          {% trans "Обновлено:" %} {{ task.updated_at|timesince }} {% trans "назад" %}
                                       </p>
                                   </a>
                               </li>
                           {% endfor %}
                       </ul>
-                      {# Пагинация для истории задач #}
                       {% if task_history_page.paginator.num_pages > 1 %}
                           <div class="mt-4 text-center">
                               {% include "includes/pagination_simple.html" with page_obj=task_history_page param_name='task_page' %}
                           </div>
                       {% endif %}
-                  {% else %} {# Если задач нет #}
-                      <p class="text-gray-500 dark:text-gray-400 italic text-sm text-center py-6">{% trans "Нет задач для отображения в истории." %}</p>
+                  {% else %}
+                      <p class="text-gray-500 dark:text-gray-400 italic text-sm text-center py-6">{% translate "Нет задач для отображения в истории." %}</p>
                   {% endif %}
               </div>
-            </div> {# Конец колонки истории задач #}
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
 
-        </div> {# Конец grid #}
-    </div> {# Конец обертки для формы и истории #}
-
-  </div> {# Конец блока с аватаром и основной информацией #}
-</div> {# Конец внешнего контейнера #}
-{% endblock %} {# Конец блока list_content #}
-
-{% block scripts %}
-    {{ block.super }} {# Включаем скрипты из базового шаблона (важно для Toastify и др.) #}
-
-    {# Подключаем JS-медиа самой формы (например, для ClearableFileInput или других виджетов Django) #}
+{% block body_extra_js %}
+    {{ block.super }}
     {{ form.media.js }}
-
-    {# Если форма использует Select2 (для job_title, department), подключаем JS #}
     {% if form.fields.department or form.fields.job_title %}
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-        {% if LANGUAGE_CODE == 'ru' %}
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+        {% get_current_language as LANGUAGE_CODE %}
+        {% if LANGUAGE_CODE %}
+            <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2' }}.js" defer></script>
         {% endif %}
-        <script>
-            $(document).ready(function() {
-                const defaultOptions = {
-                    theme: "default", width: '100%', allowClear: true,
-                    language: "{{ LANGUAGE_CODE|slice:':2'|default:'en' }}"
-                };
-                try {
-                    $('.select2-single').select2({
-                        ...defaultOptions,
-                        placeholder: $(this).data('placeholder') || '{% trans "Выберите значение" %}',
-                    });
-                } catch (e) { console.error("Error initializing Select2 single:", e); }
+        <script defer>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof $ !== 'undefined' && $.fn.select2) {
+                    const defaultSelect2Options = {
+                        theme: "default", width: '100%', allowClear: true,
+                        language: "{{ LANGUAGE_CODE|slice:':2'|default:'en' }}"
+                    };
+                    try {
+                        $('#id_job_title, #id_department').each(function() {
+                            $(this).select2({ ...defaultSelect2Options, placeholder: $(this).data('placeholder') || '{% translate "Выберите..." %}' });
+                        });
+                    } catch (e) { console.error("Error initializing Select2 for profile form:", e); }
+                } else {
+                    console.warn("jQuery or Select2 not available for user_profile.html");
+                }
             });
         </script>
     {% endif %}
-
-{% endblock %}
+{% endblock body_extra_js %}

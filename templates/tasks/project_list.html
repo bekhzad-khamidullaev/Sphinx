@@ -4,7 +4,7 @@
 {% block title %}{% trans "Проекты" %}{% endblock %}
 
 {% block list_title %}
-<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
+<h1 class="text-3xl font-semibold text-gray-900 sm:text-4xl">
     {% trans 'Проекты' %}
 </h1>
 {% endblock %}
@@ -44,7 +44,7 @@
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{{ project.start_date|date:"d.m.Y"|default:"-" }}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{{ project.end_date|date:"d.m.Y"|default:"-" }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-center text-gray-600 dark:text-gray-400">{{ project.tasks.count }}</td> {# project.tasks.count is correct #}
+                <td class="px-4 py-3 whitespace-nowrap text-center text-gray-600 dark:text-gray-400">{{ project.tasks.count }}</td>
                 <td class="px-4 py-3 text-center whitespace-nowrap">
                     <div class="flex items-center justify-center space-x-1">
                         <a href="{{ project.get_absolute_url }}" title="{% trans 'Просмотреть задачи' %}" class="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 transition-colors"><i class="fas fa-eye fa-fw" aria-hidden="true"></i></a>

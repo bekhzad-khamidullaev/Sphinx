@@ -1,29 +1,29 @@
 {% extends 'base.html' %}
 {% load i18n app_filters static widget_tweaks %}
 
-{% block title %}{{ task.title }} - {{ task.task_number|default:task.pk }}{% endblock %}
+{% block title %}{{ task_instance.title }} - {{ task_instance.task_number|default:task_instance.pk }}{% endblock %}
 
 {% block list_title %}
 <div class="flex items-center justify-between flex-wrap gap-4">
     <div>
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl flex items-center">
-            <span class="text-gray-400 dark:text-gray-500 mr-2">#{{ task.task_number|default:task.pk }}</span> {{ task.title }}
+        <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl flex items-center">
+            <span class="text-gray-400 dark:text-gray-500 mr-2">#{{ task_instance.task_number|default:task_instance.pk }}</span> {{ task_instance.title }}
         </h1>
-        {% if task.project %}
+        {% if task_instance.project %}
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {% blocktrans with project_name=task.project.name %}Проект: <a href="{{ task.project.get_absolute_url }}" class="hover:underline">{{ project_name }}</a>{% endblocktrans %}
+            {% blocktrans with project_name=task_instance.project.name %}Проект: <a href="{{ task_instance.project.get_absolute_url }}" class="hover:underline">{{ project_name }}</a>{% endblocktrans %}
         </p>
         {% endif %}
     </div>
     <div class="flex space-x-3 flex-shrink-0">
-        {% if perms.tasks.change_task %} {# Or use task.has_permission template tag/method #}
-        <a href="{% url 'tasks:task_update' pk=task.pk %}"
+        {% if perms.tasks.change_task or can_change_task %} {# Use context var from view #}
+        <a href="{% url 'tasks:task_update' pk=task_instance.pk %}"
             class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-gray-900 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 dark:bg-ios-yellow dark:text-black dark:hover:bg-yellow-300 dark:focus:ring-offset-dark-800 transition-all">
             <i class="fas fa-edit mr-2" aria-hidden="true"></i> {% trans 'Редактировать' %}
         </a>
         {% endif %}
-        {% if perms.tasks.delete_task %} {# Or use task.has_permission template tag/method #}
-        <a href="{% url 'tasks:task_delete' pk=task.pk %}"
+        {% if perms.tasks.delete_task or can_delete_task %} {# Use context var from view #}
+        <a href="{% url 'tasks:task_delete' pk=task_instance.pk %}"
             class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-ios-red dark:hover:bg-red-400 dark:focus:ring-offset-dark-800 transition-all">
             <i class="fas fa-trash mr-2" aria-hidden="true"></i> {% trans 'Удалить' %}
         </a>
@@ -37,44 +37,44 @@
 {% endblock %}
 
 {% block list_content %}
-<div id="task-detail-container" class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 mt-6" data-task-id="{{ task.pk }}">
+<div id="task-detail-container" class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 mt-6" data-task-id="{{ task_instance.pk }}">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="md:col-span-2 space-y-6">
             <div class="flex flex-wrap gap-4 items-center">
                 <div>
                     <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Статус' %}</span>
                     <span id="task-status-badge" class="status-badge px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
-                        {% if task.status == task.StatusChoices.NEW %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200
-                        {% elif task.status == task.StatusChoices.IN_PROGRESS %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200
-                        {% elif task.status == task.StatusChoices.ON_HOLD %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200
-                        {% elif task.status == task.StatusChoices.CANCELLED %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through
-                        {% elif task.status == task.StatusChoices.COMPLETED %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200
-                        {% elif task.status == task.StatusChoices.OVERDUE %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200
+                        {% if task_instance.status == task_instance.StatusChoices.NEW %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200
+                        {% elif task_instance.status == task_instance.StatusChoices.IN_PROGRESS %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200
+                        {% elif task_instance.status == task_instance.StatusChoices.ON_HOLD %}bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200
+                        {% elif task_instance.status == task_instance.StatusChoices.CANCELLED %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through
+                        {% elif task_instance.status == task_instance.StatusChoices.COMPLETED %}bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200
+                        {% elif task_instance.status == task_instance.StatusChoices.OVERDUE %}bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200
                         {% else %}bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200{% endif %}">
-                        {{ task.status_display }}
+                        {{ task_instance.status_display }}
                     </span>
                 </div>
                 <div>
                     <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Приоритет' %}</span>
-                    <p class="text-gray-800 dark:text-gray-100 font-medium text-sm">{{ task.priority_display }}</p>
+                    <p class="text-gray-800 font-medium text-sm">{{ task_instance.priority_display }}</p>
                 </div>
             </div>
 
-            {% if task.description %}
+            {% if task_instance.description %}
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">{% trans 'Описание' %}</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">{% trans 'Описание' %}</h3>
                 <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 mt-3">
-                    {{ task.description|linebreaksbr }}
+                    {{ task_instance.description|linebreaksbr }}
                 </div>
             </div>
             {% endif %}
 
-            {% if task.category or task.subcategory %}
+            {% if task_instance.category or task_instance.subcategory %}
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">{% trans 'Категоризация' %}</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2 border-b border-gray-200 dark:border-dark-600 pb-2">{% trans 'Категоризация' %}</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-3">
-                    {% if task.category %}Категория: <span class="font-medium">{{ task.category.name }}</span>{% if task.subcategory %} / {% endif %}{% endif %}
-                    {% if task.subcategory %}Подкатегория: <span class="font-medium">{{ task.subcategory.name }}</span>{% endif %}
+                    {% if task_instance.category %}Категория: <span class="font-medium">{{ task_instance.category.name }}</span>{% if task_instance.subcategory %} / {% endif %}{% endif %}
+                    {% if task_instance.subcategory %}Подкатегория: <span class="font-medium">{{ task_instance.subcategory.name }}</span>{% endif %}
                 </p>
             </div>
             {% endif %}
@@ -82,9 +82,9 @@
 
         <div class="space-y-6 border-t md:border-t-0 md:border-l border-gray-200 dark:border-dark-700 pt-6 md:pt-0 md:pl-8">
             <div>
-                <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3"><i class="fas fa-users mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true"></i>{% trans 'Участники' %}</h3>
+                <h3 class="text-md font-semibold text-gray-800 mb-3"><i class="fas fa-users mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true"></i>{% trans 'Участники' %}</h3>
                 <ul class="space-y-4">
-                    {% with responsible_users=task.get_responsible_users executor_users=task.get_executors watcher_users=task.get_watchers %}
+                    {% with responsible_users=task_instance.get_responsible_users executor_users=task_instance.get_executors watcher_users=task_instance.get_watchers %}
                     {% if responsible_users %}<li><span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span>
                         {% for user in responsible_users %}<div class="flex items-center mt-1"><img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name|default:user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ user.display_name|default:user.username }}</span></div>{% endfor %}
                     </li>{% endif %}
@@ -94,7 +94,7 @@
                     </li>{% endif %}
                     <li><span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Создатель' %}</span>
                         <div class="flex items-center mt-1">
-                        {% if task.created_by %}<img src="{% if task.created_by.image %}{{ task.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ task.created_by.display_name|default:task.created_by.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ task.created_by.display_name|default:task.created_by.username }}</span>
+                        {% if task_instance.created_by %}<img src="{% if task_instance.created_by.image %}{{ task_instance.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}</span>
                         {% else %}<span class="text-sm text-gray-400 italic">{% trans 'Неизвестен' %}</span>{% endif %}</div>
                     </li>
                     {% if watcher_users %}<li><span class="block text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span>
@@ -105,23 +105,23 @@
             </div>
 
             <div>
-                <h3 class="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3"><i class="far fa-calendar-alt mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true"></i>{% trans 'Сроки' %}</h3>
+                <h3 class="text-md font-semibold text-gray-800 mb-3"><i class="far fa-calendar-alt mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true"></i>{% trans 'Сроки' %}</h3>
                 <dl class="space-y-2 text-sm">
-                    <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Создана' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.created_at|date:"d.m.Y H:i" }}</dd></div>
-                    {% if task.start_date %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Начало' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.start_date|date:"d.m.Y" }}</dd></div>{% endif %}
-                    {% if task.deadline %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400 {% if task.is_overdue %}text-red-500 dark:text-red-400{% endif %}">{% trans 'Срок' %}:</dt><dd class="font-medium {% if task.is_overdue %}text-red-600 dark:text-red-400{% else %}text-gray-700 dark:text-gray-300{% endif %}">{{ task.deadline|date:"d.m.Y H:i" }}</dd></div>{% endif %}
-                    {% if task.completion_date %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400 {% if task.status == task.StatusChoices.COMPLETED %}text-green-600 dark:text-green-400{% endif %}">{% trans 'Завершена' %}:</dt><dd id="task-completion-date" class="font-medium {% if task.status == task.StatusChoices.COMPLETED %}text-green-700 dark:text-green-300{% else %}text-gray-700 dark:text-gray-300{% endif %}">{{ task.completion_date|date:"d.m.Y H:i"|default:"-" }}</dd></div>{% endif %}
-                    {% if task.estimated_time %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Оценка' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.estimated_time }}</dd></div>{% endif %}
-                    <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Обновлена' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task.updated_at|date:"d.m.Y H:i" }}</dd></div>
+                    <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Создана' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task_instance.created_at|date:"d.m.Y H:i" }}</dd></div>
+                    {% if task_instance.start_date %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Начало' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task_instance.start_date|date:"d.m.Y" }}</dd></div>{% endif %}
+                    {% if task_instance.due_date %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400 {% if task_instance.is_overdue %}text-red-500 dark:text-red-400{% endif %}">{% trans 'Срок' %}:</dt><dd class="font-medium {% if task_instance.is_overdue %}text-red-600 dark:text-red-400{% else %}text-gray-700 dark:text-gray-300{% endif %}">{{ task_instance.due_date|date:"d.m.Y" }}</dd></div>{% endif %} {# Corrected task.deadline to task_instance.due_date #}
+                    {% if task_instance.completion_date %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400 {% if task_instance.status == task_instance.StatusChoices.COMPLETED %}text-green-600 dark:text-green-400{% endif %}">{% trans 'Завершена' %}:</dt><dd id="task-completion-date" class="font-medium {% if task_instance.status == task_instance.StatusChoices.COMPLETED %}text-green-700 dark:text-green-300{% else %}text-gray-700 dark:text-gray-300{% endif %}">{{ task_instance.completion_date|date:"d.m.Y H:i"|default:"-" }}</dd></div>{% endif %}
+                    {% if task_instance.estimated_time %}<div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Оценка' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task_instance.estimated_time }}</dd></div>{% endif %}
+                    <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">{% trans 'Обновлена' %}:</dt><dd class="text-gray-700 dark:text-gray-300 font-medium">{{ task_instance.updated_at|date:"d.m.Y H:i" }}</dd></div>
                 </dl>
             </div>
         </div>
     </div>
 
-    {% with photos=task.photos.all %}
+    {% with photos=task_instance.photos.all %}
     {% if photos %}
     <div class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4"><i class="fas fa-images mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Фотографии' %} ({{ photos.count }})</h3>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-images mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Фотографии' %} ({{ photos.count }})</h3>
         <div id="task-photo-carousel" class="relative w-full max-w-2xl mx-auto" data-carousel="slide">
             <div class="relative overflow-hidden rounded-lg h-64 md:h-96 bg-gray-200 dark:bg-dark-700 flex items-center justify-center shadow-inner">
                 {% for photo in photos %}
@@ -151,16 +151,16 @@
     </div>
     {% else %}
     <div class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4"><i class="fas fa-images mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Фотографии' %}</h3>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-images mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Фотографии' %}</h3>
         <p class="text-gray-500 dark:text-gray-400 italic text-sm">{% trans 'Нет прикрепленных фотографий.' %}</p>
     </div>
     {% endif %}
     {% endwith %}
 
     <div id="comments" class="mt-10 border-t border-gray-200 dark:border-dark-700 pt-8">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4"><i class="fas fa-comments mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Комментарии' %} <span id="comment-count" class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ comments.count }})</span></h3>
-        <div id="comment-list" class="space-y-4 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin mb-6">
-            {% for comment in comments %}
+        <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-comments mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Комментарии' %} <span id="comment-count" class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ task_instance.comments.count }})</span></h3>
+        <div id="comment-list" class="space-y-4 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-dark-600 scrollbar-track-transparent mb-6">
+            {% for comment in task_instance.comments.all %} {# Changed comments to task_instance.comments.all #}
             <div class="flex space-x-3 comment-item" id="comment-{{ comment.id }}">
                 <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" src="{% if comment.author.image %}{{ comment.author.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ comment.author.display_name|default:comment.author.username|default:_('Автор') }}">
                 <div class="flex-1 bg-gray-50 dark:bg-dark-700 p-3 rounded-lg border border-gray-100 dark:border-dark-600">
@@ -176,8 +176,8 @@
             {% endfor %}
         </div>
 
-        {% if perms.tasks.add_taskcomment %} {# Or custom permission check #}
-        <form id="comment-form" method="post" action="{% url 'tasks:add_comment_to_task' task_id=task.pk %}#comments"> {# Corrected URL name #}
+        {% if can_add_comment %} {# Use context variable from view #}
+        <form id="comment-form" method="post" action="">
             {% csrf_token %}
             <div class="flex space-x-3 items-start">
                 <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" src="{% if request.user.image %}{{ request.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ request.user.display_name|default:request.user.username }}">
@@ -207,51 +207,51 @@
 
 {% block scripts %}
 {{ block.super }}
-<script id="task-detail-data" type="application/json">
-    {{ task_detail_json_data|safe }}
-</script>
-{# Your tasks_no_modal.js or specific WebSocket handling script for comments #}
-{# <script src="{% static 'js/task_comments_ws.js' %}" defer></script> #}
-<script src="{% static 'js/tasks_no_modal.js' %}" defer></script>
+{# json_script filter is safer for embedding JSON #}
+{{ task_detail_json_data|json_script:"task-detail-data" }}
+{{ status_choices_json|json_script:"status-choices-data" }} {# If needed by task_detail.js #}
+
+<script src="{% static 'js/tasks_no_modal.js' %}" defer></script> {# Contains comment WebSocket logic #}
 <script>
-    // Initialize Flowbite Carousel after DOM is loaded if not using data-fc-autoint
-    document.addEventListener('DOMContentLoaded', function () {
-        if (typeof Flowbite !== 'undefined' && typeof Carousel !== 'undefined') {
-            const carouselElement = document.getElementById('task-photo-carousel');
-            if (carouselElement) {
-                const items = [];
-                carouselElement.querySelectorAll('[data-carousel-item]').forEach((el, index) => {
-                    items.push({ position: index, el: el });
-                });
-                const indicators = [];
-                 carouselElement.querySelectorAll('[data-carousel-slide-to]').forEach((el, index) => {
-                    indicators.push({ position: index, el: el });
-                });
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Flowbite !== 'undefined' && typeof Carousel !== 'undefined') {
+        const carouselElement = document.getElementById('task-photo-carousel');
+        if (carouselElement) {
+            const items = [];
+            carouselElement.querySelectorAll('[data-carousel-item]').forEach((el, index) => {
+                items.push({ position: index, el: el });
+            });
+            const indicators = [];
+             carouselElement.querySelectorAll('[data-carousel-slide-to]').forEach((el, index) => {
+                indicators.push({ position: index, el: el });
+            });
 
-                if (items.length > 0) {
-                    const carousel = new Carousel(carouselElement, items, {
-                        defaultPosition: 0,
-                        interval: 3000, // Optional: auto-cycle
-                        indicators: {
-                            activeClasses: 'bg-gray-900 dark:bg-white',
-                            inactiveClasses: 'bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-400',
-                            items: indicators
-                        },
-                        // onNext: () => { console.log('next slider item shown'); },
-                        // onPrev: () => { console.log('previous slider item shown'); },
-                        // onChange: () => { console.log('new slider item has been shown'); }
-                    });
-
-                    // Optional: setup prev/next listeners if not auto-handled by Flowbite's data attributes
-                    const prevButton = carouselElement.querySelector('[data-carousel-prev]');
-                    const nextButton = carouselElement.querySelector('[data-carousel-next]');
-                    if(prevButton) prevButton.addEventListener('click', () => carousel.prev());
-                    if(nextButton) nextButton.addEventListener('click', () => carousel.next());
-                }
+            if (items.length > 0) {
+                const carousel = new Carousel(carouselElement, items, {
+                    defaultPosition: 0,
+                    interval: 5000, // Optional: auto-cycle
+                    indicators: {
+                        activeClasses: 'bg-gray-900 dark:bg-white',
+                        inactiveClasses: 'bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-400',
+                        items: indicators.length > 0 ? indicators : null // Pass only if indicators exist
+                    }
+                });
+                const prevButton = carouselElement.querySelector('[data-carousel-prev]');
+                const nextButton = carouselElement.querySelector('[data-carousel-next]');
+                if(prevButton) prevButton.addEventListener('click', () => carousel.prev());
+                if(nextButton) nextButton.addEventListener('click', () => carousel.next());
             }
-        } else {
-            console.warn('Flowbite or Carousel not initialized globally for task_detail.html');
         }
-    });
+    } else { console.warn('Flowbite Carousel not initialized for task_detail.html'); }
+});
+</script>
+{{ status_mapping_json|json_script:"status-mapping-data" }}
+
+<script id="task-list-config" type="application/json">
+{
+    "initialView": "{{ request.COOKIES.task_view_mode|default:'kanban' }}",
+    "updateStatusUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_update_task_status' task_id=0 %}{% endfilter %}",
+    "deleteTaskUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_delete_task' task_id=0 %}{% endfilter %}"
+}
 </script>
 {% endblock %}

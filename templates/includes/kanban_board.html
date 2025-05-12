@@ -1,41 +1,42 @@
 {% load static i18n app_filters %}
+
 <div id="kanban-board"
     class="mt-6 flex flex-nowrap overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-dark-600 scrollbar-track-transparent hidden"
-    data-ajax-base-url="{{ ajax_base_url }}">
-    {% for status, task_list in tasks_by_status.items %}
-    {% with status_display_name=status_mapping|getkey:status %}
-    <div class="kanban-column-wrapper flex-shrink-0 w-72 md:w-80" data-status="{{ status }}">
-        <div class="kanban-column bg-gray-100 dark:bg-dark-800 w-full h-full rounded-xl shadow-md flex flex-col max-h-[calc(100vh-220px)] border border-gray-200 dark:border-dark-700"
-            data-status="{{ status }}">
+    >
+    {% for status_code, task_list in tasks_by_status.items %}
+    {% with status_display_name=status_mapping_dict|get_item:status_code %}
+    <div class="kanban-column-wrapper flex-shrink-0 w-72 md:w-80" data-status="{{ status_code }}">
+        <div class="kanban-column bg-gray-100 dark:bg-dark-800 w-full h-full rounded-xl shadow-md flex flex-col max-h-[calc(100vh-240px)] border border-gray-200 dark:border-dark-700" data-status="{{ status_code }}">
             <h3 class="text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 p-4 sticky top-0 z-10 bg-opacity-90 backdrop-blur-sm rounded-t-xl flex justify-between items-center border-b border-gray-300 dark:border-dark-600
-                    {% if status == 'new' %}bg-gray-200 dark:bg-dark-700
-                    {% elif status == 'in_progress' %}bg-yellow-100 dark:bg-yellow-900/60 border-yellow-300 dark:border-yellow-700/50 text-yellow-800 dark:text-yellow-200
-                    {% elif status == 'on_hold' %}bg-blue-100 dark:bg-blue-900/60 border-blue-300 dark:border-blue-700/50 text-blue-800 dark:text-blue-200
-                    {% elif status == 'canceled' %}bg-gray-200 dark:bg-dark-600 text-gray-500 dark:text-gray-400
-                    {% elif status == 'completed' %}bg-green-100 dark:bg-green-900/60 border-green-300 dark:border-green-700/50 text-green-800 dark:text-green-200
-                    {% elif status == 'overdue' %}bg-red-100 dark:bg-red-900/60 border-red-300 dark:border-red-700/50 text-red-800 dark:text-red-200
+                    {% if status_code == 'new' %}bg-gray-200 dark:bg-dark-700
+                    {% elif status_code == 'in_progress' %}bg-yellow-100 dark:bg-yellow-900/60 border-yellow-300 dark:border-yellow-700/50 text-yellow-800 dark:text-yellow-200
+                    {% elif status_code == 'on_hold' %}bg-blue-100 dark:bg-blue-900/60 border-blue-300 dark:border-blue-700/50 text-blue-800 dark:text-blue-200
+                    {% elif status_code == 'cancelled' or status_code == 'canceled' %}bg-gray-200 dark:bg-dark-600 text-gray-500 dark:text-gray-400
+                    {% elif status_code == 'completed' %}bg-green-100 dark:bg-green-900/60 border-green-300 dark:border-green-700/50 text-green-800 dark:text-green-200
+                    {% elif status_code == 'overdue' %}bg-red-100 dark:bg-red-900/60 border-red-300 dark:border-red-700/50 text-red-800 dark:text-red-200
                     {% else %}bg-gray-200 dark:bg-dark-700{% endif %}">
-                <span>{{ status_display_name|default:status }}</span>
+                <span>{{ status_display_name|default:status_code }}</span>
                 <span class="task-count bg-gray-500/20 dark:bg-black/20 text-gray-700 dark:text-gray-300 rounded-full px-2.5 py-0.5 text-xs font-semibold font-mono shadow-inner">{{ task_list|length }}</span>
             </h3>
-            <div class="kanban-tasks space-y-3 p-4 overflow-y-auto flex-1 min-h-[600px]">
+            <div class="kanban-tasks space-y-3 p-4 overflow-y-auto flex-1 min-h-[500px]">
                 {% for task in task_list %}
-                 {% with priority_color_class=task.priority|get_priority_color %}
+                 {% with priority_border_class=task.priority|get_priority_border_color priority_text_class=task.priority|get_priority_text_color responsible_user=task.get_responsible_users.first %}
                  <div id="task-{{ task.pk }}"
-                    class="kanban-task bg-white dark:bg-dark-700 rounded-lg shadow-md p-3.5 cursor-grab hover:shadow-lg border border-gray-200 dark:border-dark-600 border-l-4 {{ priority_color_class }} transition-all duration-150 hover:scale-[1.01] group flex flex-col relative"
+                    class="kanban-task bg-white dark:bg-dark-700 rounded-lg shadow-md p-3.5 cursor-grab hover:shadow-lg border border-gray-200 dark:border-dark-600 border-l-4 {{ priority_border_class }} transition-all duration-150 hover:scale-[1.01] group flex flex-col relative"
                     draggable="true"
                     data-task-id="{{ task.pk }}"
-                    data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/"
                     data-status="{{ task.status }}">
                     <div class="flex-grow">
                         <div class="flex justify-between items-center mb-2 text-xs">
-                            <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Перейти к задаче' %} {{ task.task_number }}"
+                            <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Перейти к задаче' %} {{ task.task_number|default:task.pk }}"
                                class="font-mono font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
-                                {{ task.task_number }}
+                                #{{ task.task_number|default:task.pk }}
                             </a>
+                            {% if task.project %}
                             <a href="{{ task.project.get_absolute_url }}" title="{% trans 'Проект' %}: {{ task.project.name }}" class="text-gray-500 dark:text-gray-400 hover:underline truncate ml-2 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                                 <i class="fas fa-project-diagram fa-fw mr-1 opacity-70"></i>{{ task.project.name|truncatechars:20 }}
                             </a>
+                            {% endif %}
                         </div>
                         <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="block mb-3 group/title">
                              <p class="text-sm font-medium text-gray-800 dark:text-gray-100 break-words group-hover/title:text-blue-700 dark:group-hover/title:text-blue-400 transition-colors">{{ task.title }}</p>
@@ -43,62 +44,56 @@
                         <div class="space-y-1.5 text-xs text-gray-600 dark:text-gray-400 mb-3">
                             <div class="flex items-center gap-1.5">
                                 <i class="fas fa-user-plus fa-fw text-gray-400 dark:text-gray-500" title="{% trans 'Инициатор' %}"></i>
-                                {% if task.created_by and task.created_by.get_absolute_url %}
-                                <a href="{{ task.created_by.get_absolute_url }}" title="{% trans 'Профиль' %} {{ task.created_by.display_name|default:task.created_by.username }}" class="hover:underline hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
+                                {% if task.created_by %}
+                                    {% if task.created_by.get_absolute_url %}<a href="{{ task.created_by.get_absolute_url }}" title="{% trans 'Профиль' %} {{ task.created_by.display_name|default:task.created_by.username }}" class="hover:underline hover:text-gray-800 dark:hover:text-gray-200 transition-colors">{% endif %}
                                     {{ task.created_by.display_name|default:task.created_by.username }}
-                                </a>
-                                {% else %}
-                                <span>{{ task.created_by.display_name|default:task.created_by.username|default:"-" }}</span>
-                                {% endif %}
+                                    {% if task.created_by.get_absolute_url %}</a>{% endif %}
+                                {% else %}<span>-</span>{% endif %}
                                 <span class="text-gray-400 dark:text-gray-500 ml-auto" title="{% trans 'Дата создания' %}"><i class="far fa-calendar-plus fa-fw mr-1"></i>{{ task.created_at|date:"d.m.y" }}</span>
                             </div>
-                            {% if task.assignee %}
+                            {% if responsible_user %}
                             <div class="flex items-center gap-1.5">
-                                <i class="fas fa-user-check fa-fw text-gray-400 dark:text-gray-500" title="{% trans 'Исполнитель' %}"></i>
-                                {% if task.assignee.get_absolute_url %}
-                                <a href="{{ task.assignee.get_absolute_url }}" title="{% trans 'Профиль' %} {{ task.assignee.display_name|default:task.assignee.username }}" class="hover:underline hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
-                                    {{ task.assignee.display_name|default:task.assignee.username }}
-                                </a>
-                                {% else %}
-                                <span>{{ task.assignee.display_name|default:task.assignee.username }}</span>
-                                {% endif %}
+                                <i class="fas fa-user-check fa-fw text-gray-400 dark:text-gray-500" title="{% trans 'Ответственный' %}"></i>
+                                {% if responsible_user.get_absolute_url %}<a href="{{ responsible_user.get_absolute_url }}" title="{% trans 'Профиль' %} {{ responsible_user.display_name|default:responsible_user.username }}" class="hover:underline hover:text-gray-800 dark:hover:text-gray-200 transition-colors">{% endif %}
+                                {{ responsible_user.display_name|default:responsible_user.username }}
+                                {% if responsible_user.get_absolute_url %}</a>{% endif %}
                             </div>
                             {% else %}
                              <div class="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 italic">
-                                 <i class="fas fa-user-times fa-fw" title="{% trans 'Исполнитель не назначен' %}"></i>
+                                 <i class="fas fa-user-times fa-fw" title="{% trans 'Ответственный не назначен' %}"></i>
                                  <span>{% trans 'Не назначен' %}</span>
                              </div>
                             {% endif %}
                         </div>
                     </div>
                     <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-auto pt-2 border-t border-gray-100 dark:border-dark-600">
-                        <span class="inline-flex items-center gap-1.5 font-medium {{ priority_color_class|replace:'border-l-4 border-,text-' }}" title="{% trans 'Приоритет' %}: {{ task.get_priority_display }}">
-                             {% if task.priority == 1 %}<i class="fas fa-flag fa-fw text-red-500"></i> <span class="hidden sm:inline">{% trans "Высокий" %}</span>
-                             {% elif task.priority == 2 %}<i class="fas fa-angle-double-up fa-fw text-orange-500"></i> <span class="hidden sm:inline">{% trans "Выше ср." %}</span>
-                             {% elif task.priority == 3 %}<i class="fas fa-equals fa-fw text-yellow-500"></i> <span class="hidden sm:inline">{% trans "Средний" %}</span>
-                             {% elif task.priority == 4 %}<i class="fas fa-angle-double-down fa-fw text-blue-500"></i> <span class="hidden sm:inline">{% trans "Ниже ср." %}</span>
-                             {% elif task.priority == 5 %}<i class="fas fa-angle-down fa-fw text-green-500"></i> <span class="hidden sm:inline">{% trans "Низкий" %}</span>
+                        <span class="inline-flex items-center gap-1.5 font-medium {{ priority_text_class }}" title="{% trans 'Приоритет' %}: {{ task.get_priority_display }}">
+                             {% if task.priority == task.TaskPriority.HIGH %}<i class="fas fa-flag fa-fw text-red-500"></i> <span class="hidden sm:inline">{% trans "Высокий" %}</span>
+                             {% elif task.priority == task.TaskPriority.MEDIUM_HIGH %}<i class="fas fa-angle-double-up fa-fw text-orange-500"></i> <span class="hidden sm:inline">{% trans "Выше ср." %}</span>
+                             {% elif task.priority == task.TaskPriority.MEDIUM %}<i class="fas fa-equals fa-fw text-yellow-500"></i> <span class="hidden sm:inline">{% trans "Средний" %}</span>
+                             {% elif task.priority == task.TaskPriority.MEDIUM_LOW %}<i class="fas fa-angle-double-down fa-fw text-blue-500"></i> <span class="hidden sm:inline">{% trans "Ниже ср." %}</span>
+                             {% elif task.priority == task.TaskPriority.LOW %}<i class="fas fa-angle-down fa-fw text-green-500"></i> <span class="hidden sm:inline">{% trans "Низкий" %}</span>
                              {% else %}<i class="fas fa-question-circle fa-fw text-gray-400"></i> {{ task.get_priority_display }}
                              {% endif %}
                         </span>
-                        {% if task.deadline %}
+                        {% if task.due_date %}
                         <span class="inline-flex items-center gap-1 {% if task.is_overdue %}text-red-600 dark:text-red-400 font-semibold{% else %}text-gray-500 dark:text-gray-400{% endif %}" title="{% trans 'Срок выполнения' %}">
-                            <i class="far fa-calendar-alt fa-fw"></i> {{ task.deadline|date:"d.m.y" }}
+                            <i class="far fa-calendar-alt fa-fw"></i> {{ task.due_date|date:"d.m.y" }}
                         </span>
                         {% endif %}
                     </div>
-                    <div class="kanban-actions absolute bottom-1 right-1 flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-white dark:bg-dark-700 p-1 rounded-md shadow-sm">
+                    <div class="kanban-actions absolute bottom-1 right-1 flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-white/80 dark:bg-dark-700/80 backdrop-blur-sm p-1 rounded-md shadow-sm">
                         <a href="{% url 'tasks:task_detail' pk=task.pk %}" title="{% trans 'Подробнее' %}"
                             class="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-dark-600 transition-colors">
                             <i class="fas fa-eye fa-fw"></i>
                         </a>
-                        <button type="button" data-action="edit-task" data-edit-url="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}"
+                        <a href="{% url 'tasks:task_update' pk=task.pk %}" title="{% trans 'Редактировать' %}"
                             class="p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors">
                             <i class="fas fa-edit fa-fw"></i>
-                        </button>
+                        </a>
                         <button type="button" data-action="delete-task" data-task-id="{{ task.pk }}"
                             data-task-name="{{ task.title|escapejs }}"
-                            data-delete-url="{{ ajax_base_url }}{{ task.pk }}/delete/" title="{% trans 'Удалить' %}"
+                            title="{% trans 'Удалить' %}"
                             class="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 transition-colors">
                             <i class="fas fa-trash fa-fw"></i>
                         </button>
@@ -117,7 +112,7 @@
     {% empty %}
     <div class="text-center text-gray-500 dark:text-gray-400 text-lg py-12 px-4 italic w-full bg-white dark:bg-dark-800 rounded-xl shadow">
         <i class="fas fa-folder-open fa-3x mb-4 text-gray-400 dark:text-gray-500"></i><br>
-        {% trans 'Задачи для отображения не найдены или статусы не определены.' %}
+        {% trans 'Нет задач для отображения на доске Канбан.' %}
     </div>
     {% endfor %}
 </div>

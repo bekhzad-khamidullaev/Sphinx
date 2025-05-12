@@ -1,34 +1,32 @@
-{% load i18n app_filters %}
-{% with sort_ascending=column_name sort_descending="-"|add:column_name %}
-    {% if current_sort == sort_ascending %}
-        {% url_replace sort=sort_descending as next_sort_url %}
-        {% with aria_sort="ascending" sort_icon="fas fa-sort-up" %}
-            <th scope="col" class="sort-header px-4 py-3.5" aria-sort="{{ aria_sort }}">
-                <a href="?{{ next_sort_url }}" class="flex items-center group text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">
-                    {{ display_name }}
-                    <i class="{{ sort_icon }} fa-fw ml-1.5 text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"></i>
-                </a>
-            </th>
-        {% endwith %}
-    {% elif current_sort == sort_descending %}
-        {% url_replace sort=sort_ascending as next_sort_url %}
-        {% with aria_sort="descending" sort_icon="fas fa-sort-down" %}
-             <th scope="col" class="sort-header px-4 py-3.5" aria-sort="{{ aria_sort }}">
-                <a href="?{{ next_sort_url }}" class="flex items-center group text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">
-                    {{ display_name }}
-                    <i class="{{ sort_icon }} fa-fw ml-1.5 text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"></i>
-                </a>
-            </th>
-        {% endwith %}
+{% load i18n app_filters %} {# Make sure app_filters and url_replace tag are available #}
+
+{% with sort_param_asc=column_name sort_param_desc="-"|add:column_name %}
+    {% if current_sort == sort_param_asc %}
+        {# Currently sorted A-Z, link to sort Z-A #}
+        {% url_replace sort=sort_param_desc as next_sort_url_params %}
+        <th scope="col" class="sort-header px-4 py-3.5 sorted-asc" aria-sort="ascending" data-column="{{ column_name }}">
+            <a href="?{{ next_sort_url_params }}" class="flex items-center group text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">
+                {{ display_name }}
+                <i class="fas fa-sort-up fa-fw ml-1.5 text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"></i>
+            </a>
+        </th>
+    {% elif current_sort == sort_param_desc %}
+        {# Currently sorted Z-A, link to sort A-Z #}
+        {% url_replace sort=sort_param_asc as next_sort_url_params %}
+        <th scope="col" class="sort-header px-4 py-3.5 sorted-desc" aria-sort="descending" data-column="{{ column_name }}">
+            <a href="?{{ next_sort_url_params }}" class="flex items-center group text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">
+                {{ display_name }}
+                <i class="fas fa-sort-down fa-fw ml-1.5 text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"></i>
+            </a>
+        </th>
     {% else %}
-        {% url_replace sort=sort_ascending as next_sort_url %}
-        {% with aria_sort="none" sort_icon="fas fa-sort" %}
-            <th scope="col" class="sort-header px-4 py-3.5" aria-sort="{{ aria_sort }}">
-                 <a href="?{{ next_sort_url }}" class="flex items-center group text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
-                    {{ display_name }}
-                    <i class="{{ sort_icon }} fa-fw ml-1.5 text-gray-400 dark:text-gray-500 opacity-40 group-hover:opacity-80"></i>
-                 </a>
-            </th>
-        {% endwith %}
+        {# Not currently sorted by this column, link to sort A-Z #}
+        {% url_replace sort=sort_param_asc as next_sort_url_params %}
+        <th scope="col" class="sort-header px-4 py-3.5" aria-sort="none" data-column="{{ column_name }}">
+            <a href="?{{ next_sort_url_params }}" class="flex items-center group text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                {{ display_name }}
+                <i class="fas fa-sort fa-fw ml-1.5 text-gray-400 dark:text-gray-500 opacity-40 group-hover:opacity-80"></i>
+            </a>
+        </th>
     {% endif %}
 {% endwith %}

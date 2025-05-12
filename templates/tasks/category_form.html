@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block list_title %}
-<h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
+<h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
     {% if form.instance.pk %}
         {% blocktrans with name=form.instance.name %}Редактирование категории: {{ name }}{% endblocktrans %}
     {% else %}

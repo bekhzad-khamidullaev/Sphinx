@@ -12,24 +12,25 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://ajax.googleapis.com">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
+            // darkMode: 'class', // REMOVED DARK MODE
             theme: {
                 extend: {
                     colors: {
-                        dark: { 50: '#f9f9f9', 100: '#f2f2f2', 200: '#e5e5e5', 300: '#d1d1d1', 400: '#b3b3b3', 500: '#8e8e93', 600: '#636366', 700: '#48484a', 800: '#3a3a3c', 900: '#2c2c2e', 950: '#1c1c1e', },
+                        // dark: { 50: '#f9f9f9', ..., 950: '#1c1c1e', }, // REMOVED DARK PALETTE
                         ios: { blue: '#0a84ff', green: '#30d158', indigo: '#5e5ce6', orange: '#ff9f0a', pink: '#ff375f', purple: '#bf5af2', red: '#ff453a', teal: '#64d2ff', yellow: '#ffd60a', }
                     }
                 }
             }
         }
-        if (localStorage.theme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
+        // REMOVED DARK THEME TOGGLE LOGIC
+        // if (localStorage.theme === 'dark') {
+        //   document.documentElement.classList.add('dark');
+        // } else {
+        //   document.documentElement.classList.remove('dark');
+        // }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
         integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
@@ -44,45 +45,44 @@
     {% block head_extra %}{% endblock %}
     <title>{% block title %}{% endblock %} | Sphinx</title>
 </head>
-<body class="h-full bg-gray-50 dark:bg-dark-950 text-gray-900 dark:text-gray-100 flex flex-col antialiased"
-    x-data="{ mobileMenuOpen: false }">
+<body class="h-full bg-gray-50 text-neutral-900 flex flex-col antialiased" x-data="{ mobileMenuOpen: false }">
     <div id="preloader"
-        class="fixed inset-0 w-full h-full bg-white/95 dark:bg-dark-950/95 flex items-center justify-center z-[1001] transition-opacity duration-500">
+        class="fixed inset-0 w-full h-full bg-white/95 flex items-center justify-center z-[1001] transition-opacity duration-500">
         <div
-            class="w-12 h-12 border-4 border-gray-200 dark:border-dark-700 border-l-ios-blue rounded-full animate-spin">
+            class="w-12 h-12 border-4 border-gray-200 border-l-ios-blue rounded-full animate-spin">
         </div>
     </div>
     {% if user.is_authenticated %}
     <header
-        class="fixed w-full top-0 z-40 flex items-center justify-between bg-white/70 dark:bg-dark-800/70 backdrop-blur-lg px-4 py-2 shadow-md dark:shadow-dark-900/50 border-b border-gray-200 dark:border-dark-700/50">
+        class="fixed w-full top-0 z-40 flex items-center justify-between bg-white/70 backdrop-blur-lg px-4 py-2 shadow-md border-b border-gray-200">
         <div class="flex items-center">
             <button @click="mobileMenuOpen = !mobileMenuOpen"
-                class="md:hidden mr-3 p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-full focus:outline-none"
+                class="md:hidden mr-3 p-2 text-gray-700 hover:bg-gray-100 rounded-full focus:outline-none"
                 aria-label="Open menu" :aria-expanded="mobileMenuOpen">
                 <i class="fas fa-bars fa-lg"></i>
             </button>
             <a href="{% url 'tasks:task_list' %}" class="flex items-center flex-shrink-0" aria-label="Home">
                 <img src="{% static 'img/logo.png' %}" alt="Sphinx Logo" class="w-8 h-8 md:w-9 md:h-9">
                 <strong
-                    class="ml-2 text-teal-600 dark:text-ios-teal text-lg font-semibold hidden sm:inline-block">Sphinx</strong>
+                    class="ml-2 text-teal-600 text-lg font-semibold hidden sm:inline-block">Sphinx</strong>
             </a>
              <nav class="hidden md:flex items-center ml-6 space-x-1">
                  {% if perms.tasks %}
                  <div>
-                    <button id="tasks-dropdown-button" data-dropdown-toggle="tasks-dropdown" data-dropdown-placement="bottom-start" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:text-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:border-gray-700 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150 inline-flex items-center" type="button">
-                        <i class="fas fa-tasks mr-2 text-blue-500 dark:text-ios-blue"></i> {% trans 'Задачи' %}
+                    <button id="tasks-dropdown-button" data-dropdown-toggle="tasks-dropdown" data-dropdown-placement="bottom-start" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-900 bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 transition-colors duration-150 inline-flex items-center" type="button">
+                        <i class="fas fa-tasks mr-2 text-blue-500"></i> {% trans 'Задачи' %}
                         <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/></svg>
                     </button>
-                    <div id="tasks-dropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 border dark:border-gray-600">
-                        <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="tasks-dropdown-button">
+                    <div id="tasks-dropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 border">
+                        <ul class="py-2 text-sm text-gray-700" aria-labelledby="tasks-dropdown-button">
                              {% if perms.tasks.view_task %}
-                            <li><a href="{% url 'tasks:task_list' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Список Задач' %}</a></li>
+                            <li><a href="{% url 'tasks:task_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Список Задач' %}</a></li>
                             {% endif %}
                              {% if perms.tasks.view_project %}
-                            <li><a href="{% url 'tasks:project_list' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Проекты' %}</a></li>
+                            <li><a href="{% url 'tasks:project_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Проекты' %}</a></li>
                              {% endif %}
                             {% if perms.tasks.view_category %}
-                            <li><a href="{% url 'tasks:category_list' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Категории' %}</a></li>
+                            <li><a href="{% url 'tasks:category_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Категории' %}</a></li>
                             {% endif %}
                         </ul>
                     </div>
@@ -90,24 +90,24 @@
                 {% endif %}
                  {% if perms.checklists %}
                  <div>
-                    <button id="checklists-dropdown-button" data-dropdown-toggle="checklists-dropdown" data-dropdown-placement="bottom-start" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:text-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:border-gray-700 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150 inline-flex items-center" type="button">
-                        <i class="fas fa-clipboard-list mr-2 text-indigo-500 dark:text-ios-indigo"></i> {% trans 'Чеклисты' %}
+                    <button id="checklists-dropdown-button" data-dropdown-toggle="checklists-dropdown" data-dropdown-placement="bottom-start" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-900 bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 transition-colors duration-150 inline-flex items-center" type="button">
+                        <i class="fas fa-clipboard-list mr-2 text-indigo-500"></i> {% trans 'Чеклисты' %}
                         <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/></svg>
                     </button>
-                    <div id="checklists-dropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-48 dark:bg-gray-700 border dark:border-gray-600">
-                        <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="checklists-dropdown-button">
+                    <div id="checklists-dropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-48 border">
+                        <ul class="py-2 text-sm text-gray-700" aria-labelledby="checklists-dropdown-button">
                             {% if perms.checklists.view_checklisttemplate %}
-                            <li><a href="{% url 'checklists:template_list' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Шаблоны' %}</a></li>
+                            <li><a href="{% url 'checklists:template_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Шаблоны' %}</a></li>
                             {% endif %}
                             {% if perms.checklists.view_checklistrun %}
-                            <li><a href="{% url 'checklists:history_list' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'История выполнения' %}</a></li>
+                            <li><a href="{% url 'checklists:history_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'История выполнения' %}</a></li>
                             {% endif %}
                              {% if perms.checklists.view_checklistrun %}
                              <div class="py-1">
-                                 <hr class="border-gray-200 dark:border-gray-600 mx-2">
+                                 <hr class="border-gray-200 mx-2">
                              </div>
-                             <li><a href="{% url 'checklists:report_summary' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Сводный отчет' %}</a></li>
-                             <li><a href="{% url 'checklists:report_issues' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Отчет по проблемам' %}</a></li>
+                             <li><a href="{% url 'checklists:report_summary' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Сводный отчет' %}</a></li>
+                             <li><a href="{% url 'checklists:report_issues' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Отчет по проблемам' %}</a></li>
                              {% endif %}
                         </ul>
                     </div>
@@ -115,17 +115,17 @@
                  {% endif %}
                 {% if perms.user_profiles %}
                 <div>
-                    <button id="users-dropdown-button" data-dropdown-toggle="users-dropdown" data-dropdown-placement="bottom-start" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-900 bg-white dark:bg-gray-800 dark:text-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:border-gray-700 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150 inline-flex items-center" type="button">
-                         <i class="fas fa-users mr-2 text-orange-500 dark:text-ios-orange"></i> {% trans 'Пользователи' %}
+                    <button id="users-dropdown-button" data-dropdown-toggle="users-dropdown" data-dropdown-placement="bottom-start" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-900 bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 transition-colors duration-150 inline-flex items-center" type="button">
+                         <i class="fas fa-users mr-2 text-orange-500"></i> {% trans 'Пользователи' %}
                         <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/></svg>
                     </button>
-                     <div id="users-dropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 border dark:border-gray-600">
-                         <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="users-dropdown-button">
+                     <div id="users-dropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 border">
+                         <ul class="py-2 text-sm text-gray-700" aria-labelledby="users-dropdown-button">
                              {% if perms.user_profiles.view_user %}
-                             <li><a href="{% url 'user_profiles:user_list' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Список пользователей' %}</a></li>
+                             <li><a href="{% url 'user_profiles:user_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Список пользователей' %}</a></li>
                              {% endif %}
                              {% if perms.user_profiles.view_team %}
-                             <li><a href="{% url 'user_profiles:team_list' %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{% trans 'Команды' %}</a></li>
+                             <li><a href="{% url 'user_profiles:team_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Команды' %}</a></li>
                              {% endif %}
                          </ul>
                     </div>
@@ -140,24 +140,22 @@
             <div class="flex items-center space-x-3">
                 <div class="universal-search-container relative hidden lg:block">
                     <input type="search" id="universal-search-input"
-                        class="form-input w-40 lg:w-56 px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-ios-blue text-sm border-transparent focus:border-transparent dark:placeholder-gray-500 dark:text-gray-200"
+                        class="form-input w-40 lg:w-56 px-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm border-transparent focus:border-transparent placeholder-gray-500 text-gray-900"
                         placeholder="{% trans 'Поиск...' %}" aria-label="{% trans 'Универсальный поиск' %}"
                         autocomplete="off" data-suggestions-url="{% url 'tasks:search-suggestions-api' %}">
                     <div id="universal-suggestions-box"
-                        class="absolute z-50 w-full mt-1 bg-white dark:bg-dark-800 rounded-lg shadow-lg max-h-80 overflow-y-auto hidden border border-gray-200 dark:border-dark-700">
+                        class="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg max-h-80 overflow-y-auto hidden border border-gray-200">
                     </div>
                 </div>
-                {# --- User Avatar/Name Display (Mobile & Desktop) --- #}
-                <div class="flex items-center px-2 py-1 bg-gray-100 dark:bg-dark-700 rounded-full">
+                <div class="flex items-center px-2 py-1 bg-gray-100 rounded-full">
                      <img class="w-7 h-7 rounded-full object-cover"
                          src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}"
                          alt="{% trans 'User profile photo' %}">
-                     <span class="ml-2 text-gray-800 dark:text-gray-200 text-sm hidden md:inline-block truncate max-w-[100px]">{{ user.get_short_name|default:user.username }}</span>
+                     <span class="ml-2 text-gray-800 text-sm hidden md:inline-block truncate max-w-[100px]">{{ user.get_short_name|default:user.username }}</span>
                  </div>
-                 {# --- Desktop User Dropdown --- #}
                 <div class="relative hidden md:block" x-data="{ userMenuOpen: false }">
                     <button @click="userMenuOpen = !userMenuOpen"
-                        class="p-2 -ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white focus:outline-none"
+                        class="p-2 -ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
                         aria-label="User menu" :aria-expanded="userMenuOpen">
                         <i class="fas fa-chevron-down text-xs"></i>
                     </button>
@@ -166,33 +164,33 @@
                         x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                         x-transition:leave="transition ease-in duration-100"
                         x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                        class="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-800 shadow-xl dark:shadow-dark-900/50 rounded-xl border border-gray-200 dark:border-dark-700 origin-top-right z-50 overflow-hidden"
+                        class="absolute right-0 mt-2 w-56 bg-white shadow-xl rounded-xl border border-gray-200 origin-top-right z-50 overflow-hidden"
                         x-cloak>
                         <div class="py-1">
                             <a href="{% url 'user_profiles:profile_view' %}"
-                                class="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
+                                class="flex items-center px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors">
                                 <i class="fas fa-user-circle w-4 mr-3 text-gray-500"></i>{% trans 'Мой профиль' %}
                             </a>
                              {% if perms.room.view_room %}
                             <a href="{% url 'room:rooms' %}"
-                                class="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
+                                class="flex items-center px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors">
                                 <i class="fas fa-comments w-4 mr-3 text-gray-500"></i>{% trans 'Чаты' %}
                             </a>
                              {% endif %}
                              {% if user.is_staff %}
                             <a href="/admin/"
-                                class="flex items-center px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
+                                class="flex items-center px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 transition-colors">
                                 <i class="fas fa-cog w-4 mr-3 text-gray-500"></i>{% trans 'Админка' %}
                             </a>
                             {% endif %}
                         </div>
-                        <hr class="border-gray-200 dark:border-dark-600">
+                        <hr class="border-gray-200">
                         <div class="py-1">
                             <form method="post" action="{% url 'set_language' %}" class="px-4 py-2 text-sm">
                                 {% csrf_token %}
                                 <label for="language-select-desktop" class="sr-only">{% trans "Language" %}</label>
                                 <select name="language" id="language-select-desktop" onchange="this.form.submit()"
-                                    class="w-full text-gray-800 dark:text-gray-200 bg-transparent dark:bg-transparent border-0 focus:ring-0 p-0 appearance-none">
+                                    class="w-full text-gray-800 bg-transparent border-0 focus:ring-0 p-0 appearance-none">
                                     <option value="uz" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>🇺🇿 {% trans 'Uzbek' %}</option>
                                     <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>🇷🇺 {% trans 'Русский' %}
                                     </option>
@@ -201,19 +199,11 @@
                                 </select>
                             </form>
                         </div>
-                        <hr class="border-gray-200 dark:border-dark-600">
-                         <div class="py-1 px-4">
-                              <button id="darkModeToggle" aria-label="Toggle dark mode" class="flex items-center w-full text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors py-2 px-0 rounded-md">
-                                 <i class="fas fa-moon w-4 mr-3 text-gray-500 dark:hidden"></i>
-                                 <i class="fas fa-sun w-4 mr-3 text-gray-500 hidden dark:inline-block"></i>
-                                 <span class="dark:hidden">{% trans 'Темная тема' %}</span>
-                                 <span class="hidden dark:inline-block">{% trans 'Светлая тема' %}</span>
-                             </button>
-                         </div>
-                        <hr class="border-gray-200 dark:border-dark-600">
+                        {# REMOVED DARK MODE TOGGLE FROM DESKTOP DROPDOWN #}
+                        <hr class="border-gray-200">
                         <div class="py-1">
                             <a href="{% url 'user_profiles:logout' %}"
-                                class="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-dark-700 transition-colors">
+                                class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                 <i class="fas fa-sign-out-alt w-4 mr-3"></i>{% trans 'Выход' %}
                             </a>
                         </div>
@@ -226,77 +216,76 @@
         x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
         x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0"
         x-transition:leave-end="-translate-x-full"
-        class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-dark-800 shadow-lg z-[60] flex flex-col"
+        class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-[60] flex flex-col"
         @click.outside="mobileMenuOpen = false" x-cloak>
-        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-700">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
             <a href="/" class="flex items-center" aria-label="Home"><img src="{% static 'img/logo.png' %}"
                     alt="Sphinx Logo" class="w-8 h-8"><strong
-                    class="ml-2 text-teal-600 dark:text-ios-teal text-md font-semibold">Sphinx</strong></a>
+                    class="ml-2 text-teal-600 text-md font-semibold">Sphinx</strong></a>
             <button @click="mobileMenuOpen = false"
-                class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white p-1"><i
+                class="text-gray-500 hover:text-gray-800 p-1"><i
                     class="fas fa-times fa-lg"></i></button>
         </div>
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
             {% if perms.tasks.view_category %}
             <a href="{% url 'tasks:category_list' %}"
-                class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
-                    class="fas fa-folder w-5 mr-3 text-teal-500 dark:text-ios-teal"></i> {% trans 'Категории' %}</a>
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
+                    class="fas fa-folder w-5 mr-3 text-teal-500"></i> {% trans 'Категории' %}</a>
             {% endif %}
             {% if perms.tasks.view_task %}
             <a href="{% url 'tasks:task_list' %}"
-                class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
-                    class="fas fa-tasks w-5 mr-3 text-blue-500 dark:text-ios-blue"></i> {% trans 'Задачи' %}</a>
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
+                    class="fas fa-tasks w-5 mr-3 text-blue-500"></i> {% trans 'Задачи' %}</a>
             {% endif %}
             {% if perms.tasks.view_project %}
             <a href="{% url 'tasks:project_list' %}"
-                class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
-                    class="fas fa-project-diagram w-5 mr-3 text-purple-500 dark:text-ios-purple"></i> {% trans 'Проекты' %}</a>
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
+                    class="fas fa-project-diagram w-5 mr-3 text-purple-500"></i> {% trans 'Проекты' %}</a>
             {% endif %}
             {% if perms.checklists.view_checklisttemplate %}
             <a href="{% url 'checklists:template_list' %}"
-               class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
-               class="fas fa-clipboard-list w-5 mr-3 text-indigo-500 dark:text-ios-indigo"></i> {% trans 'Шаблоны чеклистов' %}</a>
+               class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
+               class="fas fa-clipboard-list w-5 mr-3 text-indigo-500"></i> {% trans 'Шаблоны чеклистов' %}</a>
             {% endif %}
             {% if perms.checklists.view_checklistrun %}
              <a href="{% url 'checklists:history_list' %}"
-                class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
                 class="fas fa-history w-5 mr-3 text-gray-500"></i> {% trans 'История чеклистов' %}</a>
             {% endif %}
              {% if perms.user_profiles.view_user %}
              <a href="{% url 'user_profiles:user_list' %}"
-                class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
-                    class="fas fa-users w-5 mr-3 text-orange-500 dark:text-ios-orange"></i> {% trans 'Пользователи' %}</a>
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
+                    class="fas fa-users w-5 mr-3 text-orange-500"></i> {% trans 'Пользователи' %}</a>
              {% endif %}
              {% if perms.user_profiles.view_team %}
              <a href="{% url 'user_profiles:team_list' %}"
-                class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
-                     class="fas fa-users-cog w-5 mr-3 text-pink-500 dark:text-ios-pink"></i> {% trans 'Команды' %}</a>
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
+                     class="fas fa-users-cog w-5 mr-3 text-pink-500"></i> {% trans 'Команды' %}</a>
              {% endif %}
-            <hr class="border-gray-200 dark:border-dark-600 my-2">
+            <hr class="border-gray-200 my-2">
             <div class="relative lg:hidden px-1 py-2">
                 <input type="search" id="mobile-search-input"
-                    class="form-input w-full px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-ios-blue text-sm border-transparent focus:border-transparent dark:placeholder-gray-500 dark:text-gray-200"
+                    class="form-input w-full px-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm border-transparent focus:border-transparent placeholder-gray-500 text-gray-900"
                     placeholder="{% trans 'Поиск...' %}" aria-label="{% trans 'Поиск' %}">
             </div>
-            {# --- User Actions Moved to Mobile Sidebar --- #}
-             <hr class="border-gray-200 dark:border-dark-600 my-2">
+             <hr class="border-gray-200 my-2">
              <a href="{% url 'user_profiles:profile_view' %}"
-                class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
                     class="fas fa-user-circle w-5 mr-3 text-gray-500"></i> {% trans 'Мой профиль' %}</a>
              {% if perms.room.view_room %}
              <a href="{% url 'room:rooms' %}"
-                 class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
+                 class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
                      class="fas fa-comments w-5 mr-3 text-gray-500"></i> {% trans 'Чаты' %}</a>
              {% endif %}
              {% if user.is_staff %}<a href="/admin/"
-                 class="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700"><i
+                 class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
                      class="fas fa-cog w-5 mr-3 text-gray-500"></i> {% trans 'Админка' %}</a>{% endif %}
-            <hr class="border-gray-200 dark:border-dark-600 my-2">
+            <hr class="border-gray-200 my-2">
              <form method="post" action="{% url 'set_language' %}" class="w-full px-3 py-2">
                  {% csrf_token %}
                  <label for="language-select-mobile" class="sr-only">{% trans "Language" %}</label>
                  <select name="language" id="language-select-mobile" onchange="this.form.submit()"
-                     class="w-full text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-dark-700 rounded-md p-2 border border-gray-300 dark:border-dark-600 text-sm focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                     class="w-full text-gray-800 bg-gray-100 rounded-md p-2 border border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500 appearance-none">
                      <option value="uz" {% if LANGUAGE_CODE == "uz" %}selected{% endif %}>🇺🇿 {% trans 'Uzbek' %}</option>
                      <option value="ru" {% if LANGUAGE_CODE == "ru" %}selected{% endif %}>🇷🇺 {% trans 'Русский' %}
                      </option>
@@ -304,32 +293,27 @@
                      </option>
                  </select>
              </form>
-             <button id="darkModeToggleMobile" aria-label="Toggle dark mode" class="flex items-center w-full px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700">
-                <i class="fas fa-moon w-5 mr-3 text-gray-500 dark:hidden"></i>
-                <i class="fas fa-sun w-5 mr-3 text-gray-500 hidden dark:inline-block"></i>
-                <span class="dark:hidden">{% trans 'Темная тема' %}</span>
-                <span class="hidden dark:inline-block">{% trans 'Светлая тема' %}</span>
-            </button>
-             <hr class="border-gray-200 dark:border-dark-600 my-2">
+             {# REMOVED DARK MODE TOGGLE FROM MOBILE SIDEBAR #}
+             <hr class="border-gray-200 my-2">
              <a href="{% url 'user_profiles:logout' %}"
-                 class="flex items-center px-3 py-2 rounded-md text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-700 transition-colors"><i
+                 class="flex items-center px-3 py-2 rounded-md text-red-600 hover:bg-red-100 transition-colors"><i
                      class="fas fa-sign-out-alt w-5 mr-3"></i>{% trans 'Выход' %}</a>
         </nav>
-        {# Убираем нижний блок из мобильного меню, т.к. все перенесено в nav #}
     </div>
     <div x-show="mobileMenuOpen" x-transition:enter="transition-opacity ease-linear duration-300"
         x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/30 dark:bg-black/50 z-50 md:hidden"
+        x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/30 z-50 md:hidden"
         @click="mobileMenuOpen = false" x-cloak></div>
-    <main id="main-content" class="flex-1 overflow-y-auto pt-20 pb-24 md:pt-16 md:pb-20 bg-gray-50 dark:bg-dark-950">
+
+    <main id="main-content" class="flex-1 overflow-y-auto pt-20 pb-24 md:pt-16 md:pb-20 bg-gray-50">
         <div class="container mx-auto px-4 py-6">
             <div class="mb-6 hidden md:block">
                 {% block list_title %}{% endblock %}
             </div>
             <div class="mb-6 block md:hidden">
                 {% block list_title_mobile %}
-                    {{ block.super }}
+                    {{ block.super }} {# Allows inheriting from base if defined there #}
                 {% endblock %}
             </div>
             <div id="list_actions_mobile" class="md:hidden mb-4 flex flex-wrap gap-2">
@@ -340,25 +324,25 @@
     </main>
     {% else %}
     <div class="flex items-center justify-center min-h-screen">
-        <p class="text-xl text-gray-600 dark:text-gray-400">{% trans "Требуется вход в систему." %}
-            <a href="{% url 'user_profiles:login' %}" class="text-blue-600 dark:text-blue-400 hover:underline ml-2">{%
+        <p class="text-xl text-gray-600">{% trans "Требуется вход в систему." %}
+            <a href="{% url 'user_profiles:login' %}" class="text-blue-600 hover:underline ml-2">{%
                 trans "Войти" %}</a>
         </p>
     </div>
     {% endif %}
     <footer
-        class="fixed bottom-0 left-0 w-full bg-white/80 dark:bg-dark-800/80 backdrop-blur-lg border-t border-gray-200 dark:border-dark-700 shadow-lg px-4 py-2 md:px-6 md:py-2 flex flex-col md:flex-row md:items-center md:justify-between rounded-t-xl md:rounded-t-2xl z-30 text-xs md:text-sm">
-        <span class="text-gray-600 dark:text-gray-400 text-center md:text-left mb-1 md:mb-0">© <span id="year"></span>
-            <a href="/" class="hover:underline text-teal-600 dark:text-ios-teal font-medium">Sphinx™</a>. {% trans 'All Rights Reserved' %}.</span>
+        class="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-lg border-t border-gray-200 shadow-lg px-4 py-2 md:px-6 md:py-2 flex flex-col md:flex-row md:items-center md:justify-between rounded-t-xl md:rounded-t-2xl z-30 text-xs md:text-sm">
+        <span class="text-gray-600 text-center md:text-left mb-1 md:mb-0">© <span id="year"></span>
+            <a href="/" class="hover:underline text-teal-600 font-medium">Sphinx™</a>. {% trans 'All Rights Reserved' %}.</span>
         <ul
-            class="flex flex-wrap items-center justify-center md:justify-end font-medium text-gray-600 dark:text-gray-400">
+            class="flex flex-wrap items-center justify-center md:justify-end font-medium text-gray-600">
             <li><a href="#" target="_blank" rel="noopener noreferrer"
-                    class="hover:text-teal-600 dark:hover:text-ios-teal transition-colors px-2">{% trans 'Privacy Policy' %}</a></li>
+                    class="hover:text-teal-600 transition-colors px-2">{% trans 'Privacy Policy' %}</a></li>
         </ul>
     </footer>
     <div id="loading-indicator"
-        class="hidden fixed inset-0 bg-white/70 dark:bg-dark-900/70 flex justify-center items-center z-[999]">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 dark:border-ios-blue">
+        class="hidden fixed inset-0 bg-white/70 flex justify-center items-center z-[999]">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500">
         </div>
     </div>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/node-uuid/1.4.8/uuid.min.js"></script>

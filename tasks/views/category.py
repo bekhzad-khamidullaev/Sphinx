@@ -1,4 +1,3 @@
-# tasks/views/category.py
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -7,7 +6,7 @@ from django.contrib import messages
 from ..models import TaskCategory
 from ..forms import TaskCategoryForm
 from ..filters import TaskCategoryFilter
-from .mixins import SuccessMessageMixin # Using Django's built-in
+from .mixins import SuccessMessageMixin
 
 class TaskCategoryListView(LoginRequiredMixin, ListView):
     model = TaskCategory
@@ -48,7 +47,7 @@ class TaskCategoryCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = _('Создание новой категории')
-        context['form_action'] = _('Создать категорию')
+        context['form_action_label'] = _('Создать категорию')
         return context
 
 class TaskCategoryUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
@@ -57,19 +56,19 @@ class TaskCategoryUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView
     template_name = 'tasks/category_form.html'
     success_url = reverse_lazy('tasks:category_list')
     success_message = _("Категория '%(name)s' успешно обновлена.")
-    context_object_name = 'category'
+    context_object_name = 'object' # Use 'object' for consistency with DeleteView
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = _('Редактирование категории') + f': {self.object.name}'
-        context['form_action'] = _('Сохранить изменения')
+        context['form_action_label'] = _('Сохранить изменения')
         return context
 
 class TaskCategoryDeleteView(LoginRequiredMixin, DeleteView):
     model = TaskCategory
     template_name = 'tasks/category_confirm_delete.html'
     success_url = reverse_lazy('tasks:category_list')
-    context_object_name = 'category'
+    context_object_name = 'object'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -77,7 +76,7 @@ class TaskCategoryDeleteView(LoginRequiredMixin, DeleteView):
         return context
 
     def form_valid(self, form):
-        category_name = self.object.name
+        object_name = self.object.name
         response = super().form_valid(form)
-        messages.success(self.request, _("Категория '%(name)s' была успешно удалена.") % {'name': category_name})
+        messages.success(self.request, _("Категория '%(name)s' была успешно удалена.") % {'name': object_name})
         return response

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title|default:_("Удаление должности") }}{% endblock %}
+
+{% block page_title_block %}
+  <h1 class="text-title-md2 font-semibold text-black dark:text-white">
+    {{ page_title|default:_("Удаление должности") }}
+  </h1>
+{% endblock %}
+
+{% block content %}
+<div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+    <div class="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
+        <h3 class="font-medium text-black dark:text-white">
+            {% trans "Подтверждение удаления" %}
+        </h3>
+    </div>
+    <div class="p-6.5">
+        <p class="text-black dark:text-white mb-4">
+            {% blocktrans with name=object.name %}
+            Вы уверены, что хотите удалить должность <strong>"{{ name }}"</strong>?
+            {% endblocktrans %}
+        </p>
+        <p class="text-sm text-warning mb-2">
+            {% trans "Внимание: Если эта должность присвоена каким-либо пользователям, их связь с этой должностью будет удалена (установлена в NULL) или защищена от удаления, в зависимости от настроек модели User." %}
+        </p>
+        <p class="text-danger font-semibold mb-6">{% trans "Это действие нельзя будет отменить!" %}</p>
+        <form method="post" action="">
+            {% csrf_token %}
+            <div class="flex justify-end gap-3 mt-4">
+                <a href="{% url 'user_profiles:jobtitle_list' %}" class="flex justify-center rounded bg-gray-200 dark:bg-gray-700 px-6 py-2 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                    {% trans 'Отмена' %}
+                </a>
+                <button type="submit" class="flex justify-center rounded bg-danger px-6 py-2 font-medium text-white hover:bg-opacity-90">
+                    <i class="fas fa-trash mr-2 mt-0.5"></i> {% trans 'Да, удалить' %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

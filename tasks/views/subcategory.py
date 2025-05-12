@@ -1,4 +1,3 @@
-# tasks/views/subcategory.py
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -15,13 +14,13 @@ class TaskSubcategoryListView(LoginRequiredMixin, FilterView):
     model = TaskSubcategory
     queryset = TaskSubcategory.objects.select_related('category').order_by('category__name', 'name')
     template_name = "tasks/subcategory_list.html"
-    context_object_name = "object_list" # Use object_list for consistency with ListView
+    context_object_name = "object_list"
     paginate_by = 15
     filterset_class = TaskSubcategoryFilter
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['filterset'] = context.get('filter') # FilterView uses 'filter' by default
+        context['filterset'] = context.get('filter')
         context['page_title'] = _("Подкатегории Задач")
         return context
 
@@ -33,7 +32,6 @@ class TaskSubcategoryDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Детали подкатегории") + f": {self.object.name}"
-        # context['tasks'] = self.object.tasks.all()[:10]
         return context
 
 class TaskSubcategoryCreateView(LoginRequiredMixin, SuccessMessageMixin, WebSocketNotificationMixin, CreateView):
@@ -48,12 +46,12 @@ class TaskSubcategoryCreateView(LoginRequiredMixin, SuccessMessageMixin, WebSock
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = _("Создать Подкатегорию")
-        context['form_action'] = _("Создать")
+        context['form_action_label'] = _("Создать")
         return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        self.send_ws_notification({"action": "create", "id": self.object.id, "name": self.object.name, "category": self.object.category.name})
+        self.send_ws_notification({"action": "create", "id": self.object.id, "name": self.object.name, "category_name": self.object.category.name})
         return response
 
 class TaskSubcategoryUpdateView(LoginRequiredMixin, SuccessMessageMixin, WebSocketNotificationMixin, UpdateView):
@@ -64,41 +62,39 @@ class TaskSubcategoryUpdateView(LoginRequiredMixin, SuccessMessageMixin, WebSock
     success_message = _("Подкатегория '%(name)s' успешно обновлена!")
     ws_group_name = "subcategories_list"
     ws_event_type = "subcategory_update"
-    context_object_name = 'subcategory'
+    context_object_name = 'object'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = _("Редактировать Подкатегорию: %s") % self.object.name
-        context['form_action'] = _("Сохранить")
+        context['form_action_label'] = _("Сохранить")
         return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        self.send_ws_notification({"action": "update", "id": self.object.id, "name": self.object.name, "category": self.object.category.name})
+        self.send_ws_notification({"action": "update", "id": self.object.id, "name": self.object.name, "category_name": self.object.category.name})
         return response
 
-class TaskSubcategoryDeleteView(LoginRequiredMixin, DeleteView): # Removed WS and Success Mixins, handling manually
+class TaskSubcategoryDeleteView(LoginRequiredMixin, DeleteView):
     model = TaskSubcategory
     template_name = "tasks/subcategory_confirm_delete.html"
     success_url = reverse_lazy("tasks:subcategory_list")
-    ws_group_name = "subcategories_list" # For manual sending
-    ws_event_type = "subcategory_update" # For manual sending
-    context_object_name = 'subcategory'
+    ws_group_name = "subcategories_list"
+    ws_event_type = "subcategory_update"
+    context_object_name = 'object'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = _("Удалить Подкатегорию: %s") % self.object.name
         return context
 
-    # Overriding form_valid to send success message and WS notification manually
     def form_valid(self, form):
-        subcategory_id = self.object.id
-        subcategory_name = self.object.name
-        response = super().form_valid(form) # Perform deletion
-        messages.success(self.request, _("Подкатегория '%(name)s' удалена!") % {'name': subcategory_name})
-        # Manually send WS notification after successful deletion
-        ws_mixin = WebSocketNotificationMixin() # Instantiate mixin manually
+        object_id = self.object.id
+        object_name = self.object.name
+        response = super().form_valid(form)
+        messages.success(self.request, _("Подкатегория '%(name)s' удалена!") % {'name': object_name})
+        ws_mixin = WebSocketNotificationMixin()
         ws_mixin.ws_group_name = self.ws_group_name
         ws_mixin.ws_event_type = self.ws_event_type
-        ws_mixin.send_ws_notification({"action": "delete", "id": subcategory_id})
+        ws_mixin.send_ws_notification({"action": "delete", "id": object_id, "name": object_name})
         return response
