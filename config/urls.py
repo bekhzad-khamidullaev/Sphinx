@@ -37,7 +37,7 @@ urlpatterns = i18n_patterns(
 
     # Подключение маршрутов приложения `tasks`
     path("core/", include("tasks.urls")),
-    
+
     # Подключение маршрутов приложения `chats`
     path("rooms/", include("room.urls")),
     path('checklists/', include('checklists.urls', namespace='checklists')),

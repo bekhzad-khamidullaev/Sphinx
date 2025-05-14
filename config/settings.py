@@ -32,7 +32,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_tailwind',
     'tailwind',
-    # 'theme',    
+    'theme',
+    'django_browser_reload',
     "django_filters",
     "drf_yasg",
     "encrypted_model_fields",
@@ -40,7 +41,6 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "simple_history",
-    "django_browser_reload",
     "django_select2",
     "widget_tweaks",
     "taggit",
@@ -107,8 +107,9 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 
 # --- Файлы ---
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+# STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / 'theme' / 'static']
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
@@ -202,7 +203,9 @@ FIELD_ENCRYPTION_KEY = "_3HZU7uFwNYQw0n_7r1BFgwPU52Xs2N16uQUrJvPdUM="
 # --- Crispy Forms ---
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["tailwind"]
 CRISPY_TEMPLATE_PACK = "tailwind"
-# TAILWIND_APP_NAME = 'theme'
+TAILWIND_APP_NAME = 'theme'
+NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd"
+
 # --- Select2 ---
 SELECT2_CACHE_BACKEND = "default"
 
