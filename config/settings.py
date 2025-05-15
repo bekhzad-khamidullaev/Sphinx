@@ -248,21 +248,21 @@ if "test" in sys.argv:
 
 
 SITE_URL = 'http://127.0.0.1:8000' # ИЗМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL ДЛЯ ПРОДАкШЕНА
-SITE_NAME = 'Sphinx Task Manager' # Название вашего проекта/сайта
+SITE_NAME = 'ServiceDesk' # Название вашего проекта/сайта
 
 # Настройки Email (замените на ваши реальные данные)
 # Для локальной разработки можно использовать консольный email backend:
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Для продакшена:
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.example.com' # Ваш SMTP сервер
+EMAIL_HOST = 'smtp.office365.com' # Ваш SMTP сервер
 EMAIL_PORT = 587 # или 465 для SSL
 EMAIL_USE_TLS = True # True для TLS, False для SSL (если порт 465)
-EMAIL_HOST_USER = 'your-email@example.com' # Ваш email логин
-EMAIL_HOST_PASSWORD = 'your-email-password' # Ваш email пароль
-DEFAULT_FROM_EMAIL = f'{SITE_NAME} <noreply@example.com>' # Email отправителя по умолчанию
+EMAIL_HOST_USER = 'b.xamidullayev@evos.uz' # Ваш email логин
+EMAIL_HOST_PASSWORD = 'bgtyhn1234$' # Ваш email пароль
+DEFAULT_FROM_EMAIL = f'{SITE_NAME} <noreply@evos.uz>' # Email отправителя по умолчанию
 SERVER_EMAIL = DEFAULT_FROM_EMAIL # Для ошибок сервера
-ADMINS = [('Your Admin Name', 'admin-email@example.com')] # Email админов для уведомлений
+ADMINS = [('Bekhzad Khamidulloh', 'b.xamidullayev@evos.uz')] # Email админов для уведомлений
 
 # Кастомные настройки для user_profiles/signals.py
 ENABLE_AUDIT_LOG = False # Установите True, если решите добавить AuditLog позже
