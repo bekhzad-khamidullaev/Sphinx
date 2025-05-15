@@ -3,701 +3,642 @@ import json
 import uuid
 import base64
 import logging
-import asyncio # Import asyncio for gather
-from collections import defaultdict # Use defaultdict for easier handling
+import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.utils.translation import gettext as _
-from django.db.models import Q
-from django.utils.timezone import now
-from django.db import models
-from django.contrib.auth import get_user_model # Import get_user_model
-
-# Models are imported after get_user_model potentially runs if needed at module level elsewhere
+from django.utils import timezone
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.conf import settings
 from .models import Room, Message, Reaction, MessageReadStatus
-# utils.py is no longer needed for in-memory presence
+from .utils import get_redis_connection, get_room_online_users_redis_key, FileUploadValidator
+from .serializers import BasicUserSerializer, MessageSerializer # Используем сериализаторы для данных
 
 logger = logging.getLogger(__name__)
+# User = get_user_model()
 
-# --- Message Types (Constants) ---
-MSG_TYPE_MESSAGE = 'chat_message'
-MSG_TYPE_EDIT = 'edit_message'
-MSG_TYPE_DELETE = 'delete_message'
-MSG_TYPE_REACTION = 'reaction_update'
-MSG_TYPE_FILE = 'file_message'
-MSG_TYPE_READ_STATUS = 'read_status_update' # Optional broadcast
-MSG_TYPE_REPLY = 'reply_message'
-MSG_TYPE_ONLINE_USERS = 'online_users'
-MSG_TYPE_ERROR = 'error_message'
-MSG_TYPE_OLDER_MESSAGES = 'older_messages' # For infinite scroll
-MSG_TYPE_LOAD_OLDER = 'load_older_messages' # Client request type
-MSG_TYPE_ACK = 'message_ack' # For message confirmation
+User = settings.AUTH_USER_MODEL
 
+# --- Message Types (Константы для типов сообщений WebSocket) ---
+# Клиент -> Сервер
+MSG_TYPE_CLIENT_SEND_MESSAGE = 'send_message'
+MSG_TYPE_CLIENT_EDIT_MESSAGE = 'edit_message'
+MSG_TYPE_CLIENT_DELETE_MESSAGE = 'delete_message'
+MSG_TYPE_CLIENT_ADD_REACTION = 'add_reaction'
+MSG_TYPE_CLIENT_REMOVE_REACTION = 'remove_reaction' # Явное удаление реакции
+MSG_TYPE_CLIENT_SEND_FILE = 'send_file'
+MSG_TYPE_CLIENT_MARK_READ = 'mark_read'
+MSG_TYPE_CLIENT_LOAD_OLDER = 'load_older_messages'
+MSG_TYPE_CLIENT_TYPING = 'typing_status' # Пользователь печатает
+
+# Сервер -> Клиент
+MSG_TYPE_SERVER_NEW_MESSAGE = 'new_message'
+MSG_TYPE_SERVER_UPDATE_MESSAGE = 'update_message' # Для редактирования и удаления (с флагом is_deleted)
+MSG_TYPE_SERVER_REACTION_UPDATE = 'reaction_update'
+MSG_TYPE_SERVER_ONLINE_USERS = 'online_users_update'
+MSG_TYPE_SERVER_OLDER_MESSAGES = 'older_messages_list'
+MSG_TYPE_SERVER_MESSAGE_ACK = 'message_ack' # Подтверждение получения сообщения сервером
+MSG_TYPE_SERVER_ERROR = 'error_notification'
+MSG_TYPE_SERVER_TYPING_UPDATE = 'typing_update' # Рассылка статуса "печатает"
+
+# --- Consumer ---
 class ChatConsumer(AsyncWebsocketConsumer):
-    # --- In-Memory Storage for Online Users (Class Variable) ---
-    # WARNING: This is NOT shared across multiple worker processes!
-    online_users_by_room = defaultdict(set)
-    # ---
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = None
+        self.room_slug = None
+        self.room_id = None
+        self.room_group_name = None
+        self.redis_conn = None
+        self.is_connected_and_authenticated = False
 
     async def connect(self):
-        self.room_slug = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = f'chat_{self.room_slug}'
-        self.user = self.scope['user']
-
+        self.user = self.scope.get('user')
         if not self.user or not self.user.is_authenticated:
-            logger.warning(f"Unauthenticated user tried to connect to room {self.room_slug}.")
-            await self.close()
+            logger.warning("Unauthenticated user connection attempt.")
+            await self.close(code=4001) # Код для неавторизованного доступа
             return
 
-        logger.info(f"User {self.user.username} connecting to room {self.room_slug}...")
-        self.room = await self.get_room(self.room_slug)
-        if not self.room or self.room.is_archived:
-            logger.warning(f"Connection rejected: Room {self.room_slug} not found or archived.")
-            await self.close(code=4004)
+        self.room_slug = self.scope['url_route']['kwargs']['room_name']
+        self.room_group_name = f'chat_{self.room_slug}' # Имя группы для Channels
+
+        self.redis_conn = await get_redis_connection()
+        if not self.redis_conn:
+            logger.error(f"Failed to get Redis connection for user {self.user.username} in room {self.room_slug}.")
+            await self.close(code=1011) # Внутренняя ошибка сервера
             return
-        if not await self.check_permissions(self.user, self.room):
-             logger.warning(f"User {self.user.username} permission denied for room {self.room_slug}.")
-             await self.close(code=4003)
-             return
+
+        room_obj = await self._get_room_from_db(self.room_slug)
+        if not room_obj:
+            logger.warning(f"Room {self.room_slug} not found or archived. User: {self.user.username}")
+            await self.close(code=4004) # Код для "не найдено"
+            return
+        self.room_id = room_obj.id # Сохраняем ID комнаты для удобства
+
+        can_access = await self._check_room_access(room_obj, self.user)
+        if not can_access:
+            logger.warning(f"Access denied for user {self.user.username} to room {self.room_slug}.")
+            await self.close(code=4003) # Код для "запрещено"
+            return
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
-        logger.info(f"User {self.user.username} ACCEPTED connection to room {self.room_slug}")
+        self.is_connected_and_authenticated = True
+        logger.info(f"User {self.user.username} (channel: {self.channel_name}) connected to room {self.room_slug}.")
 
-        # --- Use In-Memory Online Status ---
-        await self.add_user_to_online_list()
-        await self.broadcast_online_users()
-        # ---
+        await self._add_user_to_online_list_redis()
+        await self._broadcast_online_users_to_group()
+        # Отправить текущему пользователю полный список онлайн пользователей при подключении
+        # await self._send_current_online_users_to_client(self.channel_name)
+
 
     async def disconnect(self, close_code):
-        logger.info(f"User {getattr(self.user, 'username', 'anonymous')} disconnecting from room {self.room_slug}, code: {close_code}")
-        if hasattr(self, 'user') and self.user.is_authenticated and hasattr(self, 'room_group_name'):
-            # --- Use In-Memory Online Status ---
-            await self.remove_user_from_online_list()
-            await self.broadcast_online_users()
-            # ---
-            await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-        logger.info(f"User {getattr(self.user, 'username', 'anonymous')} disconnected fully from {self.room_slug}")
+        logger.info(f"User {getattr(self.user, 'username', 'Anonymous')} (channel: {self.channel_name}) disconnecting from room {self.room_slug}, code: {close_code}")
+        if self.is_connected_and_authenticated:
+            if self.redis_conn:
+                await self._remove_user_from_online_list_redis()
+                await self._broadcast_online_users_to_group()
+            if self.room_group_name and self.channel_name:
+                await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        # Пул соединений Redis сам управляет закрытием соединений
+        logger.info(f"User {getattr(self.user, 'username', 'Anonymous')} disconnected fully from {self.room_slug}.")
+
 
     async def receive(self, text_data):
-        try:
-            data = json.loads(text_data)
-            message_type = data.get('type')
-            if not message_type:
-                raise ValueError("Message type not provided.")
-            logger.debug(f"Receive type '{message_type}' from {self.user.username} in {self.room_slug}")
-
-            handler = getattr(self, f'handle_{message_type}', self.handle_unknown_type)
-            await handler(data.get('payload', {})) # Pass payload to handler
-        except json.JSONDecodeError:
-            logger.error(f"Invalid JSON from {self.user.username}: {text_data}")
-            await self.send_error("Invalid JSON format.")
-        except Exception as e:
-            logger.exception(f"Error processing message from {self.user.username} in {self.room_slug}: {e}. Data: {text_data}")
-            await self.send_error("An error occurred.")
-
-
-    # --- Message Handlers ---
-    async def handle_chat_message(self, payload):
-        content = payload.get('content', '').strip() # Consumer expects 'content' key
-        client_msg_id = payload.get('client_id')
-        if not content: return await self.send_error("Message content empty.", client_msg_id)
-
-        message = await self.save_message(user=self.user, room=self.room, content=content)
-        logger.info(f"Message {message.id} saved successfully for room {self.room_slug}. Attempting broadcast...") # LOG 1
-        await self.broadcast_message(message, MSG_TYPE_MESSAGE, client_msg_id=client_msg_id)
-
-    async def handle_reply_message(self, payload):
-        content = payload.get('content', '').strip() # Consumer expects 'content' key
-        reply_to_id = payload.get('reply_to_id')
-        client_msg_id = payload.get('client_id')
-        if not content or not reply_to_id: return await self.send_error("Missing data for reply.", client_msg_id)
-
-        try:
-            reply_to_msg = await self.get_message(uuid.UUID(reply_to_id))
-            if not reply_to_msg or reply_to_msg.room != self.room: raise Message.DoesNotExist
-        except (ValueError, Message.DoesNotExist): return await self.send_error("Invalid message to reply to.", client_msg_id)
-
-        message = await self.save_message(user=self.user, room=self.room, content=content, reply_to=reply_to_msg)
-        await self.broadcast_message(message, MSG_TYPE_REPLY, include_reply_to=True, client_msg_id=client_msg_id)
-
-    async def handle_edit_message(self, payload):
-        message_id = payload.get('message_id')
-        new_content = payload.get('content', '').strip() # Consumer expects 'content' key
-        if not message_id or not new_content: return await self.send_error("Missing data for edit.")
-
-        try:
-            message = await self.get_message(uuid.UUID(message_id))
-            if not message or message.user != self.user or message.room != self.room or message.is_deleted:
-                return await self.send_error("Cannot edit this message.")
-            updated_message = await self.update_message_content(message, new_content)
-            await self.broadcast_message(updated_message, MSG_TYPE_EDIT)
-        except (ValueError, Message.DoesNotExist): await self.send_error("Invalid message ID for edit.")
-
-    async def handle_delete_message(self, payload):
-        message_id = payload.get('message_id')
-        if not message_id: return await self.send_error("Missing message ID for delete.")
-
-        try:
-            message = await self.get_message(uuid.UUID(message_id))
-            if not message or message.user != self.user or message.room != self.room or message.is_deleted:
-                return await self.send_error("Cannot delete this message.")
-            deleted_message = await self.mark_message_deleted(message)
-            await self.broadcast_message(deleted_message, MSG_TYPE_DELETE)
-        except (ValueError, Message.DoesNotExist): await self.send_error("Invalid message ID for delete.")
-
-    async def handle_add_reaction(self, payload):
-        message_id = payload.get('message_id')
-        emoji = payload.get('emoji', '').strip()
-        if not message_id or not emoji or len(emoji) > 10: return await self.send_error("Invalid reaction data.")
-
-        try:
-            message = await self.get_message(uuid.UUID(message_id))
-            if not message or message.room != self.room or message.is_deleted:
-                return await self.send_error("Cannot react to this message.")
-
-            await self.add_or_update_reaction(message, self.user, emoji) # Toggle reaction
-            reactions_summary = await self.get_reactions_summary(message) # Get updated summary
-
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'reaction_broadcast',
-                    'message_id': str(message.id),
-                    'reactions': reactions_summary
-                }
-            )
-        except (ValueError, Message.DoesNotExist): await self.send_error("Invalid message ID for reaction.")
-
-    async def handle_mark_read(self, payload):
-        last_id = payload.get('last_visible_message_id')
-        if not last_id:
-            logger.debug(f"Marking all as read for user {self.user.id} in room {self.room_slug}")
-            await self.update_read_status_to_latest(self.user, self.room)
-            # Optionally broadcast this status if needed by other clients
-            # await self.broadcast_read_status(...)
+        if not self.is_connected_and_authenticated:
+            logger.warning(f"Message received from non-authenticated/disconnected channel {self.channel_name}")
             return
 
         try:
-            message = await self.get_message(uuid.UUID(last_id))
-            if message and message.room == self.room:
-                logger.debug(f"Marking read up to {message.id} for user {self.user.id} in room {self.room_slug}")
-                await self.update_read_status(self.user, self.room, message)
-                # Optionally broadcast this status
-                # await self.broadcast_read_status(...)
-            else:
-                 logger.warning(f"Mark read failed: Message {last_id} not found or not in room {self.room_slug}.")
-                 await self.send_error("Invalid last visible message ID.")
-        except (ValueError, Message.DoesNotExist):
-            logger.warning(f"Mark read failed: Invalid UUID format '{last_id}'.")
-            await self.send_error("Invalid message ID format for mark read.")
+            data = json.loads(text_data)
+            message_type = data.get('type')
+            payload = data.get('payload', {})
+            client_msg_id = payload.get('client_id') # Для ACK
 
-    async def handle_send_file(self, payload):
-        file_data_base64 = payload.get('file_data')
-        filename = payload.get('filename')
-        content = payload.get('content', '') # Optional caption (use 'content' key)
-        client_msg_id = payload.get('client_id')
+            if not message_type:
+                raise ValueError("Message type not provided in incoming WebSocket data.")
 
-        if not file_data_base64 or not filename: return await self.send_error("Missing file data.", client_msg_id)
-        # TODO: Add robust file size and type validation here before decoding/saving
+            logger.debug(f"Received type '{message_type}' from {self.user.username} in {self.room_slug}. Payload: {payload}")
 
-        try:
-            file_content = base64.b64decode(file_data_base64)
-            django_file = ContentFile(file_content, name=filename)
-            message = await self.save_message(user=self.user, room=self.room, content=content, file=django_file)
-            await self.broadcast_message(message, MSG_TYPE_FILE, include_file_info=True, client_msg_id=client_msg_id)
-        except (TypeError, ValueError) as e:
-             logger.error(f"File decode error from user {self.user.username}: {e}")
-             await self.send_error("Invalid file data provided.", client_msg_id)
+            handler_name = f'handle_client_{message_type}'
+            handler = getattr(self, handler_name, self._handle_unknown_client_type)
+            await handler(payload, client_msg_id)
+
+        except json.JSONDecodeError:
+            logger.error(f"Invalid JSON from {self.user.username}: {text_data}")
+            await self._send_error_to_client("Invalid JSON format.")
+        except ValueError as e: # Для наших кастомных ошибок
+            logger.warning(f"ValueError processing message from {self.user.username}: {e}")
+            await self._send_error_to_client(str(e), client_msg_id)
+        except DjangoValidationError as e: # Для ошибок валидации Django (например, из FileUploadValidator)
+            logger.warning(f"DjangoValidationError from {self.user.username}: {e.messages}")
+            await self._send_error_to_client(". ".join(e.messages), client_msg_id)
         except Exception as e:
-            logger.exception(f"Error saving file message from {self.user.username}: {e}")
-            await self.send_error("Could not process file.", client_msg_id)
+            logger.exception(f"Unhandled error processing message from {self.user.username} in {self.room_slug}: {e}. Data: {text_data}")
+            await self._send_error_to_client(_("Произошла внутренняя ошибка сервера."), client_msg_id)
 
-    async def handle_load_older_messages(self, payload):
-        """Handles request from client to load older messages."""
-        before_message_id = payload.get('before_message_id')
-        limit = 20 # Number of older messages to fetch
-
-        try:
-            before_message = None
-            if before_message_id:
-                before_message = await self.get_message(uuid.UUID(before_message_id))
-                if not before_message or before_message.room != self.room:
-                     return await self.send_error("Invalid 'before_message_id'.")
-
-            older_messages = await self.get_older_messages(self.room, limit, before_message)
-
-            serialized_messages = []
-            for msg in older_messages:
-                serialized_messages.append(await self.serialize_message(msg, include_reply_to=True, include_file_info=True))
-
-            await self.send(text_data=json.dumps({ # Use send/dumps
-                'type': MSG_TYPE_OLDER_MESSAGES,
-                'payload': {
-                    'messages': serialized_messages,
-                    'has_more': len(older_messages) == limit
-                }
-            }))
-        except (ValueError, Message.DoesNotExist):
-            await self.send_error("Invalid 'before_message_id'.")
-        except Exception as e:
-            logger.exception(f"Error loading older messages for room {self.room_slug}: {e}")
-            await self.send_error("Could not load older messages.")
-
-    async def handle_unknown_type(self, payload):
-        await self.send_error(f"Unknown message type received.")
-
-    # --- Broadcasting Methods ---
-    async def broadcast_message(self, message, message_type, include_reply_to=False, include_file_info=False, client_msg_id=None):
-        """ Broadcasts a message, optionally includes client_id for acknowledgement """
-        logger.debug(f"Serializing message {message.id} for broadcast...") # LOG 2
-        message_data = await self.serialize_message(message, include_reply_to, include_file_info)
-        # Log serialized data only if needed for intense debugging (can be large)
-        # logger.debug(f"Message {message.id} serialized: {json.dumps(message_data, indent=2)}") # LOG 3
-        broadcast_data = {
-            'type': 'chat_broadcast',
-            'message_type': message_type,
-            'message': message_data,
-            'sender_channel_name': self.channel_name
-        }
-        if client_msg_id:
-            broadcast_data['client_id'] = client_msg_id
-
-        logger.info(f"Broadcasting message {message.id} (type: {message_type}) to group {self.room_group_name}") # LOG 4
-        try:
-            await self.channel_layer.group_send(self.room_group_name, broadcast_data)
-            logger.info(f"Successfully sent message {message.id} to channel layer group {self.room_group_name}") # LOG 5
-        except Exception as e:
-             logger.exception(f"!!! Error sending message {message.id} to channel layer group {self.room_group_name}: {e}") # LOG 6
-
-    async def chat_broadcast(self, event):
-        """ Sends message data received from the group to this specific WebSocket client. """
-        logger.info(f"Consumer {self.channel_name} received broadcast event type {event.get('message_type')} for message {event.get('message',{}).get('id')} in group {self.room_group_name}") # LOG 7
-        payload = event['message']
-        # If client_id was part of the broadcast, add it to the payload sent back
-        if 'client_id' in event:
-             payload['client_id'] = event['client_id']
-
-        send_to_client = True
-        # Don't send regular message back to sender if no client_id for ACK
-        if self.channel_name == event.get('sender_channel_name') and not event.get('client_id'):
-             logger.debug(f"Skipping broadcast to self for message {payload.get('id')} (no client_id ack needed)")
-             send_to_client = False
-
-        if send_to_client:
-            # Check if it's an ACK for the original sender
-            if self.channel_name == event.get('sender_channel_name') and event.get('client_id'):
-                 logger.debug(f"Sending ACK for client_id {event['client_id']} to {self.channel_name}")
-                 try:
-                     await self.send(text_data=json.dumps({ # Use send/dumps
-                         'type': MSG_TYPE_ACK,
-                         'payload': {
-                             'client_id': event['client_id'],
-                             'server_id': payload['id'],
-                             'timestamp': payload['timestamp']
-                         }
-                     }))
-                 except Exception as e:
-                     logger.exception(f"!!! Error sending ACK to client {self.channel_name}: {e}")
-            else:
-                 # Send regular message to other clients
-                 logger.info(f"Sending message {payload.get('id')} type {event['message_type']} to client {self.channel_name}") # LOG 8
-                 try:
-                      await self.send(text_data=json.dumps({'type': event['message_type'], 'payload': payload})) # Use send/dumps
-                      logger.info(f"Successfully sent message {payload.get('id')} to client {self.channel_name}") # LOG 9
-                 except Exception as e:
-                      logger.exception(f"!!! Error sending message {payload.get('id')} to client {self.channel_name}: {e}") # LOG 10
-
-    async def reaction_broadcast(self, event):
-         logger.debug(f"Sending reaction update for message {event['message_id']} to {self.channel_name}")
-         await self.send(text_data=json.dumps({ # Use send/dumps
-             'type': MSG_TYPE_REACTION,
-             'payload': {'message_id': event['message_id'],'reactions': event['reactions']}
-         }))
-
-    async def online_status_broadcast(self, event):
-         logger.debug(f"Sending online users list {event['users']} to {self.channel_name}")
-         await self.send(text_data=json.dumps({ # Use send/dumps
-            'type': MSG_TYPE_ONLINE_USERS,
-            'payload': {'users': event['users']} # Send list of user data dicts
-         }))
-
-
-    # --- Database Interaction (Async Helpers) ---
+    # --- Database Access Methods (Async Wrappers) ---
     @database_sync_to_async
-    def get_room(self, slug):
-        """ Gets Room object or None, prefetches participants """
+    def _get_room_from_db(self, slug: str):
         try:
-            return Room.objects.prefetch_related('participants').get(slug=slug)
+            return Room.objects.select_related(None).only('id', 'private', 'is_archived').get(slug=slug, is_archived=False)
         except Room.DoesNotExist:
-            logger.warning(f"Room with slug '{slug}' not found in get_room.")
             return None
 
     @database_sync_to_async
-    def check_permissions(self, user, room):
-        """ Checks if user can access the room """
-        if not room: return False
-        if not room.private: return True
-        # Use exists() for efficiency on the prefetched relation
+    def _check_room_access(self, room: Room, user: User) -> bool:
+        if not room.private:
+            return True
         return room.participants.filter(pk=user.pk).exists()
 
     @database_sync_to_async
-    def get_message(self, message_id):
-        """ Gets a specific message by UUID, selecting related fields """
-        try:
-            # Select related user and reply info needed for serialization/logic
-            return Message.objects.select_related('user', 'reply_to__user').get(id=message_id)
-        except (Message.DoesNotExist, ValueError): # Catch invalid UUIDs too
-             logger.warning(f"Message with ID '{message_id}' not found or invalid UUID in get_message.")
-             return None
-
-    @database_sync_to_async
-    def save_message(self, user, room, content='', file=None, reply_to=None):
-        """ Creates and saves a new message """
-        logger.debug(f"Saving message for user {user.id} in room {room.id}. ReplyTo: {reply_to.id if reply_to else None}")
-        # TODO: Add SearchVector update logic here if using PostgreSQL FTS
-        msg = Message.objects.create(
-            user=user, room=room, content=content, file=file, reply_to=reply_to
-        )
-        logger.info(f"Message {msg.id} created.")
-        return msg
-
-    @database_sync_to_async
-    def update_message_content(self, message, new_content):
-        """ Updates the content and edited_at timestamp of a message """
-        logger.debug(f"Updating content for message {message.id}")
-        message.content = new_content
-        message.edited_at = now()
-        # TODO: Update SearchVector if needed
-        message.save(update_fields=['content', 'edited_at'])
-        logger.info(f"Message {message.id} content updated.")
-        return message
-
-    @database_sync_to_async
-    def mark_message_deleted(self, message):
-        """ Marks a message as deleted (soft delete) """
-        logger.debug(f"Marking message {message.id} as deleted")
-        message.is_deleted = True
-        message.content = "" # Clear content
-        if message.file: # Check if file exists before deleting
+    def _save_message_to_db(self, content: str, file_obj=None, reply_to_id=None) -> Message | None:
+        reply_to_msg = None
+        if reply_to_id:
             try:
-                 message.file.delete(save=False) # Delete file from storage
-                 message.file = None # Clear file field
-            except Exception as e:
-                 logger.error(f"Could not delete file for deleted message {message.id}: {e}")
-        # TODO: Update SearchVector if needed
-        message.save(update_fields=['is_deleted', 'content', 'file'])
-        # Optionally delete associated reactions?
-        # Reaction.objects.filter(message=message).delete()
-        logger.info(f"Message {message.id} marked as deleted.")
+                reply_to_msg = Message.objects.only('id', 'room_id').get(id=reply_to_id, room_id=self.room_id, is_deleted=False)
+            except Message.DoesNotExist:
+                logger.warning(f"Reply message {reply_to_id} not found or deleted.")
+                return None # Или бросить исключение, которое обработается в receive
+
+        new_message = Message.objects.create(
+            room_id=self.room_id,
+            user=self.user,
+            content=content,
+            file=file_obj,
+            reply_to=reply_to_msg
+        )
+        # Room.last_activity_at обновляется через сигнал/save() модели Message
+        return new_message
+
+    @database_sync_to_async
+    def _get_message_from_db(self, message_id: uuid.UUID) -> Message | None:
+        try:
+            # Предзагружаем связанные объекты для сериализации
+            return Message.objects.select_related('user', 'reply_to__user').prefetch_related('reactions__user').get(id=message_id, room_id=self.room_id)
+        except Message.DoesNotExist:
+            return None
+
+    @database_sync_to_async
+    def _edit_message_in_db(self, message: Message, new_content: str) -> Message:
+        message.content = new_content
+        message.edited_at = timezone.now()
+        message.save(update_fields=['content', 'edited_at'])
         return message
 
     @database_sync_to_async
-    def add_or_update_reaction(self, message, user, emoji):
-        """ Adds or removes a reaction from a message for a user (toggle). """
-        reaction, created = Reaction.objects.get_or_create(
-            message=message, user=user, emoji=emoji,
-            defaults={'emoji': emoji} # Ensure emoji is set on create
-        )
-        if not created:
-            logger.debug(f"Removing reaction '{emoji}' by user {user.id} from message {message.id}")
-            reaction.delete()
-            return None, False # Removed
-        logger.debug(f"Added reaction '{emoji}' by user {user.id} to message {message.id}")
-        return reaction, True # Added
+    def _delete_message_in_db(self, message: Message) -> Message:
+        message.is_deleted = True
+        message.content = "" # Очищаем контент
+        if message.file:
+            try:
+                message.file.delete(save=False) # Удаляем файл из хранилища
+            except Exception as e_file:
+                logger.error(f"Could not delete file for deleted message {message.id}: {e_file}")
+            message.file = None # Очищаем поле файла
+        message.save(update_fields=['is_deleted', 'content', 'file'])
+        # Можно также удалить связанные реакции
+        # Reaction.objects.filter(message=message).delete()
+        return message
 
     @database_sync_to_async
-    def get_reactions_summary(self, message):
-        """ Gets a summary of reactions (emoji -> {count, users}) for a message. """
-        # Efficiently fetch counts and usernames grouped by emoji
-        reactions_data = Reaction.objects.filter(message=message) \
-                                     .values('emoji', 'user__username') \
-                                     .order_by('emoji') # Order for consistent grouping
+    def _toggle_reaction_on_db(self, message: Message, emoji: str, add: bool) -> tuple[dict | None, bool]:
+        """
+        Добавляет или удаляет реакцию.
+        Возвращает словарь с обновленными реакциями для сообщения и флаг, было ли изменение.
+        """
+        current_reaction = Reaction.objects.filter(message=message, user=self.user, emoji=emoji).first()
+        changed = False
+        if add:
+            if not current_reaction:
+                Reaction.objects.create(message=message, user=self.user, emoji=emoji)
+                changed = True
+        else: # remove
+            if current_reaction:
+                current_reaction.delete()
+                changed = True
+
+        if changed:
+            return self._get_reactions_summary_for_message(message), True
+        return None, False
+
+
+    @database_sync_to_async
+    def _get_reactions_summary_for_message(self, message: Message) -> dict:
+        # Этот метод вызывается как часть _toggle_reaction_on_db
+        # или для сериализации сообщения
         summary = {}
-        for r in reactions_data:
-            emoji = r['emoji']
-            username = r['user__username']
-            if emoji not in summary:
-                summary[emoji] = {'count': 0, 'users': []}
-            summary[emoji]['count'] += 1
-            summary[emoji]['users'].append(username) # Store usernames
-        # logger.debug(f"Generated reactions summary for message {message.id}: {summary}")
+        reactions_qs = Reaction.objects.filter(message=message).select_related('user').order_by('created_at')
+        for r in reactions_qs:
+            emoji_val = r.emoji
+            if emoji_val not in summary:
+                summary[emoji_val] = {'count': 0, 'users': [], 'reacted_by_current_user': False}
+            summary[emoji_val]['count'] += 1
+            summary[emoji_val]['users'].append(r.user.username) # Или BasicUserSerializer(r.user).data для большей инфо
+            if self.user == r.user: # Проверка для текущего пользователя консьюмера
+                 summary[emoji_val]['reacted_by_current_user'] = True
         return summary
 
     @database_sync_to_async
-    def update_read_status(self, user, room, message):
-         """ Updates the last read message for a user in a room. """
-         logger.debug(f"Updating read status for user {user.id} in room {room.id} to message {message.id}")
-         status, created = MessageReadStatus.objects.update_or_create(
-            user=user, room=room,
-            defaults={'last_read_message': message}
-         )
-         logger.debug(f"Read status {'created' if created else 'updated'} for user {user.id}, room {room.id}.")
+    def _update_read_status_in_db(self, last_message_id: uuid.UUID | None):
+        last_message_obj = None
+        if last_message_id:
+            try:
+                last_message_obj = Message.objects.only('id').get(id=last_message_id, room_id=self.room_id)
+            except Message.DoesNotExist:
+                logger.warning(f"Mark read: Message {last_message_id} not found in room {self.room_slug}.")
+                raise ValueError(_("Сообщение для отметки о прочтении не найдено."))
+        else: # Если last_message_id не передан, считаем все сообщения в комнате прочитанными
+            last_message_obj = Message.objects.filter(room_id=self.room_id, is_deleted=False).order_by('-date_added').only('id').first()
+
+        if last_message_obj: # Если есть что отмечать
+            MessageReadStatus.objects.update_or_create(
+                user=self.user, room_id=self.room_id,
+                defaults={'last_read_message': last_message_obj, 'last_read_timestamp': timezone.now()}
+            )
+        else: # Если сообщений в комнате нет, но пользователь зашел - создаем статус без сообщения
+             MessageReadStatus.objects.update_or_create(
+                user=self.user, room_id=self.room_id,
+                defaults={'last_read_message': None, 'last_read_timestamp': timezone.now()}
+            )
+
 
     @database_sync_to_async
-    def update_read_status_to_latest(self, user, room):
-        """ Updates the last read message to the latest message in the room. """
-        latest_message = Message.objects.filter(room=room, is_deleted=False).order_by('-date_added').first()
-        if latest_message:
-             status, created = MessageReadStatus.objects.update_or_create(
-                 user=user, room=room,
-                 defaults={'last_read_message': latest_message}
-             )
-             logger.info(f"Read status {'created' if created else 'updated'} to latest message {latest_message.id} for user {user.id}, room {room.id}.")
-        else:
-             logger.debug(f"No messages in room {room.id}, cannot update read status to latest for user {user.id}")
+    def _get_older_messages_from_db(self, limit: int, before_message_id_str: str | None) -> tuple[list[Message], bool]:
+        qs = Message.objects.filter(room_id=self.room_id, is_deleted=False)
+        if before_message_id_str:
+            try:
+                before_message_id = uuid.UUID(before_message_id_str)
+                # Получаем date_added для сообщения, относительно которого ищем более старые
+                before_message_date = Message.objects.only('date_added').get(id=before_message_id, room_id=self.room_id).date_added
+                qs = qs.filter(date_added__lt=before_message_date)
+            except (Message.DoesNotExist, ValueError):
+                # Если ID невалидный или сообщение не найдено, возвращаем пустой список
+                return [], False
+
+        # Загружаем сообщения, включая связанные данные для сериализации
+        messages = list(
+            qs.select_related('user', 'reply_to__user')
+              .prefetch_related('reactions__user') # Для подсчета реакций при сериализации
+              .order_by('-date_added')[:limit]
+        )
+        has_more = len(messages) == limit
+        return messages[::-1], has_more # Возвращаем в хронологическом порядке
+
+
+    # --- Redis Online Status Methods ---
+    async def _add_user_to_online_list_redis(self):
+        key = get_room_online_users_redis_key(self.room_slug)
+        # Добавляем ID пользователя и время последнего пинга (можно использовать для удаления "мертвых" сессий)
+        await self.redis_conn.hset(key, str(self.user.id), timezone.now().isoformat())
+        await self.redis_conn.expire(key, 3600 * 24) # Ключ комнаты будет жить сутки, если в ней есть кто-то
+        logger.debug(f"User {self.user.id} added/updated in online list for room {self.room_slug} (Redis HASH).")
+
+    async def _remove_user_from_online_list_redis(self):
+        key = get_room_online_users_redis_key(self.room_slug)
+        await self.redis_conn.hdel(key, str(self.user.id))
+        logger.debug(f"User {self.user.id} removed from online list for room {self.room_slug} (Redis HASH).")
 
     @database_sync_to_async
-    def get_older_messages(self, room, limit, before_message=None):
-        """ Fetches older messages before a specific message. """
-        queryset = Message.objects.filter(room=room, is_deleted=False)
-        if before_message:
-            queryset = queryset.filter(date_added__lt=before_message.date_added)
-        # Fetch and reverse to maintain chronological order within the batch
-        older_messages = list(
-            queryset.select_related('user', 'reply_to__user')
-                    .prefetch_related('reactions__user') # Prefetch reactions for older messages too
-                    .order_by('-date_added')[:limit]
-        )[::-1]
-        logger.debug(f"Fetched {len(older_messages)} older messages for room {room.slug} before {before_message.id if before_message else 'start'}")
-        return older_messages
+    def _get_users_details_from_db(self, user_ids: list[int]) -> list[dict]:
+        if not user_ids: return []
+        users = User.objects.filter(id__in=user_ids, is_active=True)
+        # Используем BasicUserSerializer, который уже есть
+        return BasicUserSerializer(users, many=True, context={'request': self.scope.get('request')}).data
 
-    @database_sync_to_async
-    def get_online_user_data(self, user_ids):
-         """ Fetches user data (id, username, avatar) for a list of integer IDs. """
-         if not user_ids: return []
-         # Ensure we only query with actual integers if somehow non-integers get in
-         int_user_ids = [uid for uid in user_ids if isinstance(uid, int)]
-         if not int_user_ids: return []
 
-         UserModel = get_user_model() # Get the User model class here
-         users = UserModel.objects.filter(id__in=int_user_ids, is_active=True).values('id', 'username', 'image')
+    async def _get_online_user_ids_from_redis(self) -> list[int]:
+        key = get_room_online_users_redis_key(self.room_slug)
+        online_users_timestamps = await self.redis_conn.hgetall(key) # { 'user_id_str': 'timestamp_str', ... }
+        
+        # Опционально: очистка старых записей, если пользователь давно не пинговал
+        # Например, если timestamp > 10 минут назад, удаляем
+        # current_time = timezone.now()
+        # user_ids_to_keep = []
+        # for user_id_str, timestamp_str in online_users_timestamps.items():
+        #     try:
+        #         last_ping = timezone.datetime.fromisoformat(timestamp_str)
+        #         if (current_time - last_ping).total_seconds() < 600: # 10 минут
+        #             user_ids_to_keep.append(int(user_id_str))
+        #         else:
+        #             await self.redis_conn.hdel(key, user_id_str) # Удаляем старую запись
+        #     except (ValueError, TypeError): # Невалидный user_id или timestamp
+        #         await self.redis_conn.hdel(key, user_id_str)
+        # return user_ids_to_keep
 
-         user_data_list = []
-         media_url = getattr(settings, 'MEDIA_URL', '/media/')
-         for user in users:
-              # Construct avatar URL carefully
-              avatar_url = f"{media_url}{user['image']}" if user.get('image') else None
-              user_data_list.append({'id': user['id'],'username': user['username'],'avatar_url': avatar_url})
-         return user_data_list
+        # Простая версия: просто берем все ID из HASH
+        user_ids_int = []
+        for user_id_str in online_users_timestamps.keys():
+            try: user_ids_int.append(int(user_id_str))
+            except ValueError: pass # Игнорируем нечисловые ключи, если вдруг появятся
+        return user_ids_int
 
 
     # --- Serialization ---
-    async def serialize_message(self, message, include_reply_to=False, include_file_info=False):
-        """ Asynchronously serializes a Message object for WebSocket transmission. """
-        @database_sync_to_async
-        def get_user_info(user_id):
-             """ Safely gets user info, handling DoesNotExist. """
-             if not user_id: return {'username': _('[удаленный пользователь]'), 'id': None, 'avatar_url': None}
-             UserModel = get_user_model()
-             try:
-                 user = UserModel.objects.values('id', 'username', 'image').get(pk=user_id) # Fetch only needed fields
-                 media_url = getattr(settings, 'MEDIA_URL', '/media/')
-                 avatar_url = f"{media_url}{user['image']}" if user.get('image') else None
-                 return {'username': user['username'], 'id': user['id'], 'avatar_url': avatar_url}
-             except UserModel.DoesNotExist:
-                 logger.warning(f"User with ID {user_id} not found during message serialization.")
-                 return {'username': _('[удаленный пользователь]'), 'id': user_id, 'avatar_url': None}
+    async def _serialize_message_for_broadcast(self, message: Message) -> dict:
+        # Сериализация сообщения для отправки клиентам.
+        # MessageSerializer требует request в контексте для `reacted_by_current_user`
+        # Но для broadcast это не нужно, так как сообщение идет ко всем.
+        # Мы можем вручную собрать нужные данные или адаптировать сериализатор.
+        # Простой вариант: собрать вручную, используя части из MessageSerializer.
 
-        @database_sync_to_async
-        def get_reply_info(reply_msg_id):
-            """ Safely gets reply info, handling DoesNotExist. """
-            if not reply_msg_id: return None
-            UserModel = get_user_model() # Define UserModel inside if not available globally
+        # Собираем информацию о пользователе
+        user_data = await database_sync_to_async(lambda: BasicUserSerializer(message.user).data)()
+
+        # Собираем информацию об ответе (если есть)
+        reply_data = None
+        if message.reply_to:
+            reply_user_data = await database_sync_to_async(lambda: BasicUserSerializer(message.reply_to.user).data)()
+            reply_data = {
+                'id': str(message.reply_to.id),
+                'user': reply_user_data,
+                'content_preview': message.reply_to.content[:70] + '...' if message.reply_to.content and len(message.reply_to.content) > 70 else message.reply_to.content,
+                'has_file': bool(message.reply_to.file),
+                'is_deleted': message.reply_to.is_deleted,
+            }
+
+        # Собираем информацию о файле (если есть)
+        file_data = None
+        if message.file:
             try:
-                reply_msg = Message.objects.select_related('user').only('id', 'user_id', 'user__username', 'content', 'file', 'is_deleted').get(pk=reply_msg_id)
-                reply_user = reply_msg.user # Access related user
-                reply_user_info = {'username': reply_user.username if reply_user else _('[удаленный пользователь]')}
-                return {
-                    'id': str(reply_msg.id), 'user': reply_user_info,
-                    'content': reply_msg.content[:50] + '...' if not reply_msg.is_deleted else _("[удалено]"),
-                    'is_deleted': reply_msg.is_deleted,
-                    'has_file': bool(reply_msg.file)
-                }
-            except Message.DoesNotExist:
-                logger.warning(f"Reply message with ID {reply_msg_id} not found during serialization.")
-                return {'id': str(reply_msg_id), 'content': _("[не найдено]"), 'is_deleted': True}
-            except Exception as e: # Catch other potential errors like User.DoesNotExist if relation broken
-                 logger.error(f"Error fetching reply info for message {reply_msg_id}: {e}")
-                 return {'id': str(reply_msg_id), 'content': _("[ошибка загрузки ответа]"), 'is_deleted': True}
+                file_data = {'url': message.file.url, 'name': message.get_filename(), 'size': message.file.size}
+            except Exception: # Если файл недоступен
+                file_data = {'url': '#', 'name': _('Файл недоступен'), 'size': None}
 
-
-        @database_sync_to_async
-        def get_file_info(msg_pk):
-            """ Safely gets file info, handling storage/db errors. """
-            try:
-                # Fetch the message again just to get the file field reliably
-                msg_with_file = Message.objects.only('file').get(pk=msg_pk)
-                file_field = msg_with_file.file
-                if not file_field or not file_field.name: return None # Check if file exists and has a name
-
-                # Attempt to get properties, handle potential exceptions
-                try: size = file_field.size
-                except Exception: size = None
-                try: url = file_field.url
-                except Exception: url = '#' # Fallback URL
-
-                name = file_field.name.split('/')[-1]
-                return {'url': url, 'name': name, 'size': size}
-
-            except Message.DoesNotExist:
-                logger.warning(f"Message {msg_pk} not found when getting file info.")
-                return None
-            except Exception as e:
-                logger.error(f"Unexpected error getting file info for msg {msg_pk}: {e}")
-                return {'url': '#', 'name': _('Файл недоступен'), 'size': None}
-
-        # Use message attributes directly where possible to reduce async calls
-        user_id = message.user_id
-        reply_to_id = message.reply_to_id if include_reply_to else None
-        message_pk = message.pk
-        has_file = bool(message.file) # Check if file field has a value
-
-        # Prepare awaitables
-        tasks_to_gather = [
-            get_user_info(user_id),
-            self.get_reactions_summary(message) # Already async
-        ]
-        if reply_to_id:
-            tasks_to_gather.append(get_reply_info(reply_to_id))
-        else:
-            tasks_to_gather.append(asyncio.sleep(0, result=None)) # Placeholder if no reply
-
-        if include_file_info and has_file:
-            tasks_to_gather.append(get_file_info(message_pk))
-        else:
-             tasks_to_gather.append(asyncio.sleep(0, result=None)) # Placeholder if no file
-
-        # Fetch data concurrently
-        user_info, reactions_summary, reply_info, file_info = await asyncio.gather(*tasks_to_gather)
+        # Собираем реакции
+        reactions_summary = await self._get_reactions_summary_for_message(message)
 
         return {
             'id': str(message.id),
-            'user': user_info,
-            'room': self.room_slug,
+            'user': user_data,
+            'room_slug': self.room_slug, # или message.room.slug, если объект комнаты есть
             'content': message.content if not message.is_deleted else _("Сообщение удалено"),
-            'timestamp': message.date_added.isoformat(),
+            'file': file_data,
+            'timestamp': message.date_added.isoformat(), # Используем date_added, так как это время создания
             'edited_at': message.edited_at.isoformat() if message.edited_at else None,
             'is_deleted': message.is_deleted,
-            'reactions': reactions_summary or {}, # Ensure reactions is always a dict
-            'reply_to': reply_info,
-            'file': file_info,
+            'reply_to': reply_data,
+            'reactions': reactions_summary,
         }
 
 
-    # --- Online Status (In-Memory) ---
-    async def get_redis_key(self): # Renamed for clarity, though not using Redis now
-         """ Generates a unique key for the room's online user set (in-memory). """
-         safe_slug = "".join(c if c.isalnum() or c in ['-', '_'] else '_' for c in self.room_slug)
-         return f"inmemory_online_users:{safe_slug}" # Prefix clearly indicates in-memory
+    # --- WebSocket Send Helpers ---
+    async def _send_to_client(self, message_type: str, payload: dict, client_msg_id: str | None = None):
+        """ Отправляет данные конкретному этому клиенту (self.send). """
+        data_to_send = {'type': message_type, 'payload': payload}
+        if client_msg_id and message_type == MSG_TYPE_SERVER_MESSAGE_ACK:
+            # У ACK client_id должен быть на верхнем уровне, а не в payload
+            data_to_send['client_id'] = client_msg_id
+            # Для ACK payload содержит server_id и timestamp
+        elif client_msg_id: # Для других сообщений, если client_id нужен в payload
+             payload['client_id'] = client_msg_id
 
-    async def add_user_to_online_list(self):
-        """ Adds user ID to the in-memory set for the current room. """
-        # No await needed for class variable access
-        ChatConsumer.online_users_by_room[self.room_slug].add(self.user.id)
-        logger.debug(f"User {self.user.id} added to in-memory online list for room {self.room_slug}. Current: {ChatConsumer.online_users_by_room[self.room_slug]}")
+        await self.send(text_data=json.dumps(data_to_send))
 
-    async def remove_user_from_online_list(self):
-        """ Removes user ID from the in-memory set for the current room. """
-        if self.room_slug in ChatConsumer.online_users_by_room:
-            ChatConsumer.online_users_by_room[self.room_slug].discard(self.user.id)
-            if not ChatConsumer.online_users_by_room[self.room_slug]:
-                # Clean up empty room entries from the dictionary
-                try:
-                    del ChatConsumer.online_users_by_room[self.room_slug]
-                    logger.debug(f"Removed empty online set for room {self.room_slug}")
-                except KeyError: pass # Already removed, ignore
-            else:
-                 logger.debug(f"User {self.user.id} removed from in-memory online list for room {self.room_slug}. Remaining: {ChatConsumer.online_users_by_room.get(self.room_slug)}")
+    async def _send_error_to_client(self, error_message: str, client_msg_id: str | None = None):
+        logger.warning(f"Sending error to client {self.user.username}: {error_message}")
+        await self._send_to_client(MSG_TYPE_SERVER_ERROR, {'message': error_message}, client_msg_id=client_msg_id)
 
-    async def get_online_users_list(self):
-        """ Gets user data for users currently marked as online in this room (in-memory). """
-        user_ids = ChatConsumer.online_users_by_room.get(self.room_slug, set())
-        online_user_details = []
-        if user_ids:
-             # Fetch user details from DB based on IDs
-            online_user_details = await self.get_online_user_data(list(user_ids)) # Pass list of IDs
-        logger.debug(f"Fetched online user details for room {self.room_slug}: {len(online_user_details)} users")
-        return online_user_details
+    # --- Broadcast and Group Send Methods ---
+    async def _broadcast_message_object_to_group(self, message_type: str, message_obj: Message, client_msg_id_ack: str | None = None):
+        """ Сериализует объект сообщения и рассылает его группе. """
+        serialized_message_data = await self._serialize_message_for_broadcast(message_obj)
+        
+        group_payload = {
+            'type': 'chat_message_event', # Имя метода-обработчика в консьюмере для group_send
+            'event_type': message_type,    # Фактический тип для клиента (new_message, update_message)
+            'message_data': serialized_message_data,
+            'sender_channel_name': self.channel_name,
+        }
+        if client_msg_id_ack: # Для отправки ACK обратно оригинальному отправителю
+            group_payload['client_id_ack'] = client_msg_id_ack
+        
+        await self.channel_layer.group_send(self.room_group_name, group_payload)
 
-    async def broadcast_online_users(self):
-        """ Broadcasts the current list of online users to the room group. """
-        # Note: This list is only accurate for users connected to THIS worker process.
-        online_users = await self.get_online_users_list()
+    # Этот метод будет вызван Channels при получении сообщения от группы
+    async def chat_message_event(self, event: dict):
+        """ Обрабатывает события сообщений, полученные от группы Channels. """
+        event_type = event['event_type']
+        message_data = event['message_data']
+        sender_channel_name = event['sender_channel_name']
+        client_id_ack = event.get('client_id_ack')
+
+        # Если это сообщение от текущего пользователя и есть client_id_ack, отправляем ACK
+        if self.channel_name == sender_channel_name and client_id_ack:
+            await self._send_to_client(
+                MSG_TYPE_SERVER_MESSAGE_ACK,
+                {'server_id': message_data['id'], 'timestamp': message_data['timestamp']},
+                client_msg_id=client_id_ack # ACK должен содержать client_id верхнего уровня
+            )
+        # Отправляем основное сообщение всем клиентам в группе (включая отправителя, если он должен видеть серверную версию)
+        # Можно добавить условие `if self.channel_name != sender_channel_name or client_id_ack:`
+        # если не хотим дублировать сообщение отправителю, если он уже сделал optimistic update.
+        # Но для простоты и консистентности (клиент всегда получает серверную версию) - отправляем всем.
+        await self._send_to_client(event_type, message_data)
+
+
+    async def _broadcast_reaction_update_to_group(self, message_id: uuid.UUID, reactions_summary: dict):
         await self.channel_layer.group_send(
             self.room_group_name,
-            {'type': 'online_status_broadcast', 'users': online_users }
+            {
+                'type': 'reaction_update_event', # Метод-обработчик в консьюмере
+                'message_id': str(message_id),
+                'reactions': reactions_summary,
+                'sender_channel_name': self.channel_name, # Чтобы не отправлять себе, если не нужно
+            }
         )
-        logger.debug(f"Broadcasted online users for room {self.room_slug}: {len(online_users)} users")
+    # Обработчик для reaction_update_event
+    async def reaction_update_event(self, event: dict):
+        # if self.channel_name == event['sender_channel_name']: # Не отправлять себе
+        # return
+        await self._send_to_client(
+            MSG_TYPE_SERVER_REACTION_UPDATE,
+            {'message_id': event['message_id'], 'reactions': event['reactions']}
+        )
 
 
-    # --- Error Handling ---
-    async def send_error(self, message, client_msg_id=None):
-        """ Sends an error message back to the specific client. """
-        payload = {'message': message}
-        if client_msg_id: payload['client_id'] = client_msg_id
-        logger.warning(f"Sending error to {self.user.username} in room {self.room_slug}: {message}")
+    async def _broadcast_online_users_to_group(self):
+        online_user_ids = await self._get_online_user_ids_from_redis()
+        if not online_user_ids: # Если список пуст, все равно отправляем пустой список
+            user_details_list = []
+        else:
+            user_details_list = await self._get_users_details_from_db(online_user_ids)
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'online_users_event', # Метод-обработчик в консьюмере
+                'users': user_details_list
+            }
+        )
+    # Обработчик для online_users_event
+    async def online_users_event(self, event: dict):
+        await self._send_to_client(MSG_TYPE_SERVER_ONLINE_USERS, {'users': event['users']})
+
+    async def _broadcast_typing_status_to_group(self, is_typing: bool):
+        user_info = await database_sync_to_async(lambda: BasicUserSerializer(self.user).data)()
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'typing_status_event',
+                'user_info': user_info,
+                'is_typing': is_typing,
+                'sender_channel_name': self.channel_name,
+            }
+        )
+    # Обработчик для typing_status_event
+    async def typing_status_event(self, event: dict):
+        if self.channel_name == event['sender_channel_name']: # Не отправлять себе
+            return
+        await self._send_to_client(
+            MSG_TYPE_SERVER_TYPING_UPDATE,
+            {'user': event['user_info'], 'is_typing': event['is_typing']}
+        )
+
+
+    # --- Client Message Handlers (handle_client_*) ---
+    async def _handle_unknown_client_type(self, payload: dict, client_msg_id: str | None):
+        logger.warning(f"Received unknown message type from {self.user.username}.")
+        await self._send_error_to_client(_("Неизвестный тип сообщения."), client_msg_id)
+
+    async def handle_client_send_message(self, payload: dict, client_msg_id: str | None):
+        content = payload.get('content', '').strip()
+        reply_to_id_str = payload.get('reply_to_id')
+        reply_to_id = uuid.UUID(reply_to_id_str) if reply_to_id_str else None
+
+        if not content:
+            raise ValueError(_("Сообщение не может быть пустым.")) # Это будет поймано в receive
+
+        new_message = await self._save_message_to_db(content, reply_to_id=reply_to_id)
+        if not new_message: # Например, если reply_to_id невалидный
+             raise ValueError(_("Не удалось создать сообщение, возможно, сообщение для ответа не найдено."))
+
+        await self._broadcast_message_object_to_group(MSG_TYPE_SERVER_NEW_MESSAGE, new_message, client_msg_id_ack=client_msg_id)
+
+    async def handle_client_edit_message(self, payload: dict, client_msg_id: str | None):
+        message_id_str = payload.get('message_id')
+        new_content = payload.get('content', '').strip()
+
+        if not message_id_str or not new_content:
+            raise ValueError(_("Отсутствует ID сообщения или новый текст для редактирования."))
+        try: message_id = uuid.UUID(message_id_str)
+        except ValueError: raise ValueError(_("Некорректный ID сообщения."))
+
+        message_obj = await self._get_message_from_db(message_id)
+        if not message_obj:
+            raise ValueError(_("Сообщение для редактирования не найдено."))
+        if message_obj.user != self.user and not self.user.is_staff: # Проверка прав
+            raise ValueError(_("Вы не можете редактировать это сообщение."))
+        if message_obj.is_deleted:
+            raise ValueError(_("Нельзя редактировать удаленное сообщение."))
+
+        edited_message = await self._edit_message_in_db(message_obj, new_content)
+        await self._broadcast_message_object_to_group(MSG_TYPE_SERVER_UPDATE_MESSAGE, edited_message, client_msg_id_ack=client_msg_id)
+
+    async def handle_client_delete_message(self, payload: dict, client_msg_id: str | None):
+        message_id_str = payload.get('message_id')
+        if not message_id_str: raise ValueError(_("Отсутствует ID сообщения для удаления."))
+        try: message_id = uuid.UUID(message_id_str)
+        except ValueError: raise ValueError(_("Некорректный ID сообщения."))
+
+        message_obj = await self._get_message_from_db(message_id)
+        if not message_obj:
+            raise ValueError(_("Сообщение для удаления не найдено."))
+        if message_obj.user != self.user and not self.user.is_staff: # Проверка прав
+            raise ValueError(_("Вы не можете удалить это сообщение."))
+        # if message_obj.is_deleted: # Можно не проверять, просто повторно "удалит"
+        #     raise ValueError(_("Сообщение уже удалено."))
+
+        deleted_message = await self._delete_message_in_db(message_obj)
+        await self._broadcast_message_object_to_group(MSG_TYPE_SERVER_UPDATE_MESSAGE, deleted_message, client_msg_id_ack=client_msg_id)
+
+    async def handle_client_add_reaction(self, payload: dict, client_msg_id: str | None):
+        message_id_str = payload.get('message_id')
+        emoji = payload.get('emoji', '').strip()
+        if not message_id_str or not emoji: raise ValueError(_("Отсутствует ID сообщения или эмодзи для реакции."))
+        try: message_id = uuid.UUID(message_id_str)
+        except ValueError: raise ValueError(_("Некорректный ID сообщения."))
+
+        message_obj = await self._get_message_from_db(message_id)
+        if not message_obj or message_obj.is_deleted:
+            raise ValueError(_("Нельзя отреагировать на это сообщение."))
+
+        reactions_summary, changed = await self._toggle_reaction_on_db(message_obj, emoji, add=True)
+        if changed and reactions_summary is not None:
+            await self._broadcast_reaction_update_to_group(message_id, reactions_summary)
+        # ACK можно отправить, если клиент его ожидает
+
+    async def handle_client_remove_reaction(self, payload: dict, client_msg_id: str | None):
+        message_id_str = payload.get('message_id')
+        emoji = payload.get('emoji', '').strip()
+        if not message_id_str or not emoji: raise ValueError(_("Отсутствует ID сообщения или эмодзи для удаления реакции."))
+        try: message_id = uuid.UUID(message_id_str)
+        except ValueError: raise ValueError(_("Некорректный ID сообщения."))
+
+        message_obj = await self._get_message_from_db(message_id)
+        # Проверка на существование сообщения не так критична для удаления реакции,
+        # но если сообщение удалено, то и реакций на него быть не должно.
+        if not message_obj:
+             logger.debug(f"Attempt to remove reaction from non-existent/deleted message {message_id_str}")
+             return # Тихо завершаем, если сообщения нет
+
+        reactions_summary, changed = await self._toggle_reaction_on_db(message_obj, emoji, add=False)
+        if changed and reactions_summary is not None:
+            await self._broadcast_reaction_update_to_group(message_id, reactions_summary)
+
+    async def handle_client_send_file(self, payload: dict, client_msg_id: str | None):
+        file_data_base64 = payload.get('file_data')
+        filename = payload.get('filename')
+        content = payload.get('content', '') # Опциональный текст к файлу
+
+        # Валидация файла
+        validator = FileUploadValidator(file_data_base64, filename)
+        # validate() бросит DjangoValidationError если что-то не так,
+        # которое будет поймано в self.receive
+        decoded_file_content = validator.validate()
+
+        django_file = ContentFile(decoded_file_content, name=filename)
+        new_message = await self._save_message_to_db(content=content, file_obj=django_file)
+        if not new_message:
+            raise ValueError(_("Не удалось сохранить сообщение с файлом.")) # Например, из-за ошибки БД
+
+        await self._broadcast_message_object_to_group(MSG_TYPE_SERVER_NEW_MESSAGE, new_message, client_msg_id_ack=client_msg_id)
+
+
+    async def handle_client_mark_read(self, payload: dict, client_msg_id: str | None):
+        last_message_id_str = payload.get('last_visible_message_id')
+        last_message_id = uuid.UUID(last_message_id_str) if last_message_id_str else None
         try:
-            await self.send(text_data=json.dumps({'type': MSG_TYPE_ERROR, 'payload': payload})) # Use send/dumps
-        except Exception as e:
-             logger.error(f"Failed to send error message to client {self.channel_name}: {e}")
+            await self._update_read_status_in_db(last_message_id)
+            # Можно отправить подтверждение клиенту, если он этого ожидает
+            # await self._send_to_client('mark_read_ack', {'status': 'success'}, client_msg_id)
+            logger.debug(f"User {self.user.username} marked read up to {last_message_id_str or 'latest'} in room {self.room_slug}")
+        except ValueError as e: # От _update_read_status_in_db, если сообщение не найдено
+            await self._send_error_to_client(str(e), client_msg_id)
 
 
-# --- User Search Consumer ---
-class UserSearchConsumer(AsyncWebsocketConsumer):
-    """ Handles WebSocket requests for searching users. """
-    async def connect(self):
-        self.user = self.scope['user']
-        if not self.user or not self.user.is_authenticated:
-             await self.close()
-             return
-        await self.accept()
-        logger.info(f"UserSearchConsumer connected for user {self.user.username}")
+    async def handle_client_load_older(self, payload: dict, client_msg_id: str | None):
+        before_message_id_str = payload.get('before_message_id')
+        limit = int(payload.get('limit', settings.CHAT_MESSAGES_PAGE_SIZE))
 
-    async def disconnect(self, close_code):
-        logger.info(f"UserSearchConsumer disconnected for user {self.user.username}")
+        older_messages, has_more = await self._get_older_messages_from_db(limit, before_message_id_str)
 
-    @database_sync_to_async
-    def search_users_db(self, query):
-         """ Performs the actual database query for users. """
-         logger.debug(f"Searching users in DB for query: '{query}'")
-         UserModel = get_user_model() # Get User model correctly
-         search_filter = (
-             Q(username__icontains=query) | Q(first_name__icontains=query) |
-             Q(last_name__icontains=query) | Q(email__icontains=query)
-         )
-         return list(
-             UserModel.objects.filter(is_active=True).filter(search_filter)
-                 .values('id', 'username', 'first_name', 'last_name', 'image')[:15] # Limit results, include image
-         )
+        serialized_messages = []
+        for msg_obj in older_messages:
+            serialized_messages.append(await self._serialize_message_for_broadcast(msg_obj))
 
-    async def receive(self, text_data):
-        try:
-            data = json.loads(text_data)
-            query = data.get('query', '').strip()
-            logger.debug(f"User {self.user.username} searching for: '{query}'")
+        await self._send_to_client(
+            MSG_TYPE_SERVER_OLDER_MESSAGES,
+            {'messages': serialized_messages, 'has_more': has_more},
+            client_msg_id=client_msg_id # Если клиент ждет ответа на конкретный запрос
+        )
 
-            if len(query) < 1: # Minimum query length
-                 users_data = []
-            else:
-                 users_data = await self.search_users_db(query)
-                 # Process results to add display_name and avatar_url
-                 media_url = getattr(settings, 'MEDIA_URL', '/media/')
-                 for user in users_data:
-                      user['display_name'] = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or user['username']
-                      user['avatar_url'] = f"{media_url}{user['image']}" if user.get('image') else None
-                      user.pop('image', None) # Remove original image field name
-
-            logger.debug(f"Found {len(users_data)} users for query '{query}'")
-            await self.send(text_data=json.dumps({ # Use send/dumps
-                'type': 'user_search_results',
-                'payload': {'users': users_data}
-            }))
-        except json.JSONDecodeError:
-             logger.error(f"Invalid JSON received in UserSearchConsumer: {text_data}")
-             await self.send(text_data=json.dumps({'error': 'Invalid JSON'})) # Use send/dumps
-        except Exception as e:
-             logger.exception(f"User search error for user {self.user.username}: {e}")
-             await self.send(text_data=json.dumps({'error': 'Search failed'})) # Use send/dumps
+    async def handle_client_typing_status(self, payload: dict, client_msg_id: str | None):
+        is_typing = bool(payload.get('is_typing', False))
+        # Рассылаем всем в группе, кроме себя
+        await self._broadcast_typing_status_to_group(is_typing)
+        # ACK здесь обычно не нужен

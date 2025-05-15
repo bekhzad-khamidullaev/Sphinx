@@ -269,3 +269,9 @@ ENABLE_AUDIT_LOG = False # Установите True, если решите до
 # AUDIT_LOG_APP_NAME = 'audit' # Если AuditLog будет в приложении 'audit'
 DEFAULT_STAFF_GROUP_NAME = 'Сотрудники' # Имя группы для автоматического добавления staff-пользователей
 NOTIFY_ADMINS_ON_NEW_USER = True # Отправлять ли админам email о новом пользователе
+
+
+# Chat specific settings
+CHAT_MESSAGES_PAGE_SIZE = 50 # Количество сообщений при подгрузке старых
+MAX_FILE_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'] # MIME types

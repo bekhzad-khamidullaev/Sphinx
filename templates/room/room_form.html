@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load i18n widget_tweaks %}
+
+{# block title уже переопределен в base через page_title #}
+{% block head_extra %}
+    {{ block.super }}
+    {{ form.media.css }} {# Для виджетов, если они используют CSS #}
+    {# Если используете Select2 или подобные JS-виджеты для participants #}
+    {# <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> #}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8">
+    <form method="post" action="{% if form.instance.pk %}{% url 'room:edit_room' slug=form.instance.slug %}{% else %}{% url 'room:create_room' %}{% endif %}" autocomplete="off" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+         {% endif %}
+
+        <div class="space-y-6">
+            <div>
+                <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {{ form.name.label }} {% if form.name.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                {% render_field form.name class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" placeholder=form.name.label %}
+                {% if form.name.help_text %}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ form.name.help_text|safe }}</p>
+                {% endif %}
+                {% if form.name.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+             <div class="flex items-start pt-2">
+                 {% render_field form.private class+="form-checkbox h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600 mr-2 mt-0.5" %}
+                 <div>
+                     <label for="{{ form.private.id_for_label }}" class="block text-sm text-gray-900 dark:text-gray-300 cursor-pointer font-medium">
+                         {{ form.private.label }}
+                     </label>
+                     {% if form.private.help_text %}
+                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ form.private.help_text|safe }}</p>
+                     {% endif %}
+                     {% if form.private.errors %}
+                         <p class="text-xs text-red-600 dark:text-red-400 mt-1 ml-6">{{ form.private.errors.0 }}</p>
+                     {% endif %}
+                 </div>
+             </div>
+
+            {# Поле участников показывается/скрывается с помощью JS в зависимости от form.private #}
+            <div id="participants-field-container" class="{% if not form.private.value %}hidden{% endif %}">
+                <label for="{{ form.participants.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {{ form.participants.label }}
+                </label>
+                {% render_field form.participants class+="form-multiselect block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm h-48" %}
+                {% if form.participants.help_text %}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ form.participants.help_text|safe }}</p>
+                {% endif %}
+                {% if form.participants.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ form.participants.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <p id="participants-field-notice" class="text-xs text-gray-500 dark:text-gray-400 italic mt-1 {% if form.private.value %}hidden{% endif %}">
+                {% trans "Выбор участников доступен только для приватных комнат." %}
+            </p>
+        </div>
+
+        <div class="flex justify-end items-center space-x-3 pt-8 mt-8 border-t border-gray-200 dark:border-dark-600">
+            <a href="{% url 'room:rooms' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
+                {% trans 'Отмена' %}
+            </a>
+            <button type="submit" class="px-5 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:bg-ios-teal dark:hover:bg-teal-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
+                <i class="fas fa-plus mr-2"></i> {% trans 'Создать комнату' %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {{ form.media.js }} {# Для виджетов, если они используют JS #}
+    {# Если используете Select2 #}
+    {# <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script> #}
+    {# <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const privateCheckbox = document.getElementById('{{ form.private.id_for_label }}');
+            const participantsContainer = document.getElementById('participants-field-container');
+            const participantsNotice = document.getElementById('participants-field-notice');
+
+            function toggleParticipantsField() {
+                if (privateCheckbox.checked) {
+                    participantsContainer.classList.remove('hidden');
+                    participantsNotice.classList.add('hidden');
+                } else {
+                    participantsContainer.classList.add('hidden');
+                    participantsNotice.classList.remove('hidden');
+                }
+            }
+
+            if (privateCheckbox) {
+                privateCheckbox.addEventListener('change', toggleParticipantsField);
+                // toggleParticipantsField(); // Вызвать при загрузке для установки начального состояния
+                                        // Уже учтено классами hidden/not hidden в HTML
+            }
+
+            // Пример для Select2, если используется:
+            // if (typeof $ !== 'undefined' && $.fn.select2) {
+            //     $('#{{ form.participants.id_for_label }}').select2({
+            //         placeholder: "{% trans 'Выберите участников...' %}",
+            //         allowClear: true,
+            //         width: '100%'
+            //     });
+            // }
+        });
+    </script>
+{% endblock %}

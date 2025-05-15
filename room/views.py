@@ -1,230 +1,253 @@
 # room/views.py
-import json
 import logging
-import uuid # Needed for slug fallback
+import uuid
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden, JsonResponse, Http404
 from django.views.decorators.http import require_POST, require_GET
-from django.db.models import Q, Max, OuterRef, Subquery
+from django.db.models import Q, Max, OuterRef, Subquery, Exists, Value, BooleanField
+from django.db.models.functions import Coalesce
 from django.utils.text import slugify
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib import messages
+from django.contrib import messages as django_messages
 from django.utils.translation import gettext_lazy as _
-from django.db import transaction # Import transaction
-from .models import Room, Message, MessageReadStatus
+from django.utils import timezone
+from django.urls import reverse
+from django.db import transaction
 
-from .models import Room, Message, MessageReadStatus # Removed Reaction import, not used here
-from .forms import RoomForm # Import the form
+from .models import Room, Message, MessageReadStatus
+from .forms import RoomForm
+from .serializers import MessageSerializer # Может понадобиться для начальной загрузки сообщений
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-@login_required
-def rooms(request):
-    """Displays a list of accessible, non-archived chat rooms with unread status."""
 
-    # Subquery for the ID of the last message in each room
-    last_message_id_subquery = Message.objects.filter(
-        room=OuterRef('pk'), is_deleted=False
+@login_required
+def room_list_view(request):
+    """
+    Отображает список доступных чат-комнат для пользователя.
+    Комнаты отсортированы по последней активности.
+    Добавляется информация о непрочитанных сообщениях.
+    """
+    user = request.user
+
+    # Подзапрос для получения ID последнего сообщения в комнате
+    last_message_in_room_subquery = Message.objects.filter(
+        room=OuterRef('pk'),
+        is_deleted=False
     ).order_by('-date_added').values('id')[:1]
 
-    # Subquery for the ID of the last message READ BY THE CURRENT USER in each room
-    user_last_read_id_subquery = MessageReadStatus.objects.filter(
-        user=request.user,
+    # Подзапрос для получения ID последнего прочитанного сообщения пользователем в комнате
+    user_last_read_message_subquery = MessageReadStatus.objects.filter(
+        user=user,
         room=OuterRef('pk')
-    ).values('last_read_message_id')[:1] #[:1] handles potential None
+    ).values('last_read_message_id')[:1]
 
-    # Filter rooms and annotate
-    rooms_list = Room.objects.filter(
+    # Основной запрос комнат
+    rooms_qs = Room.objects.filter(
         Q(is_archived=False) &
-        (Q(private=False) | Q(participants=request.user))
-    ).annotate(
-        # Get the ID of the very last message
-        room_last_message_id=Subquery(last_message_id_subquery),
-        # Get the ID of the last message read by the user (can be NULL)
-        user_last_read_message_id=Subquery(user_last_read_id_subquery),
-        # Optimize by getting last message time too for ordering
-        last_message_time=Subquery(last_message_id_subquery.values('date_added'))
-    ).select_related().distinct().order_by('-last_message_time', '-updated_at')
+        (Q(private=False) | Q(participants=user)) # Публичные или приватные, где пользователь участник
+    ).select_related('creator').prefetch_related('participants').annotate(
+        # Аннотируем ID последнего сообщения в комнате
+        latest_message_id_in_room=Subquery(last_message_in_room_subquery),
+        # Аннотируем ID последнего прочитанного сообщения пользователем
+        user_latest_read_message_id=Subquery(user_last_read_message_subquery),
+    ).distinct().order_by('-last_activity_at') # Сортировка по полю last_activity_at модели Room
 
-    # Calculate unread status based on annotations directly (more efficient)
-    # We don't need the exact count here, just whether unread exist
+    # Определяем наличие непрочитанных сообщений на основе аннотаций
+    # has_unread = True если:
+    # 1. В комнате есть сообщения (latest_message_id_in_room не NULL)
+    # 2. ИЛИ пользователь никогда не читал сообщения в этой комнате (user_latest_read_message_id IS NULL)
+    #    ИЛИ ID последнего сообщения в комнате не совпадает с ID последнего прочитанного пользователем
+    #    (с учетом того, что ID сообщений UUID и могут не быть строго последовательными по значению,
+    #     но date_added должно быть). Более надежно было бы сравнивать timestamp'ы, но это сложнее в одном запросе.
+    #     Текущая логика с ID должна работать, если UUIDv1 или если мы предполагаем, что более новый ID > старый ID.
+    #     Альтернативно, можно сделать это в цикле в Python, но это больше запросов.
+    #
+    #     Упрощенный вариант (если ID не всегда упорядочены, но мы хотим избежать цикла):
+    #     has_unread = Exists(Message.objects.filter(room=OuterRef('pk'), is_deleted=False, date_added__gt=Coalesce(Subquery(MessageReadStatus.objects.filter(user=user, room=OuterRef('pk')).values('last_read_message__date_added')[:1]), timezone.datetime.min.replace(tzinfo=timezone.utc))))
+    #     rooms_qs = rooms_qs.annotate(has_unread=has_unread)
+    #
+    # Пока оставим вариант с сравнением ID, так как он проще и часто используется
     processed_rooms = []
-    for room in rooms_list:
-        # Determine if unread:
-        # 1. User has never read (user_last_read_message_id is None) AND room has messages (room_last_message_id exists)
-        # 2. User has read, but the room's last message ID is different from the user's last read ID
-        #    (Note: Assumes IDs are sequential like UUIDv1 or auto-increment int. If not, compare timestamps)
-        has_unread = (room.room_last_message_id is not None) and \
-                     (room.user_last_read_message_id is None or \
-                      room.room_last_message_id != room.user_last_read_message_id)
-
-        room.has_unread = has_unread # Add the flag directly to the room object for template use
+    for room in rooms_qs:
+        has_unread_flag = False
+        if room.latest_message_id_in_room: # Если в комнате есть сообщения
+            if not room.user_latest_read_message_id: # Пользователь ничего не читал
+                has_unread_flag = True
+            # Сравниваем ID. UUID могут не быть упорядочены лексикографически так же, как по времени.
+            # Для UUIDv1 это обычно так, для UUIDv4 - нет.
+            # Более надежно было бы иметь timestamp последнего прочитанного сообщения.
+            # Предположим, что last_read_message_id всегда "меньше или равно" latest_message_id_in_room, если прочитано.
+            elif room.latest_message_id_in_room != room.user_latest_read_message_id:
+                 has_unread_flag = True
+        room.has_unread = has_unread_flag
         processed_rooms.append(room)
 
-    return render(request, 'room/rooms.html', {'rooms': processed_rooms}) # Pass processed list
+
+    context = {
+        'rooms': processed_rooms,
+        'page_title': _("Чат-комнаты")
+    }
+    return render(request, 'room/room_list.html', context)
+
 
 @login_required
-def room(request, slug):
-    """Displays a specific chat room and its messages."""
-    room_obj = get_object_or_404(Room.objects.prefetch_related('participants'), slug=slug, is_archived=False)
-    if room_obj.private and request.user not in room_obj.participants.all():
-        messages.error(request, _("У вас нет доступа к этой приватной комнате."))
-        return redirect('room:rooms')
+def room_detail_view(request, slug):
+    """ Отображает конкретную чат-комнату и ее сообщения. """
+    user = request.user
+    try:
+        # Загружаем комнату, включая участников для проверки прав
+        room_obj = Room.objects.prefetch_related('participants').get(slug=slug, is_archived=False)
+    except Room.DoesNotExist:
+        raise Http404(_("Чат-комната не найдена или заархивирована."))
 
-    # Fetch initial messages
-    message_queryset = Message.objects.filter(room=room_obj) \
-                                      .select_related('user', 'reply_to__user') \
-                                      .prefetch_related('reactions__user') \
-                                      .order_by('date_added')
-    messages_list = list(message_queryset[:100])
+    # Проверка прав доступа
+    if room_obj.private and not room_obj.participants.filter(pk=user.pk).exists():
+        django_messages.error(request, _("У вас нет доступа к этой приватной комнате."))
+        return redirect('room:rooms') # Имя URL для списка комнат
 
-    # Get other rooms for sidebar (with unread status)
-    last_message_id_subquery = Message.objects.filter(room=OuterRef('pk'), is_deleted=False).order_by('-date_added').values('id')[:1]
-    user_last_read_id_subquery = MessageReadStatus.objects.filter(user=request.user,room=OuterRef('pk')).values('last_read_message_id')[:1]
-    rooms_for_sidebar_qs = Room.objects.filter(
-        Q(is_archived=False) & (Q(private=False) | Q(participants=request.user))
-    ).exclude(pk=room_obj.pk).annotate(
-        room_last_message_id=Subquery(last_message_id_subquery),
-        user_last_read_message_id=Subquery(user_last_read_id_subquery),
-        last_message_time=Subquery(last_message_id_subquery.values('date_added'))
-    ).distinct().order_by('-last_message_time', '-updated_at')[:20] # Limit sidebar rooms
+    # Загрузка начального набора сообщений (например, последние N)
+    # Используем MessageSerializer для консистентности с WebSocket, если это удобно
+    # Или собираем данные вручную для шаблона.
+    # Пагинация на стороне клиента (бесконечная прокрутка) будет загружать старые сообщения через WebSocket.
+    initial_messages_qs = Message.objects.filter(room=room_obj, is_deleted=False)\
+                                       .select_related('user', 'reply_to__user')\
+                                       .prefetch_related('reactions__user')\
+                                       .order_by('-date_added')[:settings.CHAT_MESSAGES_PAGE_SIZE]
+    
+    initial_messages = list(initial_messages_qs)[::-1] # Переворачиваем для хронологического порядка
 
-    rooms_for_sidebar_processed = []
-    for r in rooms_for_sidebar_qs:
-         r.has_unread = (r.room_last_message_id is not None) and \
-                        (r.user_last_read_message_id is None or \
-                         r.room_last_message_id != r.user_last_read_message_id)
-         rooms_for_sidebar_processed.append(r)
+    # Сериализация сообщений (если нужна сложная структура для JS)
+    # serialized_initial_messages = []
+    # for msg in initial_messages:
+    #     # Здесь нужен контекст с request для MessageSerializer, если он используется
+    #     serializer_context = {'request': request, 'consumer_user': user} # consumer_user - тот, кто смотрит
+    #     serialized_initial_messages.append(MessageSerializer(msg, context=serializer_context).data)
 
+    # Отмечаем сообщения как прочитанные
+    # Обновляем MessageReadStatus до последнего видимого сообщения
+    if initial_messages:
+        last_message_in_initial_set = initial_messages[-1]
+        MessageReadStatus.objects.update_or_create(
+            user=user, room=room_obj,
+            defaults={'last_read_message': last_message_in_initial_set, 'last_read_timestamp': timezone.now()}
+        )
+    else: # Если сообщений нет, но пользователь зашел в комнату
+        MessageReadStatus.objects.update_or_create(
+            user=user, room=room_obj,
+            defaults={'last_read_message': None, 'last_read_timestamp': timezone.now()}
+        )
 
-    # Mark messages as read
-    if messages_list:
-        # ... (mark as read logic as before) ...
-        last_message = messages_list[-1]
-        try:
-            MessageReadStatus.objects.update_or_create(
-                user=request.user, room=room_obj,
-                defaults={'last_read_message': last_message}
-            )
-        except Exception as e: logger.error(f"Error updating read status: {e}")
-
+    # Список других комнат для боковой панели (аналогично room_list_view)
+    # ... (можно скопировать и адаптировать логику из room_list_view для rooms_for_sidebar) ...
+    # Для краткости здесь пропущено, но вы можете добавить похожую логику
+    rooms_for_sidebar = Room.objects.filter(
+        Q(is_archived=False) & (Q(private=False) | Q(participants=user))
+    ).exclude(pk=room_obj.pk).order_by('-last_activity_at')[:10] # Пример
 
     context = {
         'room': room_obj,
-        'messages': messages_list,
-        'rooms_for_sidebar': rooms_for_sidebar_processed, # Pass processed list
+        'messages_list': initial_messages, # Передаем объекты модели, шаблон сам их отобразит
+        # 'serialized_messages_json': json.dumps(serialized_initial_messages), # Если JS ожидает JSON
+        'rooms_for_sidebar': rooms_for_sidebar,
+        'page_title': room_obj.name,
+        'chat_messages_page_size': settings.CHAT_MESSAGES_PAGE_SIZE,
     }
-    return render(request, 'room/room.html', context)
+    return render(request, 'room/room_detail.html', context)
+
 
 @login_required
-def create_room(request):
-    """Handles creation of new chat rooms using a form."""
+def room_create_view(request):
+    """ Создание новой чат-комнаты. """
     if request.method == 'POST':
-        form = RoomForm(request.POST, user=request.user)
+        form = RoomForm(request.POST, user=request.user) # Передаем пользователя для логики формы
         if form.is_valid():
             try:
-                # Create instance in memory
-                room_instance = form.save(commit=False)
-                # Note: creator isn't set on the model, user is passed to form init for queryset filtering
+                with transaction.atomic(): # Используем транзакцию для атомарности операций
+                    new_room = form.save(commit=False)
+                    new_room.creator = request.user
 
-                # --- Generate unique slug ---
-                base_slug = slugify(room_instance.name) or f"room-{uuid.uuid4().hex[:8]}" # Ensure non-empty base
-                slug = base_slug
-                counter = 1
-                while Room.objects.filter(slug=slug).exists():
-                     slug = f"{base_slug}-{counter}"
-                     counter += 1
-                room_instance.slug = slug
-                logger.info(f"Generated unique slug '{slug}' for room '{room_instance.name}'")
-                # --- End slug generation ---
+                    # Генерация уникального slug
+                    base_slug = slugify(new_room.name) or f"room-{uuid.uuid4().hex[:6]}"
+                    slug = base_slug
+                    counter = 1
+                    while Room.objects.filter(slug=slug).exists():
+                        slug = f"{base_slug}-{counter}"
+                        counter += 1
+                    new_room.slug = slug
+                    new_room.save() # Сначала сохраняем комнату, чтобы получить ID
 
-                # Now save the instance with the unique slug
-                room_instance.save()
-                # Save ManyToMany participants *after* instance is saved
-                form.save_m2m()
+                    # Сохраняем M2M участников, выбранных в форме
+                    form.save_m2m()
+                    # Добавляем создателя в участники, если он еще не там
+                    if request.user not in new_room.participants.all():
+                        new_room.participants.add(request.user)
 
-                # Add creator to participants explicitly after saving M2M
-                if request.user not in room_instance.participants.all():
-                    room_instance.participants.add(request.user)
-                    logger.info(f"Added creator {request.user.username} to participants of room {room_instance.slug}")
-
-                logger.info(f"Room '{room_instance.name}' (slug: {room_instance.slug}) created successfully by {request.user.username}")
-                messages.success(request, _("Комната '%(name)s' успешно создана.") % {'name': room_instance.name})
-                return redirect('room:room', slug=room_instance.slug) # Redirect to the new room
-
+                django_messages.success(request, _("Комната '%(name)s' успешно создана.") % {'name': new_room.name})
+                return redirect(new_room.get_absolute_url())
             except Exception as e:
-                 logger.exception(f"Error creating room by user {request.user.username}: {e}")
-                 messages.error(request, _("Произошла ошибка при создании комнаты."))
-                 # Re-render the form with the original (failed) form object containing errors
-                 # Users list for template needs to be fetched again
-                 users_for_template = User.objects.filter(is_active=True).exclude(pk=request.user.pk).order_by('username')
-                 return render(request, 'room/create_room.html', {'form': form, 'users': users_for_template})
-        else:
-            # Form is invalid, re-render with errors
-            logger.warning(f"Invalid RoomForm submission by {request.user.username}: {form.errors.as_json()}")
-            # Fall through to render GET part with the invalid form
-    else: # GET request
-        form = RoomForm(user=request.user) # Pass user to exclude self from choices
+                logger.exception(f"Error creating room by {request.user.username}: {e}")
+                django_messages.error(request, _("Произошла ошибка при создании комнаты. Попробуйте еще раз."))
+    else:
+        form = RoomForm(user=request.user)
 
-    # Exclude self from user list shown in template (form queryset handles actual exclusion)
-    users_for_template = User.objects.filter(is_active=True).exclude(pk=request.user.pk).order_by('username')
     context = {
         'form': form,
-        'users': users_for_template # For potential display if not using form rendering
+        'page_title': _("Создать новую комнату")
     }
-    return render(request, 'room/create_room.html', context)
+    return render(request, 'room/room_form.html', context)
 
 
-# --- API-like views ---
-@require_POST # Use POST for state changes
+@require_POST
 @login_required
-def archive_room(request, slug):
-    room_obj = get_object_or_404(Room, slug=slug)
-    # Permission check
-    if not request.user.is_staff and request.user not in room_obj.participants.all():
-         logger.warning(f"User {request.user.username} attempted archive room '{slug}' without permission.")
-         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+def room_archive_view(request, slug):
+    """ Архивирование комнаты (AJAX). """
+    room = get_object_or_404(Room, slug=slug)
+    # Проверка прав: архивировать может создатель или staff
+    if room.creator != request.user and not request.user.is_staff:
+        logger.warning(f"User {request.user.username} (not creator/staff) tried to archive room '{slug}'.")
+        return JsonResponse({'success': False, 'error': _('У вас нет прав для архивирования этой комнаты.')}, status=403)
 
-    if room_obj.is_archived:
-        return JsonResponse({'success': True, 'message': 'Room already archived'})
+    if room.is_archived:
+        return JsonResponse({'success': True, 'message': _('Комната уже в архиве.')})
 
-    room_obj.is_archived = True
-    room_obj.save(update_fields=['is_archived'])
+    room.is_archived = True
+    room.save(update_fields=['is_archived'])
     logger.info(f"Room '{slug}' archived by user {request.user.username}.")
-    # Return success, JS should remove the room from the list
-    return JsonResponse({'success': True, 'message': 'Room archived'})
+    return JsonResponse({'success': True, 'message': _('Комната успешно заархивирована.')})
 
-
+# Поиск сообщений (если нужен HTTP эндпоинт, а не только через WebSocket)
 @require_GET
 @login_required
-def search_messages(request, slug):
-    room_obj = get_object_or_404(Room, slug=slug)
-    if room_obj.private and request.user not in room_obj.participants.all():
-         logger.warning(f"User {request.user.username} attempted to search private room '{slug}' without permission.")
-         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+def message_search_view(request, slug):
+    room = get_object_or_404(Room, slug=slug)
+    if room.private and not room.participants.filter(pk=request.user.pk).exists():
+        return JsonResponse({'success': False, 'error': _('Доступ запрещен.')}, status=403)
 
     query = request.GET.get('q', '').strip()
-    if len(query) < 2:
-        return JsonResponse({'success': False, 'error': 'Query must be at least 2 characters.'}, status=400)
+    if len(query) < 2: # Минимальная длина запроса
+        return JsonResponse({'success': False, 'error': _('Запрос должен содержать минимум 2 символа.')}, status=400)
 
-    # Basic search fallback
+    # PostgreSQL FTS (если настроено)
+    # from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+    # vector = SearchVector('content', weight='A') + SearchVector('user__username', weight='B') # Пример
+    # search_query = SearchQuery(query, search_type='websearch')
+    # results = Message.objects.annotate(
+    #     rank=SearchRank(vector, search_query)
+    # ).filter(search_vector=search_query, room=room, is_deleted=False).order_by('-rank')[:20]
+
+    # Простой поиск
     results = Message.objects.filter(
-        room=room_obj,
+        room=room,
         content__icontains=query,
         is_deleted=False
-    ).select_related('user').order_by('-date_added')[:20] # Limit results
+    ).select_related('user').order_by('-date_added')[:20]
 
-    messages_data = [
-        {
-            'id': str(msg.id),
-            'user': msg.user.username if msg.user else 'System',
-            'content': msg.content,
-            'timestamp': msg.date_added.isoformat(),
-            'reply_to_id': str(msg.reply_to.id) if msg.reply_to else None,
-            'file_url': msg.file.url if msg.file else None,
-         } for msg in results
-    ]
+    # Используем MessageSerializer для форматирования данных
+    # Нужен request в контексте, если сериализатор его использует
+    serializer_context = {'request': request, 'consumer_user': request.user}
+    messages_data = MessageSerializer(results, many=True, context=serializer_context).data
     return JsonResponse({'success': True, 'messages': messages_data})

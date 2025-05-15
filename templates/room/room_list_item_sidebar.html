@@ -1,0 +1,18 @@
+{% load i18n %}
+<a href="{% url 'room:room' slug=room_item.slug %}"
+   class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md group
+          {% if room_item.slug == current_room_slug %}
+            bg-indigo-100 text-indigo-700 dark:bg-indigo-700/30 dark:text-indigo-300
+          {% else %}
+            text-gray-700 hover:bg-gray-100 hover:text-gray-900
+            dark:text-gray-300 dark:hover:bg-dark-700 dark:hover:text-gray-100
+          {% endif %}">
+    <span class="truncate flex-1"># {{ room_item.name }}</span>
+    {% if room_item.private and room_item.slug != current_room_slug %} {# Не показываем иконку замка для текущей приватной комнаты #}
+        <i class="fas fa-lock fa-xs ml-2 text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400"></i>
+    {% endif %}
+    {# Индикатор непрочитанных сообщений (если нужен в сайдбаре) #}
+    {# {% if room_item.has_unread %}
+        <span class="ml-auto w-2 h-2 bg-red-500 rounded-full"></span>
+    {% endif %} #}
+</a>
