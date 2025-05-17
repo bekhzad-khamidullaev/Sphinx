@@ -3,34 +3,32 @@
 
 {% block title %}{{ page_title|default:_("Удаление команды") }}{% endblock %}
 
-{% block page_title_block %}
-  <h1 class="text-title-md2 font-semibold text-black dark:text-white">
+{% block list_title %} {# Используем стандартный блок base.html #}
+  <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
     {{ page_title|default:_("Удаление команды") }}
   </h1>
 {% endblock %}
 
-{% block content %}
-<div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-    <div class="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
-        <h3 class="font-medium text-black dark:text-white">
-            {% trans "Подтверждение удаления" %}
-        </h3>
-    </div>
-    <div class="p-6.5">
-        <p class="text-black dark:text-white mb-4">
+{% block list_content %} {# Используем стандартный блок base.html #}
+<div class="bg-white shadow-lg rounded-xl border border-gray-200 p-6 md:p-8 mt-6 max-w-lg mx-auto">
+    <h3 class="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
+        {% trans "Подтверждение удаления" %}
+    </h3>
+    <div class="p-0">
+        <p class="text-gray-700 mb-4">
             {% blocktrans with name=object.name %}
             Вы уверены, что хотите удалить команду <strong>"{{ name }}"</strong>?
             {% endblocktrans %}
         </p>
-        <p class="text-danger font-semibold mb-6">{% trans "Это действие нельзя будет отменить!" %}</p>
+        <p class="text-red-600 font-semibold mb-6">{% trans "Это действие нельзя будет отменить!" %}</p>
         <form method="post" action="">
             {% csrf_token %}
             <div class="flex justify-end gap-3 mt-4">
-                <a href="{% url 'user_profiles:team_list' %}" class="flex justify-center rounded bg-gray-200 dark:bg-gray-700 px-6 py-2 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                <a href="{% url 'user_profiles:team_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
                     {% trans 'Отмена' %}
                 </a>
-                <button type="submit" class="flex justify-center rounded bg-danger px-6 py-2 font-medium text-white hover:bg-opacity-90">
-                    <i class="fas fa-trash mr-2 mt-0.5"></i> {% trans 'Да, удалить' %}
+                <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition active:scale-95 shadow-sm inline-flex items-center">
+                    <i class="fas fa-trash mr-2"></i> {% trans 'Да, удалить' %}
                 </button>
             </div>
         </form>

@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% load i18n static %}
 {% load widget_tweaks %}
+
 {% block title %}{{ page_title|default:_("Форма шаблона чеклиста") }}{% endblock %}
+
 {% block head_extra %}
     {{ block.super }}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -9,68 +11,69 @@
     {{ form.media.css }}
     {{ item_formset.media.css }}
     <style>
-        html.dark .select2-container--default .select2-selection--single,
-        html.dark .select2-container--default .select2-selection--multiple { background-color: theme('colors.dark.700'); border-color: theme('colors.dark.600'); color: theme('colors.gray.300'); }
-        html.dark .select2-container--default .select2-selection--single .select2-selection__rendered { color: theme('colors.gray.300'); }
-        html.dark .select2-container--default .select2-selection--single .select2-selection__arrow b { border-color: theme('colors.gray.400') transparent transparent transparent; }
-        html.dark .select2-dropdown { background-color: theme('colors.dark.800'); border-color: theme('colors.dark.600'); }
-        html.dark .select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: theme('colors.blue.600'); color: white; }
-        html.dark .select2-results__option[aria-selected=true] { background-color: theme('colors.dark.600'); }
-        html.dark .select2-search--dropdown .select2-search__field { background-color: theme('colors.dark.700'); border-color: theme('colors.dark.600'); color: theme('colors.gray.300'); }
-        .formset-item.deleted { opacity: 0.5; border-left: 3px solid theme('colors.red.500'); }
+        .formset-item.deleted {
+            opacity: 0.5;
+            border-left: 3px solid theme('colors.red.500');
+        }
         .formset-item.deleted label,
         .formset-item.deleted input,
         .formset-item.deleted select,
-        .formset-item.deleted textarea { pointer-events: none; }
+        .formset-item.deleted textarea {
+            pointer-events: none;
+        }
     </style>
 {% endblock %}
+
 {% block list_title %}
-<h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">{{ page_title }}</h1>
+    <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">{{ page_title }}</h1>
 {% endblock %}
+
 {% block list_content %}
-<div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6">
+<div class="bg-white shadow-lg rounded-xl border border-gray-200 p-6 md:p-8 mt-6">
     {% include 'includes/form_errors.html' with form=form formset=item_formset %}
     <form method="post" action="" id="template-form" autocomplete="off" novalidate>
         {% csrf_token %}
-        <fieldset class="mb-6 border-b border-gray-200 dark:border-dark-600 pb-6">
-            <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Основная информация" %}</legend>
-             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                 {% for field in form.visible_fields %}
-                      <div class="{% if field.name == 'description' or field.name == 'tags' %}md:col-span-2{% endif %}">
-                          <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
-                          </label>
-                         {% if field.widget_type == 'checkbox' %}
-                              <div class="flex items-center">
-                                   {% render_field field class+="form-checkbox h-5 w-5 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600" %}
-                                   <label for="{{ field.id_for_label }}" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">{{ field.label }}</label>
-                              </div>
-                              <script>
-                                  const label_{{ field.auto_id }} = document.querySelector('label[for="{{ field.id_for_label }}"]');
-                                  if (label_{{ field.auto_id }} && !label_{{ field.auto_id }}.closest('.flex')) {
-                                      label_{{ field.auto_id }}.classList.add('hidden');
-                                  }
-                              </script>
-                          {% elif field.widget_type == 'select' %}
-                              {% render_field field class+="form-select block w-full select2-basic text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                          {% elif field.widget_type == 'textarea' %}
-                              {% render_field field class+="form-textarea block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" rows="3" %}
-                          {% elif field.widget_type == 'date' %}
-                               {% render_field field class+="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                          {% elif field.widget_type == 'clearablefile' %}
-                               {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                           {% else %}
-                               {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                           {% endif %}
-                           {% if field.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
-                           {% if field.errors %}<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
-                      </div>
-                  {% endfor %}
-                  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
-             </div>
+        <fieldset class="mb-6 border-b border-gray-200 pb-6">
+            <legend class="text-lg font-semibold text-gray-800 mb-4">{% trans "Основная информация" %}</legend>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                {% for field in form.visible_fields %}
+                    <div class="{% if field.name == 'description' or field.name == 'tags' %}md:col-span-2{% endif %}">
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                        </label>
+                        {% if field.widget_type == 'checkbox' %}
+                            <div class="flex items-center">
+                                {% render_field field class+="form-checkbox h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" %}
+                                <label for="{{ field.id_for_label }}" class="ml-2 block text-sm text-gray-900">{{ field.label }}</label>
+                            </div>
+                            <script>
+                                // This script hides the main label for the checkbox if it's not part of the flex container above
+                                const label_{{ field.auto_id }} = document.querySelector('label[for="{{ field.id_for_label }}"]');
+                                if (label_{{ field.auto_id }} && !label_{{ field.auto_id }}.closest('.flex')) {
+                                    label_{{ field.auto_id }}.classList.add('hidden');
+                                }
+                            </script>
+                        {% elif field.widget_type == 'select' %}
+                            {% render_field field class+="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                        {% elif field.widget_type == 'textarea' %}
+                            {% render_field field class+="form-textarea block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="3" %}
+                        {% elif field.widget_type == 'date' %}
+                            {% render_field field class+="form-input flatpickr-date block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                        {% elif field.widget_type == 'clearablefile' %}
+                            {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                        {% else %}
+                            {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                        {% endif %}
+                        {% if field.help_text %}<p class="mt-1 text-xs text-gray-500">{{ field.help_text|safe }}</p>{% endif %}
+                        {% if field.errors %}<p class="mt-1 text-xs text-red-600">{{ field.errors|striptags }}</p>{% endif %}
+                    </div>
+                {% endfor %}
+                {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+            </div>
         </fieldset>
+
         <fieldset class="mb-6">
-            <legend class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Пункты чеклиста" %}</legend>
+            <legend class="text-lg font-semibold text-gray-800 mb-4">{% trans "Пункты чеклиста" %}</legend>
             {{ item_formset.management_form }}
             <div id="item-formset-container" class="space-y-4">
                 {% for item_form in item_formset %}
@@ -78,20 +81,21 @@
                 {% endfor %}
             </div>
             <div id="empty-item-form" class="hidden">
-                 {% include "includes/formset_item.html" with form=item_formset.empty_form formset=item_formset prefix=item_formset.prefix forloop=None %}
+                {% include "includes/formset_item.html" with form=item_formset.empty_form formset=item_formset prefix=item_formset.prefix forloop=None %}
             </div>
             <div class="mt-4">
-                <button type="button" id="add-item-form" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
+                <button type="button" id="add-item-form" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
                     <i class="fas fa-plus mr-2"></i> {% trans 'Добавить пункт' %}
                 </button>
             </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">{% trans "Пустые строки будут проигнорированы. Нажмите иконку корзины для удаления." %}</p>
+            <p class="text-xs text-gray-500 mt-2">{% trans "Пустые строки будут проигнорированы. Нажмите иконку корзины для удаления." %}</p>
         </fieldset>
-        <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
-            <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'checklists:template_list' %}{% endif %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
+
+        <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200">
+            <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'checklists:template_list' %}{% endif %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
                 {% trans 'Отмена' %}
             </a>
-            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-ios-indigo dark:hover:bg-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
+            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
                 {% if object %}{% trans "Сохранить изменения" %}{% else %}{% trans "Создать шаблон" %}{% endif %}
             </button>
@@ -99,6 +103,7 @@
     </form>
 </div>
 {% endblock %}
+
 {% block scripts %}
     {{ block.super }}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
@@ -110,166 +115,200 @@
     {{ item_formset.media.js }}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-             console.log("Checklist Template Form JS Loaded");
-             function initSelect2(selector) {
-                 $(selector).not('.select2-hidden-accessible').each(function() {
-                      if (typeof $ !== 'undefined' && $.fn.select2) {
-                           $(this).select2({
-                                theme: 'default',
-                                language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
-                                width: '100%',
-                                allowClear: $(this).prop('required') ? false : true,
-                                placeholder: $(this).data('placeholder') || '',
-                           });
-                      } else { console.warn("jQuery or Select2 not loaded."); }
-                 });
-             }
-             initSelect2('.select2-basic');
-             initSelect2('#id_target_location');
-             initSelect2('#id_target_point');
-             initSelect2('.item-form select[name$="-target_point"]');
-             initSelect2('.item-form select[name$="-parent_item"]');
-             initSelect2('.item-form select[name$="-answer_type"]');
-              function initFlatpickr(selector) {
-                 if (typeof flatpickr !== 'undefined') {
+            function initSelect2(selector) {
+                $(selector).not('.select2-hidden-accessible').each(function() {
+                    if (typeof $ !== 'undefined' && $.fn.select2) {
+                        $(this).select2({
+                            theme: 'default',
+                            language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
+                            width: '100%',
+                            allowClear: !$(this).prop('required'),
+                            placeholder: $(this).data('placeholder') || '{% trans "Выберите..." %}',
+                        });
+                    }
+                });
+            }
+
+            function initFlatpickr(selector) {
+                if (typeof flatpickr !== 'undefined') {
                     flatpickr(selector, {
-                         dateFormat: "Y-m-d",
-                         altInput: true,
-                         altFormat: "d.m.Y",
-                         locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
-                     });
-                 } else { console.warn("Flatpickr not loaded."); }
-              }
-              initFlatpickr(".flatpickr-date");
+                        dateFormat: "Y-m-d",
+                        altInput: true,
+                        altFormat: "d.m.Y",
+                        locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
+                    });
+                }
+            }
+
+            // Initialize for existing elements
+            initSelect2('.select2-basic'); // Main form selects
+            initSelect2('#id_target_location');
+            initSelect2('#id_target_point');
+            initFlatpickr(".flatpickr-date"); // Main form datepickers
+
+            // Formset handling
             const container = document.getElementById('item-formset-container');
             const addButton = document.getElementById('add-item-form');
             const emptyFormTemplateNode = document.getElementById('empty-item-form')?.firstElementChild?.cloneNode(true);
             const totalFormsInput = document.querySelector('input[name="{{ item_formset.prefix }}-TOTAL_FORMS"]');
             const prefix = "{{ item_formset.prefix|escapejs }}";
+
             if (container && addButton && emptyFormTemplateNode && totalFormsInput) {
                 let formCount = parseInt(totalFormsInput.value, 10);
+
                 function updateElementIndices(elem, index) {
-                    const idRegex = new RegExp(`(${prefix}-(\\d+|__prefix__))`);
-                    const nameRegex = new RegExp(`(${prefix}-(\\d+|__prefix__))`);
+                    const idRegex = new RegExp(`(${prefix}-(\\d+|__prefix__))`, 'g');
+                    const nameRegex = new RegExp(`(${prefix}-(\\d+|__prefix__))`, 'g');
+
                     if (elem.id) { elem.id = elem.id.replace(idRegex, `${prefix}-${index}`); }
                     if (elem.name) { elem.name = elem.name.replace(nameRegex, `${prefix}-${index}`); }
-                     elem.querySelectorAll('label').forEach(label => {
+
+                    elem.querySelectorAll('label').forEach(label => {
                         if (label.htmlFor) { label.htmlFor = label.htmlFor.replace(idRegex, `${prefix}-${index}`); }
-                     });
-                    elem.childNodes.forEach(child => {
-                         if (child.nodeType === Node.ELEMENT_NODE) {
-                              updateElementIndices(child, index);
-                         }
                     });
-                 }
+                    // Recursively update children
+                     elem.childNodes.forEach(child => {
+                        if (child.nodeType === Node.ELEMENT_NODE) {
+                            updateElementIndices(child, index);
+                        }
+                    });
+                }
+
                 addButton.addEventListener('click', function() {
                     const newForm = emptyFormTemplateNode.cloneNode(true);
-                    newForm.classList.remove('deleted');
+                    newForm.classList.remove('deleted'); // Ensure new forms are not marked as deleted
                     updateElementIndices(newForm, formCount);
                     container.appendChild(newForm);
                     totalFormsInput.value = formCount + 1;
+
                     const deleteButton = newForm.querySelector('.delete-formset-item');
-                     if (deleteButton) { addDeleteListener(deleteButton); }
-                    initSelect2($(`#${newForm.id} .select2-basic`));
+                    if (deleteButton) { addDeleteListener(deleteButton); }
+
+                    // Initialize plugins for the new form
+                    initSelect2($(`#${newForm.id} .select2-basic`)); // General selects in formset
                     initSelect2($(`#${newForm.id} select[name$="-target_point"]`));
                     initSelect2($(`#${newForm.id} select[name$="-parent_item"]`));
                     initSelect2($(`#${newForm.id} select[name$="-answer_type"]`));
-                    initFlatpickr($(`#${newForm.id} .flatpickr-date`));
-                     formCount++;
-                     newForm.querySelector('input, textarea, select')?.focus();
+                    initFlatpickr($(`#${newForm.id} .flatpickr-date`)); // Datepickers in formset
+
+                    formCount++;
+                    newForm.querySelector('input, textarea, select')?.focus();
                 });
+
                 function addDeleteListener(button) {
-                     button.addEventListener('click', function() {
+                    button.addEventListener('click', function() {
                         const formRow = this.closest('.formset-item');
                         const deleteInput = formRow.querySelector('input[type="checkbox"][id$="-DELETE"]');
-                         if (deleteInput) {
-                             deleteInput.checked = !deleteInput.checked;
-                             formRow.classList.toggle('deleted', deleteInput.checked);
-                             const icon = this.querySelector('i');
-                             if (icon) {
-                                  icon.classList.toggle('fa-trash', !deleteInput.checked);
-                                  icon.classList.toggle('fa-undo', deleteInput.checked);
-                                  this.title = deleteInput.checked ? '{% trans "Восстановить пункт" %}' : '{% trans "Удалить пункт" %}';
-                             }
-                         }
-                     });
-                 }
-                container.querySelectorAll('.item-form').forEach(formRow => {
+                        if (deleteInput) {
+                            deleteInput.checked = !deleteInput.checked;
+                            formRow.classList.toggle('deleted', deleteInput.checked);
+                            const icon = this.querySelector('i');
+                            if (icon) {
+                                icon.classList.toggle('fa-trash', !deleteInput.checked);
+                                icon.classList.toggle('fa-undo', deleteInput.checked);
+                                this.title = deleteInput.checked ? '{% trans "Восстановить пункт" %}' : '{% trans "Удалить пункт" %}';
+                            }
+                        }
+                    });
+                }
+
+                // Add delete listeners and initialize plugins for initially rendered forms
+                container.querySelectorAll('.formset-item').forEach(formRow => {
                     const deleteButton = formRow.querySelector('.delete-formset-item');
                     const deleteInput = formRow.querySelector('input[type="checkbox"][id$="-DELETE"]');
-                     if (deleteButton) { addDeleteListener(deleteButton); }
-                     if (deleteInput && deleteInput.checked) {
-                          formRow.classList.add('deleted');
-                           if(deleteButton){
-                               const icon = deleteButton.querySelector('i');
-                                if (icon) {
-                                     icon.classList.remove('fa-trash');
-                                     icon.classList.add('fa-undo');
-                                     deleteButton.title = '{% trans "Восстановить пункт" %}';
-                                }
-                           }
-                     }
+
+                    if (deleteButton) { addDeleteListener(deleteButton); }
+
+                    if (deleteInput && deleteInput.checked) {
+                        formRow.classList.add('deleted');
+                        if(deleteButton){
+                            const icon = deleteButton.querySelector('i');
+                            if (icon) {
+                                icon.classList.remove('fa-trash');
+                                icon.classList.add('fa-undo');
+                                deleteButton.title = '{% trans "Восстановить пункт" %}';
+                            }
+                        }
+                    }
+                    // Init for existing formset forms
+                    initSelect2($(`#${formRow.id} .select2-basic`));
+                    initSelect2($(`#${formRow.id} select[name$="-target_point"]`));
+                    initSelect2($(`#${formRow.id} select[name$="-parent_item"]`));
+                    initSelect2($(`#${formRow.id} select[name$="-answer_type"]`));
+                    initFlatpickr($(`#${formRow.id} .flatpickr-date`));
                 });
-            } else { console.warn("Formset management elements not found."); }
-             const locationSelect = document.getElementById('id_target_location');
-             const pointSelect = document.getElementById('id_target_point');
-             const pointWrapper = pointSelect?.closest('div');
-             if (locationSelect && pointSelect) {
-                 const initialPointValue = '{{ form.target_point.value|default:""|escapejs }}';
-                 const pointApiUrl = "{% url 'checklists:api:api_checklist_point_list' %}";
-                 const noLocationText = "{% trans "--- Сначала выберите местоположение ---" %}";
-                 const selectPointText = "{% trans "--------- Выберите точку ---------" %}";
-                 const noPointsText = "{% trans "--- Точек не найдено ---" %}";
-                 const errorText = "{% trans "--- Ошибка загрузки ---" %}";
-                 function updatePoints() {
-                     const locationId = locationSelect.value;
-                     pointSelect.disabled = true;
-                     if (pointWrapper) pointWrapper.classList.add('opacity-50');
-                     $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
-                     if (locationId) {
-                         const url = `${pointApiUrl}?location=${locationId}`;
-                         fetch(url)
-                             .then(response => response.ok ? response.json() : Promise.reject('Network error'))
-                             .then(data => {
-                                 const points = Array.isArray(data) ? data : (data.results || []);
-                                 const placeholderOption = new Option(selectPointText, '', false, false);
-                                 $(pointSelect).append(placeholderOption);
-                                 if (points.length > 0) {
-                                     points.forEach(point => {
-                                         const option = new Option(point.name, point.id);
-                                         if (initialPointValue && point.id == initialPointValue) {
-                                              option.selected = true;
-                                         }
-                                         $(pointSelect).append(option);
-                                     });
-                                     pointSelect.disabled = false;
-                                     if (pointWrapper) pointWrapper.classList.remove('opacity-50');
-                                 } else {
-                                      $(pointSelect).empty().append(new Option(noPointsText, '')).trigger('change');
-                                      pointSelect.disabled = true;
-                                 }
-                                 $(pointSelect).trigger('change');
-                             })
-                             .catch(error => {
-                                 console.error('Error loading points:', error);
-                                  $(pointSelect).empty().append(new Option(errorText, '')).trigger('change');
-                                 pointSelect.disabled = true;
-                                 if (pointWrapper) pointWrapper.classList.add('opacity-50');
-                             });
-                     } else {
-                         $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
-                         pointSelect.disabled = true;
-                          if (pointWrapper) pointWrapper.classList.add('opacity-50');
-                     }
-                 }
-                 $(locationSelect).on('change', updatePoints);
-                 if (locationSelect.value) { updatePoints(); }
-                 else {
-                      pointSelect.disabled = true;
-                      $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
-                      if (pointWrapper) pointWrapper.classList.add('opacity-50');
-                 }
-             } else { console.warn("Location/Point dropdown elements not found."); }
-         });
+            }
+
+            // Dependent dropdown for Location -> Point
+            const locationSelect = document.getElementById('id_target_location');
+            const pointSelect = document.getElementById('id_target_point');
+            const pointWrapper = pointSelect?.closest('div'); // The div wrapping the point select
+
+            if (locationSelect && pointSelect) {
+                const initialPointValue = '{{ form.target_point.value|default:""|escapejs }}';
+                const pointApiUrl = "{% url 'checklists:api:api_checklist_point_list' %}"; // Ensure this URL is correct
+                const noLocationText = "{% trans "--- Сначала выберите местоположение ---" %}";
+                const selectPointText = "{% trans "--------- Выберите точку ---------" %}";
+                const noPointsText = "{% trans "--- Точек не найдено ---" %}";
+                const errorText = "{% trans "--- Ошибка загрузки ---" %}";
+
+                function updatePointsDropdown() {
+                    const locationId = locationSelect.value;
+                    pointSelect.disabled = true;
+                    if (pointWrapper) pointWrapper.classList.add('opacity-50');
+                    $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change'); // Clear and set placeholder
+
+                    if (locationId) {
+                        const url = `${pointApiUrl}?location=${locationId}`;
+                        fetch(url)
+                            .then(response => response.ok ? response.json() : Promise.reject('Network error or invalid JSON'))
+                            .then(data => {
+                                const points = Array.isArray(data) ? data : (data.results || []); // Handle paginated or direct list
+                                $(pointSelect).empty(); // Clear previous options before adding new ones
+                                const placeholderOption = new Option(selectPointText, '', !initialPointValue, !initialPointValue);
+                                $(pointSelect).append(placeholderOption);
+
+                                if (points.length > 0) {
+                                    points.forEach(point => {
+                                        const option = new Option(point.name, point.id);
+                                        if (initialPointValue && String(point.id) === String(initialPointValue)) {
+                                            option.selected = true;
+                                        }
+                                        $(pointSelect).append(option);
+                                    });
+                                    pointSelect.disabled = false;
+                                    if (pointWrapper) pointWrapper.classList.remove('opacity-50');
+                                } else {
+                                    $(pointSelect).empty().append(new Option(noPointsText, '')).trigger('change');
+                                    pointSelect.disabled = true; // Keep disabled if no points
+                                }
+                                $(pointSelect).trigger('change'); // Notify Select2 of changes
+                            })
+                            .catch(error => {
+                                console.error('Error loading points:', error);
+                                $(pointSelect).empty().append(new Option(errorText, '')).trigger('change');
+                                pointSelect.disabled = true;
+                                if (pointWrapper) pointWrapper.classList.add('opacity-50'); // Keep disabled on error
+                            });
+                    } else {
+                        // No location selected
+                        $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
+                        pointSelect.disabled = true;
+                        if (pointWrapper) pointWrapper.classList.add('opacity-50');
+                    }
+                }
+
+                $(locationSelect).on('change', updatePointsDropdown);
+
+                // Initial load if location is pre-selected
+                if (locationSelect.value) {
+                    updatePointsDropdown();
+                } else {
+                    pointSelect.disabled = true;
+                    $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
+                    if (pointWrapper) pointWrapper.classList.add('opacity-50');
+                }
+            }
+        });
     </script>
 {% endblock %}

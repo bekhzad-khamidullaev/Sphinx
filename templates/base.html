@@ -11,31 +11,10 @@
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://ajax.googleapis.com">
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- FontAwesome (если используете для иконок) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     {% tailwind_css %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <!-- <script>
-        tailwind.config = {
-            // darkMode: 'class', // REMOVED DARK MODE
-            theme: {
-                extend: {
-                    colors: {
-                        // dark: { 50: '#f9f9f9', ..., 950: '#1c1c1e', }, // REMOVED DARK PALETTE
-                        ios: { blue: '#0a84ff', green: '#30d158', indigo: '#5e5ce6', orange: '#ff9f0a', pink: '#ff375f', purple: '#bf5af2', red: '#ff453a', teal: '#64d2ff', yellow: '#ffd60a', }
-                    }
-                }
-            }
-        }
-        // REMOVED DARK THEME TOGGLE LOGIC
-        // if (localStorage.theme === 'dark') {
-        //   document.documentElement.classList.add('dark');
-        // } else {
-        //   document.documentElement.classList.remove('dark');
-        // }
-    </script> -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
         integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -203,7 +182,6 @@
                                 </select>
                             </form>
                         </div>
-                        {# REMOVED DARK MODE TOGGLE FROM DESKTOP DROPDOWN #}
                         <hr class="border-gray-200">
                         <div class="py-1">
                             <a href="{% url 'user_profiles:logout' %}"
@@ -297,7 +275,6 @@
                      </option>
                  </select>
              </form>
-             {# REMOVED DARK MODE TOGGLE FROM MOBILE SIDEBAR #}
              <hr class="border-gray-200 my-2">
              <a href="{% url 'user_profiles:logout' %}"
                  class="flex items-center px-3 py-2 rounded-md text-red-600 hover:bg-red-100 transition-colors"><i
@@ -317,7 +294,7 @@
             </div>
             <div class="mb-6 block md:hidden">
                 {% block list_title_mobile %}
-                    {{ block.super }} {# Allows inheriting from base if defined there #}
+                    {{ block.super }}
                 {% endblock %}
             </div>
             <div id="list_actions_mobile" class="md:hidden mb-4 flex flex-wrap gap-2">

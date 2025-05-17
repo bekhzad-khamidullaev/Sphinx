@@ -1,107 +1,123 @@
 {% extends 'base.html' %}
 {% load i18n static widget_tweaks %}
+
 {% block title %}{% trans "Изменить статус чеклиста" %}: {{ checklist_run }}{% endblock %}
+
 {% block head_extra %}
     {{ block.super }}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     {{ form.media.css }}
 {% endblock %}
+
 {% block list_title %}
-<div class="flex items-center justify-between flex-wrap gap-4">
-    <div>
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
-            {% trans "Изменить статус чеклиста" %}
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {{ checklist_run.template.name }} – {{ checklist_run.performed_at|date:"d.m.Y H:i" }}
-        </p>
-    </div>
-    <div>
-        <a href="{{ checklist_run.get_absolute_url }}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-            <i class="fas fa-arrow-left mr-2"></i> {% trans "Назад к просмотру" %}
-        </a>
-    </div>
-</div>
-{% endblock %}
-{% block list_content %}
-<div class="bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 p-6 md:p-8 mt-6 max-w-2xl mx-auto">
-    {% include 'includes/form_errors.html' with form=form %}
-    <form method="post" action="" id="status-update-form" novalidate>
-        {% csrf_token %}
-        <div class="space-y-4">
-            {% for field in form.visible_fields %}
-                <div>
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}
-                    </label>
-                    {% if field.widget_type == 'select' %}
-                        {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                    {% elif field.widget_type == 'textarea' %}
-                        {% render_field field class+="form-textarea block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" rows="3" %}
-                    {% elif field.widget_type == 'datetime-local' %}
-                        {% render_field field class+="form-input flatpickr-input block w-auto text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                    {% else %}
-                        {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                    {% endif %}
-                    {% if field.help_text %}
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>
-                    {% endif %}
-                    {% if field.errors %}
-                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>
-                    {% endif %}
-                </div>
-            {% endfor %}
-            {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+    <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
+                {% trans "Изменить статус чеклиста" %}
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">
+                {{ checklist_run.template.name }} – {{ checklist_run.performed_at|date:"d.m.Y H:i" }}
+            </p>
         </div>
-        <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-dark-600">
-            <a href="{{ checklist_run.get_absolute_url }}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-                {% trans "Отмена" %}
+        <div>
+            <a href="{{ checklist_run.get_absolute_url }}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+                <i class="fas fa-arrow-left mr-2"></i> {% trans "Назад к просмотру" %}
             </a>
-            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-                <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
-                {% trans "Сохранить статус" %}
-            </button>
         </div>
-    </form>
-</div>
+    </div>
 {% endblock %}
+
+{% block list_content %}
+    <div class="bg-white shadow-lg rounded-xl border border-gray-200 p-6 md:p-8 mt-6 max-w-2xl mx-auto">
+        {% include 'includes/form_errors.html' with form=form %}
+        <form method="post" action="" id="status-update-form" novalidate>
+            {% csrf_token %}
+            <div class="space-y-4">
+                {% for field in form.visible_fields %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}
+                        </label>
+                        {% if field.widget_type == 'select' %}
+                            {% render_field field class+="form-select select2-basic block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                        {% elif field.widget_type == 'textarea' %}
+                            {% render_field field class+="form-textarea block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="3" %}
+                        {% elif field.widget_type == 'datetime-local' %}
+                            {% render_field field class+="form-input flatpickr-input block w-auto text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                        {% else %}
+                            {% render_field field class+="form-input block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                        {% endif %}
+                        {% if field.help_text %}
+                            <p class="mt-1 text-xs text-gray-500">{{ field.help_text|safe }}</p>
+                        {% endif %}
+                        {% if field.errors %}
+                            <p class="mt-1 text-xs text-red-600">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+            </div>
+            <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200">
+                <a href="{{ checklist_run.get_absolute_url }}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+                    {% trans "Отмена" %}
+                </a>
+                <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm">
+                    <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4"></i>
+                    {% trans "Сохранить статус" %}
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
 {% block scripts %}
-{{ block.super }}
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|default:'ru'|slice:":2" }}.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
-<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
-{{ form.media.js }}
-<script defer>
-    document.addEventListener('DOMContentLoaded', function () {
-        if (typeof $ !== 'undefined' && $.fn.select2) {
-            $('.select2-basic').select2({
-                theme: 'default',
-                language: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}",
-                width: '100%',
-                allowClear: true,
-                placeholder: "{% trans 'Выберите...' %}",
-                minimumResultsForSearch: 10
-            });
-            $('#id_approved_by').select2({
-                theme: 'default',
-                language: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}",
-                width: '100%',
-                allowClear: true,
-                placeholder: "{% trans 'Выберите пользователя...' %}"
-            });
-        }
-        if (typeof flatpickr !== 'undefined') {
-            flatpickr(".flatpickr-input[type='datetime-local']", {
-                enableTime: true,
-                dateFormat: "Y-m-d H:i",
-                altInput: true,
-                altFormat: "d.m.Y H:i",
-                locale: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}"
-            });
-        }
-    });
-</script>
+    {{ block.super }}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|default:'ru'|slice:":2" }}.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
+    {{ form.media.js }}
+    <script defer>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $('.select2-basic').select2({
+                    theme: 'default',
+                    language: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}",
+                    width: '100%',
+                    allowClear: true,
+                    placeholder: "{% trans 'Выберите...' %}",
+                    minimumResultsForSearch: 10
+                });
+                $('#id_approved_by').select2({ // Specific handling for approved_by if needed
+                    theme: 'default',
+                    language: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}",
+                    width: '100%',
+                    allowClear: true,
+                    placeholder: "{% trans 'Выберите пользователя...' %}"
+                });
+                 // Apply to all select fields rendered by the form loop if they don't have 'select2-basic'
+                $('form#status-update-form select:not(.select2-basic):not(#id_approved_by)').each(function() {
+                    $(this).select2({
+                        theme: 'default',
+                        language: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}",
+                        width: '100%',
+                        allowClear: $(this).find('option[value=""]').length > 0, // Allow clear if there's an empty option
+                        placeholder: "{% trans 'Выберите...' %}",
+                        minimumResultsForSearch: 10
+                    });
+                });
+            }
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr(".flatpickr-input[type='datetime-local']", { // More specific selector for flatpickr
+                    enableTime: true,
+                    dateFormat: "Y-m-d H:i",
+                    altInput: true,
+                    altFormat: "d.m.Y H:i",
+                    locale: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}"
+                });
+            }
+        });
+    </script>
 {% endblock %}

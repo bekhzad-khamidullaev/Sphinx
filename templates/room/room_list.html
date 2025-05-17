@@ -1,29 +1,29 @@
 {% extends "base.html" %}
-{% load i18n static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
-    {# page_title уже в base.html #}
+    {# page_title is in base.html #}
     <a href="{% url 'room:create_room' %}"
-       class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:bg-ios-teal dark:hover:bg-teal-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
+       class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition active:scale-95 shadow-sm inline-flex items-center">
         <i class="fas fa-plus mr-2"></i> {% trans 'Создать новую комнату' %}
     </a>
 </div>
 
 {% if rooms %}
     <div id="room-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {% for room_obj in rooms %} {# Изменил room на room_obj чтобы не конфликтовать с именем шаблона #}
-            {% include "room/partials/room_card.html" with room=room_obj %}
+        {% for room_obj in rooms %}
+            {% include "includes/room_card.html" with room=room_obj %}
         {% endfor %}
     </div>
-    {# Здесь можно добавить пагинацию, если комнат очень много #}
+    {# Pagination can be added here if there are many rooms #}
 {% else %}
-    <div class="text-center text-gray-500 dark:text-gray-400 py-12 px-6 bg-white dark:bg-dark-800 rounded-lg shadow border border-gray-200 dark:border-dark-700">
-        <i class="fas fa-comments fa-3x mb-3 text-gray-400 dark:text-gray-500"></i>
+    <div class="text-center text-gray-500 py-12 px-6 bg-white rounded-lg shadow border border-gray-200">
+        <i class="fas fa-comments fa-3x mb-3 text-gray-400"></i>
         <p class="text-lg">{% trans "Нет доступных чат-комнат." %}</p>
         <p class="text-sm mt-1">{% trans "Вы можете создать новую комнату." %}</p>
         <div class="mt-4">
-            <a href="{% url 'room:create_room' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:bg-ios-teal dark:hover:bg-teal-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center">
+            <a href="{% url 'room:create_room' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition active:scale-95 shadow-sm inline-flex items-center">
                 <i class="fas fa-plus mr-2"></i> {% trans 'Создать первую комнату' %}
             </a>
         </div>
@@ -33,6 +33,4 @@
 
 {% block scripts %}
     {{ block.super }}
-    {# <script src="{% static 'js/room_list_actions.js' %}" defer></script> #}
-    {# Например, для AJAX архивирования прямо из списка, если нужно #}
 {% endblock %}

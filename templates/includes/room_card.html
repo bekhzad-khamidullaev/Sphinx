@@ -1,12 +1,12 @@
 {% load i18n %}
 <a href="{{ room.get_absolute_url }}" id="room-card-{{ room.slug }}"
-   class="block bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700 hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-200 ease-in-out p-5 group">
+   class="block bg-white shadow-lg rounded-xl border border-gray-200 hover:shadow-xl hover:border-indigo-300 transition-all duration-200 ease-in-out p-5 group">
     <div class="flex justify-between items-start mb-3">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate" title="{{ room.name }}">
+        <h3 class="text-lg font-semibold text-gray-800 group-hover:text-indigo-600 truncate" title="{{ room.name }}">
             #{{ room.name }}
         </h3>
         {% if room.private %}
-            <span title="{% trans 'Приватная комната' %}" class="ml-2 text-xs bg-yellow-200 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100 px-2 py-0.5 rounded-full flex-shrink-0">
+            <span title="{% trans 'Приватная комната' %}" class="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full flex-shrink-0">
                 <i class="fas fa-lock fa-xs mr-1"></i>{% trans "Приват" %}
             </span>
         {% endif %}
@@ -18,13 +18,13 @@
         {% endif %}
     </div>
 
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+    <p class="text-xs text-gray-500 mb-1">
         {% trans "Участников:" %} {{ room.participants.count }}
     </p>
-    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-        {% trans "Создатель:" %} {{ room.creator.username|default:_("Неизвестен") }}
+    <p class="text-xs text-gray-500 mb-3">
+        {% trans "Инициатор:" %} {{ room.creator.username|default:_("Неизвестен") }}
     </p>
-    <p class="text-xs text-gray-400 dark:text-gray-500">
+    <p class="text-xs text-gray-400">
         {% trans "Активность:" %} <time datetime="{{ room.last_activity_at|date:"c" }}">{{ room.last_activity_at|timesince }} {% trans "назад" %}</time>
     </p>
 </a>

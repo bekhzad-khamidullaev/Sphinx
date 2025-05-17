@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static i18n app_filters %} {# Make sure app_filters is correctly loaded #}
+{% load static i18n app_filters %}
 
 {% block title %}{% trans 'Задачи' %}{% endblock %}
 
@@ -12,49 +12,48 @@
             {% trans 'Задачи' %}
         {% endif %}
     </h1>
-    {# Filter form trigger can go here if you have one #}
 </div>
 {% endblock %}
 
 
 {% block list_actions %}
-<div class="flex items-center ml-auto pl-4 space-x-3 flex-shrink-0"> {# ml-auto to push to the right #}
+<div class="flex items-center ml-auto pl-4 space-x-3 flex-shrink-0">
     <div class="inline-flex rounded-md shadow-sm" role="group">
         <a href="{{ create_url }}"
-           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-dark-700 dark:border-dark-600 dark:text-white dark:hover:text-white dark:hover:bg-dark-600 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150">
-            <i class="fas fa-plus mr-2 text-blue-500 dark:text-ios-blue" aria-hidden="true"></i> {% trans 'Создать задачу' %}
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 transition-colors duration-150">
+            <i class="fas fa-plus mr-2 text-blue-500" aria-hidden="true"></i> {% trans 'Создать задачу' %}
         </a>
         <button type="button" id="toggleViewBtn"
-           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border-y border-e border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-dark-700 dark:border-dark-600 dark:text-white dark:hover:text-white dark:hover:bg-dark-600 dark:focus:ring-blue-500 dark:focus:text-white transition-colors duration-150"
+           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border-y border-e border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 transition-colors duration-150"
            aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
              <i id="viewIcon" class="fas fa-columns mr-2" aria-hidden="true"></i>
              <span id="viewText">{% trans 'Канбан' %}</span>
         </button>
     </div>
 
-    <div id="column-toggle-dropdown-wrapper" class="relative hidden"> {# Wrapper for Flowbite dropdown positioning #}
+    <div id="column-toggle-dropdown-wrapper" class="relative hidden">
         <button id="dropdownCheckboxButton" data-dropdown-toggle="dropdownColumnCheckbox"
-           class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-ios-blue dark:hover:bg-blue-600 dark:focus:ring-blue-800" type="button">
+           class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" type="button">
             <i class="fas fa-eye-slash mr-2" aria-hidden="true"></i> {% trans 'Колонки' %}
             <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
             </svg>
         </button>
-        <div id="dropdownColumnCheckbox" class="z-50 hidden w-48 bg-white divide-y divide-gray-100 rounded-lg shadow-xl dark:bg-dark-700 dark:divide-dark-600 border border-gray-200 dark:border-dark-600">
-            <ul class="p-3 space-y-3 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownCheckboxButton">
+        <div id="dropdownColumnCheckbox" class="z-50 hidden w-48 bg-white divide-y divide-gray-100 rounded-lg shadow-xl border border-gray-200">
+            <ul class="p-3 space-y-3 text-sm text-gray-700" aria-labelledby="dropdownCheckboxButton">
                 <li>
-                    <button type="button" id="resetHiddenColumnsBtn" class="flex items-center w-full text-left text-blue-600 dark:text-blue-400 hover:underline focus:outline-none">
+                    <button type="button" id="resetHiddenColumnsBtn" class="flex items-center w-full text-left text-blue-600 hover:underline focus:outline-none">
                          <i class="fas fa-eye mr-2" aria-hidden="true"></i> {% trans 'Показать все' %}
                     </button>
                 </li>
-                <hr class="border-gray-200 dark:border-dark-600 !my-2">
-                {% for status_val, status_name in status_choices_list %} {# Use status_choices_list from view context #}
+                <hr class="border-gray-200 !my-2">
+                {% for status_val, status_name in status_choices_list %}
                 <li>
                     <div class="flex items-center">
                         <input id="checkbox-column-{{ status_val }}" type="checkbox" value="{{ status_val }}"
-                           class="toggle-column-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-dark-700 focus:ring-2 dark:bg-dark-600 dark:border-dark-500"
+                           class="toggle-column-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                            data-status="{{ status_val }}" checked>
-                        <label for="checkbox-column-{{ status_val }}" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer">{{ status_name }}</label>
+                        <label for="checkbox-column-{{ status_val }}" class="ms-2 text-sm font-medium text-gray-900 cursor-pointer">{{ status_name }}</label>
                     </div>
                 </li>
                 {% endfor %}
@@ -66,10 +65,10 @@
 
 
 {% block list_actions_mobile %}
-<a href="{{ create_url }}" class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
+<a href="{{ create_url }}" class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
     <i class="fas fa-plus mr-2" aria-hidden="true"></i> {% trans 'Создать задачу' %}
 </a>
-<button type="button" id="toggleViewBtnMobile" class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm inline-flex items-center justify-center"
+<button type="button" id="toggleViewBtnMobile" class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm inline-flex items-center justify-center"
     aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
     <i id="viewIconMobile" class="fas fa-columns mr-2" aria-hidden="true"></i>
     <span id="viewTextMobile">{% trans 'Канбан' %}</span>
@@ -77,30 +76,25 @@
 {% endblock %}
 
 {% block list_content %}
-{# Pass context variables to included templates #}
 {% include 'includes/kanban_board.html' with tasks_by_status=tasks_by_status_kanban status_mapping_dict=status_mapping_dict %}
 {% include 'includes/task_list_table.html' with tasks_for_table=tasks_page_obj status_choices_list=status_choices_list current_sort=current_sort request=request %}
 
 {% if is_paginated %}
 <div id="pagination" class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm {% if initial_task_view_mode == 'kanban' %}hidden{% endif %}">
-    {# Pass the actual Django Page object, which is named 'page_obj' in the parent context #}
     {% include "includes/pagination.html" with page_obj=page_obj %}
 </div>
 {% else %}
-    {% if tasks_page_obj %} {# Check if there are any items at all #}
-        {# Optionally, show total count if not paginated but items exist #}
-        {# <p class="mt-6 text-sm text-gray-500">{% blocktrans count count=tasks_page_obj|length %}{{ count }} task found.{% plural %}{{ count }} tasks found.{% endblocktrans %}</p> #}
+    {% if tasks_page_obj %}
     {% endif %}
 {% endif %}
 
-{# JSON data for JavaScript #}
 {{ status_mapping_json|json_script:"status-mapping-data" }}
 
 <script id="task-list-config" type="application/json">
 {
     "initialView": "{{ request.COOKIES.task_view_mode|default:'kanban' }}",
     "updateStatusUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_update_task_status' task_id=0 %}{% endfilter %}",
-    "deleteTaskUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_delete_task' task_id=0 %}{% endfilter %}" {# Assuming 0 is a valid placeholder for your URL #}
+    "deleteTaskUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_delete_task' task_id=0 %}{% endfilter %}"
 }
 </script>
 
@@ -110,6 +104,4 @@
 {{ block.super }}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
 <script src="{% static 'js/tasks_no_modal.js' %}" defer></script>
-{# Ensure Flowbite JS is loaded if data-dropdown-toggle is used for Flowbite dropdowns #}
-{# <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script> #}
 {% endblock %}

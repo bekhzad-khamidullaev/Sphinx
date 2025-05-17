@@ -1,119 +1,127 @@
 {% extends 'base.html' %}
 {% load i18n static app_filters %}
+
 {% block title %}{% trans "Сводный отчет по чеклистам" %}{% endblock %}
+
 {% block head_extra %}
     {{ block.super }}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 {% endblock %}
+
 {% block list_title %}
-<h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100 sm:text-4xl">
-    {% trans 'Сводный отчет по чеклистам' %}
-</h1>
+    <h1 class="text-3xl font-semibold text-gray-900 sm:text-4xl">
+        {% trans 'Сводный отчет по чеклистам' %}
+    </h1>
 {% endblock %}
+
 {% block list_actions %}
-<a href="{% url 'checklists:report_issues' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-    <i class="fas fa-exclamation-triangle mr-1.5"></i> {% trans 'Отчет по проблемам' %}
-</a>
-<a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm">
-    <i class="fas fa-history mr-1.5"></i> {% trans 'К истории' %}
-</a>
+    <a href="{% url 'checklists:report_issues' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+        <i class="fas fa-exclamation-triangle mr-1.5"></i> {% trans 'Отчет по проблемам' %}
+    </a>
+    <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+        <i class="fas fa-history mr-1.5"></i> {% trans 'К истории' %}
+    </a>
 {% endblock %}
+
 {% block list_content %}
-<div class="bg-white dark:bg-dark-800 shadow-md rounded-lg border border-gray-200 dark:border-dark-700 p-4 mb-6">
-    <form method="get" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-        <div>
-            <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{% trans "Начальная дата" %}</label>
-            <input type="date" id="start_date" name="start_date" value="{{ start_date|default:'' }}" class="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm">
-        </div>
-        <div>
-            <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{% trans "Конечная дата" %}</label>
-            <input type="date" id="end_date" name="end_date" value="{{ end_date|default:'' }}" class="form-input flatpickr-date block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm">
-        </div>
-        <div class="flex space-x-2">
-            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm w-full sm:w-auto">{% trans "Применить" %}</button>
-            <a href="{% url 'checklists:report_summary' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-700 border border-gray-300 dark:border-dark-600 hover:bg-gray-50 dark:hover:bg-dark-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-dark-800 transition active:scale-95 shadow-sm w-full sm:w-auto">{% trans "Сбросить" %}</a>
-        </div>
-    </form>
-</div>
-<div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-dark-800 dark:to-dark-700 shadow rounded-lg border border-gray-200 dark:border-dark-700 p-6 mb-6">
-    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{% trans "Общие показатели за период" %}</h3>
-    <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4 text-center">
-        <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">{% trans "Всего выполнено" %}</dt>
-            <dd class="mt-1 text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ total_completed_runs|default:0 }}</dd>
-        </div>
-        <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">{% trans "С замечаниями" %}</dt>
-            <dd class="mt-1 text-3xl font-bold text-red-600 dark:text-red-400">{{ total_runs_with_issues|default:0 }}</dd>
-        </div>
-         <div>
-             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">{% trans "% без замечаний" %}</dt>
-             <dd class="mt-1 text-3xl font-bold text-green-600 dark:text-green-400">
-                 {% if overall_percentage_ok is not None %}
-                      {{ overall_percentage_ok|floatformat:0 }}%
-                 {% else %}
-                     -
-                 {% endif %}
-             </dd>
-         </div>
-    </dl>
-</div>
-<div class="mt-6 overflow-hidden bg-white dark:bg-dark-800 shadow-lg rounded-xl border border-gray-200 dark:border-dark-700">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
-            <thead class="bg-gray-50 dark:bg-dark-700/50">
-                <tr class="text-xs text-left text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                     <th scope="col" class="px-4 py-3.5">{% trans 'Шаблон чеклиста' %}</th>
-                     <th scope="col" class="px-4 py-3.5">{% trans 'Категория' %}</th>
-                     <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Выполнено' %}</th>
-                     <th scope="col" class="px-4 py-3.5 text-center">{% trans 'С проблемами' %}</th>
-                     <th scope="col" class="px-4 py-3.5 text-center">{% trans '% без проблем' %}</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-700">
-                {% for template_stat in report_data %}
-                <tr class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors duration-150 text-sm">
-                     <td class="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                          <a href="{{ template_stat.get_absolute_url }}" class="hover:underline text-blue-600 dark:text-blue-400">{{ template_stat.name }}</a>
-                     </td>
-                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ template_stat.category.name|default:"-" }}</td>
-                     <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{{ template_stat.total_runs }}</td>
-                     <td class="px-4 py-3 text-center {% if template_stat.runs_with_issues > 0 %}text-red-600 dark:text-red-400 font-medium{% else %}text-gray-600 dark:text-gray-400{% endif %}">{{ template_stat.runs_with_issues }}</td>
-                     <td class="px-4 py-3 text-center {% if template_stat.percentage_ok is not None and template_stat.percentage_ok == 100 %}text-green-600 dark:text-green-400 font-medium{% elif template_stat.percentage_ok is not None and template_stat.percentage_ok < 100 %}text-yellow-600 dark:text-yellow-400{% else %}text-gray-600 dark:text-gray-400{% endif %}">
-                          {% if template_stat.percentage_ok is not None %}
-                               {{ template_stat.percentage_ok|floatformat:0 }}%
-                          {% else %}
-                              -
-                          {% endif %}
-                     </td>
-                </tr>
-                {% empty %}
-                <tr>
-                     <td colspan="5" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
-                          <i class="fas fa-chart-bar fa-3x mb-3 text-gray-300 dark:text-gray-600"></i><br>
-                          {% trans "Нет данных для отчета за выбранный период." %}
-                     </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="bg-white shadow-md rounded-lg border border-gray-200 p-4 mb-6">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <div>
+                <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Начальная дата" %}</label>
+                <input type="date" id="start_date" name="start_date" value="{{ start_date|default:'' }}" class="form-input flatpickr-date block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Конечная дата" %}</label>
+                <input type="date" id="end_date" name="end_date" value="{{ end_date|default:'' }}" class="form-input flatpickr-date block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div class="flex space-x-2">
+                <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm w-full sm:w-auto">{% trans "Применить" %}</button>
+                <a href="{% url 'checklists:report_summary' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm w-full sm:w-auto">{% trans "Сбросить" %}</a>
+            </div>
+        </form>
     </div>
-</div>
+
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 shadow rounded-lg border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">{% trans "Общие показатели за период" %}</h3>
+        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4 text-center">
+            <div>
+                <dt class="text-sm font-medium text-gray-500 uppercase">{% trans "Всего выполнено" %}</dt>
+                <dd class="mt-1 text-3xl font-bold text-indigo-600">{{ total_completed_runs|default:0 }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 uppercase">{% trans "С замечаниями" %}</dt>
+                <dd class="mt-1 text-3xl font-bold text-red-600">{{ total_runs_with_issues|default:0 }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 uppercase">{% trans "% без замечаний" %}</dt>
+                <dd class="mt-1 text-3xl font-bold text-green-600">
+                    {% if overall_percentage_ok is not None %}
+                        {{ overall_percentage_ok|floatformat:0 }}%
+                    {% else %}
+                        -
+                    {% endif %}
+                </dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="mt-6 overflow-hidden bg-white shadow-lg rounded-xl border border-gray-200">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr class="text-xs text-left text-gray-500 uppercase tracking-wider">
+                        <th scope="col" class="px-4 py-3.5">{% trans 'Шаблон чеклиста' %}</th>
+                        <th scope="col" class="px-4 py-3.5">{% trans 'Категория' %}</th>
+                        <th scope="col" class="px-4 py-3.5 text-center">{% trans 'Выполнено' %}</th>
+                        <th scope="col" class="px-4 py-3.5 text-center">{% trans 'С проблемами' %}</th>
+                        <th scope="col" class="px-4 py-3.5 text-center">{% trans '% без проблем' %}</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for template_stat in report_data %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-150 text-sm">
+                        <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                            <a href="{{ template_stat.get_absolute_url }}" class="hover:underline text-blue-600">{{ template_stat.name }}</a>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ template_stat.category.name|default:"-" }}</td>
+                        <td class="px-4 py-3 text-center text-gray-600">{{ template_stat.total_runs }}</td>
+                        <td class="px-4 py-3 text-center {% if template_stat.runs_with_issues > 0 %}text-red-600 font-medium{% else %}text-gray-600{% endif %}">{{ template_stat.runs_with_issues }}</td>
+                        <td class="px-4 py-3 text-center {% if template_stat.percentage_ok is not None and template_stat.percentage_ok == 100 %}text-green-600 font-medium{% elif template_stat.percentage_ok is not None and template_stat.percentage_ok < 100 %}text-yellow-600{% else %}text-gray-600{% endif %}">
+                            {% if template_stat.percentage_ok is not None %}
+                                {{ template_stat.percentage_ok|floatformat:0 }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-400 italic">
+                            <i class="fas fa-chart-bar fa-3x mb-3 text-gray-300"></i><br>
+                            {% trans "Нет данных для отчета за выбранный период." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}
+
 {% block scripts %}
-{{ block.super }}
-<script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
-<script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
-<script defer>
- document.addEventListener('DOMContentLoaded', function() {
-    if (typeof flatpickr !== 'undefined') {
-         flatpickr(".flatpickr-date", {
-            dateFormat: "Y-m-d",
-            altInput: true,
-            altFormat: "d.m.Y",
-            locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
-         });
-    }
- });
-</script>
+    {{ block.super }}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
+    <script defer>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr(".flatpickr-date", {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d.m.Y",
+                    locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
+                });
+            }
+        });
+    </script>
 {% endblock %}

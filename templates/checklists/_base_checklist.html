@@ -1,4 +1,3 @@
-{# templates/checklists/_base_checklist.html #}
 {% extends 'base.html' %}
 {% load i18n static %}
 
@@ -7,8 +6,8 @@
 {% block content %}
     {# Inherited blocks like list_title, list_actions, list_content will be used by extending templates #}
     {# Add checklist-specific wrappers or elements here if needed across multiple checklist pages #}
-    {% block list_content %} {# Default content block #}
-    {% endblock list_content %}
+    {% block list_content %}
+    {% endblock %}
 {% endblock %}
 
 {% block scripts %}
