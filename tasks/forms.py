@@ -262,7 +262,7 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
             if not self.initial.get('start_date'):
                 self.fields['start_date'].initial = timezone.now().date()
             if not self.initial.get('status'):
-                self.fields['status'].initial = Task.StatusChoices.BACKLOG # Or NEW
+                self.fields['status'].initial = Task.StatusChoices.NEW # Or NEW
 
         # Logic for dependent subcategory field based on category
         category_id_from_data = self.data.get(self.add_prefix('category')) if self.is_bound else None

@@ -68,8 +68,8 @@
 <div id="task-detail-container" class="bg-white shadow-lg rounded-xl border border-gray-200 p-6 mt-6" data-task-id="{{ task_instance.pk }}">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="md:col-span-2 space-y-6">
-            {# ... (остальная информация о задаче без изменений) ... #}
-            <div class="flex flex-wrap gap-4 items-center">
+            {# ... (секция Статус, Приоритет, Описание, Категоризация - без изменений) ... #}
+             <div class="flex flex-wrap gap-4 items-center">
                 <div>
                     <span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Статус' %}</span>
                     <span id="task-status-badge" class="status-badge px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
@@ -113,44 +113,34 @@
             <div>
                 <h3 class="text-md font-semibold text-gray-800 mb-3"><i class="fas fa-users mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Участники' %}</h3>
                 <ul class="space-y-4">
-                    {% with responsible_users_assignments=task_instance.get_responsible_users executor_users_assignments=task_instance.get_executors watcher_users_assignments=task_instance.get_watchers %}
+                    {# ИСПОЛЬЗУЕМ user_obj ВМЕСТО assignment.user, ТАК КАК МЕТОДЫ МОДЕЛИ ВОЗВРАЩАЮТ QuerySet[User] #}
+                    {% with responsible_users_list=task_instance.get_responsible_users executor_users_list=task_instance.get_executors watcher_users_list=task_instance.get_watchers %}
                     
-                    {% if responsible_users_assignments %}
+                    {% if responsible_users_list %}
                     <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span>
-                        {% for assignment in responsible_users_assignments %}
-                            {% if assignment.user %} {# <--- ИСПРАВЛЕНИЕ: Проверка, что user существует #}
+                        {% for user_obj in responsible_users_list %}
                             <div class="flex items-center mt-1">
-                                <img src="{% if assignment.user.image %}{{ assignment.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ assignment.user.display_name|default:assignment.user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-700 truncate">{{ assignment.user.display_name|default:assignment.user.username }}</span>
+                                <img src="{% if user_obj.image %}{{ user_obj.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user_obj.display_name|default:user_obj.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+                                <span class="text-sm text-gray-700 truncate">{{ user_obj.display_name|default:user_obj.username }}</span>
                             </div>
-                            {% else %}
-                            <div class="flex items-center mt-1">
-                                <img src="{% static 'img/user.svg' %}" alt="{% trans 'Пользователь удален' %}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-500 italic">{% trans 'Пользователь удален' %}</span>
-                            </div>
-                            {% endif %}
                         {% endfor %}
                     </li>
                     {% endif %}
 
-                    {% if executor_users_assignments %}
+                    {% if executor_users_list %}
                     <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span>
-                        {% for assignment in executor_users_assignments %}
-                            {% if assignment.user %} {# <--- ИСПРАВЛЕНИЕ: Проверка #}
+                        {% for user_obj in executor_users_list %}
                             <div class="flex items-center mt-1">
-                                <img src="{% if assignment.user.image %}{{ assignment.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ assignment.user.display_name|default:assignment.user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-700 truncate">{{ assignment.user.display_name|default:assignment.user.username }}</span>
+                                <img src="{% if user_obj.image %}{{ user_obj.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user_obj.display_name|default:user_obj.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+                                <span class="text-sm text-gray-700 truncate">{{ user_obj.display_name|default:user_obj.username }}</span>
                             </div>
-                            {% else %}
-                            <div class="flex items-center mt-1">
-                                <img src="{% static 'img/user.svg' %}" alt="{% trans 'Пользователь удален' %}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-500 italic">{% trans 'Пользователь удален' %}</span>
-                            </div>
-                            {% endif %}
                         {% empty %}
                         <span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span>
                         {% endfor %}
                     </li>
+                    {% else %} {# Добавил else для случая, когда список пуст, но не из-за empty #}
+                         <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span>
+                         <span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span></li>
                     {% endif %}
 
                     <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Создатель' %}</span>
@@ -164,29 +154,21 @@
                         </div>
                     </li>
 
-                    {% if watcher_users_assignments %}
+                    {% if watcher_users_list %}
                     <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span>
-                        {% for assignment in watcher_users_assignments %}
-                             {% if assignment.user %} {# <--- ИСПРАВЛЕНИЕ: Проверка #}
+                        {% for user_obj in watcher_users_list %}
                             <div class="flex items-center mt-1">
-                                <img src="{% if assignment.user.image %}{{ assignment.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ assignment.user.display_name|default:assignment.user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-700 truncate">{{ assignment.user.display_name|default:assignment.user.username }}</span>
+                                <img src="{% if user_obj.image %}{{ user_obj.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user_obj.display_name|default:user_obj.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+                                <span class="text-sm text-gray-700 truncate">{{ user_obj.display_name|default:user_obj.username }}</span>
                             </div>
-                            {% else %}
-                            <div class="flex items-center mt-1">
-                                <img src="{% static 'img/user.svg' %}" alt="{% trans 'Пользователь удален' %}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-500 italic">{% trans 'Пользователь удален' %}</span>
-                            </div>
-                            {% endif %}
                         {% endfor %}
                     </li>
                     {% endif %}
                     {% endwith %}
                 </ul>
             </div>
-
             {# ... (секция "Сроки" без изменений) ... #}
-            <div>
+            <div class="pt-2">
                 <h3 class="text-md font-semibold text-gray-800 mb-3"><i class="far fa-calendar-alt mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Сроки' %}</h3>
                 <dl class="space-y-2 text-sm">
                     <div class="flex justify-between"><dt class="text-gray-500">{% trans 'Создана' %}:</dt><dd class="text-gray-700 font-medium">{{ task_instance.created_at|date:"d.m.Y H:i" }}</dd></div>
@@ -261,26 +243,21 @@
         </div>
 
         {% if can_add_comment %}
-        {# action="" означает, что форма будет отправлена на текущий URL #}
         <form id="comment-form" method="post" action=""> 
             {% csrf_token %}
             <div class="flex space-x-3 items-start">
                 <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" src="{% if request.user.image %}{{ request.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ request.user.display_name|default:request.user.username }}">
                 <div class="flex-1 mt-1">
-                    {# Это отрендерит поле <textarea> с классами из forms.py #}
                     {{ comment_form.text }} 
-                    
-                    {# Ошибки для поля text, если они есть в переданной comment_form #}
                     {% if comment_form.text.errors %}
                     <div id="comment-text-errors" class="mt-1 text-sm text-red-600">
                         {% for error in comment_form.text.errors %} <p>{{ error }}</p> {% endfor %}
                     </div>
                     {% endif %}
-
-                    {# Общие ошибки формы (non-field errors), если они есть #}
                     {% if comment_form.non_field_errors %}
                     <div id="comment-non-field-errors" class="mt-1 text-sm text-red-600">
-                        {% for error in comment_form.non_field_errors %} <p>{{ error }}</p> {% endfor %}
+                         {# Закомментировано, если дублирует django.contrib.messages #}
+                         {# {% for error in comment_form.non_field_errors %} <p>{{ error }}</p> {% endfor %} #}
                     </div>
                     {% endif %}
                 </div>
@@ -311,37 +288,43 @@
 <script src="{% static 'js/tasks_no_modal.js' %}" defer></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    if (typeof Flowbite !== 'undefined' && typeof Carousel !== 'undefined') {
-        const carouselElement = document.getElementById('task-photo-carousel');
-        if (carouselElement) {
-            const items = Array.from(carouselElement.querySelectorAll('[data-carousel-item]')).map((el, index) => ({
-                position: index,
-                el: el
-            }));
-            const indicators = Array.from(carouselElement.querySelectorAll('[data-carousel-slide-to]')).map((el, index) => ({
-                position: index,
-                el: el
-            }));
+    const checkFlowbite = setInterval(function() {
+        if (typeof Flowbite !== 'undefined' && typeof Carousel !== 'undefined') {
+            clearInterval(checkFlowbite);
+            const carouselElement = document.getElementById('task-photo-carousel');
+            if (carouselElement) {
+                const items = Array.from(carouselElement.querySelectorAll('[data-carousel-item]')).map((el, index) => ({
+                    position: index,
+                    el: el
+                }));
+                const indicators = Array.from(carouselElement.querySelectorAll('[data-carousel-slide-to]')).map((el, index) => ({
+                    position: index,
+                    el: el
+                }));
 
-            if (items.length > 0) {
-                const carousel = new Carousel(carouselElement, items, {
-                    defaultPosition: 0,
-                    interval: 5000,
-                    indicators: {
-                        activeClasses: 'bg-gray-900',
-                        inactiveClasses: 'bg-gray-400 hover:bg-gray-500',
-                        items: indicators.length > 0 ? indicators : null
+                if (items.length > 0) {
+                    try {
+                        const carousel = new Carousel(carouselElement, items, {
+                            defaultPosition: 0,
+                            interval: 5000,
+                            indicators: {
+                                activeClasses: 'bg-gray-900',
+                                inactiveClasses: 'bg-gray-400 hover:bg-gray-500',
+                                items: indicators.length > 0 ? indicators : null
+                            }
+                        });
+                        const prevButton = carouselElement.querySelector('[data-carousel-prev]');
+                        const nextButton = carouselElement.querySelector('[data-carousel-next]');
+                        if(prevButton) prevButton.addEventListener('click', () => carousel.prev());
+                        if(nextButton) nextButton.addEventListener('click', () => carousel.next());
+                    } catch (e) {
+                        console.warn('Error initializing Flowbite Carousel for task_detail.html:', e);
                     }
-                });
-                const prevButton = carouselElement.querySelector('[data-carousel-prev]');
-                const nextButton = carouselElement.querySelector('[data-carousel-next]');
-                if(prevButton) prevButton.addEventListener('click', () => carousel.prev());
-                if(nextButton) nextButton.addEventListener('click', () => carousel.next());
+                }
             }
         }
-    } else {
-        console.warn('Flowbite Carousel not initialized for task_detail.html. Flowbite or Carousel might not be loaded.');
-    }
+    }, 100);
+    setTimeout(() => clearInterval(checkFlowbite), 5000);
 });
 </script>
 
