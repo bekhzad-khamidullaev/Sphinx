@@ -6,7 +6,9 @@
 
 {% block head_extra %}
     {{ block.super }}
-    {{ form.media.css }}
+    {# Select2 CSS - загружаем, так как предполагаем использование для participants #}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    {{ form.media.css }} {# Для других виджетов, если они есть #}
 {% endblock %}
 
 {% block list_title %}
@@ -26,7 +28,7 @@
                 {% endfor %}
             </div>
         {% endif %}
-        {% if error %}
+        {% if error %} {# Общая переменная 'error' из контекста, если есть #}
             <div class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm">
                 <p>{{ error }}</p>
             </div>
@@ -36,11 +38,12 @@
                 <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
                     {{ form.name.label }} {% if form.name.field.required %}<span class="text-red-500">*</span>{% endif %}
                 </label>
-                {% render_field form.name class="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                {% render_field form.name class="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder=form.name.label %}
                 {% if form.name.errors %}
                     <p class="text-xs text-red-600 mt-1">{{ form.name.errors.0 }}</p>
                 {% endif %}
             </div>
+
             <div class="flex items-center pt-2">
                 {% render_field form.private class+="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-2" %}
                 <label for="{{ form.private.id_for_label }}" class="block text-sm text-gray-900 cursor-pointer">
@@ -67,8 +70,10 @@
                      x-transition:leave-start="opacity-100 translate-y-0"
                      x-transition:leave-end="opacity-0 -translate-y-2"
                      x-cloak>
-                    {% render_field form.participants class="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
-                    {% if form.participants.help_text %}
+                    {# Предполагаем, что виджет уже Select2MultipleWidget из forms.py #}
+                    {# Если нет, widget_tweaks применит класс, но JS все равно нужен для Select2 #}
+                    {% render_field form.participants class="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" data-placeholder=form.participants.help_text|default:_("Выберите участников...") %}
+                    {% if form.participants.help_text and not form.participants.field.widget.attrs.placeholder %} {# Показываем help_text, если он не использован как placeholder #}
                         <p class="text-xs text-gray-500 mt-1">{{ form.participants.help_text|safe }}</p>
                     {% endif %}
                     {% if form.participants.errors %}
@@ -94,30 +99,33 @@
 
 {% block scripts %}
     {{ block.super }}
-    {{ form.media.js }}
+    {# jQuery должен быть первым для Select2 #}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    {% get_current_language as LANGUAGE_CODE %}
+    {% if LANGUAGE_CODE %}
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'en' }}.js"></script>
+    {% endif %}
+    {{ form.media.js }} {# Для django-select2 или других виджетов #}
     <script>
-        // The Alpine.js directive @change on the parent div of participants
-        // should handle the visibility toggle based on the checkbox state.
-        // No additional JS is strictly needed for this basic toggle if Alpine is working.
-        // This is just a fallback or an example if you wanted to do it without Alpine for some reason,
-        // or to ensure Alpine has initialized.
         document.addEventListener('DOMContentLoaded', function() {
-            const privateCheckbox = document.getElementById('{{ form.private.id_for_label }}');
-            if (privateCheckbox && typeof Alpine === 'undefined') { // Only run if Alpine is not present
-                const participantsDiv = privateCheckbox.closest('form').querySelector('[x-data]').children[1]; // Rough targeting, improve if needed
-                const participantsHelpText = privateCheckbox.closest('form').querySelector('[x-data]').children[2];
-
-                function toggleParticipants() {
-                    if (privateCheckbox.checked) {
-                        participantsDiv.style.display = '';
-                        participantsHelpText.style.display = 'none';
-                    } else {
-                        participantsDiv.style.display = 'none';
-                        participantsHelpText.style.display = '';
-                    }
+            // Alpine.js уже должен обрабатывать видимость
+            // Инициализация Select2 для поля participants, если оно видимо
+            if (typeof $.fn.select2 === 'function') {
+                const $participantsField = $('#{{ form.participants.id_for_label }}');
+                if ($participantsField.length) {
+                    const placeholderText = $participantsField.data('placeholder') || '{% trans "Выберите участников..." %}';
+                    $participantsField.select2({
+                        theme: "default",
+                        width: '100%',
+                        placeholder: placeholderText,
+                        language: "{{ LANGUAGE_CODE|slice:':2'|default:'en' }}",
+                        // allowClear: true, // Для ModelMultipleChoiceField allowClear обычно не нужен
+                        closeOnSelect: false // Оставлять открытым при выборе нескольких
+                    });
                 }
-                privateCheckbox.addEventListener('change', toggleParticipants);
-                toggleParticipants(); // Initial state
+            } else {
+                console.warn("Select2 library not loaded.");
             }
         });
     </script>

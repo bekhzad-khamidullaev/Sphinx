@@ -131,7 +131,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}.js" defer></script>
     {% if status_form.approved_at %}
         <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
-        <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script> {# Make sure this is the correct path for Russian localization if needed #}
+        <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js" defer></script>
     {% endif %}
     {% if status_form %}
         {{ status_form.media.js }}
@@ -154,12 +154,11 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Fallback for non-Alpine environments or if Alpine hasn't initialized yet.
         if (typeof Alpine === 'undefined') {
             const btn = document.getElementById('toggleStatusFormBtn');
             const container = document.getElementById('statusFormContainer');
-            if (container) { // Ensure container exists before querying its children
-                const cancelBtn = container.querySelector('button[type="button"].px-4.py-2'); // More specific selector for cancel
+            if (container) {
+                const cancelBtn = container.querySelector('button[type="button"].px-4.py-2');
                 if (btn && cancelBtn) {
                     btn.addEventListener('click', () => { container.classList.remove('hidden'); btn.classList.add('hidden'); });
                     cancelBtn.addEventListener('click', () => { container.classList.add('hidden'); btn.classList.remove('hidden'); });

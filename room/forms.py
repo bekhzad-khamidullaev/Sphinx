@@ -2,23 +2,27 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from django_select2.forms import Select2MultipleWidget # <--- Добавляем импорт
+
 from .models import Room
 
 User = get_user_model()
 
-# Эти классы могут быть вынесены в глобальный файл стилей или определены в base.html,
-# здесь для примера и консистентности с вашим исходным кодом
-BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500"
+# --- Обновленные CSS классы (без dark:) ---
+BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out"
 TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
-SELECT_MULTI_CLASSES = f"form-multiselect {BASE_INPUT_CLASSES} h-40"
-CHECKBOX_CLASSES = "form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-dark-600 dark:border-dark-500 dark:checked:bg-indigo-500 dark:focus:ring-offset-dark-800"
+# SELECT_MULTI_CLASSES = f"form-multiselect {BASE_INPUT_CLASSES} h-40" # Заменяется на Select2
+CHECKBOX_CLASSES = "form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
 
 
 class RoomForm(forms.ModelForm):
     participants = forms.ModelMultipleChoiceField(
-        queryset=User.objects.none(), # Начальный пустой queryset
-        required=False, # Не обязательно, если комната не приватная
-        widget=forms.SelectMultiple(attrs={'class': SELECT_MULTI_CLASSES}),
+        queryset=User.objects.none(),
+        required=False,
+        widget=Select2MultipleWidget(attrs={ # <--- ИЗМЕНЕНИЕ: Используем Select2MultipleWidget
+            'data-placeholder': _("Выберите участников..."),
+            'class': 'form-select select2-basic block w-full text-sm' # Добавляем базовые классы для Select2
+        }),
         label=_("Участники"),
         help_text=_("Выберите участников, если комната приватная. Вы (создатель) будете добавлены автоматически.")
     )
@@ -28,10 +32,10 @@ class RoomForm(forms.ModelForm):
         fields = ['name', 'private', 'participants']
         widgets = {
             'name': forms.TextInput(attrs={
-                'class': TEXT_INPUT_CLASSES,
+                'class': TEXT_INPUT_CLASSES, # Используем обновленный класс
                 'placeholder': _("Название новой комнаты...")
             }),
-            'private': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}),
+            'private': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}), # Используем обновленный класс
         }
         labels = {
             'name': _("Название комнаты"),
@@ -42,11 +46,9 @@ class RoomForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        self.request_user = kwargs.pop('user', None) # Пользователь, создающий комнату
+        self.request_user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Настраиваем queryset для участников, исключая текущего пользователя,
-        # так как он будет добавлен автоматически.
         participants_qs = User.objects.filter(is_active=True).order_by('username')
         if self.request_user:
             participants_qs = participants_qs.exclude(pk=self.request_user.pk)
@@ -56,7 +58,8 @@ class RoomForm(forms.ModelForm):
         name = self.cleaned_data.get('name', '').strip()
         if not name:
             raise forms.ValidationError(_("Название комнаты не может быть пустым."))
-        # Можно добавить проверку на уникальность имени комнаты, если это требуется
+        
+        # Проверка на уникальность имени комнаты (если это бизнес-требование)
         # query = Room.objects.filter(name__iexact=name)
         # if self.instance and self.instance.pk:
         #     query = query.exclude(pk=self.instance.pk)
@@ -69,10 +72,11 @@ class RoomForm(forms.ModelForm):
         is_private = cleaned_data.get('private')
         participants = cleaned_data.get('participants')
 
+        # Если комната приватная, и не выбран ни один участник (кроме создателя, который добавляется во view),
+        # можно выдавать ошибку. Однако, если создатель - единственный обязательный участник,
+        # эта проверка может быть излишней, так как форма позволит создать приватную комнату без других участников.
         if is_private and not participants:
-            # Для приватной комнаты можно требовать хотя бы одного участника *помимо создателя*.
-            # Но если создатель добавляется автоматически, это условие может быть не нужно,
-            # или его можно изменить на "хотя бы N участников".
-            # Пока оставим как в вашем коде, если это было требование.
-            self.add_error('participants', _("Для приватной комнаты выберите хотя бы одного участника (кроме вас)."))
+            # Раскомментируйте, если хотите сделать выбор участников обязательным для приватных комнат
+            # self.add_error('participants', _("Для приватной комнаты выберите хотя бы одного участника (кроме вас)."))
+            pass # Сейчас разрешаем создавать приватные комнаты без доп. участников, создатель добавится во view.
         return cleaned_data

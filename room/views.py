@@ -1,11 +1,12 @@
 # room/views.py
 import logging
 import uuid
+from datetime import datetime, timezone as dt_timezone
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseForbidden, JsonResponse, Http404
 from django.views.decorators.http import require_POST, require_GET
-from django.db.models import Q, Max, OuterRef, Subquery, Exists, Value, BooleanField
+from django.db.models import Q, Max, OuterRef, Subquery, Exists, Value, BooleanField, Min
 from django.db.models.functions import Coalesce
 from django.utils.text import slugify
 from django.conf import settings
@@ -18,7 +19,6 @@ from django.db import transaction
 
 from .models import Room, Message, MessageReadStatus
 from .forms import RoomForm
-from .serializers import MessageSerializer # Может понадобиться для начальной загрузки сообщений
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -26,69 +26,38 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def room_list_view(request):
-    """
-    Отображает список доступных чат-комнат для пользователя.
-    Комнаты отсортированы по последней активности.
-    Добавляется информация о непрочитанных сообщениях.
-    """
     user = request.user
 
-    # Подзапрос для получения ID последнего сообщения в комнате
-    last_message_in_room_subquery = Message.objects.filter(
+    last_message_time_subquery = Message.objects.filter(
         room=OuterRef('pk'),
         is_deleted=False
-    ).order_by('-date_added').values('id')[:1]
+    ).order_by('-date_added').values('date_added')[:1]
 
-    # Подзапрос для получения ID последнего прочитанного сообщения пользователем в комнате
-    user_last_read_message_subquery = MessageReadStatus.objects.filter(
+    user_last_read_time_subquery = MessageReadStatus.objects.filter(
         user=user,
         room=OuterRef('pk')
-    ).values('last_read_message_id')[:1]
-
-    # Основной запрос комнат
+    ).values('last_read_timestamp')[:1]
+    
     rooms_qs = Room.objects.filter(
         Q(is_archived=False) &
-        (Q(private=False) | Q(participants=user)) # Публичные или приватные, где пользователь участник
+        (Q(private=False) | Q(participants=user) | Q(creator=user))
     ).select_related('creator').prefetch_related('participants').annotate(
-        # Аннотируем ID последнего сообщения в комнате
-        latest_message_id_in_room=Subquery(last_message_in_room_subquery),
-        # Аннотируем ID последнего прочитанного сообщения пользователем
-        user_latest_read_message_id=Subquery(user_last_read_message_subquery),
-    ).distinct().order_by('-last_activity_at') # Сортировка по полю last_activity_at модели Room
-
-    # Определяем наличие непрочитанных сообщений на основе аннотаций
-    # has_unread = True если:
-    # 1. В комнате есть сообщения (latest_message_id_in_room не NULL)
-    # 2. ИЛИ пользователь никогда не читал сообщения в этой комнате (user_latest_read_message_id IS NULL)
-    #    ИЛИ ID последнего сообщения в комнате не совпадает с ID последнего прочитанного пользователем
-    #    (с учетом того, что ID сообщений UUID и могут не быть строго последовательными по значению,
-    #     но date_added должно быть). Более надежно было бы сравнивать timestamp'ы, но это сложнее в одном запросе.
-    #     Текущая логика с ID должна работать, если UUIDv1 или если мы предполагаем, что более новый ID > старый ID.
-    #     Альтернативно, можно сделать это в цикле в Python, но это больше запросов.
-    #
-    #     Упрощенный вариант (если ID не всегда упорядочены, но мы хотим избежать цикла):
-    #     has_unread = Exists(Message.objects.filter(room=OuterRef('pk'), is_deleted=False, date_added__gt=Coalesce(Subquery(MessageReadStatus.objects.filter(user=user, room=OuterRef('pk')).values('last_read_message__date_added')[:1]), timezone.datetime.min.replace(tzinfo=timezone.utc))))
-    #     rooms_qs = rooms_qs.annotate(has_unread=has_unread)
-    #
-    # Пока оставим вариант с сравнением ID, так как он проще и часто используется
-    processed_rooms = []
-    for room in rooms_qs:
-        has_unread_flag = False
-        if room.latest_message_id_in_room: # Если в комнате есть сообщения
-            if not room.user_latest_read_message_id: # Пользователь ничего не читал
-                has_unread_flag = True
-            # Сравниваем ID. UUID могут не быть упорядочены лексикографически так же, как по времени.
-            # Для UUIDv1 это обычно так, для UUIDv4 - нет.
-            # Более надежно было бы иметь timestamp последнего прочитанного сообщения.
-            # Предположим, что last_read_message_id всегда "меньше или равно" latest_message_id_in_room, если прочитано.
-            elif room.latest_message_id_in_room != room.user_latest_read_message_id:
-                 has_unread_flag = True
-        room.has_unread = has_unread_flag
-        processed_rooms.append(room)
-
+        latest_message_timestamp_in_room=Subquery(last_message_time_subquery),
+        user_latest_read_timestamp=Subquery(user_last_read_time_subquery),
+        has_unread=Exists(
+            Message.objects.filter(
+                room=OuterRef('pk'),
+                is_deleted=False,
+                date_added__gt=Coalesce(
+                    OuterRef('user_latest_read_timestamp'),
+                    datetime.min.replace(tzinfo=dt_timezone.utc)
+                )
+            )
+        )
+    ).distinct().order_by('-last_activity_at')
 
     context = {
-        'rooms': processed_rooms,
+        'rooms': rooms_qs,
         'page_title': _("Чат-комнаты")
     }
     return render(request, 'room/room_list.html', context)
@@ -96,63 +65,67 @@ def room_list_view(request):
 
 @login_required
 def room_detail_view(request, slug):
-    """ Отображает конкретную чат-комнату и ее сообщения. """
     user = request.user
     try:
-        # Загружаем комнату, включая участников для проверки прав
-        room_obj = Room.objects.prefetch_related('participants').get(slug=slug, is_archived=False)
+        room_obj = Room.objects.prefetch_related(
+            'participants',
+        ).get(slug=slug, is_archived=False)
     except Room.DoesNotExist:
         raise Http404(_("Чат-комната не найдена или заархивирована."))
 
-    # Проверка прав доступа
-    if room_obj.private and not room_obj.participants.filter(pk=user.pk).exists():
+    if room_obj.private and not room_obj.participants.filter(pk=user.pk).exists() and room_obj.creator != user:
         django_messages.error(request, _("У вас нет доступа к этой приватной комнате."))
-        return redirect('room:rooms') # Имя URL для списка комнат
+        return redirect('room:rooms')
 
-    # Загрузка начального набора сообщений (например, последние N)
-    # Используем MessageSerializer для консистентности с WebSocket, если это удобно
-    # Или собираем данные вручную для шаблона.
-    # Пагинация на стороне клиента (бесконечная прокрутка) будет загружать старые сообщения через WebSocket.
     initial_messages_qs = Message.objects.filter(room=room_obj, is_deleted=False)\
                                        .select_related('user', 'reply_to__user')\
                                        .prefetch_related('reactions__user')\
                                        .order_by('-date_added')[:settings.CHAT_MESSAGES_PAGE_SIZE]
-    
-    initial_messages = list(initial_messages_qs)[::-1] # Переворачиваем для хронологического порядка
+    initial_messages = list(initial_messages_qs)[::-1]
 
-    # Сериализация сообщений (если нужна сложная структура для JS)
-    # serialized_initial_messages = []
-    # for msg in initial_messages:
-    #     # Здесь нужен контекст с request для MessageSerializer, если он используется
-    #     serializer_context = {'request': request, 'consumer_user': user} # consumer_user - тот, кто смотрит
-    #     serialized_initial_messages.append(MessageSerializer(msg, context=serializer_context).data)
-
-    # Отмечаем сообщения как прочитанные
-    # Обновляем MessageReadStatus до последнего видимого сообщения
+    last_message_to_mark_read = None
     if initial_messages:
-        last_message_in_initial_set = initial_messages[-1]
-        MessageReadStatus.objects.update_or_create(
-            user=user, room=room_obj,
-            defaults={'last_read_message': last_message_in_initial_set, 'last_read_timestamp': timezone.now()}
-        )
-    else: # Если сообщений нет, но пользователь зашел в комнату
-        MessageReadStatus.objects.update_or_create(
-            user=user, room=room_obj,
-            defaults={'last_read_message': None, 'last_read_timestamp': timezone.now()}
-        )
+        last_message_to_mark_read = initial_messages[-1]
+    elif Message.objects.filter(room=room_obj, is_deleted=False).exists():
+        last_message_to_mark_read = Message.objects.filter(room=room_obj, is_deleted=False).latest('date_added')
 
-    # Список других комнат для боковой панели (аналогично room_list_view)
-    # ... (можно скопировать и адаптировать логику из room_list_view для rooms_for_sidebar) ...
-    # Для краткости здесь пропущено, но вы можете добавить похожую логику
-    rooms_for_sidebar = Room.objects.filter(
-        Q(is_archived=False) & (Q(private=False) | Q(participants=user))
-    ).exclude(pk=room_obj.pk).order_by('-last_activity_at')[:10] # Пример
+    MessageReadStatus.objects.update_or_create(
+        user=user, room=room_obj,
+        defaults={'last_read_message': last_message_to_mark_read, 'last_read_timestamp': timezone.now()}
+    )
+
+    last_message_time_subquery_sidebar = Message.objects.filter(
+        room=OuterRef('pk'),
+        is_deleted=False
+    ).order_by('-date_added').values('date_added')[:1]
+
+    user_last_read_time_subquery_sidebar = MessageReadStatus.objects.filter(
+        user=user,
+        room=OuterRef('pk')
+    ).values('last_read_timestamp')[:1]
+
+    rooms_for_sidebar_qs = Room.objects.filter(
+        Q(is_archived=False) & (Q(private=False) | Q(participants=user) | Q(creator=user))
+    ).exclude(pk=room_obj.pk).annotate(
+        latest_message_timestamp_in_room=Subquery(last_message_time_subquery_sidebar),
+        user_latest_read_timestamp=Subquery(user_last_read_time_subquery_sidebar),
+        has_unread=Exists(
+            Message.objects.filter(
+                room=OuterRef('pk'),
+                is_deleted=False,
+                date_added__gt=Coalesce(
+                    OuterRef('user_latest_read_timestamp'),
+                    datetime.min.replace(tzinfo=dt_timezone.utc)
+                )
+            )
+        )
+    ).order_by('-last_activity_at')[:10]
+
 
     context = {
         'room': room_obj,
-        'messages_list': initial_messages, # Передаем объекты модели, шаблон сам их отобразит
-        # 'serialized_messages_json': json.dumps(serialized_initial_messages), # Если JS ожидает JSON
-        'rooms_for_sidebar': rooms_for_sidebar,
+        'messages_list': initial_messages, # messages_list - это имя переменной, используемое в шаблоне
+        'rooms_for_sidebar': rooms_for_sidebar_qs,
         'page_title': room_obj.name,
         'chat_messages_page_size': settings.CHAT_MESSAGES_PAGE_SIZE,
     }
@@ -161,28 +134,25 @@ def room_detail_view(request, slug):
 
 @login_required
 def room_create_view(request):
-    """ Создание новой чат-комнаты. """
     if request.method == 'POST':
-        form = RoomForm(request.POST, user=request.user) # Передаем пользователя для логики формы
+        form = RoomForm(request.POST, user=request.user)
         if form.is_valid():
             try:
-                with transaction.atomic(): # Используем транзакцию для атомарности операций
+                with transaction.atomic():
                     new_room = form.save(commit=False)
                     new_room.creator = request.user
 
-                    # Генерация уникального slug
-                    base_slug = slugify(new_room.name) or f"room-{uuid.uuid4().hex[:6]}"
+                    base_slug = slugify(new_room.name, allow_unicode=True) or f"room-{uuid.uuid4().hex[:6]}"
                     slug = base_slug
                     counter = 1
                     while Room.objects.filter(slug=slug).exists():
                         slug = f"{base_slug}-{counter}"
                         counter += 1
                     new_room.slug = slug
-                    new_room.save() # Сначала сохраняем комнату, чтобы получить ID
-
-                    # Сохраняем M2M участников, выбранных в форме
-                    form.save_m2m()
-                    # Добавляем создателя в участники, если он еще не там
+                    new_room.save()
+                    
+                    form.save_m2m() 
+                    
                     if request.user not in new_room.participants.all():
                         new_room.participants.add(request.user)
 
@@ -191,6 +161,7 @@ def room_create_view(request):
             except Exception as e:
                 logger.exception(f"Error creating room by {request.user.username}: {e}")
                 django_messages.error(request, _("Произошла ошибка при создании комнаты. Попробуйте еще раз."))
+                form.add_error(None, _("Внутренняя ошибка сервера при создании комнаты."))
     else:
         form = RoomForm(user=request.user)
 
@@ -204,9 +175,7 @@ def room_create_view(request):
 @require_POST
 @login_required
 def room_archive_view(request, slug):
-    """ Архивирование комнаты (AJAX). """
     room = get_object_or_404(Room, slug=slug)
-    # Проверка прав: архивировать может создатель или staff
     if room.creator != request.user and not request.user.is_staff:
         logger.warning(f"User {request.user.username} (not creator/staff) tried to archive room '{slug}'.")
         return JsonResponse({'success': False, 'error': _('У вас нет прав для архивирования этой комнаты.')}, status=403)
@@ -215,39 +184,87 @@ def room_archive_view(request, slug):
         return JsonResponse({'success': True, 'message': _('Комната уже в архиве.')})
 
     room.is_archived = True
-    room.save(update_fields=['is_archived'])
+    room.save(update_fields=['is_archived', 'updated_at'])
     logger.info(f"Room '{slug}' archived by user {request.user.username}.")
     return JsonResponse({'success': True, 'message': _('Комната успешно заархивирована.')})
 
-# Поиск сообщений (если нужен HTTP эндпоинт, а не только через WebSocket)
+
 @require_GET
 @login_required
 def message_search_view(request, slug):
     room = get_object_or_404(Room, slug=slug)
-    if room.private and not room.participants.filter(pk=request.user.pk).exists():
+    if room.private and not room.participants.filter(pk=request.user.pk).exists() and room.creator != request.user:
         return JsonResponse({'success': False, 'error': _('Доступ запрещен.')}, status=403)
 
     query = request.GET.get('q', '').strip()
-    if len(query) < 2: # Минимальная длина запроса
+    if len(query) < 2:
         return JsonResponse({'success': False, 'error': _('Запрос должен содержать минимум 2 символа.')}, status=400)
 
-    # PostgreSQL FTS (если настроено)
-    # from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
-    # vector = SearchVector('content', weight='A') + SearchVector('user__username', weight='B') # Пример
-    # search_query = SearchQuery(query, search_type='websearch')
-    # results = Message.objects.annotate(
-    #     rank=SearchRank(vector, search_query)
-    # ).filter(search_vector=search_query, room=room, is_deleted=False).order_by('-rank')[:20]
-
-    # Простой поиск
-    results = Message.objects.filter(
+    results_qs = Message.objects.filter(
         room=room,
         content__icontains=query,
         is_deleted=False
-    ).select_related('user').order_by('-date_added')[:20]
+    ).select_related('user', 'reply_to__user').prefetch_related('reactions__user').order_by('-date_added')[:20] # Убрал __userprofile
+    
+    messages_data = []
+    for msg in results_qs:
+        user_avatar_url = None
+        if hasattr(msg.user, 'image') and msg.user.image and hasattr(msg.user.image, 'url'):
+            user_avatar_url = request.build_absolute_uri(msg.user.image.url) if request else msg.user.image.url
+        
+        reply_user_avatar_url = None
+        if msg.reply_to and msg.reply_to.user:
+            if hasattr(msg.reply_to.user, 'image') and msg.reply_to.user.image and hasattr(msg.reply_to.user.image, 'url'):
+                 reply_user_avatar_url = request.build_absolute_uri(msg.reply_to.user.image.url) if request else msg.reply_to.user.image.url
 
-    # Используем MessageSerializer для форматирования данных
-    # Нужен request в контексте, если сериализатор его использует
-    serializer_context = {'request': request, 'consumer_user': request.user}
-    messages_data = MessageSerializer(results, many=True, context=serializer_context).data
+        user_data = {
+            'id': msg.user.id,
+            'username': msg.user.username,
+            'display_name': msg.user.display_name if hasattr(msg.user, 'display_name') else msg.user.username,
+            'avatar_url': user_avatar_url
+        }
+        reply_data = None
+        if msg.reply_to:
+            reply_user_data = {
+                'id': msg.reply_to.user.id,
+                'username': msg.reply_to.user.username,
+                'display_name': msg.reply_to.user.display_name if hasattr(msg.reply_to.user, 'display_name') else msg.reply_to.user.username,
+                'avatar_url': reply_user_avatar_url
+            }
+            reply_data = {
+                'id': str(msg.reply_to.id),
+                'user': reply_user_data,
+                'content_preview': msg.reply_to.content[:70] + '...' if msg.reply_to.content and len(msg.reply_to.content) > 70 else (_("[Файл]") if msg.reply_to.file else ""),
+                'has_file': bool(msg.reply_to.file),
+                'is_deleted': msg.reply_to.is_deleted,
+            }
+        file_data = None
+        if msg.file and hasattr(msg.file, 'url'):
+            try:
+                file_data = {'url': request.build_absolute_uri(msg.file.url) if request else msg.file.url, 'name': msg.get_filename(), 'size': msg.file.size}
+            except ValueError:
+                 file_data = {'url': msg.file.url, 'name': msg.get_filename(), 'size': msg.file.size}
+            except Exception:
+                 file_data = {'url': '#', 'name': _('Ошибка файла'), 'size': None}
+        
+        reactions_summary = {}
+        for r_obj in msg.reactions.all():
+            if r_obj.emoji not in reactions_summary:
+                reactions_summary[r_obj.emoji] = {'count': 0, 'users': []}
+            reactions_summary[r_obj.emoji]['count'] +=1
+            reactions_summary[r_obj.emoji]['users'].append(r_obj.user.username)
+
+        messages_data.append({
+            'id': str(msg.id),
+            'user': user_data,
+            'room_slug': room.slug,
+            'content': msg.content if not msg.is_deleted else (_("Сообщение удалено") if msg.is_deleted else ""),
+            'file': file_data,
+            'timestamp': msg.date_added.isoformat(),
+            'edited_at': msg.edited_at.isoformat() if msg.edited_at else None,
+            'is_deleted': msg.is_deleted,
+            'reply_to': reply_data,
+            'reactions': reactions_summary,
+        })
+
     return JsonResponse({'success': True, 'messages': messages_data})

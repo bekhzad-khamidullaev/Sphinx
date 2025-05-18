@@ -24,7 +24,7 @@ INSTALLED_APPS = [
 
     "user_profiles",
     "tasks",
-    "room",
+    # "room",
     "checklists",
 
     "channels",

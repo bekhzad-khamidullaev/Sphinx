@@ -1,36 +1,52 @@
 {% extends "base.html" %}
 {% load static i18n %}
+{% load app_filters %} {# Убедитесь, что этот файл существует и нужен, или удалите #}
 
-{% block content %}
-<div class="flex justify-between items-center mb-6">
-    {# page_title is in base.html #}
+{% block title %}{{ page_title|default:_("Чат-комнаты") }}{% endblock %}
+
+{% block list_title %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
+        {{ page_title|default:_("Чат-комнаты") }}
+    </h1>
+    {% if perms.room.add_room %} {# Стандартная проверка прав Django #}
     <a href="{% url 'room:create_room' %}"
        class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition active:scale-95 shadow-sm inline-flex items-center">
         <i class="fas fa-plus mr-2"></i> {% trans 'Создать новую комнату' %}
     </a>
+    {% endif %}
 </div>
+{% endblock %}
 
+{% block list_content %}
 {% if rooms %}
     <div id="room-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {% for room_obj in rooms %}
-            {% include "includes/room_card.html" with room=room_obj %}
+        {% for room_obj in rooms %} {# rooms - это queryset из view #}
+            {% include "includes/room_card.html" with room=room_obj %} {# Передаем room_obj как room в инклюд #}
         {% endfor %}
     </div>
-    {# Pagination can be added here if there are many rooms #}
+    {% if is_paginated %}
+        <div class="mt-6">
+            {% include "includes/pagination.html" with page_obj=page_obj %}
+        </div>
+    {% endif %}
 {% else %}
     <div class="text-center text-gray-500 py-12 px-6 bg-white rounded-lg shadow border border-gray-200">
         <i class="fas fa-comments fa-3x mb-3 text-gray-400"></i>
         <p class="text-lg">{% trans "Нет доступных чат-комнат." %}</p>
         <p class="text-sm mt-1">{% trans "Вы можете создать новую комнату." %}</p>
+        {% if perms.room.add_room %}
         <div class="mt-4">
             <a href="{% url 'room:create_room' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition active:scale-95 shadow-sm inline-flex items-center">
                 <i class="fas fa-plus mr-2"></i> {% trans 'Создать первую комнату' %}
             </a>
         </div>
+        {% endif %}
     </div>
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
     {{ block.super }}
+    {# Если для этого списка нужны специфичные JS, добавьте их сюда #}
 {% endblock %}

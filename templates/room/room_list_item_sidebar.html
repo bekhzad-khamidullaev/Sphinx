@@ -10,4 +10,8 @@
     {% if room_item.private and room_item.slug != current_room_slug %}
         <i class="fas fa-lock fa-xs ml-2 text-gray-400 group-hover:text-gray-500"></i>
     {% endif %}
+    {# Пример добавления индикатора непрочитанных сообщений, если переменная room_item.has_unread доступна #}
+    {# {% if room_item.has_unread and room_item.slug != current_room_slug %}
+        <span class="ml-auto w-2 h-2 bg-red-500 rounded-full" title="{% trans 'Непрочитанные' %}"></span>
+    {% endif %} #}
 </a>
