@@ -21,8 +21,9 @@ build/
 .env.*
 .venv/
 local_settings.py
+config/settings.py
 # media/
-# staticfiles/
+staticfiles/
 django-debug-toolbar/
 debug.log
 
@@ -46,7 +47,7 @@ coverage.xml
 .idea/
 
 # Node/NPM
-#node_modules/
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -56,10 +57,10 @@ yarn-error.log*
 # static/js/
 # static/css/
 # static/assets/
-# *.map
+*.map
 
 # Select2
-# select2/
+select2/
 
 # System files
 .DS_Store
