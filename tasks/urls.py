@@ -47,7 +47,7 @@ urlpatterns = [
     path('tasks/<int:pk>/perform/', task.TaskPerformView.as_view(), name='task_perform'),
     path('ajax/tasks/<int:task_id>/update-status/', ajax.update_task_status, name='ajax_update_task_status'),
     path('ajax/tasks/<int:task_id>/delete/', ajax.delete_task_ajax, name='ajax_delete_task'),
-    path('tasks/<int:task_id>/add_comment/', task.add_comment_to_task, name='add_comment_to_task'),
+    # path('tasks/<int:task_id>/add_comment/', task.add_comment_to_task, name='add_comment_to_task'),
 
     path('reports/', report.ReportIndexView.as_view(), name='report_index'),
     path('reports/export/excel/', report.export_tasks_to_excel, name='export_tasks_excel'),
