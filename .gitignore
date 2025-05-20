@@ -25,7 +25,9 @@ local_settings.py
 # staticfiles/
 django-debug-toolbar/
 debug.log
-
+config/settings.py
+config/settings/local.py
+config/settings/local.pyc
 # Coverage and testing
 htmlcov/
 .tox/
