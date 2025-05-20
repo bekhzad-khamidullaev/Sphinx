@@ -120,3 +120,4 @@ XlsxWriter==3.2.2
 yarl==1.19.0
 zope.interface==7.2
 django-simpleui
+Twisted[tls,http2]

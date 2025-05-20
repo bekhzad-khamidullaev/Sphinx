@@ -123,11 +123,11 @@ DEFAULT_DB_NAME = BASE_DIR / "db.sqlite3"
 DATABASES = {
     "default": {
         "ENGINE": os.environ.get('SQL_ENGINE', DEFAULT_DB_ENGINE),
-        "NAME": os.environ.get('SQL_DATABASE', DEFAULT_DB_NAME),
-        "USER": os.environ.get('SQL_USER', ''),
-        "PASSWORD": os.environ.get('SQL_PASSWORD', ''),
-        "HOST": os.environ.get('SQL_HOST', ''), # Для PostgreSQL это 'db' (имя сервиса Docker)
-        "PORT": os.environ.get('SQL_PORT', ''), # Для PostgreSQL это '5432'
+        "NAME": os.environ.get('POSTGRES_DB', DEFAULT_DB_NAME),
+        "USER": os.environ.get('POSTGRES_USER', ''),
+        "PASSWORD": os.environ.get('POSTGRES_PASSWORD', ''),
+        "HOST": os.environ.get('POSTGRES_HOST', ''), # Для PostgreSQL это 'db' (имя сервиса Docker)
+        "PORT": os.environ.get('POSTGRES_PORT', ''), # Для PostgreSQL это '5432'
     }
 }
 # Корректируем NAME для SQLite, если он был переопределен в .env без полного пути
