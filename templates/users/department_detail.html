@@ -5,104 +5,106 @@
 
 {% block page_title_block %}
   <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <h2 class="text-title-md2 font-bold text-black dark:text-white">
+    <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl"> {# Используем стандартные классы для заголовка #}
       {{ page_title|default:department.name }}
-    </h2>
+    </h1>
+    {% if perms.user_profiles.change_department %} {# Пример проверки прав #}
     <nav>
-      <a href="{% url 'user_profiles:department_update' pk=department.pk %}" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 lg:px-6 transition active:scale-95 shadow-sm">
+      <a href="{% url 'user_profiles:department_update' pk=department.pk %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
         <i class="fas fa-edit mr-2"></i> {% trans 'Редактировать отдел' %}
       </a>
     </nav>
+    {% endif %}
   </div>
 {% endblock %}
 
 {% block content %}
 <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
     {# Информация об отделе #}
-    <div class="md:col-span-1 rounded-sm border border-stroke bg-white py-6 px-7.5 shadow-default dark:border-strokedark dark:bg-boxdark">
-        <h4 class="mb-5 text-xl font-semibold text-black dark:text-white">{% trans "Информация об отделе" %}</h4>
+    <div class="md:col-span-1 rounded-xl border border-gray-200 bg-white py-6 px-7 shadow-lg">
+        <h4 class="mb-5 text-xl font-semibold text-gray-900">{% trans "Информация об отделе" %}</h4>
         <div class="space-y-3">
             <div>
-                <p class="text-sm text-meta">{% trans "Название:" %}</p>
-                <p class="font-medium text-black dark:text-white">{{ department.name }}</p>
+                <p class="text-sm text-gray-500">{% trans "Название:" %}</p>
+                <p class="font-medium text-gray-900">{{ department.name }}</p>
             </div>
             {% if department.description %}
             <div>
-                <p class="text-sm text-meta">{% trans "Описание:" %}</p>
-                <p class="text-black dark:text-white">{{ department.description|linebreaksbr }}</p>
+                <p class="text-sm text-gray-500">{% trans "Описание:" %}</p>
+                <p class="text-gray-900">{{ department.description|linebreaksbr }}</p>
             </div>
             {% endif %}
             {% if department.head %}
             <div>
-                <p class="text-sm text-meta">{% trans "Руководитель:" %}</p>
-                <p class="font-medium text-black dark:text-white">
-                    <a href="{{ department.head.get_absolute_url }}" class="hover:text-primary dark:hover:text-blue-400">{{ department.head.display_name }}</a>
+                <p class="text-sm text-gray-500">{% trans "Руководитель:" %}</p>
+                <p class="font-medium text-gray-900">
+                    <a href="{{ department.head.get_absolute_url }}" class="hover:text-blue-600">{{ department.head.display_name }}</a>
                 </p>
             </div>
             {% endif %}
             {% if department.parent %}
             <div>
-                <p class="text-sm text-meta">{% trans "Вышестоящий отдел:" %}</p>
-                <p class="font-medium text-black dark:text-white">
-                    <a href="{{ department.parent.get_absolute_url }}" class="hover:text-primary dark:hover:text-blue-400">{{ department.parent.name }}</a>
+                <p class="text-sm text-gray-500">{% trans "Вышестоящий отдел:" %}</p>
+                <p class="font-medium text-gray-900">
+                    <a href="{{ department.parent.get_absolute_url }}" class="hover:text-blue-600">{{ department.parent.name }}</a>
                 </p>
             </div>
             {% endif %}
-             <div>
-                <p class="text-sm text-meta">{% trans "Дата создания:" %}</p>
-                <p class="font-medium text-black dark:text-white">{{ department.created_at|date:"d.m.Y H:i" }}</p>
+            <div>
+                <p class="text-sm text-gray-500">{% trans "Дата создания:" %}</p>
+                <p class="font-medium text-gray-900">{{ department.created_at|date:"d.m.Y H:i" }}</p>
             </div>
         </div>
     </div>
 
     {# Сотрудники отдела #}
-    <div class="md:col-span-1 rounded-sm border border-stroke bg-white py-6 px-7.5 shadow-default dark:border-strokedark dark:bg-boxdark">
-        <h4 class="mb-5 text-xl font-semibold text-black dark:text-white">{% trans "Сотрудники" %} ({{ employees.count }})</h4>
+    <div class="md:col-span-1 rounded-xl border border-gray-200 bg-white py-6 px-7 shadow-lg">
+        <h4 class="mb-5 text-xl font-semibold text-gray-900">{% trans "Сотрудники" %} ({{ employees.count }})</h4>
         {% if employees %}
         <ul class="space-y-3 max-h-96 overflow-y-auto scrollbar-thin">
             {% for employee in employees %}
-            <li class="flex items-center space-x-3.5 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-boxdark-2">
+            <li class="flex items-center space-x-3.5 p-2 rounded-md hover:bg-gray-100">
                 <div class="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
                     <img class="h-full w-full object-cover" src="{% if employee.image %}{{ employee.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ employee.display_name }}">
                 </div>
                 <div>
-                    <h5 class="font-medium text-black dark:text-white">
-                        <a href="{{ employee.get_absolute_url }}" class="hover:text-primary dark:hover:text-blue-400">{{ employee.display_name }}</a>
+                    <h5 class="font-medium text-gray-900">
+                        <a href="{{ employee.get_absolute_url }}" class="hover:text-blue-600">{{ employee.display_name }}</a>
                     </h5>
-                    <p class="text-xs text-meta">@{{ employee.username }} {% if employee.job_title %}| {{ employee.job_title.name }}{% endif %}</p>
+                    <p class="text-xs text-gray-500">@{{ employee.username }} {% if employee.job_title %}| {{ employee.job_title.name }}{% endif %}</p>
                 </div>
             </li>
             {% endfor %}
         </ul>
         {% else %}
-        <p class="text-meta italic">{% trans "В этом отделе нет сотрудников." %}</p>
+        <p class="text-gray-500 italic">{% trans "В этом отделе нет сотрудников." %}</p>
         {% endif %}
     </div>
 
     {# Команды в отделе #}
-    <div class="md:col-span-1 rounded-sm border border-stroke bg-white py-6 px-7.5 shadow-default dark:border-strokedark dark:bg-boxdark">
-        <h4 class="mb-5 text-xl font-semibold text-black dark:text-white">{% trans "Команды в отделе" %} ({{ teams_in_department.count }})</h4>
+    <div class="md:col-span-1 rounded-xl border border-gray-200 bg-white py-6 px-7 shadow-lg">
+        <h4 class="mb-5 text-xl font-semibold text-gray-900">{% trans "Команды в отделе" %} ({{ teams_in_department.count }})</h4>
         {% if teams_in_department %}
         <ul class="space-y-3 max-h-96 overflow-y-auto scrollbar-thin">
             {% for team_item in teams_in_department %}
-            <li class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-boxdark-2">
-                <a href="{{ team_item.get_absolute_url }}" class="font-medium text-black dark:text-white hover:text-primary dark:hover:text-blue-400">{{ team_item.name }}</a>
-                 {% if team_item.team_leader %}<p class="text-xs text-meta">{% trans "Лидер:" %} {{ team_item.team_leader.display_name }}</p>{% endif %}
+            <li class="p-2 rounded-md hover:bg-gray-100">
+                <a href="{{ team_item.get_absolute_url }}" class="font-medium text-gray-900 hover:text-blue-600">{{ team_item.name }}</a>
+                {% if team_item.team_leader %}<p class="text-xs text-gray-500">{% trans "Лидер:" %} {{ team_item.team_leader.display_name }}</p>{% endif %}
             </li>
             {% endfor %}
         </ul>
         {% else %}
-        <p class="text-meta italic">{% trans "В этом отделе нет команд." %}</p>
+        <p class="text-gray-500 italic">{% trans "В этом отделе нет команд." %}</p>
         {% endif %}
     </div>
 </div>
 
 {% if child_departments %}
-<div class="mt-6 rounded-sm border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-    <h4 class="mb-5 text-xl font-semibold text-black dark:text-white">{% trans "Дочерние отделы" %}</h4>
+<div class="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-lg">
+    <h4 class="mb-5 text-xl font-semibold text-gray-900">{% trans "Дочерние отделы" %}</h4>
     <ul class="list-disc list-inside pl-5 space-y-1">
         {% for child in child_departments %}
-        <li><a href="{{ child.get_absolute_url }}" class="text-primary hover:underline dark:text-blue-400">{{ child.name }}</a></li>
+        <li><a href="{{ child.get_absolute_url }}" class="text-blue-600 hover:underline">{{ child.name }}</a></li>
         {% endfor %}
     </ul>
 </div>

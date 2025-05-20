@@ -3,14 +3,14 @@
 
 {% block title %}{{ page_title|default:_("Должности") }}{% endblock %}
 
-{% block page_title_block %}
-  <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <h2 class="text-title-md2 font-bold text-black dark:text-white">
+{% block list_title %} {# Используем стандартный блок base.html #}
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
       {{ page_title|default:_("Должности") }}
-    </h2>
+    </h1>
     {% if perms.user_profiles.add_jobtitle %}
     <nav>
-      <a href="{% url 'user_profiles:jobtitle_create' %}" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 lg:px-6 transition active:scale-95 shadow-sm">
+      <a href="{% url 'user_profiles:jobtitle_create' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
         <i class="fas fa-id-badge mr-2"></i> {% trans 'Создать должность' %}
       </a>
     </nav>
@@ -18,43 +18,43 @@
   </div>
 {% endblock %}
 
-{% block content %}
-<div class="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
-  <div class="max-w-full overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-boxdark-2">
+{% block list_content %} {# Используем стандартный блок base.html #}
+<div class="rounded-xl border border-gray-200 bg-white px-5 pt-6 pb-2.5 shadow-lg sm:px-7 xl:pb-1">
+  <div class="max-w-full overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300">
     <table class="w-full table-auto">
       <thead>
-        <tr class="bg-gray-2 text-left dark:bg-meta-4">
-          <th class="min-w-[250px] py-4 px-4 font-medium text-black dark:text-white xl:pl-11">{% trans 'Название должности' %}</th>
-          <th class="py-4 px-4 font-medium text-black dark:text-white">{% trans 'Описание' %}</th>
-          <th class="min-w-[120px] py-4 px-4 font-medium text-black dark:text-white text-center">{% trans 'Пользователей' %}</th>
-          <th class="py-4 px-4 font-medium text-black dark:text-white text-center">{% trans 'Действия' %}</th>
+        <tr class="bg-gray-100 text-left">
+          <th class="min-w-[250px] py-4 px-4 font-medium text-gray-700 xl:pl-11">{% trans 'Название должности' %}</th>
+          <th class="py-4 px-4 font-medium text-gray-700">{% trans 'Описание' %}</th>
+          <th class="min-w-[120px] py-4 px-4 font-medium text-gray-700 text-center">{% trans 'Пользователей' %}</th>
+          <th class="py-4 px-4 font-medium text-gray-700 text-center">{% trans 'Действия' %}</th>
         </tr>
       </thead>
       <tbody>
-        {% for job_title_item in object_list %} {# Renamed jobtitle to job_title_item #}
-        <tr id="jobtitle-row-{{ job_title_item.pk }}">
-          <td class="border-b border-[#eee] py-5 px-4 pl-9 dark:border-strokedark xl:pl-11">
-            <h5 class="font-medium text-black dark:text-white">{{ job_title_item.name }}</h5>
+        {% for job_title_item in object_list %}
+        <tr id="jobtitle-row-{{ job_title_item.pk }}" class="hover:bg-gray-50">
+          <td class="border-b border-gray-200 py-5 px-4 pl-9 xl:pl-11">
+            <h5 class="font-medium text-gray-900">{{ job_title_item.name }}</h5>
           </td>
-          <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-            <p class="text-black dark:text-white truncate" title="{{ job_title_item.description|default:'' }}">{{ job_title_item.description|truncatechars:80|default:"-" }}</p>
+          <td class="border-b border-gray-200 py-5 px-4">
+            <p class="text-gray-900 truncate" title="{{ job_title_item.description|default:'' }}">{{ job_title_item.description|truncatechars:80|default:"-" }}</p>
           </td>
-          <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark text-center">
-            <p class="text-black dark:text-white">{{ job_title_item.num_users|default:0 }}</p> {# num_users annotated in view #}
+          <td class="border-b border-gray-200 py-5 px-4 text-center">
+            <p class="text-gray-900">{{ job_title_item.num_users|default:0 }}</p>
           </td>
-          <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-            <div class="flex items-center justify-center space-x-3.5">
+          <td class="border-b border-gray-200 py-5 px-4">
+            <div class="flex items-center justify-center space-x-3">
               {% if perms.user_profiles.change_jobtitle %}
-              <a href="{% url 'user_profiles:jobtitle_update' pk=job_title_item.pk %}" class="hover:text-primary" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
+              <a href="{% url 'user_profiles:jobtitle_update' pk=job_title_item.pk %}" class="text-gray-600 hover:text-blue-600" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
               {% endif %}
               {% if perms.user_profiles.delete_jobtitle %}
-              <a href="{% url 'user_profiles:jobtitle_delete' pk=job_title_item.pk %}" class="hover:text-danger" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
+              <a href="{% url 'user_profiles:jobtitle_delete' pk=job_title_item.pk %}" class="text-red-500 hover:text-red-700" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
               {% endif %}
             </div>
           </td>
         </tr>
         {% empty %}
-            <tr><td colspan="4" class="py-10 px-4 text-center text-meta">{% trans 'Должности не найдены.' %}</td></tr>
+            <tr><td colspan="4" class="py-10 px-4 text-center text-gray-500">{% trans 'Должности не найдены.' %}</td></tr>
         {% endfor %}
       </tbody>
     </table>

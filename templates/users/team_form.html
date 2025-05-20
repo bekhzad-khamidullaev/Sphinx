@@ -3,16 +3,16 @@
 
 {% block title %}{{ page_title }}{% endblock %}
 
-{% block page_title_block %}
-  <h2 class="text-title-md2 font-bold text-black dark:text-white">
+{% block list_title %} {# Используем стандартный блок base.html #}
+  <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
     {{ page_title }}
-  </h2>
+  </h1>
 {% endblock %}
 
-{% block content %}
-<div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-    <div class="border-b border-stroke px-6.5 py-4 dark:border-strokedark">
-        <h3 class="font-medium text-black dark:text-white">
+{% block list_content %} {# Используем стандартный блок base.html #}
+<div class="bg-white shadow-xl rounded-xl border border-gray-200 p-6 md:p-8 mt-6 max-w-2xl mx-auto">
+    <div class="border-b border-gray-200 px-0 py-4 mb-6">
+        <h3 class="font-medium text-lg text-gray-900">
             {% if object %}
                 {% trans "Редактирование команды" %}: {{ object.name }}
             {% else %}
@@ -20,22 +20,22 @@
             {% endif %}
         </h3>
     </div>
-    <div class="p-6.5">
-        <form method="post" enctype="multipart/form-data"> {# enctype for future file fields if any #}
+    <div class="p-0">
+        <form method="post" enctype="multipart/form-data" action="">
             {% csrf_token %}
             {% crispy form %}
             {% if form.non_field_errors %}
-                <div role="alert" class="mt-4 p-4 border border-danger/50 bg-danger/10 text-danger rounded-md dark:border-danger/70 dark:bg-danger/20 dark:text-red-400">
+                <div role="alert" class="mt-4 p-4 border border-red-400 bg-red-100 text-red-700 rounded-md">
                     <h4 class="font-bold mb-1">{% trans "Ошибка формы:" %}</h4>
                     {% for error in form.non_field_errors %}<p class="text-sm">{{ error }}</p>{% endfor %}
                 </div>
             {% endif %}
-            <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-stroke dark:border-strokedark">
-                <a href="{% url 'user_profiles:team_list' %}" class="flex justify-center rounded bg-gray-200 dark:bg-gray-700 px-6 py-2 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+            <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                <a href="{% url 'user_profiles:team_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
                     {% trans 'Отмена' %}
                 </a>
-                <button type="submit" class="flex justify-center rounded bg-primary px-6 py-2 font-medium text-gray hover:bg-opacity-90">
-                    <i class="fas fa-save mr-2 mt-0.5"></i> {{ form_action_text|default:_("Сохранить") }}
+                <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center">
+                    <i class="fas fa-save mr-2"></i> {{ form_action_text|default:_("Сохранить") }}
                 </button>
             </div>
         </form>
@@ -45,27 +45,51 @@
 
 {% block scripts %}
     {{ block.super }}
-    {{ form.media.js }} {# Для Select2 виджетов #}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    {# jQuery должен быть загружен ПЕРЕД Select2 и form.media.js #}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     {% get_current_language as LANGUAGE_CODE %}
     {% if LANGUAGE_CODE %}
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2' }}.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/{{ LANGUAGE_CODE|slice:':2'|default:'en' }}.js"></script>
     {% endif %}
+    {{ form.media.js }} {# Для виджетов django-select2, если они используются в форме #}
     <script>
         $(document).ready(function() {
             const defaultSelect2Options = {
-                theme: "default", width: '100%', allowClear: true,
+                theme: "default",
+                width: '100%',
+                allowClear: true, // Установите в false, если поле обязательное
                 language: "{{ LANGUAGE_CODE|slice:':2'|default:'en' }}"
             };
-             try {
-                $('.select2-single').each(function() {
-                    $(this).select2({ ...defaultSelect2Options, placeholder: $(this).data('placeholder') || '{% trans "Выберите..." %}' });
+            try {
+                // Инициализация для полей, которым django-select2 или Crispy Forms уже добавили классы
+                $('.select2-widget, .django-select2, .select2-basic, .select2-single, .select2-multiple').each(function() {
+                    if (!$(this).data('select2')) { // Инициализировать только если еще не инициализирован
+                        const isMultiple = $(this).is('[multiple]');
+                        const placeholderText = $(this).data('placeholder') || (isMultiple ? '{% trans "Выберите одно или несколько..." %}' : '{% trans "Выберите..." %}');
+                        $(this).select2({
+                            ...defaultSelect2Options,
+                            placeholder: placeholderText,
+                            closeOnSelect: !isMultiple // Закрывать только для single select
+                        });
+                    }
                 });
-                $('.select2-multiple').each(function() {
-                    $(this).select2({ ...defaultSelect2Options, placeholder: $(this).data('placeholder') || '{% trans "Выберите одно или несколько..." %}', closeOnSelect: false });
+
+                // Дополнительная инициализация для простых <select>, если они есть и не были охвачены выше
+                $('form select:not(.select2-widget, .django-select2, .select2-basic, .select2-single, .select2-multiple)').each(function() {
+                   if (!$(this).data('select2')) {
+                       const isMultiple = $(this).is('[multiple]');
+                       const placeholderText = $(this).find('option[value=""]').text() || (isMultiple ? '{% trans "Выберите одно или несколько..." %}' : '{% trans "Выберите..." %}');
+                       $(this).select2({
+                           ...defaultSelect2Options,
+                           placeholder: placeholderText,
+                           allowClear: $(this).find('option[value=""]').length > 0 && !isMultiple,
+                           closeOnSelect: !isMultiple
+                       });
+                   }
                 });
+
             } catch (e) { console.error("Error initializing Select2 for team form:", e); }
         });
     </script>

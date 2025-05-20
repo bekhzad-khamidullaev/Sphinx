@@ -1,30 +1,33 @@
 {% load i18n static widget_tweaks %}
 <div>
-    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
         {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
     </label>
     {% if field.widget_type == 'checkbox' %}
-         <div class="flex items-center">
-             {% render_field field class+="form-checkbox h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600" %}
-             <label for="{{ field.id_for_label }}" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">{{ field.label }}</label>
-         </div>
-         <script>
-             const label_{{ field.auto_id }} = document.querySelector('label[for="{{ field.id_for_label }}"]');
-             if (label_{{ field.auto_id }} && !label_{{ field.auto_id }}.closest('.flex')) {
-                label_{{ field.auto_id }}.classList.add('hidden');
-             }
-         </script>
-     {% elif field.widget_type == 'select' %}
-         {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-     {% elif field.widget_type == 'textarea' %}
-         {% render_field field class+="form-textarea block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" rows="3" %}
-      {% elif field.widget_type == 'clearablefileinput' or field.widget_type == 'clearablefile' %}
-          {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md" %}
-     {% elif field.widget_type == 'date' or field.widget_type == 'datetime-local' or field.widget_type == 'time' %}
-          {% render_field field class+="form-input flatpickr-input block w-auto text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-     {% else %}
-         {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-     {% endif %}
-     {% if field.help_text %}<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
-     {% if field.errors %}<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
+        <div class="flex items-center">
+            {% render_field field class+="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" %}
+            {# The label inside flex is kept, the main one above will be hidden by script #}
+            <label for="{{ field.id_for_label }}" class="ml-2 block text-sm text-gray-900">{{ field.label }}</label>
+        </div>
+        <script>
+            // Hide the main label for the checkbox if it's not part of the flex container above
+            // This assumes the first label found for the field's ID is the main one.
+            const label_{{ field.auto_id }}_main = document.querySelector('label[for="{{ field.id_for_label }}"]');
+            if (label_{{ field.auto_id }}_main && !label_{{ field.auto_id }}_main.closest('.flex')) {
+               label_{{ field.auto_id }}_main.classList.add('hidden');
+            }
+        </script>
+    {% elif field.widget_type == 'select' %}
+        {% render_field field class+="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+    {% elif field.widget_type == 'textarea' %}
+        {% render_field field class+="form-textarea block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="3" %}
+    {% elif field.widget_type == 'clearablefileinput' or field.widget_type == 'clearablefile' %}
+        {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+    {% elif field.widget_type == 'date' or field.widget_type == 'datetime-local' or field.widget_type == 'time' %}
+        {% render_field field class+="form-input flatpickr-input block w-auto text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+    {% else %}
+        {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+    {% endif %}
+    {% if field.help_text %}<p class="mt-1 text-xs text-gray-500">{{ field.help_text|safe }}</p>{% endif %}
+    {% if field.errors %}<p class="mt-1 text-xs text-red-600">{{ field.errors|striptags }}</p>{% endif %}
 </div>

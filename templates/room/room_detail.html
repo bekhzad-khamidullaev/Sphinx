@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% load app_filters %}
+
+{% block title %}{{ page_title|default:room.name }} | {% trans "Чат" %}{% endblock %}
+
+{% block head_extra %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+<style>
+    #chat-messages-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    #chat-messages-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #chat-messages-container::-webkit-scrollbar-thumb {
+        background-color: #D1D5DB; /* gray-300 */
+        border-radius: 4px;
+    }
+    #chat-messages-container {
+        scrollbar-width: thin;
+        scrollbar-color: #D1D5DB transparent; /* gray-300 */
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}{% endblock %}
+
+{% block content %}
+<div class="flex h-[calc(100vh-theme(space.16)-theme(space.10)-2px)] -mt-6 -mx-4 border-t border-gray-200">
+    <!-- Боковая панель с комнатами (для десктопа) -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex-col hidden md:flex shrink-0">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Комнаты" %}</h2>
+            {% if perms.room.add_room %}
+            <a href="{% url 'room:create_room' %}" title="{% trans 'Создать новую комнату' %}"
+                class="text-indigo-600 hover:text-indigo-500 p-1.5 rounded-full hover:bg-gray-100 transition">
+                <i class="fas fa-plus"></i>
+            </a>
+            {% endif %}
+        </div>
+        <nav id="sidebar-room-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+            {% with room_item_current=room current_room_slug_val=room.slug %}
+            <a href="{% url 'room:room' slug=room_item_current.slug %}"
+               class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md group bg-indigo-100 text-indigo-700">
+                <span class="truncate flex-1"># {{ room_item_current.name }}</span>
+            </a>
+            {% endwith %}
+
+            {% for r_item_loop in rooms_for_sidebar %}
+            {% with room_item=r_item_loop current_room_slug_val=room.slug %}
+            <a href="{% url 'room:room' slug=room_item.slug %}"
+               class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md group text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                <span class="truncate flex-1"># {{ room_item.name }}</span>
+                {% if room_item.private %}
+                    <i class="fas fa-lock fa-xs ml-2 text-gray-400 group-hover:text-gray-500"></i>
+                {% endif %}
+                {% if room_item.has_unread %}
+                    <span class="ml-auto w-2 h-2 bg-red-500 rounded-full" title="{% trans 'Непрочитанные' %}"></span>
+                {% endif %}
+            </a>
+            {% endwith %}
+            {% empty %}
+            <p class="text-xs text-gray-500 p-3 text-center italic">{% trans "Нет других комнат." %}</p>
+            {% endfor %}
+        </nav>
+    </aside>
+
+    <!-- Основная часть чата -->
+    <main class="flex-1 flex flex-col bg-gray-50 overflow-hidden">
+        <header class="p-3 md:p-4 border-b border-gray-200 bg-white shadow-sm flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="open-sidebar-btn"
+                        class="md:hidden mr-3 p-1.5 text-gray-500 hover:bg-gray-100 rounded-full">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold text-gray-800 truncate pr-4" title="{{ room.name }}">
+                        # {{ room.name }}
+                    </h1>
+                </div>
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open"
+                        class="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full focus:outline-none"
+                        title="{% trans 'Действия с комнатой' %}">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div x-show="open" @click.outside="open = false"
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-75"
+                        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                        class="absolute right-0 mt-1 w-56 bg-white shadow-xl rounded-md border border-gray-200 z-30 overflow-hidden"
+                        x-cloak>
+                        <ul class="py-1 text-sm text-gray-700">
+                            {% if request.user == room.creator or request.user.is_staff %}
+                            <li>
+                                <button type="button" id="archive-room-btn" data-room-slug="{{ room.slug }}"
+                                    data-room-name="{{ room.name|escapejs }}"
+                                    class="w-full text-left flex items-center px-4 py-2.5 hover:bg-gray-100 text-red-600">
+                                    <i class="fas fa-archive w-4 mr-2.5"></i> {% trans "Архивировать комнату" %}
+                                </button>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div id="online-users-panel" class="text-xs text-gray-500 mt-1.5 flex items-center">
+                <span class="relative flex h-2.5 w-2.5 mr-1.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+                <span id="online-count" class="font-medium">0</span> {% trans "в сети" %}:
+                <span id="online-list" class="ml-1.5 truncate italic">{% trans "Загрузка..." %}</span>
+            </div>
+            <div id="typing-indicator-panel" class="text-xs text-gray-500 mt-1 h-4">
+            </div>
+        </header>
+
+        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-4">
+            <div id="older-messages-loader" class="text-center py-4 hidden">
+                <button id="load-older-messages-btn" class="text-sm text-indigo-600 hover:underline">
+                    <i class="fas fa-spinner fa-spin mr-1"></i> {% trans "Загрузить предыдущие сообщения..." %}
+                </button>
+            </div>
+            <div id="chat-messages-list">
+                {% for message_obj_loop in messages_list %}
+                {% with msg=message_obj_loop current_user_id_str_val=request.user.pk|stringformat:"s" message_user_id_str_val=msg.user.pk|stringformat:"s" %}
+                    {% if message_user_id_str_val == current_user_id_str_val %}
+                        {% with is_own_message_val_inner=True %}
+                        {# --- Содержимое для message_item.html (своё сообщение) --- #}
+                        <div class="flex message-container justify-end group" id="message-{{ msg.id }}" data-message-id="{{ msg.id }}" data-username="{{ msg.user.username }}">
+                             <div class="max-w-[80%] message-bubble-content">
+                                 <div class="p-3 rounded-lg bg-blue-600 text-white rounded-br-none">
+                                     {% if msg.reply_to %}
+                                     <a href="#message-{{ msg.reply_to.id }}" onclick="document.getElementById('message-{{ msg.reply_to.id }}')?.scrollIntoView({behavior:'smooth', block:'center'}); return false;"
+                                        class="block text-xs p-2 -mx-1.5 rounded-lg border bg-blue-500/80 border-blue-500/50 hover:bg-blue-500/100 opacity-90 hover:opacity-100 mb-1 max-w-xs cursor-pointer" title="{% trans 'Перейти к сообщению' %}">
+                                         <p class="font-medium text-blue-100">{% trans "В ответ" %} {{ msg.reply_to.user.username|default:"System" }}</p>
+                                         <p class="italic truncate text-blue-200">
+                                             {% if msg.reply_to.is_deleted %}{% trans "[сообщение удалено]" %}
+                                             {% elif msg.reply_to.file %}<i class="fas fa-file mr-1"></i> {% trans "Файл:" %} {{ msg.reply_to.get_filename|default:msg.reply_to.file.name|truncatechars:30 }}
+                                             {% else %}{{ msg.reply_to.content|truncatechars:50 }}
+                                             {% endif %}
+                                         </p>
+                                     </a>
+                                     {% endif %}
+                                     {% if msg.file and not msg.is_deleted %}
+                                     <div class="file-block mb-1">
+                                         <a href="{{ msg.file.url }}" target="_blank" class="file-link text-blue-100 hover:text-white underline break-all font-medium text-sm flex items-center gap-2" download>
+                                             <i class="fas fa-file-alt fa-fw text-xl opacity-80"></i>
+                                             <div>
+                                                 <span class="file-name">{{ msg.get_filename|default:msg.file.name }}</span>
+                                                 {% if msg.file.size %}
+                                                     <span class="text-xs opacity-80">({{ msg.file.size|filesizeformat }})</span>
+                                                 {% endif %}
+                                             </div>
+                                         </a>
+                                         {% with msg.get_filename|lower as lower_name %}
+                                             {% if lower_name|slice:"-4:" == ".png" or lower_name|slice:"-4:" == ".jpg" or lower_name|slice:"-5:" == ".jpeg" or lower_name|slice:"-4:" == ".gif" %}
+                                             <a href="{{ msg.file.url }}" target="_blank" class="mt-1 inline-block"><img src="{{ msg.file.url }}" alt="{% trans 'Прикрепленное изображение' %}" class="max-w-[200px] max-h-48 rounded object-contain border border-gray-300"></a>
+                                             {% endif %}
+                                         {% endwith %}
+                                         {% if msg.content %}
+                                         <p class="mt-1 text-xs opacity-90 text-blue-100">{{ msg.content|linebreaksbr }}</p>
+                                         {% endif %}
+                                     </div>
+                                     {% endif %}
+                                     <div class="message-content text-sm break-words whitespace-pre-wrap">
+                                         {% if msg.is_deleted %}
+                                             <em class="text-xs italic opacity-70">{% trans "Сообщение удалено" %}</em>
+                                         {% elif not msg.file %}
+                                             {{ msg.content|linebreaksbr|urlizetrunc:40 }}
+                                         {% endif %}
+                                     </div>
+                                     <div class="flex items-center justify-end mt-1 text-[11px] message-meta text-blue-200 opacity-80">
+                                         {% if msg.edited_at and not msg.is_deleted %}
+                                             <span class="edited-indicator mr-1" title="{% trans 'Отредактировано' %} {{ msg.edited_at|date:'d.m H:i' }}">(ред.)</span>
+                                         {% endif %}
+                                         <span class="timestamp" title="{{ msg.date_added|date:'d.m.Y H:i:s' }}">{{ msg.date_added|date:"H:i" }}</span>
+                                     </div>
+                                 </div>
+                                 <div class="reactions-area mt-1 flex flex-wrap gap-1 justify-end pr-1 {% if not msg.reactions.exists %}hidden{% endif %}" id="reactions-{{ msg.id }}"></div>
+                                 <div class="absolute top-[-10px] left-[-10px] z-10 hidden group-hover:flex space-x-0.5 bg-white border border-gray-200 p-0.5 rounded-full shadow text-gray-500 text-xs">
+                                     <button type="button" data-action="add-reaction" title="{% trans 'Реагировать' %}" class="p-1.5 rounded-full hover:bg-gray-100 focus:outline-none"><i class="far fa-smile"></i></button>
+                                     <button type="button" data-action="reply-message" title="{% trans 'Ответить' %}" class="p-1.5 rounded-full hover:bg-gray-100 focus:outline-none"><i class="fas fa-reply"></i></button>
+                                     {% if msg.user.pk|stringformat:"s" == current_user_id_str_val and not msg.is_deleted %}
+                                     <button type="button" data-action="edit-message" title="{% trans 'Редактировать' %}" class="p-1.5 rounded-full hover:bg-gray-100 focus:outline-none"><i class="fas fa-pen"></i></button>
+                                     <button type="button" data-action="delete-message" title="{% trans 'Удалить' %}" class="p-1.5 rounded-full hover:bg-gray-100 text-red-500 hover:text-red-700 focus:outline-none"><i class="fas fa-trash"></i></button>
+                                     {% endif %}
+                                 </div>
+                             </div>
+                             <img src="{% if msg.user.image %}{{ msg.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ msg.user.username }}" class="w-8 h-8 rounded-full object-cover ml-2 flex-shrink-0 self-end mb-1">
+                        </div>
+                        {% endwith %}
+                    {% else %}
+                        {% with is_own_message_val_inner=False %}
+                        {# --- Содержимое для message_item.html (чужое сообщение) --- #}
+                        <div class="flex message-container justify-start group" id="message-{{ msg.id }}" data-message-id="{{ msg.id }}" data-username="{{ msg.user.username }}">
+                             <img src="{% if msg.user.image %}{{ msg.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ msg.user.username }}" class="w-8 h-8 rounded-full object-cover mr-2 flex-shrink-0 self-end mb-1">
+                            <div class="max-w-[80%] message-bubble-content">
+                                <div class="p-3 rounded-lg bg-white text-gray-900 shadow-sm border border-gray-200 rounded-bl-none">
+                                    {% if msg.user %}
+                                        <p class="text-xs font-semibold mb-0.5 text-indigo-600">
+                                            {{ msg.user.username }}
+                                        </p>
+                                    {% endif %}
+                                    {% if msg.reply_to %}
+                                    <a href="#message-{{ msg.reply_to.id }}" onclick="document.getElementById('message-{{ msg.reply_to.id }}')?.scrollIntoView({behavior:'smooth', block:'center'}); return false;"
+                                       class="block text-xs p-2 -mx-1.5 rounded-lg border bg-gray-100 border-gray-200 hover:bg-gray-200 opacity-90 hover:opacity-100 mb-1 max-w-xs cursor-pointer" title="{% trans 'Перейти к сообщению' %}">
+                                        <p class="font-medium text-gray-700">{% trans "В ответ" %} {{ msg.reply_to.user.username|default:"System" }}</p>
+                                        <p class="italic truncate text-gray-500">
+                                            {% if msg.reply_to.is_deleted %}{% trans "[сообщение удалено]" %}
+                                            {% elif msg.reply_to.file %}<i class="fas fa-file mr-1"></i> {% trans "Файл:" %} {{ msg.reply_to.get_filename|default:msg.reply_to.file.name|truncatechars:30 }}
+                                            {% else %}{{ msg.reply_to.content|truncatechars:50 }}
+                                            {% endif %}
+                                        </p>
+                                    </a>
+                                    {% endif %}
+                                    {% if msg.file and not msg.is_deleted %}
+                                    <div class="file-block mb-1">
+                                        <a href="{{ msg.file.url }}" target="_blank" class="file-link text-blue-600 hover:text-blue-700 underline break-all font-medium text-sm flex items-center gap-2" download>
+                                            <i class="fas fa-file-alt fa-fw text-xl opacity-80"></i>
+                                            <div>
+                                                <span class="file-name">{{ msg.get_filename|default:msg.file.name }}</span>
+                                                {% if msg.file.size %}
+                                                    <span class="text-xs opacity-80">({{ msg.file.size|filesizeformat }})</span>
+                                                {% endif %}
+                                            </div>
+                                        </a>
+                                        {% with msg.get_filename|lower as lower_name %}
+                                            {% if lower_name|slice:"-4:" == ".png" or lower_name|slice:"-4:" == ".jpg" or lower_name|slice:"-5:" == ".jpeg" or lower_name|slice:"-4:" == ".gif" %}
+                                            <a href="{{ msg.file.url }}" target="_blank" class="mt-1 inline-block"><img src="{{ msg.file.url }}" alt="{% trans 'Прикрепленное изображение' %}" class="max-w-[200px] max-h-48 rounded object-contain border border-gray-300"></a>
+                                            {% endif %}
+                                        {% endwith %}
+                                        {% if msg.content %}
+                                        <p class="mt-1 text-xs opacity-90">{{ msg.content|linebreaksbr }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="message-content text-sm break-words whitespace-pre-wrap">
+                                        {% if msg.is_deleted %}
+                                            <em class="text-xs italic opacity-70">{% trans "Сообщение удалено" %}</em>
+                                        {% elif not msg.file %}
+                                            {{ msg.content|linebreaksbr|urlizetrunc:40 }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex items-center justify-end mt-1 text-[11px] message-meta text-gray-400">
+                                        {% if msg.edited_at and not msg.is_deleted %}
+                                            <span class="edited-indicator mr-1" title="{% trans 'Отредактировано' %} {{ msg.edited_at|date:'d.m H:i' }}">(ред.)</span>
+                                        {% endif %}
+                                        <span class="timestamp" title="{{ msg.date_added|date:'d.m.Y H:i:s' }}">{{ msg.date_added|date:"H:i" }}</span>
+                                    </div>
+                                </div>
+                                <div class="reactions-area mt-1 flex flex-wrap gap-1 justify-start pl-1 {% if not msg.reactions.exists %}hidden{% endif %}" id="reactions-{{ msg.id }}"></div>
+                                <div class="absolute top-[-10px] right-[-10px] z-10 hidden group-hover:flex space-x-0.5 bg-white border border-gray-200 p-0.5 rounded-full shadow text-gray-500 text-xs">
+                                    <button type="button" data-action="add-reaction" title="{% trans 'Реагировать' %}" class="p-1.5 rounded-full hover:bg-gray-100 focus:outline-none"><i class="far fa-smile"></i></button>
+                                    <button type="button" data-action="reply-message" title="{% trans 'Ответить' %}" class="p-1.5 rounded-full hover:bg-gray-100 focus:outline-none"><i class="fas fa-reply"></i></button>
+                                    {% if msg.user.pk|stringformat:"s" == current_user_id_str_val and not msg.is_deleted %} {# Это условие здесь всегда будет false, но оставим для полноты структуры #}
+                                    <button type="button" data-action="edit-message" title="{% trans 'Редактировать' %}" class="p-1.5 rounded-full hover:bg-gray-100 focus:outline-none"><i class="fas fa-pen"></i></button>
+                                    <button type="button" data-action="delete-message" title="{% trans 'Удалить' %}" class="p-1.5 rounded-full hover:bg-gray-100 text-red-500 hover:text-red-700 focus:outline-none"><i class="fas fa-trash"></i></button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    {% endif %}
+                {% endwith %}
+                {% empty %}
+                <p id="no-messages-placeholder" class="text-center text-gray-500 italic py-10">
+                    {% trans "Сообщений пока нет. Начните диалог!" %}
+                </p>
+                {% endfor %}
+            </div>
+            <div id="message-anchor"></div>
+        </div>
+
+        <footer class="p-3 md:p-4 border-t border-gray-200 bg-white flex-shrink-0">
+            <div id="reply-preview-area" class="mb-2 text-xs p-2 bg-gray-100 rounded hidden border-l-4 border-indigo-500">
+                <div class="flex justify-between items-center">
+                    <div class="truncate">
+                        <span class="text-gray-600">{% trans "Ответ на:" %}</span>
+                        <strong id="reply-preview-user" class="text-gray-800"></strong>:
+                        <em id="reply-preview-text" class="italic text-gray-700"></em>
+                    </div>
+                    <button type="button" id="cancel-reply-btn"
+                        class="ml-2 text-gray-500 hover:text-red-600 text-lg font-semibold leading-none p-1">×</button>
+                </div>
+                <input type="hidden" id="reply-message-id-hidden" value="">
+            </div>
+
+            <div id="file-preview-area" class="mb-2 text-xs p-2 bg-gray-100 rounded hidden items-center justify-between border-l-4 border-gray-400">
+                <div class="flex items-center truncate">
+                    <i class="fas fa-paperclip mr-2 text-gray-600"></i>
+                    <span id="file-preview-name" class="font-medium text-gray-800"></span>
+                    <span id="file-preview-size" class="ml-2 text-gray-500"></span>
+                </div>
+                <button type="button" id="remove-file-btn"
+                    class="ml-2 text-red-500 hover:text-red-700 font-semibold p-1 leading-none">×</button>
+            </div>
+
+            <form id="chat-message-form" class="flex items-end space-x-2">
+                <label for="chat-file-input-trigger"
+                    class="flex-shrink-0 p-2.5 rounded-full hover:bg-gray-100 cursor-pointer text-gray-500 focus-within:ring-2 focus-within:ring-indigo-500"
+                    title="{% trans 'Прикрепить файл' %}">
+                    <i class="fas fa-paperclip"></i>
+                    <input type="file" id="chat-file-input" class="hidden">
+                </label>
+                <div class="flex-1 relative">
+                    <textarea id="chat-message-input" placeholder="{% trans 'Введите сообщение...' %}" rows="1"
+                        class="form-textarea block w-full px-4 py-2 pr-12 border border-gray-300 rounded-2xl shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm resize-none overflow-y-auto hide-scrollbar"
+                        style="max-height: 120px;" autocomplete="off"></textarea>
+                </div>
+                <button type="submit" id="chat-message-submit-btn"
+                    class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    title="{% trans 'Отправить' %}" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </footer>
+    </main>
+</div>
+
+<!-- Мобильная боковая панель (скрыта по умолчанию) -->
+<div id="mobile-sidebar" class="fixed inset-0 flex z-40 md:hidden hidden">
+    <div id="mobile-sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-25"></div>
+    <aside class="relative flex-1 flex flex-col max-w-xs w-full bg-white border-r border-gray-200">
+        <div class="absolute top-0 right-0 -mr-12 pt-2">
+            <button id="close-sidebar-btn" type="button"
+                class="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
+                <span class="sr-only">{% trans "Закрыть сайдбар" %}</span>
+                <i class="fas fa-times text-white"></i>
+            </button>
+        </div>
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+            <h2 class="text-lg font-semibold">{% trans "Комнаты" %}</h2>
+            {% if perms.room.add_room %}
+            <a href="{% url 'room:create_room' %}" title="{% trans 'Создать новую комнату' %}"
+                class="text-indigo-600 hover:text-indigo-500 p-1.5 rounded-full hover:bg-gray-100 transition"><i class="fas fa-plus"></i></a>
+            {% endif %}
+        </div>
+        <nav class="flex-1 overflow-y-auto p-2 space-y-1">
+            {% with room_item_current=room current_room_slug_val=room.slug %}
+            <a href="{% url 'room:room' slug=room_item_current.slug %}"
+               class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md group bg-indigo-100 text-indigo-700">
+                <span class="truncate flex-1"># {{ room_item_current.name }}</span>
+            </a>
+            {% endwith %}
+
+            {% for r_item_loop in rooms_for_sidebar %}
+            {% with room_item=r_item_loop current_room_slug_val=room.slug %}
+            <a href="{% url 'room:room' slug=room_item.slug %}"
+               class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md group text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                <span class="truncate flex-1"># {{ room_item.name }}</span>
+                {% if room_item.private %}
+                    <i class="fas fa-lock fa-xs ml-2 text-gray-400 group-hover:text-gray-500"></i>
+                {% endif %}
+                {% if room_item.has_unread %}
+                    <span class="ml-auto w-2 h-2 bg-red-500 rounded-full" title="{% trans 'Непрочитанные' %}"></span>
+                {% endif %}
+            </a>
+            {% endwith %}
+            {% endfor %}
+        </nav>
+    </aside>
+    <div class="flex-shrink-0 w-14"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    window.chatConfig = {
+        roomSlug: "{{ room.slug|escapejs }}",
+        currentUserId: "{{ request.user.pk|stringformat:'s' }}",
+        currentUsername: "{{ request.user.username|escapejs }}",
+        initialMessagesCount: {{ messages_list|length }},
+        messagesPageSize: {{ chat_messages_page_size|default:50 }},
+        i18n: {
+            loadOlderButton: "{% trans 'Загрузить еще...' %}",
+            loadingOlder: "{% trans 'Загрузка...' %}",
+            noMoreMessages: "{% trans 'Больше нет сообщений.' %}",
+            messageDeleted: "{% trans 'Сообщение удалено' %}",
+            fileNotAvailable: "{% trans 'Файл недоступен' %}",
+            confirmArchiveRoom: "{% trans 'Вы уверены, что хотите заархивировать комнату \"%s\"?' %}",
+            replyTo: "{% trans 'Ответ на:' %}",
+            file: "{% trans '[Файл]' %}",
+            edit: "{% trans 'Редактировать' %}",
+            delete: "{% trans 'Удалить' %}",
+            edited: "{% trans 'ред.' %}",
+            reply: "{% trans 'Ответить' %}",
+            react: "{% trans 'Реагировать' %}",
+            editMessagePrompt: "{% trans 'Введите новый текст сообщения:' %}",
+            confirmDeleteMessage: "{% trans 'Вы уверены, что хотите удалить это сообщение?' %}",
+            reactPrompt: "{% trans 'Введите эмодзи для реакции:' %}",
+            serverError: "{% trans 'Ошибка сервера' %}",
+            isTyping: "{% trans 'печатает...' %}",
+            areTyping: "{% trans 'печатают...' %}",
+            andOthersAreTyping: "{% trans 'и другие печатают...' %}",
+            noOneOnline: "{% trans 'Никого нет в сети' %}",
+            andMore: "{% trans 'и еще' %}",
+        }
+    };
+
+    function getWebSocketPath(type, slug = null) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        if (type === 'chat' && slug) { return `${protocol}//${host}/ws/chat/${slug}/`; }
+        console.warn(`Unknown WebSocket path type: ${type}`);
+        return `${protocol}//${host}/ws/`;
+    }
+    window.djangoWsPath = getWebSocketPath;
+</script>
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="{% static 'js/chat_room.js' %}" defer></script>
+<script src="{% static 'js/room_actions.js' %}" defer></script>
+{% endblock %}

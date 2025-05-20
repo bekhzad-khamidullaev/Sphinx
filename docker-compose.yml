@@ -1,61 +1,103 @@
-version: '3.9'
+version: '3.8'
 
 services:
   db:
-    image: postgres:15-alpine
-    container_name: sphinx_postgres_db
-    restart: unless-stopped
+    image: postgres:15-alpine # Рекомендую явно указать версию
+    container_name: sphinx_db_prod
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - postgres_data_prod:/var/lib/postgresql/data/
     env_file:
-      - .env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    expose:
-      - "5432"
+      - ./.env # Загружает переменные из .env файла
+    # НЕ открывайте порт БД наружу на продакшене, если нет крайней необходимости
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - sphinx_network_prod
 
   redis:
-    image: redis:alpine
-    container_name: sphinx_redis
-    restart: unless-stopped
-
-  web:
-    build: .
-    container_name: sphinx_web
-    command: >
-      sh -c "
-        python manage.py migrate &&
-        python manage.py collectstatic --noinput &&
-        python manage.py create_superuser &&
-        daphne -b 0.0.0.0 -p 8000 config.asgi:application"
-    restart: unless-stopped
+    image: redis:7-alpine # Рекомендую явно указать версию
+    container_name: sphinx_redis_prod
     volumes:
-      - .:/app
-      - ./media:/app/media
-      - ./staticfiles:/app/staticfiles
-    expose:
-      - "8000"
-    depends_on:
-      - db
-      - redis
+      - redis_data_prod:/data # Для сохранения данных Redis между перезапусками
+    restart: unless-stopped
+    networks:
+      - sphinx_network_prod
+    # command: redis-server --appendonly yes # Пример включения AOF для персистентности
+
+  web: # Django/Daphne сервис
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sphinx_web_prod
+    # Команда запуска уже определена в Dockerfile (CMD)
+    volumes:
+      # Код приложения уже в образе, монтирование volumes для кода в проде не нужно
+      # Это нужно для разработки, чтобы изменения кода сразу отражались
+      # - .:/app 
+      - static_volume_prod:/app/staticfiles_collected # Путь должен соответствовать STATIC_ROOT
+      - media_volume_prod:/app/mediafiles          # Путь должен соответствовать MEDIA_ROOT
     env_file:
-      - .env
+      - ./.env
+    depends_on:
+      db:
+        condition: service_healthy # Запускать только после того, как БД будет готова
+      redis:
+        condition: service_started # Redis обычно стартует быстро
+    restart: unless-stopped
+    networks:
+      - sphinx_network_prod
+    # Порт 8000 не публикуется наружу, Nginx будет проксировать запросы
 
   nginx:
-    image: nginx:alpine
-    container_name: sphinx_nginx
-    restart: unless-stopped
+    image: nginx:latest # Или ваш кастомный образ nginx, если есть
+    container_name: sphinx_nginx_prod
     ports:
-      - "8080:8080"
+      - "80:80"   # HTTP
+      - "443:443" # HTTPS
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./media:/app/media:ro
-      - ./staticfiles:/app/staticfiles:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Конфигурация Nginx
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro 
+      # Если используете /etc/nginx/conf.d/default.conf или <your_domain>.conf:
+      # - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      
+      # Статические файлы (Nginx будет их обслуживать)
+      - static_volume_prod:/app/staticfiles_collected:ro # :ro - только для чтения
+      # Медиа файлы
+      - media_volume_prod:/app/mediafiles:ro
+
+      # Для SSL сертификатов Let's Encrypt
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro # Для ACME challenge
     depends_on:
-      - web
+      - web # Nginx зависит от Django/Daphne сервиса
+    restart: unless-stopped
+    networks:
+      - sphinx_network_prod
+
+  # Сервис для Certbot (Let's Encrypt) - опционально
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: sphinx_certbot_prod
+  #   volumes:
+  #     - ./certbot/conf:/etc/letsencrypt
+  #     - ./certbot/www:/var/www/certbot # Для webroot плагина
+  #   # Эта команда для автоматического обновления. Первичный запуск делается отдельно.
+  #   entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet && docker-compose -f /путь/к/вашему/docker-compose.yml exec nginx nginx -s reload; sleep 12h & wait $${!}; done;'"
+  #   # Замените /путь/к/вашему/docker-compose.yml
 
 volumes:
-  postgres_data:
+  postgres_data_prod:
+  redis_data_prod:
+  static_volume_prod:
+  media_volume_prod:
+
+networks:
+  sphinx_network_prod:
+    driver: bridge
+    name: sphinx_prod_network # Явное имя сети

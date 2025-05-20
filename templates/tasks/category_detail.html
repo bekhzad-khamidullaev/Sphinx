@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{{ category.name }} | {% trans "Категория задач" %}{% endblock %}
+
+{% block list_title %}
+<div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
+            {% trans "Категория" %}: {{ category.name }}
+        </h1>
+        {% if category.description %}
+        <p class="text-sm text-gray-500 mt-1">{{ category.description }}</p>
+        {% endif %}
+    </div>
+    <div class="flex space-x-3 flex-shrink-0">
+        {% if perms.tasks.change_taskcategory %} {# Используйте ваше реальное разрешение #}
+        <a href="{% url 'tasks:category_update' pk=category.pk %}"
+            class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all">
+            <i class="fas fa-edit mr-2"></i> {% trans 'Редактировать' %}
+        </a>
+        {% endif %}
+        <a href="{% url 'tasks:category_list' %}"
+            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all">
+            <i class="fas fa-arrow-left mr-2"></i> {% trans 'К списку категорий' %}
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+<div class="bg-white shadow-lg rounded-xl border border-gray-200 p-6">
+    
+    {% if subcategories.exists %}
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">
+                <i class="fas fa-sitemap mr-2 text-gray-500"></i>{% trans "Подкатегории" %} ({{ subcategories.count }})
+            </h2>
+            <ul class="list-disc list-inside space-y-1 pl-5">
+                {% for subcat in subcategories %}
+                    <li>
+                        <a href="{{ subcat.get_absolute_url }}" class="text-blue-600 hover:underline">{{ subcat.name }}</a>
+                        {% if subcat.description %}
+                            <span class="text-sm text-gray-500 ml-2 italic">- {{ subcat.description|truncatechars:50 }}</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="mb-8">
+             <h2 class="text-xl font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-2">
+                <i class="fas fa-sitemap mr-2 text-gray-500"></i>{% trans "Подкатегории" %}
+            </h2>
+            <p class="text-gray-500 italic text-sm">{% trans "Нет подкатегорий в этой категории." %}</p>
+        </div>
+    {% endif %}
+
+    {# Секция для Задач в этой категории (без учета подкатегорий) #}
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">
+            <i class="fas fa-tasks mr-2 text-gray-500"></i>{% trans "Задачи в этой категории" %} ({{ tasks_in_category.count }})
+        </h2>
+        {% if tasks_in_category.exists %}
+            <ul class="space-y-3">
+                {% for task in tasks_in_category %}
+                <li class="p-3 rounded-md border border-gray-100 bg-gray-50 hover:shadow-sm transition">
+                    <a href="{{ task.get_absolute_url }}" class="block">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-medium text-sm text-blue-600 hover:underline">#{{ task.task_number|default:task.id }}</span>
+                            {# Здесь можно вставить компактный бэдж статуса, если нужно #}
+                            <span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full
+                                {% if task.status == 'new' %}bg-gray-200 text-gray-700
+                                {% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-700
+                                {% elif task.status == 'completed' %}bg-green-100 text-green-700
+                                {% else %}bg-gray-200 text-gray-600{% endif %}">
+                                {{ task.status_display }}
+                            </span>
+                        </div>
+                        <p class="text-sm font-medium text-gray-800 truncate" title="{{ task.title }}">{{ task.title }}</p>
+                        {% if task.project %}
+                            <p class="text-xs text-gray-500 mt-1">{% trans "Проект:" %} {{ task.project.name }}</p>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-500 italic text-sm">{% trans "Нет задач непосредственно в этой категории." %}</p>
+        {% endif %}
+    </div>
+    {% if tasks_in_category.has_other_pages %}
+    <div class="mt-4">
+        {% include "includes/pagination.html" with page_obj=tasks_in_category %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

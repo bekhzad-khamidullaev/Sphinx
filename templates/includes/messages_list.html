@@ -1,16 +1,17 @@
 {% load tz %}
-{% load app_filters %}
+{% load app_filters i18n %}
+
 {% for message in messages %}
 <div id="message-{{ message.id }}" class="flex message-container {% if message.user == request.user %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ message.id }}" data-username="{{ message.user.username }}">
-    <div class="max-w-[80%] p-3 rounded-lg message-bubble {% if message.user == request.user %}bg-blue-600 dark:bg-ios-blue text-white{% else %}bg-white dark:bg-dark-700 text-gray-900 dark:text-gray-100 shadow-sm border border-gray-200 dark:border-dark-600{% endif %}">
+    <div class="max-w-[80%] p-3 rounded-lg message-bubble {% if message.user == request.user %}bg-blue-600 text-white{% else %}bg-white text-gray-900 shadow-sm border border-gray-200{% endif %}">
         {% if message.reply_to %}
-        <div class="reply-block border-l-2 {% if message.user == request.user %}border-blue-300 dark:border-blue-700/50{% else %}border-gray-400 dark:border-dark-500{% endif %} pl-2 mb-1 text-sm opacity-80 cursor-pointer hover:opacity-100" onclick="document.getElementById('message-{{ message.reply_to.id }}')?.scrollIntoView({ behavior: 'smooth', block: 'center' })" title="{% trans 'Перейти к сообщению' %}">
-            <strong class="reply-user font-medium {% if message.user != request.user %}text-gray-700 dark:text-gray-300{% endif %}">{{ message.reply_to.user.username }}</strong>
-            <div class="reply-content text-xs italic {% if message.user == request.user %}text-blue-100{% else %}text-gray-500 dark:text-gray-400{% endif %} truncate">
+        <div class="reply-block border-l-2 {% if message.user == request.user %}border-blue-300{% else %}border-gray-400{% endif %} pl-2 mb-1 text-sm opacity-80 cursor-pointer hover:opacity-100" onclick="document.getElementById('message-{{ message.reply_to.id }}')?.scrollIntoView({ behavior: 'smooth', block: 'center' })" title="{% trans 'Перейти к сообщению' %}">
+            <strong class="reply-user font-medium {% if message.user != request.user %}text-gray-700{% endif %}">{{ message.reply_to.user.username }}</strong>
+            <div class="reply-content text-xs italic {% if message.user == request.user %}text-blue-100{% else %}text-gray-500{% endif %} truncate">
                 {% if message.reply_to.is_deleted %}
                     {% trans "[сообщение удалено]" %}
                 {% elif message.reply_to.file %}
-                     <i class="fas fa-paperclip fa-fw mr-1"></i> {{ message.reply_to.get_filename|default:message.reply_to.file.name|truncatechars:30 }}
+                    <i class="fas fa-paperclip fa-fw mr-1"></i> {{ message.reply_to.get_filename|default:message.reply_to.file.name|truncatechars:30 }}
                 {% else %}
                     {{ message.reply_to.content|truncatechars:50 }}
                 {% endif %}
@@ -19,18 +20,18 @@
         {% endif %}
         {% if message.file and not message.is_deleted %}
         <div class="file-block mb-1">
-             <a href="{{ message.file.url }}" target="_blank" class="file-link {% if message.user == request.user %}text-blue-100 hover:text-white{% else %}text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300{% endif %} underline break-all font-medium text-sm flex items-center gap-2" download>
+            <a href="{{ message.file.url }}" target="_blank" class="file-link {% if message.user == request.user %}text-blue-100 hover:text-white{% else %}text-blue-600 hover:text-blue-700{% endif %} underline break-all font-medium text-sm flex items-center gap-2" download>
                 <i class="fas fa-file-alt fa-fw text-xl"></i>
                 <div>
                     <span class="file-name">{{ message.get_filename|default:message.file.name }}</span>
-                     {% if message.file.size %}
+                    {% if message.file.size %}
                         <span class="text-xs opacity-80">({{ message.file.size|filesizeformat }})</span>
                     {% endif %}
                 </div>
             </a>
             {% with message.get_filename|lower as lower_name %}
                 {% if lower_name|slice:"-4:" == ".png" or lower_name|slice:"-4:" == ".jpg" or lower_name|slice:"-5:" == ".jpeg" or lower_name|slice:"-4:" == ".gif" %}
-                <a href="{{ message.file.url }}" target="_blank"><img src="{{ message.file.url }}" alt="{% trans 'Прикрепленное изображение' %}" class="max-w-xs max-h-48 mt-1 rounded object-contain border border-gray-300 dark:border-dark-600"></a>
+                <a href="{{ message.file.url }}" target="_blank"><img src="{{ message.file.url }}" alt="{% trans 'Прикрепленное изображение' %}" class="max-w-xs max-h-48 mt-1 rounded object-contain border border-gray-300"></a>
                 {% endif %}
             {% endwith %}
             {% if message.content %}
@@ -39,20 +40,20 @@
         </div>
         {% endif %}
         <div class="message-content text-sm break-words whitespace-pre-wrap">
-             {% if message.is_deleted %}
+            {% if message.is_deleted %}
                 <span class="italic text-gray-500">{% trans "Сообщение удалено" %}</span>
-             {% elif not message.file %} {# Show content only if it's not JUST a file caption #}
+            {% elif not message.file %} {# Show content only if it's not JUST a file caption #}
                 {{ message.content|linebreaksbr|urlizetrunc:40 }}
-             {% endif %}
+            {% endif %}
         </div>
-        <div class="flex items-center justify-end mt-1 text-[11px] message-meta {% if message.user == request.user %}text-blue-200{% else %}text-gray-400 dark:text-gray-500{% endif %}">
+        <div class="flex items-center justify-end mt-1 text-[11px] message-meta {% if message.user == request.user %}text-blue-200{% else %}text-gray-400{% endif %}">
             {% if message.edited_at and not message.is_deleted %}
                 <span class="edited-indicator mr-1" title="{% trans 'Отредактировано' %} {{ message.edited_at|date:'d.m H:i' }}">(ред.)</span>
             {% endif %}
             <span class="timestamp" title="{{ message.date_added|date:'d.m.Y H:i:s' }}">{{ message.date_added|date:"H:i" }}</span>
         </div>
-         <div class="reactions-block flex flex-wrap gap-1 mt-1 {% if not message.reactions.exists %}hidden{% endif %}" id="reactions-{{ message.id }}">
-         </div>
+        <div class="reactions-block flex flex-wrap gap-1 mt-1 {% if not message.reactions.exists %}hidden{% endif %}" id="reactions-{{ message.id }}">
+        </div>
     </div>
 </div>
 {% empty %}

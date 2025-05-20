@@ -20,6 +20,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, filters
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.contrib.auth.forms import AuthenticationForm
+# from .forms import LoginForm # ИЛИ, если у вас своя форма LoginForm
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.cache import never_cache
+# --- Необходим для безопасной проверки URL перенаправления ---
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import User, Team, Department, JobTitle # TaskUserRole removed
 from .serializers import TeamSerializer, UserSerializer, DepartmentSerializer, JobTitleSerializer
@@ -44,33 +50,81 @@ class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 # --- Authentication Views ---
 @csrf_protect
 @never_cache
-def base_login_view(request): # Renamed to avoid conflict with auth_login
-    if request.user.is_authenticated:
-        redirect_url = request.GET.get('next', settings.LOGIN_REDIRECT_URL)
-        return redirect(redirect_url)
+def base_login_view(request):
+    # --- Шаг 1: Получаем и ВАЛИДИРУЕМ URL для перенаправления ('next') ---
+    # Получаем 'next' из GET параметра. Если его нет, используем LOGIN_REDIRECT_URL из настроек,
+    # или '/' как абсолютный минимум по умолчанию.
+    next_url = request.GET.get('next', settings.LOGIN_REDIRECT_URL or '/')
 
-    next_page = request.GET.get('next', '/')
-    form_submitted_with_errors = False
+    # ПРОВЕРКА БЕЗОПАСНОСТИ: Убеждаемся, что URL безопасен для перенаправления.
+    # Это предотвращает "Open Redirect" уязвимости.
+    # Разрешаем перенаправление только на текущий хост (домен).
+    if not url_has_allowed_host_and_scheme(
+        url=next_url,
+        allowed_hosts={request.get_host()}, # Множество разрешенных хостов (только текущий)
+        require_https=request.is_secure(), # Требовать HTTPS, если текущий запрос был по HTTPS
+    ):
+        # Если URL небезопасен (например, ведет на другой сайт), сбрасываем его
+        # на безопасное значение по умолчанию.
+        logger.warning(f"Blocked unsafe redirect attempt to '{next_url}' during login.")
+        next_url = settings.LOGIN_REDIRECT_URL or '/'
+    # --- Конец обработки 'next' ---
+
+    # Если пользователь УЖЕ аутентифицирован, перенаправляем его сразу
+    # используя безопасный, валидированный next_url
+    if request.user.is_authenticated:
+        return redirect(next_url)
+
+    # Используем стандартную форму входа Django или вашу кастомную (LoginForm)
+    # Замените AuthenticationForm на LoginForm, если используете свою
+    login_form_class = AuthenticationForm
+    # login_form_class = LoginForm
 
     if request.method == 'POST':
-        form = LoginForm(request, data=request.POST)
+        form = login_form_class(request, data=request.POST)
         if form.is_valid():
+            # Получаем пользователя из валидной формы
             user = form.get_user()
+            # Аутентифицируем пользователя в сессии
             auth_login(request, user)
             messages.success(request, _("Вы успешно вошли в систему."))
-            redirect_url = request.POST.get('next', settings.LOGIN_REDIRECT_URL)
-            return redirect(redirect_url)
-        else:
-            # Non-field errors are handled by form's add_error or rendered by crispy
-            form_submitted_with_errors = True # Flag to prevent showing 'logged_out' message
-            messages.error(request, _('Пожалуйста, исправьте ошибки ниже.'))
-    else:
-        form = LoginForm(request)
-        if request.GET.get('logged_out') == '1' and not form_submitted_with_errors:
-            messages.info(request, _('Вы успешно вышли из системы.')) # Use info for logout
 
-    context = {'form': form, 'next': next_page, 'page_title': _("Вход")}
+            # --- Перенаправление после успешного входа ---
+            # Получаем 'next' ИЗ ТЕЛА POST запроса (из hidden input)
+            # и СНОВА ВАЛИДИРУЕМ его на безопасность, т.к. значение могло быть изменено
+            post_next_url = request.POST.get('next', settings.LOGIN_REDIRECT_URL or '/')
+            if not url_has_allowed_host_and_scheme(
+                url=post_next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                logger.warning(f"Blocked unsafe redirect attempt from POST 'next' field: '{post_next_url}'")
+                post_next_url = settings.LOGIN_REDIRECT_URL or '/' # Сброс на безопасный URL
+
+            return redirect(post_next_url) # Перенаправляем на безопасный URL
+        else:
+            # Форма невалидна, показываем ошибки
+            # Сообщения об ошибках полей обычно отображаются рядом с полями в шаблоне.
+            # Можно добавить общее сообщение об ошибке.
+            messages.error(request, _('Пожалуйста, исправьте ошибки ниже.'))
+            # Можно также перебирать form.non_field_errors() если нужно
+            # for error in form.non_field_errors():
+            #     messages.error(request, error)
+
+    else: # GET запрос
+        form = login_form_class(request)
+        # Показываем сообщение о выходе только при GET запросе и если не было ошибок POST
+        if request.GET.get('logged_out') == '1':
+            messages.info(request, _('Вы успешно вышли из системы.'))
+
+    # Передаем форму и БЕЗОПАСНЫЙ next_url (из GET-валидации) в контекст шаблона
+    context = {
+        'form': form,
+        'next': next_url, # Используем валидированный URL из GET-запроса
+        'page_title': _("Вход")
+    }
     return render(request, 'users/login.html', context)
+
 
 @never_cache
 def user_logout_view(request): # Renamed

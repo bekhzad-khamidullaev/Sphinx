@@ -1,0 +1,17 @@
+{% load i18n %}
+<a href="{% url 'room:room' slug=room_item.slug %}"
+   class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md group
+          {% if room_item.slug == current_room_slug %}
+            bg-indigo-100 text-indigo-700
+          {% else %}
+            text-gray-700 hover:bg-gray-100 hover:text-gray-900
+          {% endif %}">
+    <span class="truncate flex-1"># {{ room_item.name }}</span>
+    {% if room_item.private and room_item.slug != current_room_slug %}
+        <i class="fas fa-lock fa-xs ml-2 text-gray-400 group-hover:text-gray-500"></i>
+    {% endif %}
+    {# Пример добавления индикатора непрочитанных сообщений, если переменная room_item.has_unread доступна #}
+    {# {% if room_item.has_unread and room_item.slug != current_room_slug %}
+        <span class="ml-auto w-2 h-2 bg-red-500 rounded-full" title="{% trans 'Непрочитанные' %}"></span>
+    {% endif %} #}
+</a>

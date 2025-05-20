@@ -1,107 +1,196 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static i18n %}
 {% load app_filters %}
+
 {% block title %}{{ room.name }} | {% trans "Чат" %}{% endblock %}
+
 {% block head_extra %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'css/chat.css' %}">
     <style>
         #chat-messages::-webkit-scrollbar { width: 6px; }
         #chat-messages::-webkit-scrollbar-track { background: transparent; }
-        #chat-messages::-webkit-scrollbar-thumb { background-color: theme('colors.gray.300'); border-radius: 3px; }
-        html.dark #chat-messages::-webkit-scrollbar-thumb { background-color: theme('colors.dark.600'); }
-        #chat-messages { scrollbar-width: thin; scrollbar-color: theme('colors.gray.300') transparent; }
-        html.dark #chat-messages { scrollbar-color: theme('colors.dark.600') transparent; }
+        #chat-messages::-webkit-scrollbar-thumb { background-color: #D1D5DB; border-radius: 3px; } /* gray-300 */
+        #chat-messages { scrollbar-width: thin; scrollbar-color: #D1D5DB transparent; } /* gray-300 */
     </style>
 {% endblock %}
+
 {% block list_title %}{% endblock %}
 {% block list_title_mobile %}{% endblock %}
 {% block list_actions %}{% endblock %}
 {% block list_actions_mobile %}{% endblock %}
+
 {% block list_content %}
     <div class="flex h-[calc(100vh-theme(space.16)-theme(space.10))] -mt-6 -mx-4">
-        <aside class="w-64 bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700 flex-col hidden md:flex">
-             <div class="p-4 border-b border-gray-200 dark:border-dark-700 flex justify-between items-center flex-shrink-0">
-                 <h2 class="text-lg font-semibold">{% trans "Комнаты" %}</h2>
-                 <a href="{% url 'room:create_room' %}" title="{% trans 'Создать новую комнату' %}" class="text-blue-600 dark:text-blue-400 hover:underline p-1 rounded hover:bg-gray-100 dark:hover:bg-dark-700">
-                     <i class="fas fa-plus"></i>
-                 </a>
-             </div>
-             <nav id="sidebar-room-list" class="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
-                 {% for r in rooms_for_sidebar %}
-                     {% include "includes/room_list_item.html" with room=r current_room=room %}
-                 {% empty %}
-                     <p class="text-xs text-gray-500 p-3 text-center italic">{% trans "Нет других комнат." %}</p>
-                 {% endfor %}
-             </nav>
+        <aside class="w-64 bg-white border-r border-gray-200 flex-col hidden md:flex">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+                <h2 class="text-lg font-semibold text-gray-900">{% trans "Комнаты" %}</h2>
+                <a href="{% url 'room:create_room' %}" title="{% trans 'Создать новую комнату' %}" class="text-blue-600 hover:underline p-1 rounded hover:bg-gray-100">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </div>
+            <nav id="sidebar-room-list" class="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
+                {% comment %} === Встроенный room_list_item.html для текущей комнаты === {% endcomment %}
+                {% with current_room_obj=room %} {# Используем current_room_obj чтобы не конфликтовать с room из цикла ниже #}
+                <a href="{% url 'room:room' slug=current_room_obj.slug %}"
+                   class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md group
+                          bg-indigo-100 text-indigo-700"> {# Всегда активен для текущей комнаты #}
+                    <span class="truncate flex-1"># {{ current_room_obj.name }}</span>
+                    {# Нет нужды в иконке замка для текущей комнаты #}
+                </a>
+                {% endwith %}
+                {% comment %} === Конец встроенного room_list_item.html === {% endcomment %}
+
+                {% for r_loop_item in rooms_for_sidebar %} {# Изменил 'r' на 'r_loop_item' во избежание конфликта с 'room' #}
+                    {% comment %} === Встроенный room_list_item.html для других комнат === {% endcomment %}
+                    <a href="{% url 'room:room' slug=r_loop_item.slug %}"
+                       class="flex items-center px-3 py-2.5 text-sm font-medium rounded-md group
+                              text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                        <span class="truncate flex-1"># {{ r_loop_item.name }}</span>
+                        {% if r_loop_item.private %}
+                            <i class="fas fa-lock fa-xs ml-2 text-gray-400 group-hover:text-gray-500"></i>
+                        {% endif %}
+                        {% if r_loop_item.has_unread %}
+                            <span class="ml-auto w-2 h-2 bg-red-500 rounded-full" title="{% trans 'Непрочитанные' %}"></span>
+                        {% endif %}
+                    </a>
+                    {% comment %} === Конец встроенного room_list_item.html === {% endcomment %}
+                {% empty %}
+                    <p class="text-xs text-gray-500 p-3 text-center italic">{% trans "Нет других комнат." %}</p>
+                {% endfor %}
+            </nav>
         </aside>
-        <main class="flex-1 flex flex-col bg-gray-50 dark:bg-dark-900">
-            <header class="p-4 border-b border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 shadow-sm flex-shrink-0">
+        <main class="flex-1 flex flex-col bg-gray-50">
+            <header class="p-4 border-b border-gray-200 bg-white shadow-sm flex-shrink-0">
                 <div class="flex justify-between items-center">
-                    <h1 class="text-xl font-semibold truncate pr-4"># {{ room.name }}</h1>
-                     <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open" class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-full focus:outline-none" title="{% trans 'Действия с комнатой' %}">
+                    <h1 class="text-xl font-semibold text-gray-900 truncate pr-4"># {{ room.name }}</h1>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full focus:outline-none" title="{% trans 'Действия с комнатой' %}">
                             <i class="fas fa-ellipsis-h"></i>
                         </button>
                         <div x-show="open" @click.outside="open = false"
                              x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                              x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                             class="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 shadow-lg rounded-md border border-gray-200 dark:border-dark-600 z-20 overflow-hidden" x-cloak>
-                            <ul class="py-1 text-sm text-gray-700 dark:text-gray-300">
-                                 <li>
-                                     <button type="button"
-                                             data-action="archive-room"
-                                             data-url="{% url 'room:archive_room' room.slug %}"
-                                             data-room-name="{{ room.name|escapejs }}"
-                                             class="w-full text-left flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-dark-700 text-red-600 dark:text-red-400">
-                                         <i class="fas fa-archive w-4 mr-2"></i> {% trans "Архивировать" %}
-                                     </button>
-                                 </li>
-                             </ul>
+                             class="absolute right-0 mt-1 w-48 bg-white shadow-lg rounded-md border border-gray-200 z-20 overflow-hidden" x-cloak>
+                            <ul class="py-1 text-sm text-gray-700">
+                                <li>
+                                    <button type="button"
+                                            data-action="archive-room"
+                                            data-url="{% url 'room:archive_room' room.slug %}"
+                                            data-room-name="{{ room.name|escapejs }}"
+                                            class="w-full text-left flex items-center px-4 py-2 hover:bg-gray-100 text-red-600">
+                                        <i class="fas fa-archive w-4 mr-2"></i> {% trans "Архивировать" %}
+                                    </button>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
-                 <div id="online-users" class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+                <div id="online-users" class="text-xs text-gray-500 mt-1 flex items-center">
                     <span class="relative flex h-2 w-2 mr-1.5">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
                     <span id="online-count">0</span> {% trans "в сети" %}:
                     <span id="online-list" class="ml-1 truncate">{% trans "Загрузка..." %}</span>
                 </div>
             </header>
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
-                 <div id="older-messages-loading" class="text-center py-4 hidden">
-                     <i class="fas fa-spinner fa-spin text-gray-400"></i>
-                 </div>
-                 {% for message in messages %}
-                     {% include "room/partials/messages_list.html" with message=message %}
-                 {% empty %}
-                     <p id="no-messages" class="text-center text-gray-500 dark:text-gray-400 italic py-10">{% trans "Сообщений пока нет. Начните диалог!" %}</p>
-                 {% endfor %}
-                 <div id="message-anchor"></div>
+                <div id="older-messages-loading" class="text-center py-4 hidden">
+                    <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                </div>
+                {% for message in messages %} {# Используем message как в вашем исходном цикле #}
+                    {% comment %} === Встроенный messages_list.html === {% endcomment %}
+                    {% with current_user_id_str=request.user.pk|stringformat:"s" %}
+                    {% with msg_obj=message is_own_message_val=msg_obj.user.pk|stringformat:"s" == current_user_id_str %}
+                    <div class="flex message-container {% if is_own_message_val %}justify-end{% else %}justify-start{% endif %}" id="message-{{ msg_obj.id }}" data-message-id="{{ msg_obj.id }}" data-username="{{ msg_obj.user.username }}">
+                        <div class="max-w-[80%] p-3 rounded-lg message-bubble {% if is_own_message_val %}bg-blue-600 text-white{% else %}bg-white text-gray-900 shadow-sm border border-gray-200{% endif %}">
+                            {% if not is_own_message_val and msg_obj.user %}
+                                <p class="text-xs font-semibold mb-0.5 text-indigo-600">
+                                    {{ msg_obj.user.username }}
+                                </p>
+                            {% endif %}
+                            {% if msg_obj.reply_to %}
+                            <div class="reply-block border-l-2 {% if is_own_message_val %}border-blue-300{% else %}border-gray-400{% endif %} pl-2 mb-1 text-sm opacity-80 cursor-pointer hover:opacity-100" onclick="document.getElementById('message-{{ msg_obj.reply_to.id }}')?.scrollIntoView({ behavior: 'smooth', block: 'center' })" title="{% trans 'Перейти к сообщению' %}">
+                                <strong class="reply-user font-medium {% if not is_own_message_val %}text-gray-700{% endif %}">{{ msg_obj.reply_to.user.username }}</strong>
+                                <div class="reply-content text-xs italic {% if is_own_message_val %}text-blue-100{% else %}text-gray-500{% endif %} truncate">
+                                    {% if msg_obj.reply_to.is_deleted %}
+                                        {% trans "[сообщение удалено]" %}
+                                    {% elif msg_obj.reply_to.file %}
+                                        <i class="fas fa-paperclip fa-fw mr-1"></i> {{ msg_obj.reply_to.get_filename|default:msg_obj.reply_to.file.name|truncatechars:30 }}
+                                    {% else %}
+                                        {{ msg_obj.reply_to.content|truncatechars:50 }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if msg_obj.file and not msg_obj.is_deleted %}
+                            <div class="file-block mb-1">
+                                <a href="{{ msg_obj.file.url }}" target="_blank" class="file-link {% if is_own_message_val %}text-blue-100 hover:text-white{% else %}text-blue-600 hover:text-blue-700{% endif %} underline break-all font-medium text-sm flex items-center gap-2" download>
+                                    <i class="fas fa-file-alt fa-fw text-xl"></i>
+                                    <div>
+                                        <span class="file-name">{{ msg_obj.get_filename|default:msg_obj.file.name }}</span>
+                                        {% if msg_obj.file.size %}
+                                            <span class="text-xs opacity-80">({{ msg_obj.file.size|filesizeformat }})</span>
+                                        {% endif %}
+                                    </div>
+                                </a>
+                                {% with msg_obj.get_filename|lower as lower_name %}
+                                    {% if lower_name|slice:"-4:" == ".png" or lower_name|slice:"-4:" == ".jpg" or lower_name|slice:"-5:" == ".jpeg" or lower_name|slice:"-4:" == ".gif" %}
+                                    <a href="{{ msg_obj.file.url }}" target="_blank"><img src="{{ msg_obj.file.url }}" alt="{% trans 'Прикрепленное изображение' %}" class="max-w-xs max-h-48 mt-1 rounded object-contain border border-gray-300"></a>
+                                    {% endif %}
+                                {% endwith %}
+                                {% if msg_obj.content %}
+                                <p class="mt-1 text-xs opacity-90 {% if is_own_message_val %}text-blue-100{% endif %}">{{ msg_obj.content|linebreaksbr }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="message-content text-sm break-words whitespace-pre-wrap">
+                                {% if msg_obj.is_deleted %}
+                                    <span class="italic text-gray-500">{% trans "Сообщение удалено" %}</span>
+                                {% elif not msg_obj.file %}
+                                    {{ msg_obj.content|linebreaksbr|urlizetrunc:40 }}
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center justify-end mt-1 text-[11px] message-meta {% if is_own_message_val %}text-blue-200{% else %}text-gray-400{% endif %}">
+                                {% if msg_obj.edited_at and not msg_obj.is_deleted %}
+                                    <span class="edited-indicator mr-1" title="{% trans 'Отредактировано' %} {{ msg_obj.edited_at|date:'d.m H:i' }}">(ред.)</span>
+                                {% endif %}
+                                <span class="timestamp" title="{{ msg_obj.date_added|date:'d.m.Y H:i:s' }}">{{ msg_obj.date_added|date:"H:i" }}</span>
+                            </div>
+                            <div class="reactions-block flex flex-wrap gap-1 mt-1 {% if not msg_obj.reactions.exists %}hidden{% endif %}" id="reactions-{{ msg_obj.id }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endwith %}
+                    {% comment %} === Конец встроенного messages_list.html === {% endcomment %}
+                {% empty %}
+                    <p id="no-messages" class="text-center text-gray-500 italic py-10">{% trans "Сообщений пока нет. Начните диалог!" %}</p>
+                {% endfor %}
+                <div id="message-anchor"></div>
             </div>
-            <footer class="p-3 md:p-4 border-t border-gray-200 dark:border-dark-700 bg-white dark:bg-dark-800 flex-shrink-0">
-                 <div id="reply-preview-area" class="mb-2 text-xs p-2 bg-gray-100 dark:bg-dark-700 rounded hidden border-l-4 border-blue-500">
-                     <div class="flex justify-between items-center">
+            <footer class="p-3 md:p-4 border-t border-gray-200 bg-white flex-shrink-0">
+                <div id="reply-preview-area" class="mb-2 text-xs p-2 bg-gray-100 rounded hidden border-l-4 border-blue-500">
+                    <div class="flex justify-between items-center">
                         <span>{% trans "Ответ на:" %} <strong id="reply-preview-user"></strong>: <em id="reply-preview-text" class="truncate inline-block max-w-xs italic"></em></span>
                         <button type="button" id="cancel-reply-btn" class="text-gray-500 hover:text-red-600 text-lg font-semibold leading-none p-1">×</button>
-                     </div>
-                     <input type="hidden" id="reply-message-id" value="">
-                 </div>
-                 <div id="file-preview" class="mb-2 text-xs p-2 bg-gray-100 dark:bg-dark-700 rounded hidden flex items-center justify-between border-l-4 border-gray-400">
-                     <span><i class="fas fa-paperclip mr-1"></i> <span id="file-preview-name" class="font-medium"></span></span>
-                     <button type="button" id="remove-file-btn" class="text-red-500 hover:text-red-700 ml-2 font-semibold p-1 leading-none">×</button>
-                 </div>
+                    </div>
+                    <input type="hidden" id="reply-message-id" value="">
+                </div>
+                <div id="file-preview" class="mb-2 text-xs p-2 bg-gray-100 rounded hidden flex items-center justify-between border-l-4 border-gray-400">
+                    <span><i class="fas fa-paperclip mr-1"></i> <span id="file-preview-name" class="font-medium"></span></span>
+                    <button type="button" id="remove-file-btn" class="text-red-500 hover:text-red-700 ml-2 font-semibold p-1 leading-none">×</button>
+                </div>
                 <form id="chat-message-form" class="flex items-center space-x-2">
-                    <label for="chat-file-input" class="flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-dark-700 cursor-pointer text-gray-500 dark:text-gray-400" title="{% trans 'Прикрепить файл' %}">
+                    <label for="chat-file-input" class="flex-shrink-0 p-2 rounded-full hover:bg-gray-100 cursor-pointer text-gray-500" title="{% trans 'Прикрепить файл' %}">
                         <i class="fas fa-paperclip"></i>
                         <input type="file" id="chat-file-input" class="hidden">
                     </label>
                     <input type="text" id="chat-message-input" placeholder="{% trans 'Введите сообщение...' %}" autocomplete="off"
-                           class="flex-1 form-input block w-full px-4 py-2 border border-gray-300 rounded-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500">
+                           class="flex-1 form-input block w-full px-4 py-2 border border-gray-300 rounded-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <button type="submit" id="chat-message-submit"
-                            class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-ios-blue dark:hover:bg-blue-500" title="{% trans 'Отправить' %}">
+                            class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" title="{% trans 'Отправить' %}">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
@@ -109,19 +198,58 @@
         </main>
     </div>
 {% endblock %}
+
 {% block scripts %}
 {{ block.super }}
 <script>
     window.roomSlug = "{{ room.slug|escapejs }}";
-    window.currentUserId = {{ request.user.pk|default:'null' }};
+    window.currentUserId = "{{ request.user.pk|stringformat:'s' }}"; // Приводим к строке
     window.currentUsername = "{{ request.user.username|escapejs }}";
+    // messages_list - это переменная из цикла for, а не полный список.
+    // Если вам нужно общее количество для initialMessagesCount, его нужно передавать отдельно.
+    // Пока оставлю messages_list|length, но это будет количество сообщений на текущей "странице" (если есть пагинация)
+    window.chatConfig = {
+        roomSlug: "{{ room.slug|escapejs }}",
+        currentUserId: "{{ request.user.pk|stringformat:'s' }}",
+        currentUsername: "{{ request.user.username|escapejs }}",
+        initialMessagesCount: {{ messages|length }}, // Используем 'messages' как в цикле
+        messagesPageSize: {{ chat_messages_page_size|default:50 }},
+        i18n: {
+            loadOlderButton: "{% trans 'Загрузить еще...' %}",
+            loadingOlder: "{% trans 'Загрузка...' %}",
+            noMoreMessages: "{% trans 'Больше нет сообщений.' %}",
+            messageDeleted: "{% trans 'Сообщение удалено' %}",
+            fileNotAvailable: "{% trans 'Файл недоступен' %}",
+            confirmArchiveRoom: "{% trans 'Вы уверены, что хотите заархивировать комнату \"%s\"?' %}",
+            replyTo: "{% trans 'Ответ на:' %}",
+            file: "{% trans '[Файл]' %}",
+            edit: "{% trans 'Редактировать' %}",
+            delete: "{% trans 'Удалить' %}",
+            edited: "{% trans 'ред.' %}",
+            reply: "{% trans 'Ответить' %}",
+            react: "{% trans 'Реагировать' %}",
+            editMessagePrompt: "{% trans 'Введите новый текст сообщения:' %}",
+            confirmDeleteMessage: "{% trans 'Вы уверены, что хотите удалить это сообщение?' %}",
+            reactPrompt: "{% trans 'Введите эмодзи для реакции:' %}",
+            serverError: "{% trans 'Ошибка сервера' %}",
+            isTyping: "{% trans 'печатает...' %}",
+            areTyping: "{% trans 'печатают...' %}",
+            andOthersAreTyping: "{% trans 'и другие печатают...' %}",
+            noOneOnline: "{% trans 'Никого нет в сети' %}",
+            andMore: "{% trans 'и еще' %}",
+        }
+    };
+
     function getWebsocketPath(type, slug = null) {
-        if (type === 'chat' && slug) { return `/ws/chat/${slug}/`; }
-        if (type === 'search') { return `/ws/user_search/`; }
-        console.warn(`Unknown WS path type: ${type}`); return '/ws/';
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        if (type === 'chat' && slug) { return `${protocol}//${host}/ws/chat/${slug}/`; }
+        console.warn(`Unknown WebSocket path type: ${type}`);
+        return `${protocol}//${host}/ws/`;
     }
     window.djangoWsPath = getWebsocketPath;
 </script>
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script src="{% static 'js/chat.js' %}" defer></script>
 <script src="{% static 'js/room_actions.js' %}" defer></script>
 {% endblock %}

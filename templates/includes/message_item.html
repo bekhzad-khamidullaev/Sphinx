@@ -1,0 +1,113 @@
+{% load i18n static %}
+{# msg - объект сообщения, current_user_id - ID текущего пользователя #}
+{%
+with is_own_message=msg.user.pk|stringformat:"s" == current_user_id|stringformat:"s"
+avatar_url=msg.user.userprofile.image.url|default_if_none:''
+%}
+<div class="chat-message flex items-end mb-3 {% if is_own_message %}justify-end{% endif %}" id="message-{{ msg.id }}"
+    data-message-id="{{ msg.id }}" data-user-id="{{ msg.user.id }}">
+
+    {% if not is_own_message %}
+    <div class="flex-shrink-0 mr-2">
+        {% if avatar_url %}
+        <img src="{{ avatar_url }}" alt="{{ msg.user.username }}" class="w-8 h-8 rounded-full object-cover">
+        {% else %}
+        <span
+            class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-semibold text-gray-600">
+            {{ msg.user.username|slice:":1"|upper }}
+        </span>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="message-content max-w-xs lg:max-w-md break-words">
+        <div class="px-3.5 py-2.5 rounded-2xl shadow
+                    {% if is_own_message %}
+                        bg-indigo-600 text-white
+                        rounded-br-none
+                    {% else %}
+                        bg-white text-gray-700
+                        border border-gray-200
+                        rounded-bl-none
+                    {% endif %}">
+
+            {% if not is_own_message %}
+            <p class="text-xs font-semibold mb-0.5 text-indigo-600">
+                {{ msg.user.username }}
+            </p>
+            {% endif %}
+
+            {% if msg.reply_to %}
+            <a href="#message-{{ msg.reply_to.id }}" class="block mb-1.5 p-2 -mx-1.5 rounded-lg text-xs
+                          {% if is_own_message %}bg-indigo-500/80 hover:bg-indigo-500/100{% else %}bg-gray-100 hover:bg-gray-200{% endif %}
+                          opacity-90 hover:opacity-100 transition">
+                <p class="font-medium {% if is_own_message %}text-indigo-100{% else %}text-gray-700{% endif %}">
+                    {% trans "Ответ на:" %} {{ msg.reply_to.user.username }}
+                </p>
+                <p class="italic truncate {% if is_own_message %}text-indigo-200{% else %}text-gray-500{% endif %}">
+                    {{ msg.reply_to.content|default:_("[Файл]")|truncatechars:50 }}
+                </p>
+            </a>
+            {% endif %}
+
+            {% if msg.is_deleted %}
+            <p class="italic text-sm {% if is_own_message %}text-indigo-200{% else %}text-gray-500{% endif %}">
+                {% trans "Сообщение удалено" %}
+            </p>
+            {% else %}
+            {% if msg.file %}
+            <div class="mb-1">
+                <a href="{{ msg.file.url }}" target="_blank"
+                    class="inline-flex items-center p-2 rounded-lg
+                              {% if is_own_message %}bg-indigo-500/80 hover:bg-indigo-500/100 text-indigo-50{% else %}bg-gray-100 hover:bg-gray-200 text-gray-700{% endif %}">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    <span>{{ msg.get_filename }}</span>
+                    {# <span class="text-xs ml-2">({{ msg.file.size|filesizeformat }})</span> #}
+                </a>
+            </div>
+            {% endif %}
+            <p class="text-sm whitespace-pre-wrap message-text-content">{{ msg.content }}</p>
+            {% endif %}
+
+            <div class="message-meta text-xs mt-1.5 flex justify-between items-center
+                        {% if is_own_message %}text-indigo-200 opacity-80{% else %}text-gray-400{% endif %}">
+                <span>
+                    <time datetime="{{ msg.date_added|date:"c" }}">{{ msg.date_added|time:"H:i" }}</time>
+                    {% if msg.edited_at %}
+                    <span class="italic ml-1" title="{{ msg.edited_at|date:"d.m.Y H:i" }}">(ред.)</span>
+                    {% endif %}
+                </span>
+                <div class="message-actions ml-2 opacity-0 group-hover:opacity-100 transition-opacity
+                            flex items-center space-x-1.5
+                            {% if is_own_message %}
+                                child:text-indigo-200 child:hover:text-white
+                            {% else %}
+                                child:text-gray-400 child:hover:text-gray-600
+                            {% endif %}">
+                    <button class="action-reply" title="{% trans 'Ответить' %}"><i class="fas fa-reply fa-xs"></i></button>
+                    <button class="action-react" title="{% trans 'Реагировать' %}"><i class="far fa-smile fa-xs"></i></button>
+                    {% if msg.user.pk|stringformat:"s" == current_user_id|stringformat:"s" and not msg.is_deleted %}
+                    <button class="action-edit" title="{% trans 'Редактировать' %}"><i class="fas fa-pen fa-xs"></i></button>
+                    <button class="action-delete" title="{% trans 'Удалить' %}"><i class="fas fa-trash-alt fa-xs"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="reactions-container mt-1 flex flex-wrap gap-1 {% if is_own_message %}justify-end pr-1{% else %}pl-1{% endif %}"
+            data-message-id="{{ msg.id }}">
+        </div>
+    </div>
+
+    {% if is_own_message %}
+    <div class="flex-shrink-0 ml-2">
+        {% if avatar_url %}
+        <img src="{{ avatar_url }}" alt="{{ msg.user.username }}" class="w-8 h-8 rounded-full object-cover">
+        {% else %}
+        <span class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-semibold text-white">
+            {{ msg.user.username|slice:":1"|upper }}
+        </span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endwith %}

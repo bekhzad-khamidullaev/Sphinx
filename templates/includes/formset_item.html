@@ -1,49 +1,50 @@
 {% load i18n static widget_tweaks %}
-<div class="formset-item item-form p-4 border border-gray-200 dark:border-dark-600 rounded-lg bg-gray-50 dark:bg-dark-700/50 space-y-3" id="{{ prefix }}-{% if forloop %}{{ forloop.counter0 }}{% else %}__prefix__{% endif %}">
-     {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
-     <div class="flex items-start justify-between gap-4">
-         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 flex-grow">
-             {% for field in form.visible_fields %}
-             <div>
-                 <label for="{{ field.id_for_label }}" class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">
-                     {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
-                 </label>
-                  {% if field.widget_type == 'checkbox' %}
-                       <div class="flex items-center pt-1">
-                           {% render_field field class+="form-checkbox h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-dark-600 rounded focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:checked:bg-indigo-500 dark:bg-dark-600" %}
-                           <label for="{{ field.id_for_label }}" class="ml-2 block text-xs text-gray-900 dark:text-gray-300">{{ field.label }}</label>
-                      </div>
-                      <script>
-                          const label_{{ field.auto_id }}_formset = document.querySelector('label[for="{{ field.id_for_label }}"]');
-                          if (label_{{ field.auto_id }}_formset && !label_{{ field.auto_id }}_formset.closest('.flex')) {
-                            label_{{ field.auto_id }}_formset.classList.add('hidden');
-                          }
-                      </script>
-                  {% elif field.widget_type == 'select' %}
-                      {% render_field field class+="form-select select2-basic block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                  {% elif field.widget_type == 'textarea' %}
-                      {% render_field field class+="form-textarea block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" rows="1" %}
-                  {% elif field.name == 'order' %}
-                      {% render_field field class+="form-input w-16 text-center text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                  {% else %}
-                      {% render_field field class+="form-input block w-full text-sm dark:bg-dark-700 dark:border-dark-600 rounded-md shadow-sm" %}
-                  {% endif %}
-                  {% if field.errors %}<p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ field.errors|striptags }}</p>{% endif %}
-             </div>
-             {% endfor %}
-         </div>
-         {% if formset.can_delete %}
-         <div class="flex-shrink-0 pt-5">
-             <button type="button" title="{% trans 'Удалить пункт' %}" class="delete-formset-item p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-dark-600 transition-colors">
-                 <i class="fas fa-trash fa-fw"></i>
-             </button>
-              <div class="hidden">{{ form.DELETE }}</div>
-         </div>
-         {% endif %}
-     </div>
-      {% if form.non_field_errors %}
-         <div class="text-sm text-red-600 dark:text-red-400">
-             {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
-         </div>
-      {% endif %}
+<div class="formset-item item-form p-4 border border-gray-200 rounded-lg bg-gray-50 space-y-3" id="{{ prefix }}-{% if forloop %}{{ forloop.counter0 }}{% else %}__prefix__{% endif %}">
+    {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
+    <div class="flex items-start justify-between gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 flex-grow">
+            {% for field in form.visible_fields %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                    {{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                {% if field.widget_type == 'checkbox' %}
+                    <div class="flex items-center pt-1">
+                        {% render_field field class+="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" %}
+                        {# Label inside flex is kept, main one above might be hidden by script #}
+                        <label for="{{ field.id_for_label }}" class="ml-2 block text-xs text-gray-900">{{ field.label }}</label>
+                    </div>
+                    <script>
+                        const label_{{ field.auto_id }}_formset_main = document.querySelector('#{{ prefix }}-{% if forloop %}{{ forloop.counter0 }}{% else %}__prefix__{% endif %} label[for="{{ field.id_for_label }}"]');
+                        if (label_{{ field.auto_id }}_formset_main && !label_{{ field.auto_id }}_formset_main.closest('.flex')) {
+                            label_{{ field.auto_id }}_formset_main.classList.add('hidden');
+                        }
+                    </script>
+                {% elif field.widget_type == 'select' %}
+                    {% render_field field class+="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                {% elif field.widget_type == 'textarea' %}
+                    {% render_field field class+="form-textarea block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="1" %}
+                {% elif field.name == 'order' %}
+                    {% render_field field class+="form-input w-16 text-center text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                {% else %}
+                    {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                {% endif %}
+                {% if field.errors %}<p class="mt-1 text-xs text-red-600">{{ field.errors|striptags }}</p>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% if formset.can_delete %}
+        <div class="flex-shrink-0 pt-5">
+            <button type="button" title="{% trans 'Удалить пункт' %}" class="delete-formset-item p-1.5 rounded-full text-red-600 hover:bg-red-100 transition-colors">
+                <i class="fas fa-trash fa-fw"></i>
+            </button>
+            <div class="hidden">{{ form.DELETE }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% if form.non_field_errors %}
+        <div class="text-sm text-red-600">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
 </div>
