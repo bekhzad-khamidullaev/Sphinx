@@ -36,10 +36,12 @@ services:
       dockerfile: Dockerfile
     container_name: sphinx_web_prod
     # Команда запуска уже определена в Dockerfile (CMD)
+    ports:
+      - "8000:8000"   # HTTP
     volumes:
       # Код приложения уже в образе, монтирование volumes для кода в проде не нужно
       # Это нужно для разработки, чтобы изменения кода сразу отражались
-      # - .:/app 
+      - .:/app 
       - static_volume_prod:/app/staticfiles_collected # Путь должен соответствовать STATIC_ROOT
       - media_volume_prod:/app/mediafiles          # Путь должен соответствовать MEDIA_ROOT
     env_file:
@@ -58,8 +60,8 @@ services:
     image: nginx:latest # Или ваш кастомный образ nginx, если есть
     container_name: sphinx_nginx_prod
     ports:
-      - "80:80"   # HTTP
-      - "443:443" # HTTPS
+      - "8080:80"   # HTTP
+      - "8443:443" # HTTPS
     volumes:
       # Конфигурация Nginx
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro 
