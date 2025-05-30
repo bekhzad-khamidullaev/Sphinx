@@ -1,54 +1,41 @@
 # tasks/views/api.py
-import logging
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Count, Prefetch
+from django.db.models import Q, Count
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
+from django.urls import reverse # Keep for search suggestions
+from django.db import transaction
 from django.conf import settings
-from django.templatetags.static import static
+from django.db.models import Prefetch
 
-from ..models import (
-    Project, TaskCategory, TaskSubcategory, Task, TaskPhoto, TaskAssignment
-)
-# Импортируем Team и Department из user_profiles, так как они там определены
-from user_profiles.models import Team, Department, JobTitle
-
+from ..models import (Project, TaskCategory, TaskSubcategory, Task, TaskPhoto, TaskAssignment, Team, Department) # MODIFIED: Added TaskAssignment, Team, Department
 from ..serializers import (
     ProjectSerializer, TaskCategorySerializer, TaskSubcategorySerializer,
-    TaskSerializer, TaskPhotoSerializer, TaskAssignmentSerializer
+    TaskSerializer, TaskPhotoSerializer, TaskAssignmentSerializer # MODIFIED: Added TaskAssignmentSerializer
 )
+# User model already imported via get_user_model if used below
+# from user_profiles.models import User, Team, Department # REMOVED - imported from .models or get_user_model
 
-# Опциональные импорты
-try:
-    from checklists.models import ChecklistTemplate, Checklist
-except ImportError:
-    ChecklistTemplate, Checklist = None, None
-    logging.warning("Checklist models (ChecklistTemplate, Checklist) not found.")
-try:
-    from room.models import Room
-except ImportError:
-    Room = None
-    logging.warning("Room model not found.")
+# Optional imports
+try: from checklists.models import ChecklistTemplate, ChecklistRun
+except ImportError: ChecklistTemplate, ChecklistRun = None, None
+try: from room.models import Room
+except ImportError: Room = None
 
 User = get_user_model()
-logger = logging.getLogger(__name__)
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.annotate(task_count=Count('tasks')).order_by('name')
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated] # Or more specific permissions
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['start_date', 'end_date', 'owner', 'is_active'] # Добавил owner, is_active
-    search_fields = ['name', 'description', 'owner__username'] # Добавил owner
-    ordering_fields = ['name', 'start_date', 'end_date', 'created_at', 'task_count', 'owner__username']
+    filterset_fields = ['start_date', 'end_date'] # Add 'team', 'department' if they are on Project model
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'start_date', 'end_date', 'created_at', 'task_count']
     ordering = ['name']
-
-    def get_serializer_context(self):
-        return {'request': self.request} # Для UserNestedSerializer в ProjectSerializer, если используется
 
 class TaskCategoryViewSet(viewsets.ModelViewSet):
     queryset = TaskCategory.objects.all().order_by('name')
@@ -64,94 +51,86 @@ class TaskSubcategoryViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSubcategorySerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'category__name']
+    filterset_fields = ['category', 'category__name'] # 'category' (PK) for filtering
     search_fields = ['name', 'description', 'category__name']
     ordering_fields = ['name', 'category__name', 'created_at']
     ordering = ['category__name', 'name']
     
+    # list method override for Select2 AJAX (from original code, seems fine)
     def list(self, request, *args, **kwargs):
         category_id = request.query_params.get('category')
         queryset = self.filter_queryset(self.get_queryset())
         if category_id:
-            try:
-                queryset = queryset.filter(category_id=int(category_id))
-            except ValueError:
-                queryset = queryset.none()
+            queryset = queryset.filter(category_id=category_id)
         
         page = self.paginate_queryset(queryset)
-        serializer_context = self.get_serializer_context() # Получаем контекст
         if page is not None:
-            serializer = self.get_serializer(page, many=True, context=serializer_context) # Передаем контекст
-            if request.query_params.get('select2') == 'true':
-                 select2_data = [{'id': item['id'], 'text': item.get('name', str(item['id']))} for item in serializer.data]
-                 return Response({'results': select2_data, 'pagination': {'more': self.paginator.page.has_next() if self.paginator else False}})
+            serializer = self.get_serializer(page, many=True)
+            if request.accepted_renderer.format == 'json' and request.query_params.get('select2'):
+                 return Response(serializer.data)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True, context=serializer_context) # Передаем контекст
-        if request.query_params.get('select2') == 'true':
-            select2_data = [{'id': item['id'], 'text': item.get('name', str(item['id']))} for item in serializer.data]
-            return Response({'results': select2_data})
+        serializer = self.get_serializer(queryset, many=True)
+        if request.accepted_renderer.format == 'json' and request.query_params.get('select2'):
+             return Response(serializer.data)
         return Response(serializer.data)
-
-    def get_serializer_context(self): # Добавляем метод для передачи request
-        return {'request': self.request}
 
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.select_related(
-        'project', 'category', 'subcategory', 'created_by', 'team', 'department'
+        'project', 'category', 'subcategory', 'created_by', 'team', 'department' # Added team, department
     ).prefetch_related(
         'photos', 
-        Prefetch('assignments', queryset=TaskAssignment.objects.select_related('user'))
+        Prefetch('assignments', queryset=TaskAssignment.objects.select_related('user')) # MODIFIED
     ).order_by('-created_at')
     serializer_class = TaskSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated] # Add custom permissions as needed
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    # MODIFIED: Added team, department to filterset_fields
     filterset_fields = {
         'project': ['exact'], 'category': ['exact'], 'subcategory': ['exact'],
         'status': ['exact', 'in'], 'priority': ['exact', 'in'],
         'created_by': ['exact'], 'team': ['exact'], 'department': ['exact'],
-        'due_date': ['exact', 'lte', 'gte', 'range'],
+        'deadline': ['exact', 'lte', 'gte', 'range'],
         'start_date': ['exact', 'lte', 'gte', 'range'],
         'completion_date': ['exact', 'lte', 'gte', 'range', 'isnull'],
+        # For filtering by assigned users/roles (more complex, might need custom filter class)
         'assignments__user': ['exact'],
         'assignments__role': ['exact', 'in'],
     }
     search_fields = [
         'task_number', 'title', 'description', 
         'project__name', 'created_by__username',
-        'assignments__user__username'
+        'assignments__user__username' # MODIFIED
     ]
     ordering_fields = [
-        'task_number', 'title', 'status', 'priority', 'due_date', 
+        'task_number', 'title', 'status', 'priority', 'deadline', 
         'start_date', 'completion_date', 'created_at', 'project__name',
-        'team__name', 'department__name'
+        'team__name', 'department__name' # Added
     ]
     ordering = ['-created_at']
 
-    def get_serializer_context(self):
-        return {'request': self.request}
-
     def perform_create(self, serializer):
+        # created_by is set by the serializer if request.user is in context
+        # assignments are handled by TaskSerializer.create
         serializer.save(created_by=self.request.user)
 
     def perform_update(self, serializer):
+        # assignments are handled by TaskSerializer.update
         serializer.save()
 
-
+# TaskAssignmentViewSet (Optional - if direct CRUD on assignments is needed via API)
 class TaskAssignmentViewSet(viewsets.ModelViewSet):
     queryset = TaskAssignment.objects.select_related('task', 'user', 'assigned_by').all()
     serializer_class = TaskAssignmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated] # Customize permissions
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['task', 'user', 'role', 'assigned_by']
     ordering_fields = ['created_at', 'task__title', 'user__username', 'role']
     ordering = ['-created_at']
 
-    def get_serializer_context(self):
-        return {'request': self.request}
-
     def perform_create(self, serializer):
+        # assigned_by can be set by serializer context or here
         assigned_by_user = self.request.user if self.request.user.is_authenticated else None
         serializer.save(assigned_by=assigned_by_user)
 
@@ -164,174 +143,108 @@ class TaskPhotoViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'task__task_number']
     ordering = ['-created_at']
 
-    def get_serializer_context(self):
-        return {'request': self.request}
-
     def perform_create(self, serializer):
         serializer.save(uploaded_by=self.request.user)
 
 
-class SearchSuggestionsView(APIView):
+class SearchSuggestionsView(APIView): # (No direct changes for TaskAssignment, but ensure URLs are correct)
     permission_classes = [permissions.IsAuthenticated]
-
-    def get_absolute_url_for_suggestion(self, request, instance_obj):
-        if hasattr(instance_obj, 'get_absolute_url'):
-            try:
-                url = instance_obj.get_absolute_url()
-                # Для API, build_absolute_uri может быть избыточным, если фронтенд сам знает хост
-                # Но для консистентности и если URL могут быть относительными, лучше его использовать
-                return request.build_absolute_uri(url) if url and request else url
-            except Exception:
-                return None
-        return None
-
     def get(self, request, *args, **kwargs):
         query = request.query_params.get('q', '').strip()
         suggestions = []
-        limit_per_type = getattr(settings, 'SEARCH_SUGGESTIONS_LIMIT_PER_TYPE', 3)
+        limit = 5 
 
-        if len(query) < 2:
-            return Response({'results': suggestions})
+        if len(query) >= 2:
+            # Tasks
+            tasks_qs = Task.objects.filter(
+                Q(title__icontains=query) | Q(task_number__icontains=query)
+            ).select_related('project')[:limit]
+            suggestions.extend([{ 
+                'type': 'task', 'id': t.id, 'title': f"#{t.task_number}: {t.title}", 
+                'context': t.project.name if t.project else '', 
+                'url': t.get_absolute_url(), 'icon': 'tasks', 'color': 'blue'
+            } for t in tasks_qs])
 
-        # --- Задачи ---
-        tasks_qs = Task.objects.filter(
-            Q(title__icontains=query) | Q(task_number__icontains=query) | Q(description__icontains=query)
-        ).select_related('project')[:limit_per_type]
-        for task_obj in tasks_qs:
-            suggestions.append({
-                "type": "task", "id": task_obj.id, "type_display": _("Задача"),
-                "title": f"#{task_obj.task_number or task_obj.id}: {task_obj.title}",
-                "subtitle": task_obj.project.name if task_obj.project else "",
-                "url": self.get_absolute_url_for_suggestion(request, task_obj),
-                "icon_class": "fas fa-tasks", "color_class": "text-blue-500"
-            })
-
-        # --- Проекты ---
-        projects_qs = Project.objects.filter(name__icontains=query)[:limit_per_type]
-        for proj_obj in projects_qs:
-            suggestions.append({
-                "type": "project", "id": proj_obj.id, "type_display": _("Проект"),
-                "title": proj_obj.name,
-                "url": self.get_absolute_url_for_suggestion(request, proj_obj),
-                "icon_class": "fas fa-project-diagram", "color_class": "text-purple-500"
-            })
-        
-        # --- Категории Задач ---
-        if TaskCategory and hasattr(TaskCategory, 'objects'):
-            cats_qs = TaskCategory.objects.filter(name__icontains=query)[:limit_per_type]
-            for cat_obj in cats_qs:
-                suggestions.append({
-                    "type": "task_category", "id": cat_obj.id, "type_display": _("Категория задач"),
-                    "title": cat_obj.name,
-                    "url": self.get_absolute_url_for_suggestion(request, cat_obj),
-                    "icon_class": "fas fa-folder-open", "color_class": "text-teal-500"
-                })
-
-        # --- Подкатегории Задач ---
-        if TaskSubcategory and hasattr(TaskSubcategory, 'objects'):
-            subcats_qs = TaskSubcategory.objects.filter(name__icontains=query).select_related('category')[:limit_per_type]
-            for subcat_obj in subcats_qs:
-                suggestions.append({
-                    "type": "task_subcategory", "id": subcat_obj.id, "type_display": _("Подкатегория задач"),
-                    "title": f"{subcat_obj.category.name} / {subcat_obj.name}" if subcat_obj.category else subcat_obj.name,
-                    "url": self.get_absolute_url_for_suggestion(request, subcat_obj),
-                    "icon_class": "fas fa-folder", "color_class": "text-cyan-500"
-                })
-        
-        # --- Пользователи ---
-        users_qs = User.objects.filter(
-            Q(username__icontains=query) | Q(first_name__icontains=query) | 
-            Q(last_name__icontains=query) | Q(email__icontains=query),
-            is_active=True
-        )[:limit_per_type]
-        for user_obj in users_qs:
-            avatar_url = None
-            if user_obj.image and hasattr(user_obj.image, 'url') and user_obj.image.url:
-                avatar_url = request.build_absolute_uri(user_obj.image.url)
+            # Projects
+            projects_qs = Project.objects.filter(name__icontains=query)[:limit]
+            suggestions.extend([{ 
+                'type': 'project', 'id': p.id, 'title': p.name, 'context': _("Проект"), 
+                'url': p.get_absolute_url(), 'icon': 'project-diagram', 'color': 'purple'
+            } for p in projects_qs])
             
-            suggestions.append({
-                "type": "user", "id": user_obj.id, "type_display": _("Пользователь"),
-                "title": user_obj.display_name,
-                "subtitle": f"@{user_obj.username}",
-                "avatar_url": avatar_url,
-                "url": self.get_absolute_url_for_suggestion(request, user_obj),
-                "icon_class": "fas fa-user", "color_class": "text-orange-500"
-            })
+            # Categories
+            cats_qs = TaskCategory.objects.filter(name__icontains=query)[:limit]
+            suggestions.extend([{
+                'type': 'category', 'id': c.id, 'title': c.name, 'context': _("Категория"),
+                'url': reverse('tasks:category_detail', kwargs={'pk': c.pk}), # Updated to detail view
+                'icon': 'folder-open', 'color': 'teal'
+            } for c in cats_qs])
 
-        # --- Команды (из user_profiles) ---
-        if Team and hasattr(Team, 'objects'):
-            teams_qs = Team.objects.filter(name__icontains=query)[:limit_per_type]
-            for team_obj in teams_qs:
-                suggestions.append({
-                    "type": "team", "id": team_obj.id, "type_display": _("Команда"),
-                    "title": team_obj.name,
-                    "url": self.get_absolute_url_for_suggestion(request, team_obj),
-                    "icon_class": "fas fa-users-cog", "color_class": "text-pink-500"
-                })
+            # Subcategories
+            subcats_qs = TaskSubcategory.objects.filter(name__icontains=query).select_related('category')[:limit]
+            suggestions.extend([{
+                'type': 'subcategory', 'id': sc.id, 'title': f"{sc.category.name} / {sc.name}", 'context': _("Подкатегория"),
+                'url': reverse('tasks:subcategory_detail', kwargs={'pk': sc.pk}), # Updated to detail view
+                'icon': 'folder', 'color': 'cyan'
+            } for sc in subcats_qs])
 
-        # --- Отделы (из user_profiles) ---
-        if Department and hasattr(Department, 'objects'):
-            depts_qs = Department.objects.filter(name__icontains=query)[:limit_per_type]
-            for dept_obj in depts_qs:
-                suggestions.append({
-                    "type": "department", "id": dept_obj.id, "type_display": _("Отдел"),
-                    "title": dept_obj.name,
-                    "url": self.get_absolute_url_for_suggestion(request, dept_obj),
-                    "icon_class": "fas fa-building", "color_class": "text-sky-500"
-                })
-        
-        # --- Шаблоны Чеклистов ---
-        if ChecklistTemplate:
-            templates_qs = ChecklistTemplate.objects.filter(name__icontains=query, is_archived=False, is_active=True)[:limit_per_type]
-            for ct_obj in templates_qs:
-                suggestions.append({
-                    "type": "checklist_template", "id": str(ct_obj.uuid), "type_display": _("Шаблон чеклиста"),
-                    "title": ct_obj.name,
-                    "url": self.get_absolute_url_for_suggestion(request, ct_obj),
-                    "icon_class": "fas fa-clipboard-list", "color_class": "text-indigo-500"
-                })
+            # Users
+            users_qs = User.objects.filter(
+                Q(username__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query) | Q(email__icontains=query), 
+                is_active=True
+            )[:limit]
+            suggestions.extend([{
+                'type': 'user', 'id': u.id, 'title': f"{u.display_name or u.username} (@{u.username})", 
+                'context': u.job_title or _('Пользователь'), # Assuming job_title exists on user model
+                'url': u.get_absolute_url() if hasattr(u, 'get_absolute_url') else '#', # Check for profile URL
+                'icon': 'user', 'color': 'orange'
+            } for u in users_qs])
 
-        # --- Выполненные Чеклисты (Checklist) ---
-        if Checklist:
-            runs_qs = Checklist.objects.filter(
-                Q(template__name__icontains=query) | Q(performed_by__username__icontains=query),
-                # is_archived=False # У модели Checklist нет is_archived, у Template есть
-            ).select_related('template', 'performed_by').order_by('-performed_at')[:limit_per_type]
-            for cr_obj in runs_qs:
-                suggestions.append({
-                    "type": "checklist_run", "id": str(cr_obj.id), "type_display": _("Выполненный чеклист"),
-                    "title": f"{cr_obj.template.name} ({cr_obj.performed_at:%d.%m.%y})",
-                    "subtitle": f"{_('Выполнил')}: {cr_obj.performed_by.display_name if cr_obj.performed_by else '-'}",
-                    "url": self.get_absolute_url_for_suggestion(request, cr_obj),
-                    "icon_class": "fas fa-history", "color_class": "text-gray-500"
-                })
+            # Teams
+            if hasattr(Team, 'objects'): # Check if Team model is more than a dummy
+                teams_qs = Team.objects.filter(name__icontains=query)[:limit]
+                suggestions.extend([{
+                    'type': 'team', 'id': t.id, 'title': t.name, 'context': _("Команда"),
+                    'url': reverse('user_profiles:user_list') + f'?team={t.pk}' if 'user_profiles' in settings.INSTALLED_APPS else '#', # Adjust URL
+                    'icon': 'users-cog', 'color': 'pink'
+                } for t in teams_qs])
+
+            # Departments
+            if hasattr(Department, 'objects'): # Check if Department model is more than a dummy
+                depts_qs = Department.objects.filter(name__icontains=query)[:limit]
+                suggestions.extend([{
+                    'type': 'department', 'id': d.id, 'title': d.name, 'context': _("Отдел"),
+                    'url': reverse('user_profiles:user_list') + f'?department={d.pk}' if 'user_profiles' in settings.INSTALLED_APPS else '#', # Adjust URL
+                    'icon': 'building', 'color': 'sky'
+                } for d in depts_qs])
+
+            # Checklist (optional)
+            if ChecklistTemplate:
+                 templates = ChecklistTemplate.objects.filter(name__icontains=query, is_archived=False)[:limit]
+                 suggestions.extend([{'type': 'checklist_template', 'id': t.id, 'title': t.name, 'context': _("Шаблон"), 'url': t.get_absolute_url(), 'icon': 'clipboard-list', 'color': 'indigo'} for t in templates])
+            if ChecklistRun:
+                runs = ChecklistRun.objects.filter(Q(template__name__icontains=query) | Q(performed_by__username__icontains=query)).select_related('template', 'performed_by').order_by('-performed_at')[:limit]
+                suggestions.extend([{'type': 'checklist_run', 'id': r.id, 'title': f"{r.template.name} ({r.performed_at:%d.%m.%y})", 'context': f"{_('Выполнен')}: {r.performed_by.display_name if r.performed_by else '-'}", 'url': r.get_absolute_url(), 'icon': 'history', 'color': 'gray'} for r in runs])
             
-        # --- Чат-комнаты ---
-        if Room:
-            rooms_qs = Room.objects.filter(name__icontains=query, is_archived=False)[:limit_per_type]
-            for room_obj in rooms_qs:
-                suggestions.append({
-                    "type": "room", "id": str(room_obj.id), "type_display": _("Чат-комната"),
-                    "title": f"# {room_obj.name}",
-                    "url": self.get_absolute_url_for_suggestion(request, room_obj),
-                    "icon_class": "fas fa-comments", "color_class": "text-green-500"
-                })
+            # Room (optional)
+            if Room:
+                rooms_qs = Room.objects.filter(name__icontains=query)[:limit]
+                suggestions.extend([{'type': 'room', 'id': r.id, 'title': f"# {r.name}", 'context': _("Чат"), 'url': r.get_absolute_url(), 'icon': 'comments', 'color': 'green'} for r in rooms_qs])
 
-        return Response({'results': suggestions[:getattr(settings, 'SEARCH_SUGGESTIONS_TOTAL_LIMIT', 15)]})
+        return Response({'results': suggestions[:15]}) # Limit total results
 
-
-class UserAutocompleteView(APIView):
+class UserAutocompleteView(APIView): # (No direct changes for TaskAssignment)
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request, *args, **kwargs):
         query = request.query_params.get('q', '').strip()
-        # project_id_str = request.query_params.get('project') # Для возможной фильтрации
+        project_id_str = request.query_params.get('project') # project ID as string
         page = int(request.query_params.get('page', 1))
-        page_size = 20
+        page_size = 20 # Standard Select2 page size
 
         results = []
         more = False
 
-        if len(query) >= 1:
+        if len(query) >= 1: # Minimum query length
             search_filter = (
                 Q(username__icontains=query) | 
                 Q(first_name__icontains=query) | 
@@ -339,7 +252,25 @@ class UserAutocompleteView(APIView):
                 Q(email__icontains=query)
             )
             queryset = User.objects.filter(is_active=True).filter(search_filter)
-            
+
+            if project_id_str and project_id_str.isdigit():
+                project_id = int(project_id_str)
+                # Example: Filter users assigned to tasks in this project
+                # This can be complex. A simpler filter might be by project's team if Project has a Team FK.
+                # For now, this example shows filtering users who are assigned to ANY task in the project.
+                # This might not be what you want if you need users *available* for assignment.
+                # tasks_in_project = Task.objects.filter(project_id=project_id).values_list('id', flat=True)
+                # assigned_user_ids = TaskAssignment.objects.filter(task_id__in=tasks_in_project).values_list('user_id', flat=True).distinct()
+                # queryset = queryset.filter(id__in=assigned_user_ids)
+                # Or, if project has a direct team link:
+                # try:
+                #     project = Project.objects.get(pk=project_id)
+                #     if project.team: # Assuming Project.team is a FK to Team model
+                #          queryset = queryset.filter(teams=project.team) # Assuming User.teams is M2M
+                # except Project.DoesNotExist:
+                #     queryset = queryset.none()
+                pass # Keep project filtering logic as per your requirements.
+
             total_count = queryset.count()
             start_index = (page - 1) * page_size
             end_index = start_index + page_size
@@ -348,6 +279,6 @@ class UserAutocompleteView(APIView):
                 more = True
 
             users = queryset.order_by('username')[start_index:end_index]
-            results = [{'id': user_obj.pk, 'text': user_obj.display_name} for user_obj in users]
+            results = [{'id': user.pk, 'text': user.display_name or user.username} for user in users]
         
         return Response({'results': results, 'pagination': {'more': more}})

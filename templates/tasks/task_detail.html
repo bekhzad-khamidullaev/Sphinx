@@ -1,18 +1,14 @@
 {% extends 'base.html' %}
 {% load i18n app_filters static widget_tweaks %}
 
-{% block title %}{{ task_instance.title }} - #{{ task_instance.task_number|default:task_instance.pk }}{% endblock %}
+{% block title %}{{ task_instance.title }} - {{ task_instance.task_number|default:task_instance.pk }}{% endblock %}
 
 {% block head_extra %}
     {{ block.super }}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    {% if comment_form and comment_form.media.css %} 
-        {{ comment_form.media.css }}
-    {% endif %}
-    {% if photo_formset and photo_formset.media.css %}
-        {{ photo_formset.media.css }}
-    {% endif %}
+    {% if form.media.css %}{{ form.media.css }}{% endif %}
+    {% if photo_formset and photo_formset.media.css %}{{ photo_formset.media.css }}{% endif %}
     <style>
         #comment-list::-webkit-scrollbar {
             width: 6px;
@@ -39,18 +35,18 @@
         </h1>
         {% if task_instance.project %}
         <p class="text-sm text-gray-500 mt-1">
-            {% blocktrans with project_name=task_instance.project.name %}Проект: <a href="{{ task_instance.project.get_absolute_url }}" class="hover:underline text-blue-600">{{ project_name }}</a>{% endblocktrans %}
+            {% blocktrans with project_name=task_instance.project.name %}Проект: <a href="{{ task_instance.project.get_absolute_url }}" class="hover:underline">{{ project_name }}</a>{% endblocktrans %}
         </p>
         {% endif %}
     </div>
     <div class="flex space-x-3 flex-shrink-0">
-        {% if can_change_task %}
+        {% if perms.tasks.change_task or can_change_task %}
         <a href="{% url 'tasks:task_update' pk=task_instance.pk %}"
             class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-gray-900 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all">
             <i class="fas fa-edit mr-2" aria-hidden="true"></i> {% trans 'Редактировать' %}
         </a>
         {% endif %}
-        {% if can_delete_task %}
+        {% if perms.tasks.delete_task or can_delete_task %}
         <a href="{% url 'tasks:task_delete' pk=task_instance.pk %}"
             class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
             <i class="fas fa-trash mr-2" aria-hidden="true"></i> {% trans 'Удалить' %}
@@ -68,7 +64,6 @@
 <div id="task-detail-container" class="bg-white shadow-lg rounded-xl border border-gray-200 p-6 mt-6" data-task-id="{{ task_instance.pk }}">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="md:col-span-2 space-y-6">
-            {# ... (остальная информация о задаче без изменений) ... #}
             <div class="flex flex-wrap gap-4 items-center">
                 <div>
                     <span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Статус' %}</span>
@@ -102,8 +97,8 @@
             <div>
                 <h3 class="text-lg font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-2">{% trans 'Категоризация' %}</h3>
                 <p class="text-sm text-gray-600 mt-3">
-                    {% if task_instance.category %}Категория: <a href="{{ task_instance.category.get_absolute_url }}" class="font-medium text-blue-600 hover:underline">{{ task_instance.category.name }}</a>{% if task_instance.subcategory %} / {% endif %}{% endif %}
-                    {% if task_instance.subcategory %}Подкатегория: <a href="{{ task_instance.subcategory.get_absolute_url }}" class="font-medium text-blue-600 hover:underline">{{ task_instance.subcategory.name }}</a>{% endif %}
+                    {% if task_instance.category %}Категория: <span class="font-medium">{{ task_instance.category.name }}</span>{% if task_instance.subcategory %} / {% endif %}{% endif %}
+                    {% if task_instance.subcategory %}Подкатегория: <span class="font-medium">{{ task_instance.subcategory.name }}</span>{% endif %}
                 </p>
             </div>
             {% endif %}
@@ -113,79 +108,26 @@
             <div>
                 <h3 class="text-md font-semibold text-gray-800 mb-3"><i class="fas fa-users mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Участники' %}</h3>
                 <ul class="space-y-4">
-                    {% with responsible_users_assignments=task_instance.get_responsible_users executor_users_assignments=task_instance.get_executors watcher_users_assignments=task_instance.get_watchers %}
-                    
-                    {% if responsible_users_assignments %}
-                    <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span>
-                        {% for assignment in responsible_users_assignments %}
-                            {% if assignment.user %} {# <--- ИСПРАВЛЕНИЕ: Проверка, что user существует #}
-                            <div class="flex items-center mt-1">
-                                <img src="{% if assignment.user.image %}{{ assignment.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ assignment.user.display_name|default:assignment.user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-700 truncate">{{ assignment.user.display_name|default:assignment.user.username }}</span>
-                            </div>
-                            {% else %}
-                            <div class="flex items-center mt-1">
-                                <img src="{% static 'img/user.svg' %}" alt="{% trans 'Пользователь удален' %}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-500 italic">{% trans 'Пользователь удален' %}</span>
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                    </li>
-                    {% endif %}
-
-                    {% if executor_users_assignments %}
-                    <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span>
-                        {% for assignment in executor_users_assignments %}
-                            {% if assignment.user %} {# <--- ИСПРАВЛЕНИЕ: Проверка #}
-                            <div class="flex items-center mt-1">
-                                <img src="{% if assignment.user.image %}{{ assignment.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ assignment.user.display_name|default:assignment.user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-700 truncate">{{ assignment.user.display_name|default:assignment.user.username }}</span>
-                            </div>
-                            {% else %}
-                            <div class="flex items-center mt-1">
-                                <img src="{% static 'img/user.svg' %}" alt="{% trans 'Пользователь удален' %}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-500 italic">{% trans 'Пользователь удален' %}</span>
-                            </div>
-                            {% endif %}
-                        {% empty %}
-                        <span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span>
-                        {% endfor %}
-                    </li>
-                    {% endif %}
-
+                    {% with responsible_users=task_instance.get_responsible_users executor_users=task_instance.get_executors watcher_users=task_instance.get_watchers %}
+                    {% if responsible_users %}<li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span>
+                        {% for user in responsible_users %}<div class="flex items-center mt-1"><img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name|default:user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 truncate">{{ user.display_name|default:user.username }}</span></div>{% endfor %}
+                    </li>{% endif %}
+                    {% if executor_users %}<li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span>
+                        {% for user in executor_users %}<div class="flex items-center mt-1"><img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name|default:user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 truncate">{{ user.display_name|default:user.username }}</span></div>
+                        {% empty %}<span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span>{% endfor %}
+                    </li>{% endif %}
                     <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Создатель' %}</span>
                         <div class="flex items-center mt-1">
-                        {% if task_instance.created_by %}
-                            <img src="{% if task_instance.created_by.image %}{{ task_instance.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                            <span class="text-sm text-gray-700 truncate">{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}</span>
-                        {% else %}
-                            <span class="text-sm text-gray-400 italic">{% trans 'Неизвестен' %}</span>
-                        {% endif %}
-                        </div>
+                        {% if task_instance.created_by %}<img src="{% if task_instance.created_by.image %}{{ task_instance.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 truncate">{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}</span>
+                        {% else %}<span class="text-sm text-gray-400 italic">{% trans 'Неизвестен' %}</span>{% endif %}</div>
                     </li>
-
-                    {% if watcher_users_assignments %}
-                    <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span>
-                        {% for assignment in watcher_users_assignments %}
-                             {% if assignment.user %} {# <--- ИСПРАВЛЕНИЕ: Проверка #}
-                            <div class="flex items-center mt-1">
-                                <img src="{% if assignment.user.image %}{{ assignment.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ assignment.user.display_name|default:assignment.user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-700 truncate">{{ assignment.user.display_name|default:assignment.user.username }}</span>
-                            </div>
-                            {% else %}
-                            <div class="flex items-center mt-1">
-                                <img src="{% static 'img/user.svg' %}" alt="{% trans 'Пользователь удален' %}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
-                                <span class="text-sm text-gray-500 italic">{% trans 'Пользователь удален' %}</span>
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                    </li>
-                    {% endif %}
+                    {% if watcher_users %}<li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span>
+                        {% for user in watcher_users %}<div class="flex items-center mt-1"><img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name|default:user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 truncate">{{ user.display_name|default:user.username }}</span></div>{% endfor %}
+                    </li>{% endif %}
                     {% endwith %}
                 </ul>
             </div>
 
-            {# ... (секция "Сроки" без изменений) ... #}
             <div>
                 <h3 class="text-md font-semibold text-gray-800 mb-3"><i class="far fa-calendar-alt mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Сроки' %}</h3>
                 <dl class="space-y-2 text-sm">
@@ -200,7 +142,6 @@
         </div>
     </div>
 
-    {# ... (секция "Фотографии" без изменений) ... #}
     {% with photos=task_instance.photos.all %}
     {% if photos %}
     <div class="mt-10 border-t border-gray-200 pt-8">
@@ -240,7 +181,6 @@
     {% endif %}
     {% endwith %}
 
-    {# ... (секция "Комментарии" и блок scripts без изменений) ... #}
     <div id="comments" class="mt-10 border-t border-gray-200 pt-8">
         <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-comments mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Комментарии' %} <span id="comment-count" class="text-sm font-normal text-gray-500">({{ task_instance.comments.count }})</span></h3>
         <div id="comment-list" class="space-y-4 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent mb-6">
@@ -261,28 +201,19 @@
         </div>
 
         {% if can_add_comment %}
-        {# action="" означает, что форма будет отправлена на текущий URL #}
-        <form id="comment-form" method="post" action=""> 
+        <form id="comment-form" method="post" action="{% url 'tasks:add_comment_to_task' task_id=task_instance.pk %}">
             {% csrf_token %}
             <div class="flex space-x-3 items-start">
                 <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" src="{% if request.user.image %}{{ request.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ request.user.display_name|default:request.user.username }}">
                 <div class="flex-1 mt-1">
-                    {# Это отрендерит поле <textarea> с классами из forms.py #}
-                    {{ comment_form.text }} 
-                    
-                    {# Ошибки для поля text, если они есть в переданной comment_form #}
-                    {% if comment_form.text.errors %}
+                    {{ comment_form.text }}
                     <div id="comment-text-errors" class="mt-1 text-sm text-red-600">
-                        {% for error in comment_form.text.errors %} <p>{{ error }}</p> {% endfor %}
+                        {% if comment_form.text.errors %}{% for error in comment_form.text.errors %} {{ error }} {% endfor %}{% endif %}
                     </div>
-                    {% endif %}
 
-                    {# Общие ошибки формы (non-field errors), если они есть #}
-                    {% if comment_form.non_field_errors %}
                     <div id="comment-non-field-errors" class="mt-1 text-sm text-red-600">
-                        {% for error in comment_form.non_field_errors %} <p>{{ error }}</p> {% endfor %}
+                        {% if comment_form.non_field_errors %}{% for error in comment_form.non_field_errors %} {{ error }} {% endfor %}{% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </div>
             <div class="flex justify-end mt-2">
@@ -314,14 +245,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof Flowbite !== 'undefined' && typeof Carousel !== 'undefined') {
         const carouselElement = document.getElementById('task-photo-carousel');
         if (carouselElement) {
-            const items = Array.from(carouselElement.querySelectorAll('[data-carousel-item]')).map((el, index) => ({
-                position: index,
-                el: el
-            }));
-            const indicators = Array.from(carouselElement.querySelectorAll('[data-carousel-slide-to]')).map((el, index) => ({
-                position: index,
-                el: el
-            }));
+            const items = [];
+            carouselElement.querySelectorAll('[data-carousel-item]').forEach((el, index) => {
+                items.push({ position: index, el: el });
+            });
+            const indicators = [];
+            carouselElement.querySelectorAll('[data-carousel-slide-to]').forEach((el, index) => {
+                indicators.push({ position: index, el: el });
+            });
 
             if (items.length > 0) {
                 const carousel = new Carousel(carouselElement, items, {
@@ -339,9 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if(nextButton) nextButton.addEventListener('click', () => carousel.next());
             }
         }
-    } else {
-        console.warn('Flowbite Carousel not initialized for task_detail.html. Flowbite or Carousel might not be loaded.');
-    }
+    } else { console.warn('Flowbite Carousel not initialized for task_detail.html'); }
 });
 </script>
 
