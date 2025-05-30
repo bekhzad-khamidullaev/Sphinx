@@ -16,12 +16,12 @@ from .models import User, Team, Department, JobTitle
 logger = logging.getLogger(__name__)
 
 # --- Tailwind CSS classes ---
-BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500 transition duration-150 ease-in-out"
+BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm     transition duration-150 ease-in-out"
 TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
 TEXTAREA_CLASSES = f"form-textarea {BASE_INPUT_CLASSES}"
 SELECT_CLASSES = f"form-select {BASE_INPUT_CLASSES}" # Base for non-Select2 selects
-CHECKBOX_CLASSES = "form-checkbox h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-dark-600 dark:border-dark-500 dark:checked:bg-indigo-500 dark:focus:ring-offset-dark-800"
-FILE_INPUT_CLASSES = "form-control block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-dark-600 dark:border-dark-500 dark:placeholder-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-dark-500 dark:file:text-gray-300 dark:hover:file:bg-dark-400 transition"
+CHECKBOX_CLASSES = "form-checkbox h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500    "
+FILE_INPUT_CLASSES = "form-control block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50  focus:outline-none    file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100    transition"
 
 
 class TeamForm(forms.ModelForm):
@@ -168,16 +168,16 @@ class UserCreateForm(BaseUserCreationForm):
         self.helper.layout = Layout(
             Fieldset(_("Учетные данные"),
                 Field("username"), Field("email"), Field("password1"), Field("password2"),
-                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+                css_class="mb-6 pb-6 border-b border-gray-200 "
             ),
             Fieldset(_("Личная информация"),
                 Row(Column(Field("first_name"), css_class="md:w-1/2 px-2"), Column(Field("last_name"), css_class="md:w-1/2 px-2"), css_class="flex flex-wrap -mx-2 mb-4"),
                 Field("phone_number", css_class="mb-4"),
-                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+                css_class="mb-6 pb-6 border-b border-gray-200 "
             ),
             Fieldset(_("Рабочая информация"),
                 Field("job_title", css_class="mb-4"), Field("department", css_class="mb-4"),
-                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+                css_class="mb-6 pb-6 border-b border-gray-200 "
             ),
             Fieldset(_("Аватар"), Field("image"))
         )
@@ -230,19 +230,19 @@ class UserUpdateForm(forms.ModelForm):
         self.helper.form_method = 'post'; self.helper.form_tag = False; self.helper.disable_csrf = True
         self.helper.layout = Layout(
             Fieldset(_("Учетные данные (только просмотр)"),
-                Field("username"), css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+                Field("username"), css_class="mb-6 pb-6 border-b border-gray-200 "
             ),
             Fieldset(_("Контактная и личная информация"),
                 Field("email"),
                 Row(Column(Field("first_name"), css_class="md:w-1/2 px-2"), Column(Field("last_name"), css_class="md:w-1/2 px-2"), css_class="flex flex-wrap -mx-2 mb-4"),
                 Field("phone_number", css_class="mb-4"),
-                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+                css_class="mb-6 pb-6 border-b border-gray-200 "
             ),
             Fieldset(_("Рабочая информация"),
                 Field("job_title", css_class="mb-4"), Field("department", css_class="mb-4"),
-                css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+                css_class="mb-6 pb-6 border-b border-gray-200 "
             ),
-            Fieldset(_("Аватар"), Field("image"), css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"),
+            Fieldset(_("Аватар"), Field("image"), css_class="mb-6 pb-6 border-b border-gray-200 "),
             Fieldset(_("Права и статус"),
                 Div(Field("is_active"), css_class="mb-3"), Div(Field("is_staff"), css_class="mb-4"),
                 Field("groups")
@@ -294,9 +294,9 @@ class UserProfileEditForm(forms.ModelForm): # For user to edit their own profile
              Fieldset(_("Личная информация"),
                  Row(Column(Field("first_name"), css_class="md:w-1/2 px-2"), Column(Field("last_name"), css_class="md:w-1/2 px-2"), css_class="flex flex-wrap -mx-2 mb-4"),
                  Field("phone_number", css_class="mb-4"),
-                 css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"
+                 css_class="mb-6 pb-6 border-b border-gray-200 "
              ),
-             Fieldset(_("Аватар"), Field("image"), css_class="mb-6 pb-6 border-b border-gray-200 dark:border-dark-600"),
+             Fieldset(_("Аватар"), Field("image"), css_class="mb-6 pb-6 border-b border-gray-200 "),
              Fieldset(_("Настройки уведомлений и интерфейса"),
                  Div(Field('enable_email_notifications'), css_class='mb-3'),
                  Div(Field('tasks_per_page', css_class="w-full sm:w-1/3"), css_class='mb-3'),

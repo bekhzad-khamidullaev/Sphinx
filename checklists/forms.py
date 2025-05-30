@@ -20,16 +20,16 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 # --- Tailwind CSS Classes ---
-BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-dark-700 dark:border-dark-600 dark:text-gray-200 dark:placeholder-gray-500"
+BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm    "
 TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
 TEXTAREA_CLASSES = f"form-textarea {BASE_INPUT_CLASSES}"
 SELECT_CLASSES = f"form-select {BASE_INPUT_CLASSES}"
-CHECKBOX_CLASSES = "form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-dark-600 dark:border-dark-500 dark:checked:bg-indigo-500 dark:focus:ring-offset-dark-800"
+CHECKBOX_CLASSES = "form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500    "
 NUMBER_INPUT_CLASSES_SMALL = f"form-input {BASE_INPUT_CLASSES} w-16 text-center text-sm py-1"
 RADIO_LABEL_CLASSES = "inline-flex items-center mr-4 cursor-pointer text-sm"
-RADIO_INPUT_CLASSES = "form-radio h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:bg-dark-600 dark:border-dark-500 dark:checked:bg-indigo-500 dark:focus:ring-offset-dark-800"
-READONLY_TEXTAREA_CLASSES = 'block w-full text-sm p-2 rounded-md border-none bg-gray-100 dark:bg-dark-900/50 dark:text-gray-300 focus:ring-0 pointer-events-none'
-READONLY_INPUT_CLASSES = 'text-xs text-gray-500 dark:text-gray-400 border-none bg-transparent p-0 m-0 -mt-1 pointer-events-none'
+RADIO_INPUT_CLASSES = "form-radio h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500    "
+READONLY_TEXTAREA_CLASSES = 'block w-full text-sm p-2 rounded-md border-none bg-gray-100   focus:ring-0 pointer-events-none'
+READONLY_INPUT_CLASSES = 'text-xs text-gray-500  border-none bg-transparent p-0 m-0 -mt-1 pointer-events-none'
 STATUS_RADIO_CLASSES = 'flex flex-wrap gap-x-4 gap-y-1' # Wrapper class for status radios
 
 # Custom Widget for ChecklistItemStatus Radio Select
