@@ -51,10 +51,9 @@ class TaskListView(LoginRequiredMixin, ListView):
         else:
             logger.debug(f"TaskListView: User {user.username} is staff/superuser, no ownership filter applied.")
 
-        self.filterset = TaskFilter(self.request.GET, queryset=base_qs, request=self.request) # Pass request if filter needs it
+        self.filterset = TaskFilter(self.request.GET, queryset=base_qs, request=self.request)
         filtered_qs = self.filterset.qs.distinct()
         logger.debug(f"TaskListView: Queryset count after filtering: {filtered_qs.count()}")
-
 
         sort_param = self.request.GET.get('sort', '-created_at')
         allowed_sort_fields = {
@@ -63,14 +62,13 @@ class TaskListView(LoginRequiredMixin, ListView):
             'created_at': 'created_at', 'team': 'team__name', 'department': 'department__name',
             'created_by': 'created_by__username'
         }
-
         sort_key_cleaned = sort_param.lstrip('-')
         db_sort_field_base = allowed_sort_fields.get(sort_key_cleaned)
 
         if not db_sort_field_base:
             logger.warning(f"TaskListView: Invalid sort parameter '{sort_param}'. Defaulting to '-created_at'.")
             db_sort_field_base = 'created_at'
-            sort_param = "-created_at" # Ensure default is descending
+            sort_param = "-created_at" 
 
         db_sort_field = db_sort_field_base
         if sort_param.startswith('-'):
@@ -79,31 +77,36 @@ class TaskListView(LoginRequiredMixin, ListView):
         else:
             if db_sort_field.startswith('-'):
                 db_sort_field = db_sort_field_base
-        
+
         logger.debug(f"TaskListView: Applying sort: {db_sort_field}")
-        ordered_queryset = filtered_qs.order_by(db_sort_field, '-pk') # -pk for stable sort
-
-        self.full_ordered_queryset_for_kanban = list(ordered_queryset) # Store full list for Kanban
+        ordered_queryset = filtered_qs.order_by(db_sort_field, '-pk')
+        self.full_ordered_queryset_for_kanban = list(ordered_queryset)
         logger.debug(f"TaskListView: Kanban queryset count: {len(self.full_ordered_queryset_for_kanban)}")
-
         return ordered_queryset
 
     def get_context_data(self, **kwargs):
         logger.debug("TaskListView: get_context_data called.")
         context = super().get_context_data(**kwargs)
-
         context['filterset'] = self.filterset
         context['page_title'] = _('Задачи')
         context['current_sort'] = self.request.GET.get('sort', '-created_at')
         context['create_url'] = reverse_lazy('tasks:task_create')
-        context['filtered_project'] = None # Initialize here
+        context['filtered_project'] = None
+
+        # УДАЛЕНО формирование filter_params, так как url_replace должен это делать
+        # get_params = self.request.GET.copy()
+        # if 'page' in get_params:
+        #     del get_params['page']
+        # if 'sort' in get_params:
+        #     del get_params['sort']
+        # context['filter_params'] = get_params.urlencode()
 
         tasks_by_status_kanban = {code: [] for code, _ in Task.StatusChoices.choices}
-        if hasattr(self, 'full_ordered_queryset_for_kanban'): # Ensure queryset was prepared
+        if hasattr(self, 'full_ordered_queryset_for_kanban'):
             for task_item in self.full_ordered_queryset_for_kanban:
                 tasks_by_status_kanban.setdefault(task_item.status, []).append(task_item)
-        else: # Should not happen if get_queryset runs first, but as a safeguard
-            logger.warning("TaskListView: self.full_ordered_queryset_for_kanban not set when get_context_data called.")
+        else:
+            logger.warning("TaskListView: self.full_ordered_queryset_for_kanban not set.")
         context['tasks_by_status_kanban'] = tasks_by_status_kanban
 
         status_map_dict = dict(Task.StatusChoices.choices)
@@ -122,28 +125,14 @@ class TaskListView(LoginRequiredMixin, ListView):
                     project_instance = self.filterset.form.cleaned_data.get('project')
                     if project_instance: project_pk = project_instance.pk
                 if not project_pk: project_pk = int(project_id_filter)
-
                 if project_pk:
-                    filtered_project_obj = Project.objects.get(pk=project_pk)
+                    filtered_project_obj = get_object_or_404(Project, pk=project_pk)
                     context['page_title'] = _("Задачи по проекту: %(name)s") % {'name': filtered_project_obj.name}
                     context['filtered_project'] = filtered_project_obj
-                    logger.debug(f"TaskListView: Filtering by project: {filtered_project_obj.name}")
-
             except (Project.DoesNotExist, ValueError, TypeError, AttributeError) as e:
                 logger.warning(f"TaskListView: Could not get project for title. Filter param: {project_id_filter}. Error: {e}")
-        
-        logger.debug(f"TaskListView: Final context keys for template: {list(context.keys())}")
-        if 'filtered_project' in context:
-            logger.debug(f"TaskListView context['filtered_project'] final value: {context['filtered_project']}")
-        else:
-            logger.error("TaskListView context['filtered_project'] IS MISSING from final context!")
-            
-        logger.debug(f"TaskListView: Type of 'page_obj' in context: {type(context.get('page_obj'))}")
-        if hasattr(context.get('page_obj'), 'paginator'):
-            logger.debug(f"TaskListView: 'page_obj' has 'paginator' attribute. Type: {type(context.get('page_obj').paginator)}")
-        else:
-            logger.debug("TaskListView: 'page_obj' DOES NOT have 'paginator' attribute.")
 
+        logger.debug(f"TaskListView: Final context keys for template: {list(context.keys())}")
         return context
 
     def dispatch(self, request, *args, **kwargs):
