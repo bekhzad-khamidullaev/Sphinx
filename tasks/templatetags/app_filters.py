@@ -9,6 +9,8 @@ from urllib.parse import urlencode
 import os
 from django.utils.timesince import timesince as timesince_
 from django.utils.translation import gettext_lazy as _
+from django.forms import BaseForm, BaseFormSet
+from django.utils import timezone
 
 register = template.Library()
 logger = logging.getLogger(__name__)
@@ -82,13 +84,20 @@ def add_if_not_empty(value, to_add):
         return str(value) + str(to_add)
     return ''
 
-@register.filter
-def get_field_label(form, field_name):
-    try:
-        return form.fields[field_name].label
-    except KeyError:
-        return field_name.replace("_", " ").title()
-
+@register.filter(name='get_field_label')
+def get_field_label(form_or_formset, field_name):
+    if isinstance(form_or_formset, BaseForm):
+        try:
+            return form_or_formset.fields[field_name].label
+        except KeyError:
+            return field_name
+    elif isinstance(form_or_formset, BaseFormSet): # This part might be less common for field labels
+        if form_or_formset.forms:
+            try:
+                return form_or_formset.forms[0].fields[field_name].label
+            except (KeyError, IndexError):
+                return field_name
+    return field_name
 
 @register.filter(name="add_css_class")
 def add_css_class(field, css_class):

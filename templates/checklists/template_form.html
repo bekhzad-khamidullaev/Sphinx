@@ -10,18 +10,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     {{ form.media.css }}
     {{ item_formset.media.css }}
-    <style>
-        .formset-item.deleted {
-            opacity: 0.5;
-            border-left: 3px solid theme('colors.red.500');
-        }
-        .formset-item.deleted label,
-        .formset-item.deleted input,
-        .formset-item.deleted select,
-        .formset-item.deleted textarea {
-            pointer-events: none;
-        }
-    </style>
 {% endblock %}
 
 {% block list_title %}
@@ -43,24 +31,23 @@
                         </label>
                         {% if field.widget_type == 'checkbox' %}
                             <div class="flex items-center">
-                                {% render_field field class+="form-checkbox h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" %}
+                                {% render_field field class+="form-input h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 !block !w-auto" %}
                                 <label for="{{ field.id_for_label }}" class="ml-2 block text-sm text-gray-900">{{ field.label }}</label>
                             </div>
                             <script>
-                                // This script hides the main label for the checkbox if it's not part of the flex container above
                                 const label_{{ field.auto_id }} = document.querySelector('label[for="{{ field.id_for_label }}"]');
                                 if (label_{{ field.auto_id }} && !label_{{ field.auto_id }}.closest('.flex')) {
                                     label_{{ field.auto_id }}.classList.add('hidden');
                                 }
                             </script>
                         {% elif field.widget_type == 'select' %}
-                            {% render_field field class+="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                            {% render_field field class+="form-input select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                         {% elif field.widget_type == 'textarea' %}
-                            {% render_field field class+="form-textarea block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="3" %}
+                            {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="3" %}
                         {% elif field.widget_type == 'date' %}
                             {% render_field field class+="form-input flatpickr-date block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                         {% elif field.widget_type == 'clearablefile' %}
-                            {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                             {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                         {% else %}
                             {% render_field field class+="form-input block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                         {% endif %}
@@ -140,13 +127,9 @@
                 }
             }
 
-            // Initialize for existing elements
-            initSelect2('.select2-basic'); // Main form selects
-            initSelect2('#id_target_location');
-            initSelect2('#id_target_point');
-            initFlatpickr(".flatpickr-date"); // Main form datepickers
+            initSelect2('.select2-basic');
+            initFlatpickr(".flatpickr-date");
 
-            // Formset handling
             const container = document.getElementById('item-formset-container');
             const addButton = document.getElementById('add-item-form');
             const emptyFormTemplateNode = document.getElementById('empty-item-form')?.firstElementChild?.cloneNode(true);
@@ -159,49 +142,46 @@
                 function updateElementIndices(elem, index) {
                     const idRegex = new RegExp(`(${prefix}-(\\d+|__prefix__))`, 'g');
                     const nameRegex = new RegExp(`(${prefix}-(\\d+|__prefix__))`, 'g');
-
                     if (elem.id) { elem.id = elem.id.replace(idRegex, `${prefix}-${index}`); }
                     if (elem.name) { elem.name = elem.name.replace(nameRegex, `${prefix}-${index}`); }
-
                     elem.querySelectorAll('label').forEach(label => {
                         if (label.htmlFor) { label.htmlFor = label.htmlFor.replace(idRegex, `${prefix}-${index}`); }
                     });
-                    // Recursively update children
-                     elem.childNodes.forEach(child => {
-                        if (child.nodeType === Node.ELEMENT_NODE) {
-                            updateElementIndices(child, index);
-                        }
+                    elem.childNodes.forEach(child => {
+                        if (child.nodeType === Node.ELEMENT_NODE) { updateElementIndices(child, index); }
                     });
                 }
 
                 addButton.addEventListener('click', function() {
                     const newForm = emptyFormTemplateNode.cloneNode(true);
-                    newForm.classList.remove('deleted'); // Ensure new forms are not marked as deleted
+                    newForm.classList.remove('opacity-50', 'border-l-4', 'border-red-500');
+                    newForm.querySelectorAll('input, select, textarea, button').forEach(el => el.classList.remove('pointer-events-none'));
                     updateElementIndices(newForm, formCount);
                     container.appendChild(newForm);
                     totalFormsInput.value = formCount + 1;
-
-                    const deleteButton = newForm.querySelector('.delete-formset-item');
-                    if (deleteButton) { addDeleteListener(deleteButton); }
-
-                    // Initialize plugins for the new form
-                    initSelect2($(`#${newForm.id} .select2-basic`)); // General selects in formset
-                    initSelect2($(`#${newForm.id} select[name$="-target_point"]`));
-                    initSelect2($(`#${newForm.id} select[name$="-parent_item"]`));
-                    initSelect2($(`#${newForm.id} select[name$="-answer_type"]`));
-                    initFlatpickr($(`#${newForm.id} .flatpickr-date`)); // Datepickers in formset
-
+                    addDeleteListener(newForm.querySelector('.delete-formset-item'));
+                    initSelect2($(`#${newForm.id} .select2-basic`));
+                    initFlatpickr($(`#${newForm.id} .flatpickr-date`));
                     formCount++;
-                    newForm.querySelector('input, textarea, select')?.focus();
+                    newForm.querySelector('input[type="text"], textarea, select')?.focus();
                 });
 
+                function toggleFormElements(formRow, disable) {
+                    formRow.querySelectorAll('input:not([type="checkbox"][id$="-DELETE"]), select, textarea, button:not(.delete-formset-item)')
+                        .forEach(el => el.classList.toggle('pointer-events-none', disable));
+                }
+
                 function addDeleteListener(button) {
+                    if (!button) return;
                     button.addEventListener('click', function() {
                         const formRow = this.closest('.formset-item');
                         const deleteInput = formRow.querySelector('input[type="checkbox"][id$="-DELETE"]');
                         if (deleteInput) {
                             deleteInput.checked = !deleteInput.checked;
-                            formRow.classList.toggle('deleted', deleteInput.checked);
+                            formRow.classList.toggle('opacity-50', deleteInput.checked);
+                            formRow.classList.toggle('border-l-4', deleteInput.checked);
+                            formRow.classList.toggle('border-red-500', deleteInput.checked);
+                            toggleFormElements(formRow, deleteInput.checked);
                             const icon = this.querySelector('i');
                             if (icon) {
                                 icon.classList.toggle('fa-trash', !deleteInput.checked);
@@ -212,41 +192,30 @@
                     });
                 }
 
-                // Add delete listeners and initialize plugins for initially rendered forms
                 container.querySelectorAll('.formset-item').forEach(formRow => {
                     const deleteButton = formRow.querySelector('.delete-formset-item');
                     const deleteInput = formRow.querySelector('input[type="checkbox"][id$="-DELETE"]');
-
-                    if (deleteButton) { addDeleteListener(deleteButton); }
-
+                    addDeleteListener(deleteButton);
                     if (deleteInput && deleteInput.checked) {
-                        formRow.classList.add('deleted');
-                        if(deleteButton){
+                        formRow.classList.add('opacity-50', 'border-l-4', 'border-red-500');
+                        toggleFormElements(formRow, true);
+                        if(deleteButton) {
                             const icon = deleteButton.querySelector('i');
-                            if (icon) {
-                                icon.classList.remove('fa-trash');
-                                icon.classList.add('fa-undo');
-                                deleteButton.title = '{% trans "Восстановить пункт" %}';
-                            }
+                            if (icon) { icon.classList.remove('fa-trash'); icon.classList.add('fa-undo'); deleteButton.title = '{% trans "Восстановить пункт" %}'; }
                         }
                     }
-                    // Init for existing formset forms
                     initSelect2($(`#${formRow.id} .select2-basic`));
-                    initSelect2($(`#${formRow.id} select[name$="-target_point"]`));
-                    initSelect2($(`#${formRow.id} select[name$="-parent_item"]`));
-                    initSelect2($(`#${formRow.id} select[name$="-answer_type"]`));
                     initFlatpickr($(`#${formRow.id} .flatpickr-date`));
                 });
             }
 
-            // Dependent dropdown for Location -> Point
             const locationSelect = document.getElementById('id_target_location');
             const pointSelect = document.getElementById('id_target_point');
-            const pointWrapper = pointSelect?.closest('div'); // The div wrapping the point select
+            const pointWrapper = pointSelect?.closest('div');
 
             if (locationSelect && pointSelect) {
                 const initialPointValue = '{{ form.target_point.value|default:""|escapejs }}';
-                const pointApiUrl = "{% url 'checklists:api:api_checklist_point_list' %}"; // Ensure this URL is correct
+                const pointApiUrl = "{% url 'checklists:api:api_checklist_point_list' %}";
                 const noLocationText = "{% trans "--- Сначала выберите местоположение ---" %}";
                 const selectPointText = "{% trans "--------- Выберите точку ---------" %}";
                 const noPointsText = "{% trans "--- Точек не найдено ---" %}";
@@ -256,58 +225,33 @@
                     const locationId = locationSelect.value;
                     pointSelect.disabled = true;
                     if (pointWrapper) pointWrapper.classList.add('opacity-50');
-                    $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change'); // Clear and set placeholder
+                    $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
 
                     if (locationId) {
-                        const url = `${pointApiUrl}?location=${locationId}`;
-                        fetch(url)
-                            .then(response => response.ok ? response.json() : Promise.reject('Network error or invalid JSON'))
+                        fetch(`${pointApiUrl}?location=${locationId}`)
+                            .then(response => response.ok ? response.json() : Promise.reject('Network error'))
                             .then(data => {
-                                const points = Array.isArray(data) ? data : (data.results || []); // Handle paginated or direct list
-                                $(pointSelect).empty(); // Clear previous options before adding new ones
-                                const placeholderOption = new Option(selectPointText, '', !initialPointValue, !initialPointValue);
-                                $(pointSelect).append(placeholderOption);
-
+                                const points = Array.isArray(data) ? data : (data.results || []);
+                                $(pointSelect).empty().append(new Option(selectPointText, '', !initialPointValue, !initialPointValue));
                                 if (points.length > 0) {
                                     points.forEach(point => {
                                         const option = new Option(point.name, point.id);
-                                        if (initialPointValue && String(point.id) === String(initialPointValue)) {
-                                            option.selected = true;
-                                        }
+                                        if (initialPointValue && String(point.id) === String(initialPointValue)) option.selected = true;
                                         $(pointSelect).append(option);
                                     });
                                     pointSelect.disabled = false;
                                     if (pointWrapper) pointWrapper.classList.remove('opacity-50');
                                 } else {
                                     $(pointSelect).empty().append(new Option(noPointsText, '')).trigger('change');
-                                    pointSelect.disabled = true; // Keep disabled if no points
                                 }
-                                $(pointSelect).trigger('change'); // Notify Select2 of changes
+                                $(pointSelect).trigger('change');
                             })
-                            .catch(error => {
-                                console.error('Error loading points:', error);
-                                $(pointSelect).empty().append(new Option(errorText, '')).trigger('change');
-                                pointSelect.disabled = true;
-                                if (pointWrapper) pointWrapper.classList.add('opacity-50'); // Keep disabled on error
-                            });
-                    } else {
-                        // No location selected
-                        $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
-                        pointSelect.disabled = true;
-                        if (pointWrapper) pointWrapper.classList.add('opacity-50');
-                    }
+                            .catch(error => $(pointSelect).empty().append(new Option(errorText, '')).trigger('change'));
+                    } else if (pointWrapper) pointWrapper.classList.add('opacity-50');
                 }
-
                 $(locationSelect).on('change', updatePointsDropdown);
-
-                // Initial load if location is pre-selected
-                if (locationSelect.value) {
-                    updatePointsDropdown();
-                } else {
-                    pointSelect.disabled = true;
-                    $(pointSelect).empty().append(new Option(noLocationText, '')).trigger('change');
-                    if (pointWrapper) pointWrapper.classList.add('opacity-50');
-                }
+                if (locationSelect.value) updatePointsDropdown();
+                else if (pointWrapper) pointWrapper.classList.add('opacity-50');
             }
         });
     </script>
