@@ -72,7 +72,13 @@
                         <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
                             <a href="{{ template.get_absolute_url }}" class="hover:underline text-blue-600">{{ template.name }} {% if template.version %}(v{{ template.version }}){% endif %}</a>
                         </td>
-                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ template.category.name|default:"-" }}</td>
+                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
+                            {% if template.category %}
+                                {{ template.category.name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ template.item_count_agg|default:template.items.count }}</td>
                         <td class="px-4 py-3 text-center">
                             {% if template.is_active %}

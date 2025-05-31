@@ -7,10 +7,87 @@ import logging
 from ..models import Task
 from urllib.parse import urlencode
 import os
-
+from django.utils.timesince import timesince as timesince_
+from django.utils.translation import gettext_lazy as _
 
 register = template.Library()
 logger = logging.getLogger(__name__)
+
+
+@register.filter
+def filename(value):
+    if hasattr(value, 'name'):
+        return os.path.basename(value.name)
+    return str(value)
+
+@register.filter(name='endswith_date')
+def endswith_date(value):
+    return value.endswith('date') or value.endswith('Date')
+
+@register.filter(name='endswith_datetime')
+def endswith_datetime(value):
+    return value.endswith('datetime') or value.endswith('DateTime')
+
+@register.filter(name='endswith_time')
+def endswith_time(value):
+    return value.endswith('time') or value.endswith('Time')
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
+@register.filter
+def timesince_min_minutes(d, threshold_minutes=1):
+    """
+    Returns timesince if the difference is greater than threshold_minutes,
+    otherwise returns None.
+    threshold_minutes: The minimum difference in minutes to show the timesince.
+    """
+    if not d:
+        return None
+    # Calculate difference in seconds
+    diff_seconds = (timezone.now() - d).total_seconds()
+    if diff_seconds > (threshold_minutes * 60):
+        return timesince_(d)
+    return None
+
+
+# Другие фильтры, если нужны, например, для приоритетов задач
+@register.filter
+def get_priority_border_color(priority_value):
+    # Ваша логика для определения цвета рамки
+    # priority_mapping = {
+    #     Task.TaskPriority.HIGH: "border-red-500",
+    #     Task.TaskPriority.MEDIUM: "border-yellow-500",
+    #     ...
+    # }
+    # return priority_mapping.get(priority_value, "border-gray-300")
+    return "border-gray-300" # Placeholder
+
+@register.filter
+def get_priority_text_color(priority_value):
+    # Ваша логика
+    return "text-gray-700" # Placeholder
+
+@register.simple_tag(takes_context=True)
+def url_replace(context, **kwargs):
+    query = context['request'].GET.copy()
+    for k, v in kwargs.items():
+        query[k] = v
+    return query.urlencode()
+
+@register.filter
+def add_if_not_empty(value, to_add):
+    if value:
+        return str(value) + str(to_add)
+    return ''
+
+@register.filter
+def get_field_label(form, field_name):
+    try:
+        return form.fields[field_name].label
+    except KeyError:
+        return field_name.replace("_", " ").title()
 
 
 @register.filter(name="add_css_class")

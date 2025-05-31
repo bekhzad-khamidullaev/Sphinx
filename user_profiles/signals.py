@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.mail import send_mail, mail_admins
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
-from django.utils.html import strip_tags, format_html # format_html может быть полезен для ссылок в текстовых email
+from django.utils.html import strip_tags, format_html
 from django.contrib.auth.models import Group
 from django.contrib.sessions.models import Session
 from django.utils import timezone
@@ -16,11 +16,10 @@ from django.core.serializers.json import DjangoJSONEncoder
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from .models import User, Team, Department, JobTitle
+from .models import User, Team, Department, JobTitle, TeamMembershipUser
 
 logger = logging.getLogger(__name__)
 
-# --- Кастомные сигналы ---
 user_promoted_to_staff_signal = Signal()
 user_demoted_from_staff_signal = Signal()
 user_account_activated_signal = Signal()
@@ -33,7 +32,6 @@ user_email_changed_signal = Signal()
 user_password_changed_signal = Signal()
 
 
-# --- Helper для WebSocket ---
 def send_websocket_notification(group_name, event_type, message_data):
     try:
         channel_layer = get_channel_layer()
@@ -48,9 +46,8 @@ def send_websocket_notification(group_name, event_type, message_data):
     except Exception as e:
         logger.error(f"Failed sending WS to {group_name}: {e}", exc_info=True)
 
-# --- Helper для логирования действий через стандартный logger ---
 def log_user_activity(user_actor, action_verb, target_object=None, details_dict=None, request=None):
-    actor_username = user_actor.username if user_actor else "System"
+    actor_username = user_actor.username if user_actor and hasattr(user_actor, 'username') else "System"
     target_repr = str(target_object) if target_object else "N/A"
     log_message = f"ACTIVITY_LOG: Actor='{actor_username}', Action='{action_verb}', Target='{target_repr}'"
     extended_details = details_dict.copy() if details_dict else {}
@@ -68,7 +65,6 @@ def log_user_activity(user_actor, action_verb, target_object=None, details_dict=
     logger.info(log_message)
 
 
-# --- User Signals ---
 @receiver(pre_save, sender=User)
 def user_pre_save_handler(sender, instance: User, **kwargs):
     if instance.pk:
@@ -89,23 +85,26 @@ def user_pre_save_handler(sender, instance: User, **kwargs):
 
     if instance.pk and hasattr(instance, '_previous_is_superuser') and instance._previous_is_superuser and not instance.is_superuser:
         if User.objects.filter(is_superuser=True).exclude(pk=instance.pk).count() == 0:
-            logger.warning(f"Attempt to remove superuser status from the last superuser: {instance.username}. Reverting.")
+            logger.warning(f"Signal: Attempt to remove superuser status from the last superuser: {instance.username}. Reverting in signal.")
             instance.is_superuser = True
+
 
 @receiver(post_save, sender=User)
 def user_post_save_notifications_and_logs(sender, instance: User, created: bool, update_fields=None, **kwargs):
     actor = kwargs.get('request_user', instance)
     request_obj = kwargs.get('request', None)
-    
+
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx')
     base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-    user_profile_url = f"{base_site_url}{reverse('admin:user_profiles_user_change', args=[instance.pk])}" # Fallback
-    try: user_profile_url = base_site_url + instance.get_absolute_url()
-    except Exception: pass
+    user_profile_url = f"{base_site_url}{reverse('admin:user_profiles_user_change', args=[instance.pk])}"
+    try:
+        user_profile_url = base_site_url + instance.get_absolute_url()
+    except Exception:
+        pass
 
     if created:
         log_details = {"email": instance.email, "is_staff": instance.is_staff}
-        if actor and actor != instance : log_details["actor_id"] = actor.id
+        if actor and actor != instance : log_details["actor_id"] = actor.id if hasattr(actor, 'id') else str(actor)
         log_user_activity(actor, "USER_CREATED", instance, log_details, request=request_obj)
 
         if instance.get_setting('enable_email_notifications', True):
@@ -122,19 +121,19 @@ def user_post_save_notifications_and_logs(sender, instance: User, created: bool,
                 mail_admins(subject=f"[{site_name}] Новый пользователь: {instance.username}", message=f"Зарегистрирован новый пользователь: {instance.display_name} ({instance.username}, {instance.email}).\nПрофиль: {user_profile_url}", fail_silently=True)
                 logger.info(f"Admin notification for new user {instance.username} sent.")
             except Exception as e: logger.error(f"Failed to send new user notification to admins: {e}")
-    else: 
+    else:
         log_details = {"updated_fields": list(update_fields) if update_fields else "all"}
-        if actor and actor != instance : log_details["actor_id"] = actor.id
+        if actor and actor != instance : log_details["actor_id"] = actor.id if hasattr(actor, 'id') else str(actor)
         log_user_activity(actor, "USER_UPDATED", instance, log_details, request=request_obj)
 
         previous_email = getattr(instance, '_previous_email', instance.email)
         if instance.email != previous_email :
             user_email_changed_signal.send(sender=User, user=instance, old_email=previous_email, new_email=instance.email, actor=actor, request=request_obj)
-        
+
         previous_is_staff = getattr(instance, '_previous_is_staff', None)
         if previous_is_staff is not None and instance.is_staff != previous_is_staff:
             (user_promoted_to_staff_signal if instance.is_staff else user_demoted_from_staff_signal).send(sender=User, user=instance, actor=actor, request=request_obj)
-        
+
         previous_is_active = getattr(instance, '_previous_is_active', None)
         if previous_is_active is not None and instance.is_active != previous_is_active:
             (user_account_activated_signal if instance.is_active else user_account_deactivated_signal).send(sender=User, user=instance, actor=actor, request=request_obj)
@@ -147,10 +146,10 @@ def user_post_save_notifications_and_logs(sender, instance: User, created: bool,
 @receiver(user_password_changed_signal)
 def user_password_changed_notification(sender, user:User, request_info=None, **kwargs):
     actor = kwargs.get('actor', user)
-    actor_username = actor.username if actor else "System"
+    actor_username = actor.username if actor and hasattr(actor, 'username') else "System"
     ip_address = request_info.get('ip_address', _('неизвестен')) if request_info else _('неизвестен')
     log_user_activity(actor, "USER_PASSWORD_CHANGED", user, {"ip_address": ip_address, "request_user_agent": request_info.get('user_agent') if request_info else None}, request=kwargs.get('request'))
-    
+
     if user.get_setting('enable_email_notifications', True):
         try:
             site_name = getattr(settings, 'SITE_NAME', 'Sphinx')
@@ -167,7 +166,6 @@ def user_post_delete_handler(sender, instance: User, **kwargs):
     log_user_activity(actor, "USER_DELETED", details_dict={"username": instance.username, "email": instance.email, "user_id": instance.id}, request=kwargs.get('request'))
 
 
-# --- Team Signals ---
 @receiver(pre_save, sender=Team)
 def team_pre_save_handler(sender, instance: Team, **kwargs):
     if instance.pk:
@@ -184,7 +182,7 @@ def team_post_save_handler(sender, instance: Team, created: bool, **kwargs):
     except: team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[instance.pk])}"
 
     if created:
-        log_details = {"leader_id": instance.team_leader_id, "department_id": instance.department_id, "actor_id": actor.id if actor else None}
+        log_details = {"leader_id": instance.team_leader_id, "department_id": instance.department_id, "actor_id": actor.id if actor and hasattr(actor, 'id') else None}
         log_user_activity(actor, "TEAM_CREATED", instance, log_details, request=kwargs.get('request'))
         if instance.team_leader and instance.team_leader.get_setting('enable_email_notifications', True) and (not actor or actor.id != instance.team_leader_id):
             try:
@@ -193,7 +191,7 @@ def team_post_save_handler(sender, instance: Team, created: bool, **kwargs):
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [instance.team_leader.email], fail_silently=True)
             except Exception as e: logger.error(f"Failed to send team leader assignment email to {instance.team_leader.email}: {e}")
     else:
-        log_details = {"updated_fields": list(kwargs.get('update_fields', [])) or "all", "actor_id": actor.id if actor else None}
+        log_details = {"updated_fields": list(kwargs.get('update_fields', [])) or "all", "actor_id": actor.id if actor and hasattr(actor, 'id') else None}
         log_user_activity(actor, "TEAM_UPDATED", instance, log_details, request=kwargs.get('request'))
         previous_leader_id = getattr(instance, '_previous_team_leader_id', None)
         if previous_leader_id is not None and instance.team_leader_id != previous_leader_id:
@@ -205,50 +203,98 @@ def team_post_delete_handler(sender, instance: Team, **kwargs):
     actor = kwargs.get('request_user', None)
     log_user_activity(actor, "TEAM_DELETED", details_dict={"team_name": instance.name, "team_id": instance.id}, request=kwargs.get('request'))
 
-@receiver(m2m_changed, sender=Team.members.through)
-def team_members_changed_processing(sender, instance: Team, action: str, reverse: bool, model: User, pk_set: set, using: str, **kwargs):
+@receiver(m2m_changed, sender=TeamMembershipUser)
+def team_membership_changed_handler(sender, instance, action: str, reverse: bool, model: type, pk_set: set, **kwargs):
     actor = kwargs.get('request_user', None)
     request_obj = kwargs.get('request', None)
-    changed_users_qs = User.objects.filter(pk__in=pk_set)
-    changed_users_info_log = [f"{u.username}({u.pk})" for u in changed_users_qs]
+
+    if isinstance(instance, User):
+        user_instance = instance
+        if action in ["post_add", "post_remove"]:
+            for team_pk in pk_set:
+                team = Team.objects.filter(pk=team_pk).first()
+                if team:
+                    _process_single_membership_change(team, user_instance, action, actor, request_obj)
+        elif action == "post_clear":
+            log_user_activity(actor or user_instance, "USER_TEAMS_CLEARED", user_instance, {"details": "All teams cleared for user"}, request=request_obj)
+
+    elif isinstance(instance, Team):
+        team_instance = instance
+        if action in ["post_add", "post_remove"]:
+            users_affected_qs = User.objects.filter(pk__in=pk_set)
+            for user_obj in users_affected_qs:
+                _process_single_membership_change(team_instance, user_obj, action, actor, request_obj)
+        elif action == "post_clear":
+            log_user_activity(actor or team_instance.team_leader, "TEAM_MEMBERS_CLEARED", team_instance, {"details": "All members cleared from team"}, request=request_obj)
+            _send_team_list_ws_update(team_instance)
+            send_websocket_notification(f"team_{team_instance.id}", "team_detail_update", {"action": "members_cleared", "id": team_instance.id})
+
+
+def _process_single_membership_change(team: Team, user: User, action: str, actor: User | None, request_obj=None):
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx')
     base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-    try: team_url = base_site_url + instance.get_absolute_url()
-    except: team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[instance.pk])}"
+    try: team_url = base_site_url + team.get_absolute_url()
+    except: team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[team.pk])}"
 
     log_verb = None
     email_subject_template = ""
     email_text_template = ""
+    signal_to_send = None
 
-    if action == "post_add": log_verb = "TEAM_MEMBERS_ADDED"; email_subject_template = _("Вас добавили в команду '{team_name}' в {site_name}"); email_text_template = _("Здравствуйте, {user_name}.\n\n{actor_info} добавил(а) Вас в команду '{team_name}'.\nПодробнее: {team_url}"); [user_assigned_to_team_signal.send(Team, team=instance, user=m, assigner=actor, request=request_obj) for m in changed_users_qs]
-    elif action == "post_remove": log_verb = "TEAM_MEMBERS_REMOVED"; email_subject_template = _("Вас удалили из команды '{team_name}' в {site_name}"); email_text_template = _("Здравствуйте, {user_name}.\n\n{actor_info} удалил(а) Вас из команды '{team_name}'."); [user_removed_from_team_signal.send(Team, team=instance, user=m, remover=actor, request=request_obj) for m in changed_users_qs]
-    elif action == "post_clear": log_verb = "TEAM_MEMBERS_CLEARED"; logger.info(f"{log_verb}: All members cleared from team '{instance.name}' by '{actor.username if actor else 'System'}'.")
-    else: return
+    if action == "post_add":
+        log_verb = "USER_ADDED_TO_TEAM"
+        email_subject_template = _("Вас добавили в команду '{team_name}' в {site_name}")
+        email_text_template = _("Здравствуйте, {user_name}.\n\n{actor_info} добавил(а) Вас в команду '{team_name}'.\nПодробнее: {team_url}")
+        signal_to_send = user_assigned_to_team_signal
+    elif action == "post_remove":
+        log_verb = "USER_REMOVED_FROM_TEAM"
+        email_subject_template = _("Вас удалили из команды '{team_name}' в {site_name}")
+        email_text_template = _("Здравствуйте, {user_name}.\n\n{actor_info} удалил(а) Вас из команды '{team_name}'.")
+        signal_to_send = user_removed_from_team_signal
+    else:
+        return
 
-    if log_verb: log_user_activity(actor, log_verb, instance, {"users_pks": list(pk_set), "users_info": changed_users_info_log}, request=request_obj)
+    log_user_activity(actor, log_verb, target_object=user, details_dict={"team_id": team.id, "team_name": team.name}, request=request_obj)
+
+    if signal_to_send:
+        signal_to_send.send(sender=TeamMembershipUser, team=team, user=user, assigner=actor if action == "post_add" else None, remover=actor if action == "post_remove" else None, request=request_obj)
+
+    if user.get_setting('enable_email_notifications', True) and email_subject_template:
+        try:
+            actor_info_text = _("Администратор")
+            if actor and hasattr(actor, 'display_name') and actor != user:
+                actor_info_text = actor.display_name
+            elif actor and hasattr(actor, 'username') and actor != user:
+                 actor_info_text = actor.username
+
+
+            subject = email_subject_template.format(team_name=team.name, site_name=site_name)
+            message = email_text_template.format(user_name=user.display_name, actor_info=actor_info_text, team_name=team.name, team_url=team_url)
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
+        except Exception as e:
+            logger.error(f"Failed to send '{action}' email to {user.email} for team '{team.name}': {e}")
+
+    _send_team_list_ws_update(team)
     
-    if action in ["post_add", "post_remove"]:
-        for member in changed_users_qs:
-            if member.get_setting('enable_email_notifications', True) and email_subject_template:
-                try:
-                    actor_info = actor.display_name if actor and actor != member else _("Администратор")
-                    subject = email_subject_template.format(team_name=instance.name, site_name=site_name)
-                    message = email_text_template.format(user_name=member.display_name, actor_info=actor_info, team_name=instance.name, team_url=team_url)
-                    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [member.email], fail_silently=True)
-                except Exception as e: logger.error(f"Failed to send '{action}' email to {member.email} for team '{instance.name}': {e}")
-
-    if action in ["post_add", "post_remove", "post_clear"]:
-        current_members_details = [{"id": u.id, "username": u.username, "display_name": u.display_name} for u in instance.members.all()]
-        ws_list_message = {"action": "members_changed", "id": instance.id, "name": instance.name, "member_count": instance.members.count(), "members": current_members_details}
-        send_websocket_notification("teams_list", "team_update", ws_list_message)
-        ws_detail_action = ""; ws_detail_payload = {"id": instance.id}
-        if action == "post_add": ws_detail_action = "members_added"; ws_detail_payload["added_members"] = [{"id":u.id, "username":u.username, "display_name":u.display_name} for u in changed_users_qs]
-        elif action == "post_remove": ws_detail_action = "members_removed"; ws_detail_payload["removed_members_pks"] = list(pk_set)
-        elif action == "post_clear": ws_detail_action = "members_cleared"
-        if ws_detail_action: send_websocket_notification(f"team_{instance.id}", "team_detail_update", {"action": ws_detail_action, **ws_detail_payload})
+    ws_detail_action = ""
+    ws_detail_payload = {"id": team.id}
+    if action == "post_add":
+        ws_detail_action = "member_added"
+        ws_detail_payload["added_member"] = {"id": user.id, "username": user.username, "display_name": user.display_name}
+    elif action == "post_remove":
+        ws_detail_action = "member_removed"
+        ws_detail_payload["removed_member_pk"] = user.pk
+    
+    if ws_detail_action:
+        send_websocket_notification(f"team_{team.id}", "team_detail_update", {"action": ws_detail_action, **ws_detail_payload})
 
 
-# --- Department Signals ---
+def _send_team_list_ws_update(team: Team):
+    current_members_details = [{"id": u.id, "username": u.username, "display_name": u.display_name} for u in team.members.all()]
+    ws_list_message = {"action": "members_changed", "id": team.id, "name": team.name, "member_count": team.members.count(), "members": current_members_details}
+    send_websocket_notification("teams_list", "team_update", ws_list_message)
+
+
 @receiver(pre_save, sender=Department)
 def department_pre_save_handler(sender, instance: Department, **kwargs):
     if instance.pk:
@@ -264,7 +310,7 @@ def department_post_save_handler(sender, instance: Department, created: bool, **
     except: department_url = f"{base_site_url}{reverse('admin:user_profiles_department_change', args=[instance.pk])}"
 
     if created:
-        log_details = {"parent_id": instance.parent_id, "head_id": instance.head_id, "actor_id": actor.id if actor else None}
+        log_details = {"parent_id": instance.parent_id, "head_id": instance.head_id, "actor_id": actor.id if actor and hasattr(actor, 'id') else None}
         log_user_activity(actor, "DEPARTMENT_CREATED", instance, log_details, request=kwargs.get('request'))
         if instance.head and instance.head.get_setting('enable_email_notifications', True) and (not actor or actor.id != instance.head_id):
             try:
@@ -273,7 +319,7 @@ def department_post_save_handler(sender, instance: Department, created: bool, **
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [instance.head.email], fail_silently=True)
             except Exception as e: logger.error(f"Failed to send department head assignment email to {instance.head.email}: {e}")
     else:
-        log_details = {"updated_fields": list(kwargs.get('update_fields', [])) or "all", "actor_id": actor.id if actor else None}
+        log_details = {"updated_fields": list(kwargs.get('update_fields', [])) or "all", "actor_id": actor.id if actor and hasattr(actor, 'id') else None}
         log_user_activity(actor, "DEPARTMENT_UPDATED", instance, log_details, request=kwargs.get('request'))
         previous_head_id = getattr(instance, '_previous_head_id', None)
         if previous_head_id is not None and instance.head_id != previous_head_id:
@@ -286,7 +332,6 @@ def department_post_delete_handler(sender, instance: Department, **kwargs):
     log_user_activity(actor, "DEPARTMENT_DELETED", details_dict={"department_name": instance.name, "department_id": instance.id}, request=kwargs.get('request'))
 
 
-# --- JobTitle Signals ---
 @receiver(post_save, sender=JobTitle)
 def job_title_post_save_handler(sender, instance: JobTitle, created: bool, **kwargs):
     actor = kwargs.get('request_user', None)
@@ -302,18 +347,20 @@ def job_title_post_delete_handler(sender, instance: JobTitle, **kwargs):
     send_websocket_notification("jobtitles_list", "jobtitle_update", {"action": "delete", "id": instance.id, "name": instance.name})
 
 
-# --- User Groups (Permissions) Signals ---
 @receiver(m2m_changed, sender=User.groups.through)
-def user_groups_changed_handler(sender, instance: User, action: str, pk_set: set, reverse: bool, model: Group, **kwargs):
+def user_groups_changed_handler(sender, instance: User, action: str, pk_set: set, reverse: bool, model: type, **kwargs):
     if not reverse and action in ["post_add", "post_remove", "post_clear"]:
         actor = kwargs.get('request_user', None)
         request_obj = kwargs.get('request', None)
+        acting_user_for_log = actor if actor else instance
+
         groups_affected_qs = Group.objects.filter(pk__in=pk_set)
         group_names_affected = list(groups_affected_qs.values_list('name', flat=True))
         log_action_map = {"post_add": "USER_GROUPS_ADDED", "post_remove": "USER_GROUPS_REMOVED", "post_clear": "USER_GROUPS_CLEARED"}
         log_verb = log_action_map.get(action)
 
-        if log_verb: log_user_activity(actor or instance, log_verb, instance, {"groups": group_names_affected or _("все")}, request=request_obj)
+        if log_verb:
+            log_user_activity(acting_user_for_log, log_verb, instance, {"groups": group_names_affected or _("все")}, request=request_obj)
 
         current_groups_list = list(instance.groups.values('id', 'name'))
         ws_message_data = {"action": "permissions_updated", "id": instance.id, "username": instance.username, "groups": current_groups_list, "is_staff": instance.is_staff, "is_superuser": instance.is_superuser}
@@ -324,23 +371,26 @@ def user_groups_changed_handler(sender, instance: User, action: str, pk_set: set
             site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
             try: profile_url = base_site_url + instance.get_absolute_url()
             except: profile_url = f"{base_site_url}{reverse('admin:user_profiles_user_change', args=[instance.pk])}"
+            
             action_readable_map = {"post_add": _("Вам были добавлены группы прав"), "post_remove": _("У Вас были удалены группы прав"), "post_clear": _("Все ваши группы прав были очищены")}
             action_readable = action_readable_map.get(action, _("Ваши группы прав были изменены"))
+            
             if action_readable:
                 try:
                     subject = _("Изменение ваших прав доступа в {site_name}").format(site_name=site_name)
                     message = _("Здравствуйте, {un}.\n\n{ar}: {ga}.\nИзменение сделано: {act}.\nТекущие группы: {cg}.\nПрофиль: {pu}").format(
                         un=instance.display_name, ar=action_readable, ga=', '.join(group_names_affected) if group_names_affected else _("не указаны"),
-                        act=actor.display_name, cg=', '.join([g['name'] for g in current_groups_list]) if current_groups_list else _("нет"), pu=profile_url)
+                        act=actor.display_name if hasattr(actor, 'display_name') else str(actor), 
+                        cg=', '.join([g['name'] for g in current_groups_list]) if current_groups_list else _("нет"), pu=profile_url)
                     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [instance.email], fail_silently=True)
                 except Exception as e: logger.error(f"Failed to send permissions change email to {instance.email}: {e}")
 
-# --- Обработчики кастомных сигналов ---
+
 @receiver(user_promoted_to_staff_signal)
 def process_user_promoted_to_staff(sender, user: User, actor: User = None, **kwargs):
     request_obj = kwargs.get('request', None)
     log_user_activity(actor or user, "USER_PROMOTED_STAFF_SIGNAL", user, {"details": _("Пользователь получил права сотрудника")}, request=request_obj)
-    logger.info(f"User {user.username} promoted to staff. Actor: {actor.username if actor else 'System'}.")
+    logger.info(f"User {user.username} promoted to staff. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}.")
     if user.get_setting('enable_email_notifications', True):
         try:
             site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
@@ -360,7 +410,7 @@ def process_user_promoted_to_staff(sender, user: User, actor: User = None, **kwa
 def process_user_demoted_from_staff(sender, user: User, actor: User = None, **kwargs):
     request_obj = kwargs.get('request', None)
     log_user_activity(actor or user, "USER_DEMOTED_STAFF_SIGNAL", user, {"details": _("У пользователя отозваны права сотрудника")}, request=request_obj)
-    logger.info(f"User {user.username} demoted from staff. Actor: {actor.username if actor else 'System'}.")
+    logger.info(f"User {user.username} demoted from staff. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}.")
     if user.get_setting('enable_email_notifications', True):
         try:
             site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
@@ -379,7 +429,7 @@ def process_user_demoted_from_staff(sender, user: User, actor: User = None, **kw
 def process_user_account_activated(sender, user: User, actor: User = None, **kwargs):
     request_obj = kwargs.get('request', None)
     log_user_activity(actor or user, "USER_ACCOUNT_ACTIVATED_SIGNAL", user, {"details": _("Аккаунт активирован")}, request=request_obj)
-    logger.info(f"User {user.username} account activated. Actor: {actor.username if actor else 'System'}.")
+    logger.info(f"User {user.username} account activated. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}.")
     if user.get_setting('enable_email_notifications', True):
         try:
             site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
@@ -393,7 +443,7 @@ def process_user_account_activated(sender, user: User, actor: User = None, **kwa
 def process_user_account_deactivated(sender, user: User, actor: User = None, **kwargs):
     request_obj = kwargs.get('request', None)
     log_user_activity(actor or user, "USER_ACCOUNT_DEACTIVATED_SIGNAL", user, {"details": _("Аккаунт деактивирован")}, request=request_obj)
-    logger.info(f"User {user.username} account deactivated. Actor: {actor.username if actor else 'System'}.")
+    logger.info(f"User {user.username} account deactivated. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}.")
     if user.get_setting('enable_email_notifications', True):
         try:
             site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
@@ -407,20 +457,20 @@ def process_user_account_deactivated(sender, user: User, actor: User = None, **k
 def process_user_assigned_to_team(sender, team: Team, user: User, assigner: User = None, **kwargs):
     request_obj = kwargs.get('request', None)
     log_user_activity(assigner or user, "USER_ASSIGNED_TO_TEAM_SIGNAL", team, {"user_assigned_id": user.id, "user_assigned_username": user.username}, request=request_obj)
-    logger.info(f"User {user.username} assigned to team {team.name}. Assigner: {assigner.username if assigner else 'System'}.")
+    logger.info(f"User {user.username} assigned to team {team.name}. Assigner: {assigner.username if assigner and hasattr(assigner, 'username') else 'System'}.")
 
 @receiver(user_removed_from_team_signal)
 def process_user_removed_from_team(sender, team: Team, user: User, remover: User = None, **kwargs):
     request_obj = kwargs.get('request', None)
     log_user_activity(remover or user, "USER_REMOVED_FROM_TEAM_SIGNAL", team, {"user_removed_id": user.id, "user_removed_username": user.username}, request=request_obj)
-    logger.info(f"User {user.username} removed from team {team.name}. Remover: {remover.username if remover else 'System'}.")
+    logger.info(f"User {user.username} removed from team {team.name}. Remover: {remover.username if remover and hasattr(remover, 'username') else 'System'}.")
 
 @receiver(department_head_changed_signal)
 def process_department_head_changed(sender, department: Department, new_head: User, old_head: User = None, actor: User = None, **kwargs):
     request_obj = kwargs.get('request', None)
     log_details = {"new_head_id": new_head.id if new_head else None, "old_head_id": old_head.id if old_head else None}
     log_user_activity(actor, "DEPARTMENT_HEAD_CHANGED_SIGNAL", department, log_details, request=request_obj)
-    logger.info(f"Department '{department.name}' head changed. New: {new_head.username if new_head else 'none'}. Old: {old_head.username if old_head else 'none'}. Actor: {actor.username if actor else 'System'}")
+    logger.info(f"Department '{department.name}' head changed. New: {new_head.username if new_head else 'none'}. Old: {old_head.username if old_head else 'none'}. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}")
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
     try: department_url = base_site_url + department.get_absolute_url()
     except: department_url = f"{base_site_url}{reverse('admin:user_profiles_department_change', args=[department.pk])}"
@@ -442,7 +492,7 @@ def process_team_leader_changed(sender, team: Team, new_leader: User, old_leader
     request_obj = kwargs.get('request', None)
     log_details = {"new_leader_id": new_leader.id if new_leader else None, "old_leader_id": old_leader.id if old_leader else None}
     log_user_activity(actor, "TEAM_LEADER_CHANGED", team, log_details, request=request_obj)
-    logger.info(f"Team '{team.name}' leader changed. New: {new_leader.username if new_leader else 'none'}. Old: {old_leader.username if old_leader else 'none'}. Actor: {actor.username if actor else 'System'}")
+    logger.info(f"Team '{team.name}' leader changed. New: {new_leader.username if new_leader else 'none'}. Old: {old_leader.username if old_leader else 'none'}. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}")
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
     try: team_url = base_site_url + team.get_absolute_url()
     except: team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[team.pk])}"
@@ -463,7 +513,7 @@ def process_team_leader_changed(sender, team: Team, new_leader: User, old_leader
 def process_user_email_changed(sender, user:User, old_email:str, new_email:str, actor:User=None, **kwargs):
     request_obj = kwargs.get('request', None)
     log_user_activity(actor or user, "USER_EMAIL_CHANGED_SIGNAL", user, {"old_email": old_email, "new_email": new_email}, request=request_obj)
-    logger.info(f"User {user.username} email changed from {old_email} to {new_email}. Actor: {actor.username if actor else 'System'}")
+    logger.info(f"User {user.username} email changed from {old_email} to {new_email}. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}")
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx')
     try:
         subject = _("Ваш email в системе {site_name} был изменен").format(site_name=site_name)

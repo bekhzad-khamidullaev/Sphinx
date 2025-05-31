@@ -1,15 +1,27 @@
 # user_profiles/apps.py
 from django.apps import AppConfig
-from django.utils.translation import gettext_lazy as _ # For verbose_name
+from django.utils.translation import gettext_lazy as _
 
 class UserProfilesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'user_profiles'
-    verbose_name = _('Профили пользователей и структура') # More descriptive
+    verbose_name = _('Профили пользователей и структура')
 
     def ready(self):
         try:
-            import user_profiles.signals # If you add signals to user_profiles
-            # logger.info("User profiles signals imported.") # Use logger from models
+            import user_profiles.signals
         except ImportError:
-            pass # No signals defined or error importing
+            pass# user_profiles/apps.py
+from django.apps import AppConfig
+from django.utils.translation import gettext_lazy as _
+
+class UserProfilesConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'user_profiles'
+    verbose_name = _('Профили пользователей и структура')
+
+    def ready(self):
+        try:
+            import user_profiles.signals
+        except ImportError:
+            pass
