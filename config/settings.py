@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "tasks",
     "room",
     "checklists",
+    "qrfikr",
 
     "channels",
     "corsheaders",
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     "simple_history",
     "django_select2",
     "widget_tweaks",
+    'phonenumber_field',
     "taggit",
 ]
 
@@ -247,7 +249,7 @@ if "test" in sys.argv:
 
 
 
-SITE_URL = 'http://127.0.0.1:8000' # ИЗМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL ДЛЯ ПРОДАкШЕНА
+SITE_URL = 'http://127.0.0.1:8080' # ИЗМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL ДЛЯ ПРОДАкШЕНА
 SITE_NAME = 'ServiceDesk' # Название вашего проекта/сайта
 
 # Настройки Email (замените на ваши реальные данные)
@@ -275,3 +277,7 @@ NOTIFY_ADMINS_ON_NEW_USER = True # Отправлять ли админам emai
 CHAT_MESSAGES_PAGE_SIZE = 50 # Количество сообщений при подгрузке старых
 MAX_FILE_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'] # MIME types
+
+
+CELERY_BROKER_URL = 'redis://109.94.172.194:6379/0' # Default Redis URL
+CELERY_RESULT_BACKEND = 'redis://109.94.172.194:6379/0' # If you store results in Redis

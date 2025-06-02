@@ -1,0 +1,108 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+    <style>
+        .qr-image-container img { max-width: 300px; max-height: 300px; border: 1px solid #ccc; padding: 5px; margin-top: 10px; }
+        .feedback-url { word-break: break-all; }
+    </style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a> &rsaquo;
+    <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a> &rsaquo;
+    <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
+    {{ qr_link.location.name|truncatewords:"18" }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{{ title }}</h1>
+    <div id="content-main">
+        <fieldset class="module aligned">
+            <h2>{% trans "QR Code Information" %}</h2>
+            <div class="form-row">
+                <div>
+                    <label>{% trans "Location" %}:</label>
+                    <p><a href="{% url 'admin:checklists_location_change' qr_link.location.pk %}">{{ qr_link.location.name }}</a></p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>{% trans "Short Description" %}:</label>
+                    <p>{{ qr_link.short_description|default:"-" }}</p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>{% trans "Active" %}:</label>
+                    <p>{% if qr_link.is_active %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>{% trans "Feedback URL" %}:</label>
+                    {% url 'qrfikr:submit_review_page' qr_uuid=qr_link.id as feedback_path %}
+                    <p class="feedback-url"><a href="{{ settings.SITE_URL|default:'' }}{{ feedback_path }}" target="_blank">{{ settings.SITE_URL|default:'' }}{{ feedback_path }}</a></p>
+                </div>
+            </div>
+
+            {% if qr_link.qr_image %}
+            <div class="form-row">
+                <div>
+                    <label>{% trans "QR Code Image" %}:</label>
+                    <div class="qr-image-container">
+                        <img src="{{ qr_link.qr_image.url }}" alt="{% trans 'QR Code' %}">
+                    </div>
+                    <p><a href="{{ qr_link.qr_image.url }}" download="qr_{{ qr_link.id }}.png" class="button">{% trans "Download QR Image" %}</a></p>
+                </div>
+            </div>
+            {% else %}
+            <div class="form-row">
+                <div>
+                    <label>{% trans "QR Code Image" %}:</label>
+                    <p><em>{% trans "Image not generated yet or generation failed." %}</em></p>
+                </div>
+            </div>
+            {% endif %}
+        </fieldset>
+
+        <div class="submit-row">
+            <a href="{% url 'admin:qrfikr_qrcodelink_change' qr_link.pk %}" class="button">{% trans "Edit this QR Link" %}</a>
+            <form action="{% url 'qrfikr-api:qrcode-regenerate-qr' id=qr_link.pk %}" method="post" style="display: inline;" id="regenerate-form-{{ qr_link.pk }}">
+                {% csrf_token %}
+                <input type="submit" value="{% trans 'Regenerate QR Image' %}" class="button" name="_regenerate_qr">
+            </form>
+        </div>
+
+        <script>
+        // Optional: AJAX submission for regenerate button
+        document.querySelectorAll('form[id^="regenerate-form-"]').forEach(form => {
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}
+                });
+                if (response.ok) {
+                    alert("{% trans 'QR code regeneration scheduled/completed. Please refresh the page after a moment to see the new image.' %}");
+                    // Optionally, try to refresh the image if response contains new URL or just reload
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    const errorData = await response.json();
+                    alert("{% trans 'Error regenerating QR code:' %} " + (errorData.error || response.statusText) );
+                }
+            });
+        });
+        </script>
+    </div>
+</div>
+{% endblock %}

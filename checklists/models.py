@@ -65,7 +65,15 @@ class ChecklistItemStatus(models.TextChoices):
 class Location(models.Model):
     name = models.CharField(max_length=150, unique=True, verbose_name=_("Название Местоположения"))
     description = models.TextField(blank=True, verbose_name=_("Описание"))
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='child_locations', verbose_name=_("Родительское Местоположение"))
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='child_locations',
+        verbose_name=_("Родительское Местоположение")
+    )
+    logo_image = models.ImageField(upload_to='location_logos/%Y/%m/', null=True, blank=True, verbose_name=_("Логотип"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Создан"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Обновлен"))
 
@@ -76,6 +84,14 @@ class Location(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        try:
+            # Используем имя URL-паттерна 'location_detail' из qrfikr/urls.py
+            return reverse('qrfikr:location_detail', kwargs={'pk': self.pk})
+        except Exception:
+            # Запасной URL, если что-то пойдет не так
+            return reverse('tasks:task_list_default') # Или другой подходящий URL
 
 class ChecklistPoint(models.Model):
     location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='points', verbose_name=_("Местоположение"))

@@ -134,7 +134,7 @@ class ChecklistTemplateDetailView(LoginRequiredMixin, DetailView):
                         "target_point", "section"
                     ).order_by("section__order", "order"),
                 ),
-                 Prefetch('tags') # Предзагрузка тегов
+                Prefetch('tags') # Предзагрузка тегов
             )
         )
 
@@ -152,7 +152,7 @@ class ChecklistTemplateDetailView(LoginRequiredMixin, DetailView):
                 items_by_section[item.section].append(item)
             else:
                 unsectioned_items.append(item)
-        
+
         # Сортируем секции по их order
         sorted_sections = sorted(items_by_section.keys(), key=lambda s: s.order)
         context["grouped_items"] = [(section, items_by_section[section]) for section in sorted_sections]
