@@ -1,10 +1,8 @@
-# qrfikr/services/review_task_service.py
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 import logging
 
-# Conditional imports based on app availability
 try:
     from tasks.models import Task, Project, TaskCategory, TaskAssignment
     from user_profiles.models import User
@@ -16,7 +14,6 @@ from qrfikr.models import Review
 
 logger = logging.getLogger(__name__)
 
-# Define these templates at the module level or make them configurable via settings
 DEFAULT_TASK_TITLE_TEMPLATE = _("Low Rating Feedback: {location_name} - {rating}/5")
 DEFAULT_TASK_DESCRIPTION_TEMPLATE = _(
     "A review with a rating of {rating}/5 was submitted for location '{location_name}'.\n\n"
@@ -45,12 +42,11 @@ class ReviewTaskService:
         if not Project: return None
         location = self.review.qr_code_link.location
         
-        # Check for the specific property on the Location instance
         if hasattr(location, 'default_project_for_issues') and location.default_project_for_issues:
             project_candidate = location.default_project_for_issues
             if isinstance(project_candidate, Project):
                 return project_candidate
-            elif isinstance(project_candidate, int): # If it returns a PK
+            elif isinstance(project_candidate, int):
                 try:
                     return Project.objects.get(pk=project_candidate)
                 except Project.DoesNotExist:
@@ -66,14 +62,15 @@ class ReviewTaskService:
         return project
 
     def _get_responsible_user(self):
-        if not User: return None
+        if not User:
+            return None
         location = self.review.qr_code_link.location
 
         if hasattr(location, 'responsible_user') and location.responsible_user:
             user_candidate = location.responsible_user
             if isinstance(user_candidate, User):
                 return user_candidate
-            elif isinstance(user_candidate, int): # If it returns a PK
+            elif isinstance(user_candidate, int):
                 try:
                     return User.objects.get(pk=user_candidate, is_active=True)
                 except User.DoesNotExist:
@@ -86,9 +83,6 @@ class ReviewTaskService:
             except User.DoesNotExist:
                 logger.warning(f"Default responsible user '{default_responsible_username}' not found or inactive.")
         
-        # Fallback: try to find any superuser
-        # superuser = User.objects.filter(is_superuser=True, is_active=True).first()
-        # if superuser: return superuser
         return None
 
 
@@ -112,9 +106,9 @@ class ReviewTaskService:
             logger.info(f"Review {self.review.id} rating ({self.review.rating}) is above threshold. No task created.")
             return None
 
-        if self.review.related_task_id: # Check by ID to avoid unnecessary DB hit if already linked
+        if self.review.related_task_id:
             logger.info(f"Task (ID: {self.review.related_task_id}) already exists for review {self.review.id}. Skipping task creation.")
-            return self.review.related_task # Return existing task
+            return self.review.related_task
 
         project = self._get_task_project()
         responsible_user = self._get_responsible_user()
@@ -153,13 +147,11 @@ class ReviewTaskService:
             description += f"\n{_('Photo attached')}: {photo_url}"
 
         task_status_default = getattr(settings, 'QRFİKR_DEFAULT_TASK_STATUS', 'new')
-        # Ensure the default status is valid, otherwise fallback to a known safe default
         if task_status_default not in [choice[0] for choice in Task.StatusChoices.choices]:
             logger.warning(f"Invalid QRFİKR_DEFAULT_TASK_STATUS '{task_status_default}'. Falling back to 'new'.")
             task_status_default = 'new'
 
-        task_priority_default = getattr(settings, 'QRFİKR_DEFAULT_TASK_PRIORITY', 3) # Assuming 3 is Medium
-        # Ensure the default priority is valid
+        task_priority_default = getattr(settings, 'QRFİKR_DEFAULT_TASK_PRIORITY', 3)
         if task_priority_default not in [choice[0] for choice in Task.TaskPriority.choices]:
             logger.warning(f"Invalid QRFİKR_DEFAULT_TASK_PRIORITY '{task_priority_default}'. Falling back to Medium (3).")
             task_priority_default = 3
@@ -172,11 +164,9 @@ class ReviewTaskService:
             'status': task_status_default,
             'priority': task_priority_default,
             'category': category,
-            # 'created_by': Set if you have a system user, or leave as None
         }
         
         try:
-            # Use a system user if available, otherwise task created anonymously or by logic in Task.save()
             system_user_name = getattr(settings, 'QRFİKR_TASK_CREATOR_USERNAME', None)
             system_user = None
             if system_user_name and User:
@@ -193,8 +183,8 @@ class ReviewTaskService:
                 TaskAssignment.objects.create(
                     task=task,
                     user=responsible_user,
-                    role=TaskAssignment.RoleChoices.RESPONSIBLE, 
-                    assigned_by=system_user # Task creator can be the assigner
+                    role=TaskAssignment.RoleChoices.RESPONSIBLE,
+                    assigned_by=system_user
                 )
                 logger.info(f"Assigned {responsible_user.username} as responsible for task {task.id if task else 'N/A'}")
             

@@ -1,4 +1,3 @@
-# qrfikr/forms.py
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from .models import Review
@@ -79,9 +78,6 @@ class ReviewForm(forms.ModelForm):
         if rating is None:
             raise forms.ValidationError(_("A rating is required."), code='rating_missing')
         
-        # Проверяем, что значение рейтинга находится в допустимом диапазоне (1-5)
-        # Это также покрывается min_value/max_value в определении поля, но можно и здесь.
-        # RATING_CHOICES берутся из модели Review
         valid_ratings = [choice[0] for choice in Review.RATING_CHOICES]
         if rating not in valid_ratings:
              raise forms.ValidationError(_("Invalid rating value selected."), code='invalid_rating')
@@ -90,7 +86,7 @@ class ReviewForm(forms.ModelForm):
     def clean_photo(self):
         photo = self.cleaned_data.get('photo', False)
         if photo:
-            if photo.size > 5 * 1024 * 1024: # 5MB
+            if photo.size > 5 * 1024 * 1024:
                 raise forms.ValidationError(_("The photo file is too large (max 5MB)."))
             
             valid_image_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']

@@ -1,4 +1,3 @@
-# qrfikr/templatetags/form_attrs.py
 from django import template
 from django.forms.boundfield import BoundField
 
@@ -13,4 +12,4 @@ def attr(field, attrs_str):
                 key, value = pair.split(':', 1)
                 attrs[key.strip()] = value.strip()
         return field.as_widget(attrs=attrs)
-    return str(field) # Or raise an error
+    return str(field)

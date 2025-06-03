@@ -1,4 +1,3 @@
-# room/views.py
 import logging
 import uuid
 from datetime import datetime, timezone as dt_timezone
@@ -17,8 +16,10 @@ from django.utils import timezone
 from django.urls import reverse
 from django.db import transaction
 
+import re
 from .models import Room, Message, MessageReadStatus
 from .forms import RoomForm
+from tasks.models import Task
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -73,6 +74,14 @@ def room_detail_view(request, slug):
     except Room.DoesNotExist:
         raise Http404(_("Чат-комната не найдена или заархивирована."))
 
+    task_match = re.match(r'^task-(\d+)$', slug)
+    related_task = None
+    if task_match:
+        try:
+            related_task = Task.objects.get(pk=int(task_match.group(1)))
+        except Task.DoesNotExist:
+            related_task = None
+
     if room_obj.private and not room_obj.participants.filter(pk=user.pk).exists() and room_obj.creator != user:
         django_messages.error(request, _("У вас нет доступа к этой приватной комнате."))
         return redirect('room:rooms')
@@ -124,10 +133,11 @@ def room_detail_view(request, slug):
 
     context = {
         'room': room_obj,
-        'messages_list': initial_messages, # messages_list - это имя переменной, используемое в шаблоне
+        'messages_list': initial_messages,
         'rooms_for_sidebar': rooms_for_sidebar_qs,
         'page_title': room_obj.name,
         'chat_messages_page_size': settings.CHAT_MESSAGES_PAGE_SIZE,
+        'related_task': related_task,
     }
     return render(request, 'room/room_detail.html', context)
 

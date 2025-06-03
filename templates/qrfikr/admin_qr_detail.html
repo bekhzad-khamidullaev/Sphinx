@@ -60,7 +60,7 @@
                     <div class="qr-image-container">
                         <img src="{{ qr_link.qr_image.url }}" alt="{% trans 'QR Code' %}">
                     </div>
-                    <p><a href="{{ qr_link.qr_image.url }}" download="qr_{{ qr_link.id }}.png" class="button">{% trans "Download QR Image" %}</a></p>
+                    <p><a href="{{ qr_link.qr_image.url }}" download="qr_{{ qr_link.id }}.png" class="btn btn-secondary">{% trans "Download QR Image" %}</a></p>
                 </div>
             </div>
             {% else %}
@@ -74,10 +74,10 @@
         </fieldset>
 
         <div class="submit-row">
-            <a href="{% url 'admin:qrfikr_qrcodelink_change' qr_link.pk %}" class="button">{% trans "Edit this QR Link" %}</a>
+            <a href="{% url 'admin:qrfikr_qrcodelink_change' qr_link.pk %}" class="btn btn-secondary">{% trans "Edit this QR Link" %}</a>
             <form action="{% url 'qrfikr-api:qrcode-regenerate-qr' id=qr_link.pk %}" method="post" style="display: inline;" id="regenerate-form-{{ qr_link.pk }}">
                 {% csrf_token %}
-                <input type="submit" value="{% trans 'Regenerate QR Image' %}" class="button" name="_regenerate_qr">
+                <input type="submit" value="{% trans 'Regenerate QR Image' %}" class="btn btn-primary" name="_regenerate_qr">
             </form>
         </div>
 

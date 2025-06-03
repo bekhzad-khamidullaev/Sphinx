@@ -48,12 +48,15 @@
         {% endif %}
         {% if perms.tasks.delete_task or can_delete_task %}
         <a href="{% url 'tasks:task_delete' pk=task_instance.pk %}"
-            class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
+            class="btn bg-red-500 text-white hover:bg-red-600">
             <i class="fas fa-trash mr-2" aria-hidden="true"></i> {% trans 'Удалить' %}
         </a>
         {% endif %}
+        <a href="{{ chat_room_url }}" class="btn btn-primary">
+            <i class="fas fa-comments mr-2" aria-hidden="true"></i> {% trans 'Чат' %}
+        </a>
         <a href="{% url 'tasks:task_list' %}"
-            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all">
+            class="btn btn-secondary">
             <i class="fas fa-arrow-left mr-2" aria-hidden="true"></i> {% trans 'К списку' %}
         </a>
     </div>
