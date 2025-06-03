@@ -226,9 +226,10 @@ class TaskDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             "defaultAvatarUrl": static('img/user.svg'), # Make sure this static file exists
             "translations": translations_for_js
         }
-        context['task_detail_json_data'] = task_data_for_js # Pass as dict
+        context['task_detail_json_data'] = task_data_for_js
 
         context['status_choices_json'] = json.dumps(list(Task.StatusChoices.choices), cls=DjangoJSONEncoder)
+        context['chat_room_url'] = task_instance.get_chat_room_url()
         return context
 
     def post(self, request, *args, **kwargs): # For comment submission

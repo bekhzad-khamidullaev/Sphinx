@@ -1,16 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
-from django.views.generic import DetailView, FormView, TemplateView
+from django.views.generic import DetailView
 from django.utils.translation import gettext_lazy as _
 from django.contrib import messages
 from django.urls import reverse
-from django.conf import settings # For SITE_URL
+from django.conf import settings
 import logging
 from checklists.models import Location
 
 from .models import QRCodeLink, Review
 from .forms import ReviewForm
-# serializers are not directly used in Django template views unless for specific JS interop
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class SubmitReviewView(View):
                 review = form.save(commit=False)
                 review.qr_code_link = qr_link
                 review.ip_address = self.get_client_ip(request)
-                review.user_agent = request.META.get('HTTP_USER_AGENT', '')[:255] # Truncate if necessary
+                review.user_agent = request.META.get('HTTP_USER_AGENT', '')[:255]
                 review.save()
                 
                 logger.info(f"Review {review.id} submitted for QR {qr_uuid} from IP {review.ip_address}")
@@ -63,8 +62,6 @@ class SubmitReviewView(View):
                 messages.error(request, _("An error occurred while submitting your feedback. Please try again later."))
         else:
             logger.warning(f"Invalid review form for QR {qr_uuid}: {form.errors.as_json()}")
-            # Don't add generic "correct errors" if specific errors are shown by form rendering
-            # messages.error(request, _("Please correct the errors shown below."))
 
         context = {
             'qr_link': qr_link,
@@ -88,7 +85,6 @@ class ThankYouView(View):
         }
         return render(request, self.template_name, context)
 
-# Admin specific detail view for QR code
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 
@@ -96,7 +92,7 @@ from django.utils.decorators import method_decorator
 class AdminQRCodeDetailView(View):
     template_name = 'qrfikr/admin_qr_detail.html'
 
-    def get(self, request, pk): # pk here is the QRCodeLink id
+    def get(self, request, pk):
         qr_link = get_object_or_404(QRCodeLink.objects.select_related('location'), pk=pk)
         context = {
             'qr_link': qr_link,
@@ -110,15 +106,10 @@ class AdminQRCodeDetailView(View):
 
 class LocationDetailView(DetailView):
     model = Location
-    template_name = 'qrfikr/location_detail.html' # Вам нужно будет создать этот шаблон
-    context_object_name = 'location_object' # Имя переменной для объекта Location в шаблоне
+    template_name = 'qrfikr/location_detail.html'
+    context_object_name = 'location_object'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Добавляем название страницы в контекст
-        context['page_title'] = self.object.name 
-        # Вы можете добавить сюда любую другую информацию, которую хотите отобразить
-        # Например, список QR-кодов, связанных с этой локацией, или отзывы.
-        # context['related_qr_codes'] = QRCodeLink.objects.filter(location=self.object)
-        # context['reviews_for_location'] = Review.objects.filter(qr_code_link__location=self.object).order_by('-submitted_at')[:5]
+        context['page_title'] = self.object.name
         return context

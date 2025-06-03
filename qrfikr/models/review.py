@@ -1,16 +1,14 @@
-# qrfikr/models/review.py
 import uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-from phonenumber_field.modelfields import PhoneNumberField # Optional
+from phonenumber_field.modelfields import PhoneNumberField
 
 from .qr_code import QRCodeLink
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Ensure tasks.Task can be imported
 try:
     from tasks.models import Task
 except ImportError:
@@ -50,7 +48,7 @@ class Review(models.Model):
         verbose_name=_("Review Text")
     )
     photo = models.ImageField(
-        upload_to='review_photos/%Y/%m/%d/', # Added year/month/day subdirectories
+        upload_to='review_photos/%Y/%m/%d/',
         blank=True, null=True,
         verbose_name=_("Photo")
     )
@@ -60,8 +58,6 @@ class Review(models.Model):
         verbose_name=_("Contact Information (Phone/Email)"),
         help_text=_("Optional, if you want us to contact you.")
     )
-    # Example using django-phonenumber-field
-    # contact_phone = PhoneNumberField(blank=True, null=True, verbose_name=_("Contact Phone"))
     
     submitted_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Submitted At"), db_index=True)
     related_task = models.ForeignKey(

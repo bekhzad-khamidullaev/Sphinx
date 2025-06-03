@@ -9,7 +9,7 @@ from qrfikr.models import QRCodeLink, Review
 from qrfikr.serializers import (
     QRCodeLinkSerializer, ReviewCreateSerializer, ReviewDisplaySerializer
 )
-from qrfikr.tasks import generate_qr_image_task # Celery task
+from qrfikr.tasks import generate_qr_image_task
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +17,10 @@ class QRCodeLinkViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = QRCodeLink.objects.filter(is_active=True).select_related('location')
     serializer_class = QRCodeLinkSerializer
     permission_classes = [permissions.AllowAny]
-    lookup_field = 'id' # Should be 'pk' or 'id' if your model uses UUID as pk.
-                        # If you used 'qr_uuid' in URL, then lookup_field='qr_uuid' and ensure model has it.
-                        # Model has 'id' as UUIDField pk, so 'id' or 'pk' is fine.
+    lookup_field = 'id'
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
-    def regenerate_qr(self, request, id=None): # Changed lookup_field from pk to id to match model
+    def regenerate_qr(self, request, id=None):
         qr_link = self.get_object()
         try:
             generate_qr_image_task.delay(str(qr_link.id))
@@ -44,21 +42,19 @@ class QRCodeLinkViewSet(viewsets.ReadOnlyModelViewSet):
 class ReviewViewSet(mixins.CreateModelMixin,
                     mixins.RetrieveModelMixin,
                     mixins.ListModelMixin,
-                    viewsets.GenericViewSet): # No Update or Destroy for public
+                    viewsets.GenericViewSet):
     queryset = Review.objects.all().select_related('qr_code_link__location', 'related_task').order_by('-submitted_at')
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['qr_code_link__location', 'rating'] # Filter by location ID via qr_code_link
+    filterset_fields = ['qr_code_link__location', 'rating']
 
     def get_serializer_class(self):
         if self.action == 'create':
             return ReviewCreateSerializer
-        return ReviewDisplaySerializer # For list and retrieve
+        return ReviewDisplaySerializer
 
     def get_permissions(self):
         if self.action == 'create':
             return [permissions.AllowAny()]
-        # For list/retrieve, decide if it's admin-only or public (e.g., for showing reviews for a location)
-        # For now, let's make list/retrieve admin only for simplicity.
         return [permissions.IsAdminUser()]
 
     def perform_create(self, serializer):
@@ -69,6 +65,5 @@ class ReviewViewSet(mixins.CreateModelMixin,
         if x_forwarded_for:
             ip_address = x_forwarded_for.split(',')[0].strip()
         
-        # The 'qr_code_link' is passed as PK in request data, serializer handles fetching the instance.
         serializer.save(ip_address=ip_address, user_agent=user_agent)
         logger.info(f"Review created via API. QR Link: {serializer.instance.qr_code_link_id}, Rating: {serializer.instance.rating}, IP: {ip_address}")

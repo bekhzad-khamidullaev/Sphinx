@@ -86,6 +86,11 @@
                     <h1 class="text-xl font-semibold text-gray-800 truncate pr-4" title="{{ room.name }}">
                         # {{ room.name }}
                     </h1>
+                    {% if related_task %}
+                    <a href="{{ related_task.get_absolute_url }}" class="btn btn-secondary ml-2">
+                        <i class="fas fa-tasks mr-1"></i> {% trans 'Задача' %}
+                    </a>
+                    {% endif %}
                 </div>
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open"

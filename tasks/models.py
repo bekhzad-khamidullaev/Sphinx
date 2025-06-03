@@ -355,6 +355,18 @@ class Task(BaseModel):
     def get_absolute_url(self):
         return reverse("tasks:task_detail", kwargs={"pk": self.pk})
 
+    def get_chat_room(self):
+        from room.models import Room
+        slug = f"task-{self.pk}"
+        defaults = {"name": f"Task #{self.pk}", "creator": self.created_by}
+        room, _ = Room.objects.get_or_create(slug=slug, defaults=defaults)
+        if self.created_by and self.created_by not in room.participants.all():
+            room.participants.add(self.created_by)
+        return room
+
+    def get_chat_room_url(self):
+        return self.get_chat_room().get_absolute_url()
+
     class Meta:
         verbose_name = _("Задача")
         verbose_name_plural = _("Задачи")

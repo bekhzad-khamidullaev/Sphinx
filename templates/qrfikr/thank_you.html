@@ -18,16 +18,14 @@
         </p>
         {# Это условие теперь должно работать, если get_absolute_url определен в модели Location #}
         {% if qr_link and qr_link.location and qr_link.location.get_absolute_url %}
-        <a href="{{ qr_link.location.get_absolute_url }}"
-           class="inline-block py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out mr-2">
+        <a href="{{ qr_link.location.get_absolute_url }}" class="btn btn-primary mr-2">
             {% trans "Back to Location Details" %}
         </a>
-        <a href="{% url 'tasks:task_list_default' %}" 
-           class="inline-block py-2 px-4 bg-slate-500 hover:bg-slate-600 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out">
+        <a href="{% url 'tasks:task_list_default' %}" class="btn btn-secondary">
             {% trans "Return to Home" %}
         </a>
         {% else %}
-         <a href="{% url 'tasks:task_list_default' %}" class="inline-block py-3 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out text-base">
+         <a href="{% url 'tasks:task_list_default' %}" class="btn btn-primary">
             {% trans "Return to Home" %}
          </a>
         {% endif %}
