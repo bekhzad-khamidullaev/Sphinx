@@ -22,14 +22,14 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 # --- Base CSS Classes for Form Widgets ---
-BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out     "
+BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out dark:bg-dark-600 dark:border-dark-500 dark:text-gray-200 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
 TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
 TEXTAREA_CLASSES = f"form-textarea {BASE_INPUT_CLASSES}"
 SELECT_CLASSES = f"form-select {BASE_INPUT_CLASSES}" # For native selects if not using Select2
 DATE_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES} flatpickr-date" # For Flatpickr
 DATETIME_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES} flatpickr-datetime" # For Flatpickr
-FILE_INPUT_CLASSES = "form-control block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition duration-150 ease-in-out      "
-CHECKBOX_CLASSES = "form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500    "
+FILE_INPUT_CLASSES = "form-control block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition duration-150 ease-in-out dark:text-gray-300 dark:border-dark-500 dark:bg-dark-600 dark:file:bg-blue-800 dark:file:text-blue-300 dark:hover:file:bg-blue-700"
+CHECKBOX_CLASSES = "form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 dark:bg-dark-600 dark:border-dark-500 dark:checked:bg-indigo-500 dark:focus:ring-indigo-400"
 
 # URL name for user autocomplete, used by django-select2
 USER_AUTOCOMPLETE_URL_NAME = 'tasks:user_autocomplete' # Make sure this matches your urls.py
@@ -78,7 +78,7 @@ class ProjectForm(CrispyFormMixin, forms.ModelForm):
                 'description',
                 'owner',
                 'is_active',
-                css_class="mb-4 p-4 border rounded-lg border-gray-200 "
+                css_class="mb-4 p-4 border rounded-lg border-gray-200 dark:border-dark-600"
             ),
             Fieldset(
                 _("Сроки проекта"),
@@ -86,7 +86,7 @@ class ProjectForm(CrispyFormMixin, forms.ModelForm):
                     Column('start_date', css_class='md:w-1/2 pr-2'), # Added pr-2 for spacing
                     Column('end_date', css_class='md:w-1/2 pl-2')   # Added pl-2 for spacing
                 ),
-                css_class="mb-4 p-4 border rounded-lg border-gray-200 "
+                css_class="mb-4 p-4 border rounded-lg border-gray-200 dark:border-dark-600"
             ),
         )
 
@@ -262,7 +262,7 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
             if not self.initial.get('start_date'):
                 self.fields['start_date'].initial = timezone.now().date()
             if not self.initial.get('status'):
-                self.fields['status'].initial = Task.StatusChoices.BACKLOG # Or NEW
+                self.fields['status'].initial = Task.StatusChoices.NEW # Or NEW
 
         # Logic for dependent subcategory field based on category
         category_id_from_data = self.data.get(self.add_prefix('category')) if self.is_bound else None
@@ -293,7 +293,7 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
             Fieldset(
                 _('Основная информация'),
                 Field('project'), Field('title'), Field('description'),
-                css_class="mb-4 p-4 border rounded-lg border-gray-200 "
+                css_class="mb-4 p-4 border rounded-lg border-gray-200 dark:border-dark-600"
             ),
             Fieldset(
                 _('Классификация и Детализация'),
@@ -305,7 +305,7 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
                     Column(Field('status', wrapper_class="flex-grow"), css_class='md:w-1/2 pr-2 mb-4 md:mb-0'),
                     Column(Field('priority', wrapper_class="flex-grow"), css_class='md:w-1/2 pl-2')
                 , css_class="flex flex-col md:flex-row mb-4"),
-                css_class="mb-4 p-4 border rounded-lg border-gray-200 "
+                css_class="mb-4 p-4 border rounded-lg border-gray-200 dark:border-dark-600"
             ),
             Fieldset(
                 _('Сроки и Оценка'),
@@ -314,14 +314,14 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
                     Column(Field('due_date', wrapper_class="flex-grow"), css_class='md:w-1/3 px-1 mb-4 md:mb-0'), # px-1 for spacing
                     Column(Field('estimated_time', wrapper_class="flex-grow"), css_class='md:w-1/3 pl-2')
                 , css_class="flex flex-col md:flex-row mb-4"),
-                css_class="mb-4 p-4 border rounded-lg border-gray-200 "
+                css_class="mb-4 p-4 border rounded-lg border-gray-200 dark:border-dark-600"
             ),
             Fieldset(
                 _('Участники'),
                 Field('responsible_user', css_class="mb-4"),
                 Field('executors', css_class="mb-4"),
                 Field('watchers', css_class="mb-4"),
-                css_class="p-4 border rounded-lg border-gray-200 "
+                css_class="p-4 border rounded-lg border-gray-200 dark:border-dark-600"
             )
         )
 

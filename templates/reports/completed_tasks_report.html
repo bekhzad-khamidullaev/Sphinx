@@ -19,7 +19,7 @@
 
 {% block content %}
 <div id="content-main">
-    <p class="mb-4 text-sm text-gray-600 ">
+    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
         {% blocktrans with start_date=start_date|date:"d.m.Y" end_date=end_date|date:"d.m.Y" %}
         Отчет по задачам, завершенным в период с {{ start_date }} по {{ end_date }}.
         {% endblocktrans %}

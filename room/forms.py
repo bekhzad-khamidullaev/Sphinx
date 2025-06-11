@@ -8,7 +8,7 @@ from .models import Room
 
 User = get_user_model()
 
-# --- Обновленные CSS классы (без  ---
+# --- Обновленные CSS классы (без dark:) ---
 BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out"
 TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
 # SELECT_MULTI_CLASSES = f"form-multiselect {BASE_INPUT_CLASSES} h-40" # Заменяется на Select2

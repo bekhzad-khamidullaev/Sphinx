@@ -207,7 +207,7 @@ class Task(BaseModel):
         HIGH = 1, _("Высокий")
 
     class StatusChoices(models.TextChoices):
-        BACKLOG = "backlog", _("Бэклог")
+        # BACKLOG = "backlog", _("Бэклог")
         NEW = "new", _("Новая") # "TODO" might be better than "NEW"
         IN_PROGRESS = "in_progress", _("В работе")
         ON_HOLD = "on_hold", _("Отложена")

@@ -12,7 +12,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = [
-            'id', 'name', 'description', 'parent', 'parent_name',
+            'id', 'name', 'description', 'parent', 'parent_name', 
             'head', 'head_display_name', 'employee_count', 'team_count',
             'created_at', 'updated_at',
         ]
@@ -26,7 +26,7 @@ class JobTitleSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'user_count']
         read_only_fields = ('user_count',)
 
-class UserNestedSerializer(serializers.ModelSerializer):
+class UserNestedSerializer(serializers.ModelSerializer): # For nesting in Team/Dept
     class Meta:
         model = User
         fields = ['id', 'username', 'display_name', 'email', 'image']
@@ -38,74 +38,48 @@ class UserSerializer(serializers.ModelSerializer):
     job_title_name = serializers.CharField(source='job_title.name', read_only=True, allow_null=True)
     team_names = serializers.SerializerMethodField(read_only=True)
     group_names = serializers.SerializerMethodField(read_only=True)
-    image_url = serializers.ImageField(source='image', read_only=True)
-    teams = serializers.PrimaryKeyRelatedField(many=True, queryset=Team.objects.all(), required=False, write_only=True)
+    image_url = serializers.ImageField(source='image', read_only=True) # Expose URL
 
     class Meta:
         model = User
         fields = [
             "id", "username", "display_name", "first_name", "last_name", "email",
-            "phone_number",
-            "job_title", "job_title_name",
+            "phone_number", 
+            "job_title", "job_title_name", 
             "department", "department_name",
-            "image", "image_url",
+            "image", "image_url", # image for upload, image_url for read
             "is_active", "is_staff", "is_superuser", "date_joined", "last_login",
-            "team_names", "teams", "group_names", "settings"
+            "team_names", "group_names", "settings"
         ]
-        read_only_fields = ('date_joined', 'last_login', 'is_superuser', 'image_url', 'team_names', 'group_names')
+        read_only_fields = ('date_joined', 'last_login', 'is_superuser', 'image_url')
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8, 'style': {'input_type': 'password'}},
-            'first_name': {'required': False},
+            'first_name': {'required': False}, # Example: make optional through API
             'last_name': {'required': False},
         }
 
     def get_team_names(self, obj):
-        return list(obj.teams.all().values_list('name', flat=True))
+        return list(obj.teams.values_list('name', flat=True))
 
     def get_group_names(self, obj):
         return list(obj.groups.values_list('name', flat=True))
 
     def create(self, validated_data):
-        teams_data = validated_data.pop('teams', None)
-        groups_data = validated_data.pop('groups', None)
-        user_permissions_data = validated_data.pop('user_permissions', None)
-
+        # Handle password hashing for user creation
         password = validated_data.pop('password', None)
         user = User(**validated_data)
         if password:
             user.set_password(password)
         user.save()
-
-        if teams_data is not None:
-            user.teams.set(teams_data)
-        if groups_data is not None:
-            user.groups.set(groups_data)
-        if user_permissions_data is not None:
-            user.user_permissions.set(user_permissions_data)
-            
         return user
 
     def update(self, instance, validated_data):
-        teams_data = validated_data.pop('teams', None)
-        groups_data = validated_data.pop('groups', None)
-        user_permissions_data = validated_data.pop('user_permissions', None)
-
+        # Handle password update if provided
         password = validated_data.pop('password', None)
         if password:
             instance.set_password(password)
-        
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        if teams_data is not None:
-            instance.teams.set(teams_data)
-        if groups_data is not None:
-            instance.groups.set(groups_data)
-        if user_permissions_data is not None:
-            instance.user_permissions.set(user_permissions_data)
-            
-        return instance
+        # Update other fields
+        return super().update(instance, validated_data)
 
 
 class TeamSerializer(serializers.ModelSerializer):
@@ -113,20 +87,19 @@ class TeamSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source='department.name', read_only=True, allow_null=True)
     member_count = serializers.IntegerField(source='members.count', read_only=True)
     members_details = UserNestedSerializer(source='members', many=True, read_only=True)
-    members = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all(), required=False, write_only=True)
-
 
     class Meta:
         model = Team
         fields = [
-            'id', 'name', 'description',
-            'team_leader', 'team_leader_details',
-            'department', 'department_name',
-            'members', 'members_details', 
+            'id', 'name', 'description', 
+            'team_leader', 'team_leader_details', 
+            'department', 'department_name', 
+            'members', 'members_details', # 'members' for writing IDs, 'members_details' for reading
             'created_at', 'updated_at', 'member_count',
         ]
-        read_only_fields = ('created_at', 'updated_at', 'member_count', 'members_details')
-        extra_kwargs = {
+        read_only_fields = ('created_at', 'updated_at', 'member_count')
+        extra_kwargs = { # For write operations on M2M/FK if not using nested writes
+            'members': {'write_only': True, 'required': False},
             'team_leader': {'allow_null': True, 'required': False},
             'department': {'allow_null': True, 'required': False},
         }

@@ -11,7 +11,7 @@
 
 {% block list_actions %}
     <div class="flex items-center ml-4">
-        <div class="inline-flex rounded-md shadow-sm" role="group">
+        <div class="inline-flex rounded-md shadow-xs" role="group">
             <a href="{% url 'checklists:template_create' %}"
                class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 transition-colors duration-150">
                 <i class="fas fa-plus mr-2 text-indigo-500"></i> {% trans 'Создать шаблон' %}
@@ -72,13 +72,7 @@
                         <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
                             <a href="{{ template.get_absolute_url }}" class="hover:underline text-blue-600">{{ template.name }} {% if template.version %}(v{{ template.version }}){% endif %}</a>
                         </td>
-                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
-                            {% if template.category %}
-                                {{ template.category.name }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
+                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ template.category.name|default:"-" }}</td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ template.item_count_agg|default:template.items.count }}</td>
                         <td class="px-4 py-3 text-center">
                             {% if template.is_active %}
@@ -115,7 +109,4 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script>
-        if (typeof Flowbite !== 'undefined' && typeof initFlowbite === 'function') initFlowbite();
-    </script>
 {% endblock %}

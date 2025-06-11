@@ -35,7 +35,10 @@ INSTALLED_APPS = [
     "tasks.apps.TasksConfig",
     "room.apps.RoomConfig",
     "checklists.apps.ChecklistsConfig",
+<<<<<<< HEAD
     "qrfikr.apps.QrfikrConfig",
+=======
+>>>>>>> 229e1b6a0a57a7932eb32d4e78dbb86e2edf8053
 
     "channels",
     "corsheaders",

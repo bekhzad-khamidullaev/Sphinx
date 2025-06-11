@@ -1,41 +1,54 @@
 # user_profiles/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.db import models
+from django.db import models # For annotations if needed
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import User, Team, Department, JobTitle, TeamMembershipUser
+from .models import User, Team, Department, JobTitle
 
-class UserTeamsInline(admin.TabularInline):
-    model = TeamMembershipUser
-    fk_name = 'user'
-    verbose_name = _("Участие в команде")
-    verbose_name_plural = _("Участия в командах")
-    extra = 1
-    autocomplete_fields = ('team',)
-    fields = ('team', 'date_joined')
-    readonly_fields = ('date_joined',)
+class TeamMembershipInline(admin.TabularInline):
+    model = Team.members.through # Standard way to access M2M through table
+    verbose_name = _("Членство в команде")
+    verbose_name_plural = _("Членства в командах")
+    extra = 0
+    fields = ('team_link',) # Only show link to team
+    readonly_fields = ('team_link',)
+    can_delete = True # Allow removing user from team via this inline, but not deleting team itself
+    # autocomplete_fields = ('team',) # Requires TeamAdmin to have search_fields
+
+    def team_link(self, instance):
+        # instance here is the through model instance (e.g., Team_members)
+        team_obj = instance.team # Access the related team
+        if team_obj:
+            link = reverse("admin:user_profiles_team_change", args=[team_obj.id])
+            return format_html('<a href="{}">{}</a>', link, team_obj.name)
+        return "-"
+    team_link.short_description = _("Команда")
+
+    def has_add_permission(self, request, obj=None):
+        # Adding membership is usually done via Team admin or User admin's M2M field
+        return False # Disable direct adding here to avoid confusion, manage via User.teams field
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     list_display = (
         'username', 'email', 'first_name', 'last_name', 'department_link',
-        'job_title_name',
-        'get_groups_display',
-        'get_teams_display',
+        'job_title_name', # Use a method for JobTitle
+        'get_groups_display', # Use a method for Django Groups
         'is_staff', 'is_active'
     )
     list_select_related = ('department', 'job_title')
-    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups', 'teams', 'department', 'job_title')
+    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups', 'department', 'job_title')
     search_fields = (
         'username', 'first_name', 'last_name', 'email',
-        'department__name', 'job_title__name', 'groups__name', 'teams__name'
+        'department__name', 'job_title__name', 'groups__name'
     )
     ordering = ('last_name', 'first_name', 'username')
 
+    # Inherit standard fieldsets and add custom ones
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email", "phone_number", "image")}),
@@ -54,6 +67,7 @@ class UserAdmin(BaseUserAdmin):
         ),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
+    # add_fieldsets for user creation form
     add_fieldsets = (
         (None, {"classes": ("wide",), "fields": ("username", "email", "password", "password2")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "phone_number", "image")}),
@@ -63,9 +77,9 @@ class UserAdmin(BaseUserAdmin):
 
     filter_horizontal = ('groups', 'user_permissions')
     readonly_fields = ('last_login', 'date_joined')
-    autocomplete_fields = ['department', 'job_title', 'groups']
+    autocomplete_fields = ['department', 'job_title', 'groups'] # teams handled by filter_horizontal
 
-    inlines = [UserTeamsInline]
+    inlines = [TeamMembershipInline] # TaskUserRoleInlineForUser is removed
 
     def department_link(self, obj):
         if obj.department:
@@ -80,20 +94,17 @@ class UserAdmin(BaseUserAdmin):
         return obj.job_title.name if obj.job_title else "-"
     job_title_name.admin_order_field = 'job_title__name'
 
+
     @admin.display(description=_('Группы прав'))
     def get_groups_display(self, obj):
         return ", ".join([g.name for g in obj.groups.all()])
-
-    @admin.display(description=_('Команды'))
-    def get_teams_display(self, obj):
-        return ", ".join([t.name for t in obj.teams.all()])
 
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
     list_display = ('name', 'parent_link', 'head_link', 'employee_count_display')
     search_fields = ('name', 'description', 'head__username', 'parent__name')
-    list_filter = ('parent',)
+    list_filter = ('parent',) # Head can be many, better to search
     ordering = ('name',)
     autocomplete_fields = ('parent', 'head')
     fieldsets = (
@@ -121,34 +132,25 @@ class DepartmentAdmin(admin.ModelAdmin):
 
     def head_link(self, obj):
         if obj.head:
-            link = reverse("admin:user_profiles_user_change", args=[obj.head.id])
+            link = reverse("admin:user_profiles_user_change", args=[obj.head.id]) # Corrected app_label
             return format_html('<a href="{}">{}</a>', link, obj.head.display_name)
         return "-"
     head_link.short_description = _("Руководитель")
     head_link.admin_order_field = 'head__username'
 
-class TeamMembersInline(admin.TabularInline):
-    model = TeamMembershipUser 
-    fk_name = 'team'
-    verbose_name = _("Участник команды")
-    verbose_name_plural = _("Участники команды")
-    extra = 1
-    fields = ('user', 'date_joined')
-    readonly_fields = ('date_joined',)
-    autocomplete_fields = ('user',)
-
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     list_display = ("name", "team_leader_link", "department_link", "member_count_display", "created_at")
-    search_fields = ("name", "description", "team_leader__username", "department__name")
-    list_filter = ("department",)
+    search_fields = ("name", "description", "team_leader__username", "department__name", "members__username")
+    list_filter = ("department",) # Team leader can be many
     ordering = ('name',)
-    autocomplete_fields = ('team_leader', 'department')
+    filter_horizontal = ("members",) # For easier member management
+    autocomplete_fields = ('team_leader', 'department') # Members handled by filter_horizontal
     fieldsets = (
         (None, {"fields": ("name", "description", "team_leader", "department")}),
+        (_("Участники команды"), {"fields": ("members",)}),
     )
-    inlines = [TeamMembersInline]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request).annotate(
@@ -158,7 +160,7 @@ class TeamAdmin(admin.ModelAdmin):
 
     @admin.display(description=_("Участников"), ordering='member_count_agg')
     def member_count_display(self, obj):
-        return obj.members.count()
+        return obj.member_count_agg
 
     def team_leader_link(self, obj):
         if obj.team_leader:
@@ -185,6 +187,6 @@ class JobTitleAdmin(admin.ModelAdmin):
 
     def description_excerpt(self, obj):
         if obj.description:
-            return obj.description[:75] + '...' if len(obj.description) > 75 else obj.description
+             return obj.description[:75] + '...' if len(obj.description) > 75 else obj.description
         return "-"
     description_excerpt.short_description = _("Описание (начало)")

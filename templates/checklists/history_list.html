@@ -8,6 +8,12 @@
     {% if filterset %}{{ filterset.form.media.css }}{% endif %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .sort-header[aria-sort="ascending"] .fa-sort::before { content: "\f0de"; }
+        .sort-header[aria-sort="descending"] .fa-sort::before { content: "\f0dd"; }
+        .sort-header[aria-sort="none"] .fa-sort { opacity: 0.3; }
+        .sort-header:hover .fa-sort { opacity: 0.7; }
+    </style>
 {% endblock %}
 
 {% block list_title %}
@@ -62,7 +68,7 @@
                             <div>
                                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
                                 {% if field.widget_type == 'select' or field.widget_type == 'selectmultiple' %}
-                                    {% render_field field class+="form-input select2-basic block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                                    {% render_field field class+="form-select select2-basic block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                                 {% elif field.name == 'performed_at' %}
                                     <div class="flex space-x-2">
                                         {% trans "От" as placeholder_from %}
@@ -71,7 +77,7 @@
                                         {% render_field field class+="form-input flatpickr-date block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder=placeholder_to index=1 %}
                                     </div>
                                 {% elif field.widget_type == 'nullbooleanselect' %}
-                                    {% render_field field class+="form-input block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                                    {% render_field field class+="form-select block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                                 {% else %}
                                     {% render_field field class+="form-input block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                                 {% endif %}
@@ -117,7 +123,7 @@
                                 {% render_field field class+="form-input flatpickr-date block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder=placeholder_to_mobile index=1 %}
                             </div>
                         {% elif field.widget_type == 'select' or field.widget_type == 'nullbooleanselect' %}
-                            {% render_field field class+="form-input select2-basic block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" id=mobile_base_id %}
+                            {% render_field field class+="form-select block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" id=mobile_base_id %}
                         {% else %}
                             {% render_field field class+="form-input block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" id=mobile_base_id %}
                         {% endif %}
@@ -127,8 +133,8 @@
                     </div>
                 {% endfor %}
                 <div class="grid grid-cols-2 gap-4 pt-4">
-                    <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full text-center transition active:scale-95 shadow-sm">{% trans 'Сбросить' %}</a>
-                    <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full transition active:scale-95 shadow-sm">{% trans 'Применить' %}</button>
+                    <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full text-center">{% trans 'Сбросить' %}</a>
+                    <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full">{% trans 'Применить' %}</button>
                 </div>
             </form>
             {% endif %}
@@ -225,14 +231,21 @@
     <script defer>
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof $ !== 'undefined' && $.fn.select2) {
-                $('#filter-section .select2-basic, #filter-drawer-checklist .select2-basic').select2({
+                $('#filter-section .select2-basic').select2({
                     theme: 'default',
                     language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
                     width: '100%',
                     allowClear: true,
                     placeholder: "{% trans 'Любой' %}",
                 });
-            }
+                $('#filter-drawer-checklist select.form-select').select2({ // More specific for drawer selects
+                    theme: 'default',
+                    language: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}",
+                    width: '100%',
+                    allowClear: true,
+                    placeholder: "{% trans 'Любой' %}",
+                });
+            } else { console.warn("jQuery or Select2 not loaded for filters."); }
 
             if (typeof flatpickr !== 'undefined') {
                 flatpickr(".flatpickr-date", {
@@ -241,46 +254,77 @@
                     altFormat: "d.m.Y",
                     locale: "{{ LANGUAGE_CODE|slice:':2'|default:'ru' }}"
                 });
+            } else {
+                console.warn("Flatpickr not loaded, date filter widgets might not work correctly.");
             }
 
+            // Desktop filter toggle logic
             const filterBtn = document.getElementById('toggleFilterBtn');
             const filterSection = document.getElementById('filter-section');
             const filterArrow = document.getElementById('filter-arrow');
 
             if(filterBtn && filterSection && filterArrow) {
                 const alpineData = filterBtn.closest('[x-data]') ? Alpine.$data(filterBtn.closest('[x-data]')) : null;
-                let initialStateOpen = sessionStorage.getItem('checklistFilterOpen') === 'true';
-                if (alpineData && typeof alpineData.filterOpen !== 'undefined') initialStateOpen = alpineData.filterOpen;
+                let initialStateOpen = false;
+
+                if (alpineData && typeof alpineData.filterOpen !== 'undefined') {
+                     initialStateOpen = alpineData.filterOpen;
+                } else { // Fallback if Alpine is not ready or element not in Alpine scope
+                     initialStateOpen = sessionStorage.getItem('checklistFilterOpen') === 'true';
+                }
 
                 const params = new URLSearchParams(window.location.search);
                 let filtersActive = false;
                 for (const [key, value] of params.entries()) {
-                    if (key !== 'page' && key !== 'sort' && value && key !== 'csrfmiddlewaretoken') {
+                    if (key !== 'page' && key !== 'sort' && value && key !== 'csrfmiddlewaretoken' /* common form submit param */) {
                         filtersActive = true;
                         break;
                     }
                 }
+
                 const shouldOpen = initialStateOpen || filtersActive;
 
-                if (shouldOpen) {
-                     if (alpineData && typeof alpineData.filterOpen !== 'undefined') alpineData.filterOpen = true;
-                     else {
-                         filterSection.classList.remove('hidden');
+                if (shouldOpen && filterSection.classList.contains('hidden')) {
+                     if (alpineData && typeof alpineData.filterOpen !== 'undefined') {
+                         alpineData.filterOpen = true; // Will trigger Alpine's x-show
+                     } else {
+                         filterSection.classList.remove('hidden'); // Manual toggle
                          filterBtn.setAttribute('aria-expanded', 'true');
                          filterArrow.classList.remove('fa-chevron-down');
                          filterArrow.classList.add('fa-chevron-up');
                      }
-                } else {
-                     if (alpineData && typeof alpineData.filterOpen !== 'undefined') alpineData.filterOpen = false;
-                     else {
+                } else if (!shouldOpen && !filterSection.classList.contains('hidden')) {
+                     if (alpineData && typeof alpineData.filterOpen !== 'undefined') {
+                         alpineData.filterOpen = false;
+                     } else {
                          filterSection.classList.add('hidden');
                          filterBtn.setAttribute('aria-expanded', 'false');
                          filterArrow.classList.remove('fa-chevron-up');
                          filterArrow.classList.add('fa-chevron-down');
                      }
                 }
+
+
+                // Ensure Alpine's click handler updates arrow if Alpine is primary
+                if (!alpineData) {
+                     filterBtn.addEventListener('click', () => {
+                        const isHidden = filterSection.classList.contains('hidden'); // Check current state BEFORE toggle by Alpine
+                        // Alpine will handle the actual toggle of filterSection via x-show
+                        // We just sync the arrow and aria-expanded based on the state *after* Alpine's toggle (which is !isHidden)
+                        filterBtn.setAttribute('aria-expanded', String(!isHidden));
+                        filterArrow.classList.toggle('fa-chevron-down', isHidden); // If it was hidden, now it's shown (up arrow)
+                        filterArrow.classList.toggle('fa-chevron-up', !isHidden);  // If it was shown, now it's hidden (down arrow)
+                        // sessionStorage.setItem('checklistFilterOpen', String(!isHidden)); // Alpine already does this
+                    });
+                }
             }
-            if (typeof Flowbite !== 'undefined' && typeof initFlowbite === 'function') initFlowbite();
+
+
+            if (typeof Flowbite !== 'undefined' && typeof initFlowbite === 'function') {
+                initFlowbite();
+            } else {
+                console.warn("Flowbite not detected, mobile filter drawer might not work.");
+            }
         });
     </script>
 {% endblock %}

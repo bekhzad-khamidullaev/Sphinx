@@ -1,26 +1,29 @@
-{% load i18n app_filters %} {# Убедитесь, что app_filters (где url_replace) загружен #}
+{% load i18n app_filters %}
 
 {% with sort_param_asc=column_name sort_param_desc="-"|add:column_name %}
     {% if current_sort == sort_param_asc %}
+        {# Currently sorted A-Z, link to sort Z-A #}
         {% url_replace sort=sort_param_desc as next_sort_url_params %}
         <th scope="col" class="sort-header px-4 py-3.5 sorted-asc" aria-sort="ascending" data-column="{{ column_name }}">
-            <a href="?{{ next_sort_url_params }}" class="flex items-center group text-gray-700 hover:text-gray-900">
+            <a href="?{{ next_sort_url_params }}{% if filter_params %}&{{ filter_params }}{% endif %}" class="flex items-center group text-gray-700 hover:text-gray-900">
                 {{ display_name }}
                 <i class="fas fa-sort-up fa-fw ml-1.5 text-gray-600 group-hover:text-gray-800"></i>
             </a>
         </th>
     {% elif current_sort == sort_param_desc %}
+        {# Currently sorted Z-A, link to sort A-Z #}
         {% url_replace sort=sort_param_asc as next_sort_url_params %}
         <th scope="col" class="sort-header px-4 py-3.5 sorted-desc" aria-sort="descending" data-column="{{ column_name }}">
-            <a href="?{{ next_sort_url_params }}" class="flex items-center group text-gray-700 hover:text-gray-900">
+            <a href="?{{ next_sort_url_params }}{% if filter_params %}&{{ filter_params }}{% endif %}" class="flex items-center group text-gray-700 hover:text-gray-900">
                 {{ display_name }}
                 <i class="fas fa-sort-down fa-fw ml-1.5 text-gray-600 group-hover:text-gray-800"></i>
             </a>
         </th>
     {% else %}
+        {# Not currently sorted by this column, link to sort A-Z #}
         {% url_replace sort=sort_param_asc as next_sort_url_params %}
         <th scope="col" class="sort-header px-4 py-3.5" aria-sort="none" data-column="{{ column_name }}">
-            <a href="?{{ next_sort_url_params }}" class="flex items-center group text-gray-500 hover:text-gray-700">
+            <a href="?{{ next_sort_url_params }}{% if filter_params %}&{{ filter_params }}{% endif %}" class="flex items-center group text-gray-500 hover:text-gray-700">
                 {{ display_name }}
                 <i class="fas fa-sort fa-fw ml-1.5 text-gray-400 opacity-40 group-hover:opacity-80"></i>
             </a>

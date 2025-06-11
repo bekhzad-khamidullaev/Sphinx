@@ -1,29 +1,46 @@
 {% load i18n %}
-
-{% if formset and formset.non_form_errors %}
-    <div class="text-red-500">
-        <p>Ошибки формсета:</p>
-        <ul>
-            {% for error in formset.non_form_errors %}
-                <li>{{ error|escape }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-{% endif %}
-
-{% if formset %}
-    {% for individual_form in formset %}
-        {% if individual_form.errors %}
-            <div class="text-orange-500 mt-2">
-                <p>Ошибки в пункте {{ forloop.counter }}:</p>
-                <ul>
-                    {% for field_name, error_list in individual_form.errors.items %}
-                        {% for error in error_list %}
-                            <li>{{ field_name }}: {{ error|escape }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                </ul>
-            </div>
+{% if form.errors or formset.errors %}
+    <div role="alert" class="mb-6 p-4 border border-red-400 bg-red-50 text-red-700 rounded-lg shadow-md">
+        <div class="flex items-center mb-1">
+            <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+            <h4 class="font-semibold text-base">{% trans "Пожалуйста, исправьте ошибки:" %}</h4>
+        </div>
+        {% if form.non_field_errors %}
+            <ul class="list-disc list-inside text-sm mb-2 pl-5">
+                {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
         {% endif %}
-    {% endfor %}
+        {% if formset and formset.non_form_errors %}
+            <p class="font-semibold text-sm mt-2 pl-5">{% trans "Общие ошибки набора форм:" %}</p>
+            <ul class="list-disc list-inside text-sm mb-2 pl-5">
+                {% for error in formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+        {% for field in form %}
+            {% if field.errors %}
+                <p class="font-semibold text-sm mt-2 pl-5">{{ field.label }}:</p>
+                <ul class="list-disc list-inside text-sm mb-2 pl-5">
+                    {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+            {% endif %}
+        {% endfor %}
+        {% if formset %}
+            {% for f_form in formset %}
+                {% if f_form.non_field_errors %}
+                    <p class="font-semibold text-sm mt-2 pl-5">{% blocktrans with count=forloop.counter %}Общая ошибка в строке #{{ count }}:{% endblocktrans %}</p>
+                    <ul class="list-disc list-inside text-sm mb-2 pl-5">
+                        {% for error in f_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+                {% for field in f_form %}
+                    {% if field.errors %}
+                        <p class="font-semibold text-sm mt-2 pl-5">{% blocktrans with count=forloop.parentloop.counter label=field.label %}Строка #{{ count }} - {{ label }}:{% endblocktrans %}</p>
+                        <ul class="list-disc list-inside text-sm mb-2 pl-5">
+                            {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        {% endif %}
+    </div>
 {% endif %}

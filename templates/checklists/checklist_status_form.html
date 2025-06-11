@@ -40,11 +40,11 @@
                             {{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}
                         </label>
                         {% if field.widget_type == 'select' %}
-                            {% render_field field class+="form-input select2-basic block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                            {% render_field field class+="form-select select2-basic block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                         {% elif field.widget_type == 'textarea' %}
-                            {% render_field field class+="form-input block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="3" %}
-                        {% elif field.widget_type == 'datetime-local' or field.name == 'approved_at' %}
-                            {% render_field field class+="form-input flatpickr-input block w-full sm:w-auto text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
+                            {% render_field field class+="form-textarea block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="3" %}
+                        {% elif field.widget_type == 'datetime-local' %}
+                            {% render_field field class+="form-input flatpickr-input block w-auto text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                         {% else %}
                             {% render_field field class+="form-input block w-full text-sm rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
                         {% endif %}
@@ -82,20 +82,39 @@
     <script defer>
         document.addEventListener('DOMContentLoaded', function () {
             if (typeof $ !== 'undefined' && $.fn.select2) {
-                $('form#status-update-form .select2-basic').each(function() {
+                $('.select2-basic').select2({
+                    theme: 'default',
+                    language: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}",
+                    width: '100%',
+                    allowClear: true,
+                    placeholder: "{% trans 'Выберите...' %}",
+                    minimumResultsForSearch: 10
+                });
+                $('#id_approved_by').select2({ // Specific handling for approved_by if needed
+                    theme: 'default',
+                    language: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}",
+                    width: '100%',
+                    allowClear: true,
+                    placeholder: "{% trans 'Выберите пользователя...' %}"
+                });
+                 // Apply to all select fields rendered by the form loop if they don't have 'select2-basic'
+                $('form#status-update-form select:not(.select2-basic):not(#id_approved_by)').each(function() {
                     $(this).select2({
                         theme: 'default',
                         language: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}",
                         width: '100%',
-                        allowClear: !$(this).prop('required') && $(this).find('option[value=""]').length > 0,
-                        placeholder: $(this).data('placeholder') || "{% trans 'Выберите...' %}",
-                        minimumResultsForSearch: $(this).children('option').length > 10 ? 0 : Infinity
+                        allowClear: $(this).find('option[value=""]').length > 0, // Allow clear if there's an empty option
+                        placeholder: "{% trans 'Выберите...' %}",
+                        minimumResultsForSearch: 10
                     });
                 });
             }
             if (typeof flatpickr !== 'undefined') {
-                flatpickr("form#status-update-form .flatpickr-input", {
-                    enableTime: true, dateFormat: "Y-m-d H:i", altInput: true, altFormat: "d.m.Y H:i",
+                flatpickr(".flatpickr-input[type='datetime-local']", { // More specific selector for flatpickr
+                    enableTime: true,
+                    dateFormat: "Y-m-d H:i",
+                    altInput: true,
+                    altFormat: "d.m.Y H:i",
                     locale: "{{ LANGUAGE_CODE|default:'ru'|slice:':2' }}"
                 });
             }

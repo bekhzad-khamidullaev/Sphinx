@@ -1,8 +1,14 @@
 {
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+<<<<<<< HEAD
     "postcss": "^8.5.4",
     "tailwindcss": "^4.1.8"
+=======
+    "postcss": "^8.5.3",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^4.1.7"
+>>>>>>> 229e1b6a0a57a7932eb32d4e78dbb86e2edf8053
   },
   "name": "sphinx",
   "version": "1.0.0",

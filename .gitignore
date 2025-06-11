@@ -21,8 +21,9 @@ build/
 .env.*
 .venv/
 local_settings.py
+# config/settings.py
 # media/
-# staticfiles/
+staticfiles/
 django-debug-toolbar/
 debug.log
 
