@@ -51,3 +51,7 @@ urlpatterns = i18n_patterns(
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+admin.site.site_header = "EVOS Admin"
+admin.site.site_title = "EVOS Admin Portal"
+admin.site.index_title = "Welcome to EVOS ServiceDesk Portal"
