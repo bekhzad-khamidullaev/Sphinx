@@ -64,7 +64,7 @@
                 <div id="participants-field-container" class="{% if not form.private.value %}hidden{% endif %}">
                     {# Если в forms.py для participants используется Select2MultipleWidget, то класс select2-basic не нужен #}
                     {# widget_tweaks применит классы из виджета. #}
-                    {% render_field form.participants class="form-select block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" data-placeholder=form.participants.help_text|default:_('Выберите участников...') %}
+                    {% render_field form.participants class="form-select block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" data-placeholder="form.participants.help_text|default:_('Выберите участников...')" %}
                     {% if form.participants.help_text and not form.participants.field.widget.attrs.placeholder %}
                         <p class="text-xs text-gray-500 mt-1">{{ form.participants.help_text|safe }}</p>
                     {% endif %}

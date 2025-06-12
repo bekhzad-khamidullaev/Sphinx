@@ -14,8 +14,12 @@ from .models import Task # TaskAssignment можно импортировать,
 logger = logging.getLogger(__name__)
 
 class TaskConsumer(AsyncWebsocketConsumer):
-    DEFAULT_GROUP_NAME_LIST = "tasks_list" # Группа для общего списка задач
-    GROUP_NAME_DETAIL_PREFIX = "task_"     # Префикс для группы конкретной задачи
+    DEFAULT_GROUP_NAME_LIST = "tasks_list"  # Группа для общего списка задач
+    GROUP_NAME_DETAIL_PREFIX = "task_"  # Префикс для группы конкретной задачи
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subscribed_groups = set()
 
     async def connect(self):
         self.user = self.scope.get('user')
@@ -49,9 +53,19 @@ class TaskConsumer(AsyncWebsocketConsumer):
         logger.info(f"TaskConsumer connected user {self.user.id} to groups: {list(self.subscribed_groups)}")
 
     async def disconnect(self, close_code):
-        for group_name in self.subscribed_groups:
-            await self.channel_layer.group_discard(group_name, self.channel_name)
-        logger.info(f"TaskConsumer disconnected user {getattr(self.user, 'id', 'anon')} from groups: {list(self.subscribed_groups)}")
+        if hasattr(self, 'subscribed_groups'):
+            for group_name in self.subscribed_groups:
+                await self.channel_layer.group_discard(group_name, self.channel_name)
+            logger.info(
+                "TaskConsumer disconnected user %s from groups: %s",
+                getattr(self, 'user', None) and getattr(self.user, 'id', 'anon'),
+                list(self.subscribed_groups),
+            )
+        else:
+            logger.debug(
+                "TaskConsumer disconnect called without subscribed groups for user %s",
+                getattr(self, 'user', None) and getattr(self.user, 'id', 'anon'),
+            )
 
     @sync_to_async
     def _update_task_status_db(self, task_id: int, new_status: str, user_actor: User):
