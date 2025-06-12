@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import User, Team, Department, JobTitle, TeamMembershipUser
+from .models import User, Team, Department, JobTitle, TeamMembershipUser, Role
 
 class UserTeamsInline(admin.TabularInline):
     model = TeamMembershipUser
@@ -25,14 +25,15 @@ class UserAdmin(BaseUserAdmin):
         'username', 'email', 'first_name', 'last_name', 'department_link',
         'job_title_name',
         'get_groups_display',
+        'get_roles_display',
         'get_teams_display',
         'is_staff', 'is_active'
     )
     list_select_related = ('department', 'job_title')
-    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups', 'teams', 'department', 'job_title')
+    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups', 'roles', 'teams', 'department', 'job_title')
     search_fields = (
         'username', 'first_name', 'last_name', 'email',
-        'department__name', 'job_title__name', 'groups__name', 'teams__name'
+        'department__name', 'job_title__name', 'groups__name', 'roles__name', 'teams__name'
     )
     ordering = ('last_name', 'first_name', 'username')
 
@@ -48,6 +49,7 @@ class UserAdmin(BaseUserAdmin):
                     "is_staff",
                     "is_superuser",
                     "groups",
+                    "roles",
                     "user_permissions",
                 ),
             },
@@ -58,12 +60,12 @@ class UserAdmin(BaseUserAdmin):
         (None, {"classes": ("wide",), "fields": ("username", "email", "password", "password2")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "phone_number", "image")}),
         (_("Organization"), {"fields": ("job_title", "department")}),
-        (_("Permissions"), {"fields": ("is_active", "is_staff", "is_superuser", "groups")}),
+        (_("Permissions"), {"fields": ("is_active", "is_staff", "is_superuser", "groups", "roles")}),
     )
 
-    filter_horizontal = ('groups', 'user_permissions')
+    filter_horizontal = ('groups', 'roles', 'user_permissions')
     readonly_fields = ('last_login', 'date_joined')
-    autocomplete_fields = ['department', 'job_title', 'groups']
+    autocomplete_fields = ['department', 'job_title', 'groups', 'roles']
 
     inlines = [UserTeamsInline]
 
@@ -83,6 +85,10 @@ class UserAdmin(BaseUserAdmin):
     @admin.display(description=_('Группы прав'))
     def get_groups_display(self, obj):
         return ", ".join([g.name for g in obj.groups.all()])
+
+    @admin.display(description=_('Роли'))
+    def get_roles_display(self, obj):
+        return ", ".join([r.name for r in obj.roles.all()])
 
     @admin.display(description=_('Команды'))
     def get_teams_display(self, obj):
@@ -188,3 +194,11 @@ class JobTitleAdmin(admin.ModelAdmin):
             return obj.description[:75] + '...' if len(obj.description) > 75 else obj.description
         return "-"
     description_excerpt.short_description = _("Описание (начало)")
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
+    filter_horizontal = ("permissions",)
+
+
