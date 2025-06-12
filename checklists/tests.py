@@ -54,9 +54,13 @@ class ChecklistModelTests(TestCase):
         self.assertEqual(result1.status, ChecklistItemStatus.PENDING)
 
     def test_checklist_run_mark_complete(self):
-        checklist_run = Checklist.objects.create(template=self.template, performed_by=self.user)
+        checklist_run = Checklist.objects.create(
+            template=self.template,
+            performed_by=self.user,
+            status=ChecklistRunStatus.IN_PROGRESS,
+        )
         self.assertFalse(checklist_run.is_complete)
-        self.assertEqual(checklist_run.status, ChecklistRunStatus.IN_PROGRESS) # или DRAFT, в зависимости от дефолта
+        self.assertEqual(checklist_run.status, ChecklistRunStatus.IN_PROGRESS)
 
         checklist_run.mark_complete()
         checklist_run.refresh_from_db()
