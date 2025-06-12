@@ -364,4 +364,5 @@ class TaskCommentAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         setattr(obj, '_initiator_user_id', request.user.id)
         super().save_model(request, obj, form, change)
-        if hasattr(obj, '_initiator_user_id'): delattr(obj, '_initiator_user_id')
+        if hasattr(obj, '_initiator_user_id'):
+            delattr(obj, '_initiator_user_id')

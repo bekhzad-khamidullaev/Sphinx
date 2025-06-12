@@ -86,7 +86,10 @@ class TaskConsumer(AsyncWebsocketConsumer):
                 task_id = data.get('task_id')
                 new_status = data.get('status')
                 if task_id is None or new_status is None:
-                    await self.send_error(_("Требуются ID задачи и новый статус.")); return
+                    await self.send_error(
+                        _("Требуются ID задачи и новый статус.")
+                    )
+                    return
                 
                 task_instance, changed = await self._update_task_status_db(task_id, new_status, self.user)
                 if changed:
@@ -155,14 +158,27 @@ class TaskCommentConsumer(AsyncWebsocketConsumer):
         self.task_id_str = self.scope['url_route']['kwargs'].get('task_id')
 
         if not self.task_id_str or not self.user or not self.user.is_authenticated:
-            await self.close(); return
+            await self.close()
+            return
         
-        try: self.task_id = int(self.task_id_str)
-        except ValueError: logger.warning(f"TaskCommentConsumer: Invalid task_id '{self.task_id_str}'."); await self.close(); return
+        try:
+            self.task_id = int(self.task_id_str)
+        except ValueError:
+            logger.warning(
+                "TaskCommentConsumer: Invalid task_id '%s'.",
+                self.task_id_str,
+            )
+            await self.close()
+            return
         
         if not await self._can_view_task_for_comments(self.task_id, self.user):
-            logger.warning(f"TaskCommentConsumer: User {self.user.id} rejected for task {self.task_id} comments (no view perm).")
-            await self.close(); return
+            logger.warning(
+                "TaskCommentConsumer: User %s rejected for task %s comments (no view perm).",
+                self.user.id,
+                self.task_id,
+            )
+            await self.close()
+            return
 
         self.room_group_name = f'task_comments_{self.task_id}'
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
