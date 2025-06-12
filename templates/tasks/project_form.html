@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block list_title %}
-<h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
+<h1 class="h3 fw-bold">
     {% if form.instance.pk %}
         {% blocktrans with name=form.instance.name %}Редактирование проекта: {{ name }}{% endblocktrans %}
     {% else %}
@@ -26,7 +26,8 @@
 {% endblock %}
 
 {% block list_content %}
-<div class="bg-white  shadow-lg rounded-xl border border-gray-200  p-6 md:p-8 mt-6">
+<div class="card mt-4">
+    <div class="card-body">
     <form method="post" action="" id="project-form" novalidate>
          {% csrf_token %}
          {% crispy form %}
@@ -40,14 +41,12 @@
                 </ul>
             </div>
          {% endif %}
-         <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200 ">
-             <a href="{% url 'tasks:project_list' %}"
-                class="px-4 py-2 rounded-md text-sm font-medium text-gray-700  bg-white  border border-gray-300  hover:bg-gray-50  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500  transition active:scale-95 shadow-sm">
+         <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+             <a href="{% url 'tasks:project_list' %}" class="btn btn-secondary">
                  {% trans 'Отмена' %}
              </a>
-             <button type="submit"
-                     class="px-4 py-2 rounded-md text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500    transition active:scale-95 shadow-sm inline-flex items-center">
-                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4" aria-hidden="true"></i>
+             <button type="submit" class="btn btn-primary">
+                 <i class="fa-solid fa-floppy-disk me-2" aria-hidden="true"></i>
                  {% if form.instance.pk %}
                      {% trans "Сохранить изменения" %}
                  {% else %}
@@ -56,6 +55,7 @@
              </button>
          </div>
     </form>
+    </div>
 </div>
 {% endblock %}
 

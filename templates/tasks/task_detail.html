@@ -28,10 +28,10 @@
 {% endblock %}
 
 {% block list_title %}
-<div class="flex items-center justify-between flex-wrap gap-4">
+<div class="d-flex justify-content-between flex-wrap gap-3 align-items-start">
     <div>
-        <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl flex items-center">
-            <span class="text-gray-400 mr-2">#{{ task_instance.task_number|default:task_instance.pk }}</span> {{ task_instance.title }}
+        <h1 class="h4 fw-bold d-flex align-items-center">
+            <span class="text-muted me-2">#{{ task_instance.task_number|default:task_instance.pk }}</span> {{ task_instance.title }}
         </h1>
         {% if task_instance.project %}
         <p class="text-sm text-gray-500 mt-1">
@@ -39,16 +39,16 @@
         </p>
         {% endif %}
     </div>
-    <div class="flex space-x-3 flex-shrink-0">
+    <div class="d-flex gap-2 flex-shrink-0">
         {% if perms.tasks.change_task or can_change_task %}
         <a href="{% url 'tasks:task_update' pk=task_instance.pk %}"
-            class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-gray-900 bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all">
+            class="btn btn-warning">
             <i class="fas fa-edit mr-2" aria-hidden="true"></i> {% trans 'Редактировать' %}
         </a>
         {% endif %}
         {% if perms.tasks.delete_task or can_delete_task %}
         <a href="{% url 'tasks:task_delete' pk=task_instance.pk %}"
-            class="btn bg-red-500 text-white hover:bg-red-600">
+            class="btn btn-danger">
             <i class="fas fa-trash mr-2" aria-hidden="true"></i> {% trans 'Удалить' %}
         </a>
         {% endif %}
@@ -64,8 +64,10 @@
 {% endblock %}
 
 {% block list_content %}
-<div id="task-detail-container" class="bg-white shadow-lg rounded-xl border border-gray-200 p-6 mt-6" data-task-id="{{ task_instance.pk }}">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div id="task-detail-container" class="card mt-4" data-task-id="{{ task_instance.pk }}">
+    <div class="card-body">
+    <div class="row g-4">
+        <div class="col-md-8">
         <div class="md:col-span-2 space-y-6">
             <div class="flex flex-wrap gap-4 items-center">
                 <div>
