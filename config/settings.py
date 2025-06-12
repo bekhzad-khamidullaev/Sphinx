@@ -120,9 +120,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 # --- Пользовательская модель ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "user_profiles.User"
-LOGIN_URL = "user_profiles:login"
+LOGIN_URL = "user_profiles:base_login"
 LOGIN_REDIRECT_URL = "tasks:task_list"
-LOGOUT_REDIRECT_URL = "user_profiles:login"
+LOGOUT_REDIRECT_URL = "user_profiles:base_login"
 
 # --- WebSocket ---
 CHANNEL_LAYERS = {
