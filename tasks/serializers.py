@@ -168,13 +168,15 @@ class TaskSerializer(serializers.ModelSerializer):
             for assignment_data in assignments_data:
                 user_obj = assignment_data.get('user')
                 if isinstance(user_obj, int):
-                     user_obj = User.objects.get(pk=user_obj)
+                    user_obj = User.objects.get(pk=user_obj)
 
                 TaskAssignment.objects.create(
                     task=instance, 
                     user=user_obj, 
                     role=assignment_data['role'],
-                    assigned_by=self.context['request'].user if 'request' in self.context else None
+                    assigned_by=(
+                        self.context['request'].user if 'request' in self.context else None
+                    )
                 )
         
         instance.refresh_from_db() # To get updated assignments if needed by response
