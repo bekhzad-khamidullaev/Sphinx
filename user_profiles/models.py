@@ -1,6 +1,6 @@
 # user_profiles/models.py
 import logging
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
@@ -101,6 +101,19 @@ class JobTitle(models.Model):
     def __str__(self):
         return self.name
 
+class Role(models.Model):
+    name = models.CharField(max_length=150, unique=True, verbose_name=_('Название роли'))
+    permissions = models.ManyToManyField(Permission, blank=True, verbose_name=_('Права'))
+    description = models.TextField(blank=True, verbose_name=_('Описание'))
+
+    class Meta:
+        verbose_name = _('Роль')
+        verbose_name_plural = _('Роли')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
 class TeamMembershipUser(models.Model):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="teammembership_user_set")
     team = models.ForeignKey("Team", on_delete=models.CASCADE, related_name="teammembership_team_set")
@@ -136,6 +149,12 @@ class User(AbstractUser):
         verbose_name=_("Состоит в командах"),
         blank=True,
         related_name="team_members_reverse"
+    )
+    roles = models.ManyToManyField(
+        Role,
+        verbose_name=_('Роли'),
+        blank=True,
+        related_name='users'
     )
 
     class Meta:

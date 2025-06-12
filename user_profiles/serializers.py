@@ -38,6 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
     job_title_name = serializers.CharField(source='job_title.name', read_only=True, allow_null=True)
     team_names = serializers.SerializerMethodField(read_only=True)
     group_names = serializers.SerializerMethodField(read_only=True)
+    role_names = serializers.SerializerMethodField(read_only=True)
     image_url = serializers.ImageField(source='image', read_only=True)
     teams = serializers.PrimaryKeyRelatedField(many=True, queryset=Team.objects.all(), required=False, write_only=True)
 
@@ -50,9 +51,9 @@ class UserSerializer(serializers.ModelSerializer):
             "department", "department_name",
             "image", "image_url",
             "is_active", "is_staff", "is_superuser", "date_joined", "last_login",
-            "team_names", "teams", "group_names", "settings"
+            "team_names", "teams", "group_names", "role_names", "roles", "settings"
         ]
-        read_only_fields = ('date_joined', 'last_login', 'is_superuser', 'image_url', 'team_names', 'group_names')
+        read_only_fields = ('date_joined', 'last_login', 'is_superuser', 'image_url', 'team_names', 'group_names', 'role_names')
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8, 'style': {'input_type': 'password'}},
             'first_name': {'required': False},
@@ -65,9 +66,13 @@ class UserSerializer(serializers.ModelSerializer):
     def get_group_names(self, obj):
         return list(obj.groups.values_list('name', flat=True))
 
+    def get_role_names(self, obj):
+        return list(obj.roles.values_list('name', flat=True))
+
     def create(self, validated_data):
         teams_data = validated_data.pop('teams', None)
         groups_data = validated_data.pop('groups', None)
+        roles_data = validated_data.pop('roles', None)
         user_permissions_data = validated_data.pop('user_permissions', None)
 
         password = validated_data.pop('password', None)
@@ -82,12 +87,15 @@ class UserSerializer(serializers.ModelSerializer):
             user.groups.set(groups_data)
         if user_permissions_data is not None:
             user.user_permissions.set(user_permissions_data)
+        if roles_data is not None:
+            user.roles.set(roles_data)
             
         return user
 
     def update(self, instance, validated_data):
         teams_data = validated_data.pop('teams', None)
         groups_data = validated_data.pop('groups', None)
+        roles_data = validated_data.pop('roles', None)
         user_permissions_data = validated_data.pop('user_permissions', None)
 
         password = validated_data.pop('password', None)
@@ -104,6 +112,8 @@ class UserSerializer(serializers.ModelSerializer):
             instance.groups.set(groups_data)
         if user_permissions_data is not None:
             instance.user_permissions.set(user_permissions_data)
+        if roles_data is not None:
+            instance.roles.set(roles_data)
             
         return instance
 
