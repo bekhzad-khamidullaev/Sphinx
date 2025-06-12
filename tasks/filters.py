@@ -149,18 +149,35 @@ class TaskFilter(BaseFilter):
         ]
 
     def search_filter(self, queryset, name, value):
-        if not value: return queryset
-        return queryset.filter(
-            Q(task_number__icontains=value) |
-            Q(title__icontains=value) |
-            Q(description__icontains=value)
-        ).distinct()
+        if not value:
+            return queryset
+        return (
+            queryset.filter(
+                Q(task_number__icontains=value)
+                | Q(title__icontains=value)
+                | Q(description__icontains=value)
+            )
+            .distinct()
+        )
 
     def filter_by_assignment_role(self, queryset, name, value):
-         role_to_filter = None
-         if name == 'responsible': role_to_filter = TaskAssignment.RoleChoices.RESPONSIBLE
-         elif name == 'executor': role_to_filter = TaskAssignment.RoleChoices.EXECUTOR
-         elif name == 'watcher': role_to_filter = TaskAssignment.RoleChoices.WATCHER
-         else: logger.warning(f"filter_by_assignment_role called with unexpected filter name: {name}"); return queryset
-         if value and role_to_filter: return queryset.filter(assignments__user=value, assignments__role=role_to_filter).distinct()
-         return queryset
+        role_to_filter = None
+        if name == "responsible":
+            role_to_filter = TaskAssignment.RoleChoices.RESPONSIBLE
+        elif name == "executor":
+            role_to_filter = TaskAssignment.RoleChoices.EXECUTOR
+        elif name == "watcher":
+            role_to_filter = TaskAssignment.RoleChoices.WATCHER
+        else:
+            logger.warning(
+                "filter_by_assignment_role called with unexpected filter name: %s",
+                name,
+            )
+            return queryset
+
+        if value and role_to_filter:
+            return queryset.filter(
+                assignments__user=value,
+                assignments__role=role_to_filter,
+            ).distinct()
+        return queryset

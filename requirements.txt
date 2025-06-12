@@ -123,3 +123,4 @@ django-simpleui
 qrcode[pil]
 #django-qr-code
 django-phonenumber-field
+phonenumbers

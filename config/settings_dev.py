@@ -180,9 +180,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Authentication ---
 AUTH_USER_MODEL = "user_profiles.User"  # Custom user model
-LOGIN_URL = "user_profiles:login"
+LOGIN_URL = "user_profiles:base_login"
 LOGIN_REDIRECT_URL = "tasks:task_list"  # Where to redirect after login
-LOGOUT_REDIRECT_URL = "user_profiles:login"  # Where to redirect after logout
+LOGOUT_REDIRECT_URL = "user_profiles:base_login"  # Where to redirect after logout
 
 # --- Channels (WebSockets) ---
 CHANNEL_LAYERS = {

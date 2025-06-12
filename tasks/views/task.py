@@ -456,19 +456,30 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixi
 
 
 class TaskDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Task; template_name = 'tasks/task_confirm_delete.html'; success_url = reverse_lazy('tasks:task_list'); context_object_name = 'object'
+    model = Task
+    template_name = 'tasks/task_confirm_delete.html'
+    success_url = reverse_lazy('tasks:task_list')
+    context_object_name = 'object'
 
-    def test_func(self): return self.get_object().can_delete(self.request.user)
+    def test_func(self):
+        return self.get_object().can_delete(self.request.user)
     def handle_no_permission(self):
         messages.error(self.request, _("У вас нет прав для удаления этой задачи."))
-        try: return redirect(self.get_object().get_absolute_url())
-        except Http404: return redirect(self.success_url)
+        try:
+            return redirect(self.get_object().get_absolute_url())
+        except Http404:
+            return redirect(self.success_url)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs); task_instance = self.object
+        context = super().get_context_data(**kwargs)
+        task_instance = self.object
         display_name = f"#{task_instance.task_number or task_instance.pk}: {task_instance.title}"
-        context['page_title'] = _("Удаление задачи: %(name)s") % {'name': display_name}
-        context['confirm_delete_message'] = _("Вы уверены, что хотите удалить задачу '%(name)s'? Это действие необратимо.") % {'name': display_name}
+        context['page_title'] = _(
+            "Удаление задачи: %(name)s"
+        ) % {'name': display_name}
+        context['confirm_delete_message'] = _(
+            "Вы уверены, что хотите удалить задачу '%(name)s'? Это действие необратимо."
+        ) % {'name': display_name}
         return context
 
     def form_valid(self, form):
@@ -476,15 +487,23 @@ class TaskDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         try:
             setattr(self.object, '_initiator_user_id', self.request.user.id)
             response = super().form_valid(form)
-            logger.info(f"Task '{task_display}' deleted by {self.request.user.username}.")
-            messages.success(self.request, _("Задача '%(name)s' успешно удалена.") % {'name': task_display})
+            logger.info(
+                "Task '%s' deleted by %s.",
+                task_display,
+                self.request.user.username,
+            )
+            messages.success(
+                self.request,
+                _("Задача '%(name)s' успешно удалена.") % {'name': task_display},
+            )
             return response
-        except Exception as e:
-            logger.exception(f"Error deleting task '{task_display}': {e}")
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Error deleting task '%s': %s", task_display, exc)
             messages.error(self.request, _("Ошибка при удалении задачи."))
             return redirect(self.success_url)
         finally:
-            if hasattr(self.object, '_initiator_user_id'): delattr(self.object, '_initiator_user_id')
+            if hasattr(self.object, '_initiator_user_id'):
+                delattr(self.object, '_initiator_user_id')
 
 
 class TaskPerformView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -492,14 +511,20 @@ class TaskPerformView(LoginRequiredMixin, UserPassesTestMixin, View):
         super().setup(request, *args, **kwargs)
         self.task_instance = get_object_or_404(Task, pk=self.kwargs['pk'])
 
-    def test_func(self): return self.task_instance.can_change_status(self.request.user)
+    def test_func(self):
+        return self.task_instance.can_change_status(self.request.user)
     def handle_no_permission(self):
-        messages.error(self.request, _("У вас нет прав для выполнения этого действия над задачей."))
+        messages.error(
+            self.request,
+            _("У вас нет прав для выполнения этого действия над задачей."),
+        )
         return redirect(self.task_instance.get_absolute_url())
 
     def get(self, request, *args, **kwargs):
-        action = request.GET.get('action'); original_status = self.task_instance.status
-        new_status_candidate = None; success_msg_template = None
+        action = request.GET.get('action')
+        original_status = self.task_instance.status
+        new_status_candidate = None
+        success_msg_template = None
         task_display_name = self.task_instance.task_number or self.task_instance.pk
 
         workflow_actions = {
@@ -533,14 +558,32 @@ class TaskPerformView(LoginRequiredMixin, UserPassesTestMixin, View):
         self.task_instance.status = new_status_candidate
         try:
             setattr(self.task_instance, '_initiator_user_id', request.user.id)
-            self.task_instance.save(update_fields=['status', 'updated_at', 'completion_date'])
-            logger.info(f"User {request.user.username} action '{action}' on task {self.task_instance.id}. Status: {original_status} -> {self.task_instance.status}")
-            if success_msg_template: messages.success(request, success_msg_template % {'num': task_display_name})
-        except Exception as e:
-            logger.exception(f"Error saving task {self.task_instance.id} after action '{action}': {e}")
+            self.task_instance.save(
+                update_fields=['status', 'updated_at', 'completion_date']
+            )
+            logger.info(
+                "User %s action '%s' on task %s. Status: %s -> %s",
+                request.user.username,
+                action,
+                self.task_instance.id,
+                original_status,
+                self.task_instance.status,
+            )
+            if success_msg_template:
+                messages.success(
+                    request, success_msg_template % {'num': task_display_name}
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.exception(
+                "Error saving task %s after action '%s': %s",
+                self.task_instance.id,
+                action,
+                exc,
+            )
             messages.error(request, _("Ошибка сохранения изменений в задаче."))
         finally:
-            if hasattr(self.task_instance, '_initiator_user_id'): delattr(self.task_instance, '_initiator_user_id')
+            if hasattr(self.task_instance, '_initiator_user_id'):
+                delattr(self.task_instance, '_initiator_user_id')
         return redirect(request.META.get('HTTP_REFERER', self.task_instance.get_absolute_url()))
 
 
@@ -556,7 +599,8 @@ def add_comment_to_task(request, task_id):
         if form.is_valid():
             try:
                 comment = form.save(commit=False)
-                comment.task = task_instance; comment.author = request.user
+                comment.task = task_instance
+                comment.author = request.user
                 setattr(comment, '_initiator_user_id', request.user.id)
                 comment.save()
                 messages.success(request, _("Комментарий успешно добавлен."))
@@ -565,9 +609,20 @@ def add_comment_to_task(request, task_id):
                 logger.exception(f"Error saving comment for task {task_instance.id}: {e}")
                 messages.error(request, _("Ошибка при сохранении комментария."))
             finally:
-                if hasattr(comment, '_initiator_user_id'): delattr(comment, '_initiator_user_id')
+                if hasattr(comment, '_initiator_user_id'):
+                    delattr(comment, '_initiator_user_id')
         else:
-            logger.warning(f"Invalid comment form for task {task_instance.id}: {form.errors.as_json()}")
-            messages.error(request, _("Пожалуйста, исправьте ошибки в форме комментария."))
+            logger.warning(
+                "Invalid comment form for task %s: %s",
+                task_instance.id,
+                form.errors.as_json(),
+            )
+            messages.error(
+                request,
+                _("Пожалуйста, исправьте ошибки в форме комментария."),
+            )
             return redirect(task_instance.get_absolute_url() + '#comment-form')
-    else: return HttpResponseForbidden(_("Метод GET не разрешен для этого URL, используйте POST для добавления комментария."))
+    else:
+        return HttpResponseForbidden(
+            _("Метод GET не разрешен для этого URL, используйте POST для добавления комментария.")
+        )
