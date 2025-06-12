@@ -1,9 +1,14 @@
+"""Celery tasks for background maintenance of the Task model."""
+
 from celery import shared_task
 from django.utils import timezone
-from django.core.mail import send_mail
+from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
-from .models import Task
+from django.db import DatabaseError
+import smtplib
 import logging
+
+from .models import Task
 
 logger = logging.getLogger(__name__)
 
@@ -37,16 +42,32 @@ def check_overdue_tasks():
                     try:
                         send_mail(
                             subject=f"Задача {task.task_number or task.title} просрочена!",
-                            message=f"Задача '{task.title}' (Номер: {task.task_number}) была автоматически помечена как просроченная.\nСрок: {task.due_date.strftime('%Y-%m-%d') if task.due_date else 'N/A'}",
+                            message=(
+                                f"Задача '{task.title}' (Номер: {task.task_number}) "
+                                f"была автоматически помечена как просроченная.\n"
+                                f"Срок: {task.due_date.strftime('%Y-%m-%d') if task.due_date else 'N/A'}"
+                            ),
                             from_email=settings.DEFAULT_FROM_EMAIL,
                             recipient_list=list(recipients),
                             fail_silently=False,
                         )
-                        logger.info(f"Overdue notification sent for task {task.id} to {recipients}")
-                    except Exception as e:
-                        logger.error(f"Failed to send overdue notification for task {task.id}: {e}")
-            except Exception as e:
-                logger.error(f"Error updating task {task.id} to overdue: {e}")
+                        logger.info(
+                            "Overdue notification sent for task %s to %s",
+                            task.id,
+                            recipients,
+                        )
+                    except (BadHeaderError, smtplib.SMTPException) as exc:
+                        logger.error(
+                            "Failed to send overdue notification for task %s: %s",
+                            task.id,
+                            exc,
+                        )
+            except DatabaseError as exc:
+                logger.error(
+                    "Error updating task %s to overdue: %s",
+                    task.id,
+                    exc,
+                )
 
     if updated_count > 0:
         return f"Marked {updated_count} tasks as overdue."
