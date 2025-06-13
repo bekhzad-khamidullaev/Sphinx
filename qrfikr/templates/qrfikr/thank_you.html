@@ -1,0 +1,10 @@
+{% extends 'qrfikr/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans 'Thank You' %}{% endblock %}
+
+{% block content %}
+<h1>{% trans 'Thank you for your feedback!' %}</h1>
+<p>{{ qr_link.location.name }}</p>
+<a href="{{ qr_link.get_feedback_url }}">{% trans 'Submit another' %}</a>
+{% endblock %}

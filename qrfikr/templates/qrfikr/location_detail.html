@@ -1,0 +1,7 @@
+{% extends 'qrfikr/base.html' %}
+
+{% block content %}
+<h1>{{ object.location.name }}</h1>
+{% if object.description %}<p>{{ object.description }}</p>{% endif %}
+<a href="{{ object.get_feedback_url }}">Leave feedback</a>
+{% endblock %}
