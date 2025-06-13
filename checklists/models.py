@@ -343,3 +343,16 @@ class ChecklistResult(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+        try:
+            from .utils import calculate_checklist_score
+            if self.checklist_run_id:
+                score = calculate_checklist_score(self.checklist_run)
+                if self.checklist_run.score != score:
+                    self.checklist_run.score = score
+                    self.checklist_run.save(update_fields=["score"])
+        except Exception as exc:
+            logger.exception(
+                "Failed to update checklist score for result %s: %s",
+                self.pk,
+                exc,
+            )
