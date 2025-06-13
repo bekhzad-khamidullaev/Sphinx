@@ -310,7 +310,7 @@
     {% else %}
     <div class="flex items-center justify-center min-h-screen">
         <p class="text-xl text-gray-600">{% trans "Требуется вход в систему." %}
-            <a href="{% url 'user_profiles:login' %}" class="text-blue-600 hover:underline ml-2">{%
+            <a href="{% url 'user_profiles:base_login' %}" class="text-blue-600 hover:underline ml-2">{% 
                 trans "Войти" %}</a>
         </p>
     </div>
