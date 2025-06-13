@@ -72,7 +72,9 @@
                      x-cloak>
                     {# Предполагаем, что виджет уже Select2MultipleWidget из forms.py #}
                     {# Если нет, widget_tweaks применит класс, но JS все равно нужен для Select2 #}
-                    {% render_field form.participants class="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" data-placeholder=form.participants.help_text|default:_("Выберите участников...") %}
+                    {% with form.participants.help_text|default:_("Выберите участников...") as placeholder %}
+                        {% render_field form.participants class="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" data-placeholder=placeholder %}
+                    {% endwith %}
                     {% if form.participants.help_text and not form.participants.field.widget.attrs.placeholder %} {# Показываем help_text, если он не использован как placeholder #}
                         <p class="text-xs text-gray-500 mt-1">{{ form.participants.help_text|safe }}</p>
                     {% endif %}

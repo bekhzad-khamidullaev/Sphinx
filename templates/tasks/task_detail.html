@@ -7,7 +7,9 @@
     {{ block.super }}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    {% if form.media.css %}{{ form.media.css }}{% endif %}
+    {% if form %}
+        {{ form.media.css }}
+    {% endif %}
     {% if photo_formset and photo_formset.media.css %}{{ photo_formset.media.css }}{% endif %}
     <style>
         #comment-list::-webkit-scrollbar {
