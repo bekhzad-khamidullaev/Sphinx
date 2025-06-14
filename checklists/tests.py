@@ -1,9 +1,26 @@
 # checklists/tests.py
+import os
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+import django
+django.setup()
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.utils.translation import gettext_lazy as _
-from .models import Location, ChecklistPoint, ChecklistTemplate, ChecklistTemplateItem, Checklist, ChecklistResult, AnswerType, ChecklistItemStatus, ChecklistRunStatus
+from .models import (
+    Location,
+    ChecklistPoint,
+    ChecklistTemplate,
+    ChecklistTemplateItem,
+    Checklist,
+    ChecklistResult,
+    AnswerType,
+    ChecklistItemStatus,
+    ChecklistRunStatus,
+)
+import django
+django.setup()
 
 User = get_user_model()
 
@@ -96,6 +113,76 @@ class ChecklistModelTests(TestCase):
         self.assertEqual(result2.display_value, 25.5)
         
         result2.numeric_value = None
-        result2.value = 'abc' # Должен показать '-', так как numeric_value приоритетнее для NUMBER типа
-        if hasattr(result2, '_display_value_cache'): delattr(result2, '_display_value_cache')
+        result2.value = 'abc'  # Должен показать '-', так как numeric_value приоритетнее для NUMBER типа
+        if hasattr(result2, '_display_value_cache'):
+            delattr(result2, '_display_value_cache')
         self.assertEqual(result2.display_value, 'abc')
+
+
+class ChecklistPermissionTests(TestCase):
+    def setUp(self):
+        self.performer = User.objects.create_user('performer', password='pw')
+        self.confirm_user = User.objects.create_user('confirmer', password='pw')
+        perm = Permission.objects.get(codename='confirm_checklist')
+        self.confirm_user.user_permissions.add(perm)
+
+        self.location = Location.objects.create(name='Loc')
+        self.template = ChecklistTemplate.objects.create(name='Tmp', target_location=self.location)
+        ChecklistTemplateItem.objects.create(
+            template=self.template,
+            item_text='Q1',
+            order=1,
+            answer_type=AnswerType.YES_NO,
+        )
+        self.checklist = Checklist.objects.create(
+            template=self.template,
+            performed_by=self.performer,
+            location=self.location,
+            status=ChecklistRunStatus.IN_PROGRESS,
+        )
+        self.result = self.checklist.results.first()
+
+    def _post_data(self):
+        return {
+            'checklist_run_id': str(self.checklist.pk),
+            'results-TOTAL_FORMS': '1',
+            'results-INITIAL_FORMS': '1',
+            'results-MIN_NUM_FORMS': '0',
+            'results-MAX_NUM_FORMS': '1000',
+            'results-0-id': str(self.result.pk),
+            'results-0-status': ChecklistItemStatus.OK,
+            'results-0-value': 'yes',
+            'results-0-comments': '',
+            'results-0-is_corrected': '',
+            'action': 'submit_final',
+        }
+
+    def test_confirm_requires_permission(self):
+        url = reverse('checklists:checklist_perform', kwargs={'template_pk': self.template.pk})
+
+        self.client.login(username='performer', password='pw')
+        self.client.post(url, self._post_data())
+        self.checklist.refresh_from_db()
+        self.assertNotEqual(self.checklist.status, ChecklistRunStatus.SUBMITTED)
+
+        self.client.logout()
+        self.client.login(username='confirmer', password='pw')
+        self.client.post(url, self._post_data())
+        self.checklist.refresh_from_db()
+        self.assertEqual(self.checklist.status, ChecklistRunStatus.SUBMITTED)
+
+
+class TemplateFilterTests(TestCase):
+
+    def setUp(self):
+        self.location = Location.objects.create(name='L1')
+        self.t1 = ChecklistTemplate.objects.create(name='Alpha', target_location=self.location, is_active=True)
+        self.t2 = ChecklistTemplate.objects.create(name='Beta', target_location=self.location, is_active=False)
+
+    def test_filter_by_name(self):
+        f = ChecklistTemplateFilter({'name': 'Alpha'}, queryset=ChecklistTemplate.objects.all())
+        self.assertEqual(list(f.qs), [self.t1])
+
+    def test_filter_by_active(self):
+        f = ChecklistTemplateFilter({'is_active': 'True'}, queryset=ChecklistTemplate.objects.all())
+        self.assertEqual(list(f.qs), [self.t1])

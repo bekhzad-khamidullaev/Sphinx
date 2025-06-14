@@ -226,6 +226,12 @@ class Checklist(models.Model):
         verbose_name = _("Выполненный чеклист (Прогон)")
         verbose_name_plural = _("Выполненные чеклисты (Прогоны)")
         ordering = ['-performed_at', '-created_at']
+        permissions = [
+            (
+                "confirm_checklist",
+                _("Может подтверждать чеклист"),
+            )
+        ]
 
     def __str__(self):
         loc_info = f" @ {self.location.name}" if self.location else ""
