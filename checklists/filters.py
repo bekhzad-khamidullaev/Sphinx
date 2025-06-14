@@ -3,7 +3,14 @@ import django_filters
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
-from .models import Checklist, ChecklistItemStatus, Location, ChecklistPoint, ChecklistRunStatus
+from .models import (
+    Checklist,
+    ChecklistItemStatus,
+    Location,
+    ChecklistPoint,
+    ChecklistRunStatus,
+    ChecklistTemplate,
+)
 try:
     from tasks.models import TaskCategory
 except ImportError:
@@ -109,6 +116,58 @@ class ChecklistHistoryFilter(django_filters.FilterSet):
                         return True
                 elif isinstance(field, django_filters.fields.ChoiceField):
                     if value not in [None, '']:
+                        return True
+                elif value:
+                    return True
+            return False
+        return False
+
+
+class ChecklistTemplateFilter(django_filters.FilterSet):
+    """Filter templates by name, category and activity."""
+
+    name = django_filters.CharFilter(
+        field_name="name",
+        lookup_expr="icontains",
+        label=_("Название"),
+        widget=forms.TextInput(attrs={"placeholder": _("Название шаблона...")}),
+    )
+
+    template_category_queryset = TaskCategory.objects.none()
+    if TaskCategory and hasattr(TaskCategory, "_meta") and TaskCategory._meta.concrete_model:
+        template_category_queryset = TaskCategory.objects.all().order_by("name")
+
+    category = django_filters.ModelChoiceFilter(
+        field_name="category",
+        queryset=template_category_queryset,
+        label=_("Категория"),
+        widget=forms.Select,
+        null_label=_("Все категории"),
+    )
+
+    is_active = django_filters.BooleanFilter(
+        label=_("Активен"),
+        field_name="is_active",
+        widget=forms.NullBooleanSelect,
+    )
+
+    class Meta:
+        model = ChecklistTemplate
+        fields = []
+
+    @property
+    def is_filtered(self):
+        if hasattr(self, "form") and self.form.is_bound and self.form.is_valid():
+            for name, field in self.form.fields.items():
+                value = self.form.cleaned_data.get(name)
+                if isinstance(field, django_filters.fields.RangeField):
+                    if value and (value.start or value.stop):
+                        return True
+                elif isinstance(field, django_filters.fields.ModelChoiceField):
+                    if value:
+                        return True
+                elif isinstance(field, django_filters.fields.ChoiceField):
+                    if value not in [None, ""]:
                         return True
                 elif value:
                     return True

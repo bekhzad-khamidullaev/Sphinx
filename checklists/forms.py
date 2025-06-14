@@ -2,15 +2,22 @@
 import logging
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import inlineformset_factory, BaseInlineFormSet, models as model_forms
+from django.forms import inlineformset_factory, BaseInlineFormSet
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.db import models as django_db_models
-from django.utils.safestring import mark_safe
 from django.utils import timezone
 from .models import (
-    ChecklistTemplate, ChecklistTemplateItem, Checklist, ChecklistResult, ChecklistItemStatus, ChecklistSection,
-    ChecklistItemStatus, Location, ChecklistPoint, AnswerType, ChecklistRunStatus
+    ChecklistTemplate,
+    ChecklistTemplateItem,
+    Checklist,
+    ChecklistResult,
+    ChecklistItemStatus,
+    ChecklistSection,
+    Location,
+    ChecklistPoint,
+    AnswerType,
+    ChecklistRunStatus,
 )
 try:
     from tasks.models import TaskCategory

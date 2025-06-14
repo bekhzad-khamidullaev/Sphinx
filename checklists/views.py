@@ -37,7 +37,7 @@ from .forms import (
     PerformChecklistResultFormSet,
     ChecklistStatusUpdateForm,
 )
-from .filters import ChecklistHistoryFilter
+from .filters import ChecklistHistoryFilter, ChecklistTemplateFilter
 from .utils import calculate_checklist_score
 
 from .serializers import ChecklistPointSerializer
@@ -73,6 +73,17 @@ class CanReviewChecklistMixin(UserPassesTestMixin):
         return self.request.user.is_authenticated and self.request.user.is_staff
 
 
+class CanConfirmChecklistMixin(UserPassesTestMixin):
+    """Mixin requiring the confirm_checklist permission."""
+
+    permission_denied_message = _("У вас нет прав подтверждать чеклисты.")
+    raise_exception = True
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_authenticated and user.has_perm("checklists.confirm_checklist")
+
+
 class ChecklistTemplateListView(LoginRequiredMixin, ListView):
     model = ChecklistTemplate
     template_name = "checklists/template_list.html"
@@ -92,8 +103,10 @@ class ChecklistTemplateListView(LoginRequiredMixin, ListView):
             related_fields.append("category")
             order_by_fields.insert(0, "category__name")
 
+        self.filterset = ChecklistTemplateFilter(self.request.GET, queryset=queryset)
+
         return (
-            queryset.select_related(*related_fields)
+            self.filterset.qs.select_related(*related_fields)
             .annotate(item_count_agg=Count("items"), run_count_agg=Count("runs"))
             .order_by(*order_by_fields)
         )
@@ -102,6 +115,7 @@ class ChecklistTemplateListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Шаблоны чеклистов")
         context['can_create_template'] = self.request.user.is_staff
+        context["filterset"] = getattr(self, "filterset", None)
         return context
 
 
@@ -477,6 +491,9 @@ class PerformChecklistView(LoginRequiredMixin, CanPerformChecklistMixin, View):
                     # formset.save_m2m() # Если бы в формах формсета были M2M
 
                     if action == "submit_final":
+                        if not request.user.has_perm("checklists.confirm_checklist"):
+                            messages.error(request, _("У вас нет прав подтверждать чеклисты."))
+                            return redirect(checklist_run.get_absolute_url())
                         pending_items_count = checklist_run.results.filter(status=ChecklistItemStatus.PENDING).count()
                         if pending_items_count > 0:
                             messages.error(request, _("Не все пункты чеклиста заполнены. Пожалуйста, ответьте на все ожидающие пункты (%s) перед отправкой.") % pending_items_count)
@@ -604,7 +621,7 @@ class ChecklistDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         return context
 
 
-class ChecklistStatusUpdateView(LoginRequiredMixin, CanReviewChecklistMixin, UpdateView):
+class ChecklistStatusUpdateView(LoginRequiredMixin, CanConfirmChecklistMixin, UpdateView):
     model = Checklist
     form_class = ChecklistStatusUpdateForm
     template_name = "checklists/checklist_status_form.html"
