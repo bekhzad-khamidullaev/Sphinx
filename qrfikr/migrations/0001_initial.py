@@ -10,7 +10,8 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("checklists", "0006_alter_checklist_options"),
+        ("checklists", "0005_add_confirm_permission"),
+
     ]
 
     operations = [

@@ -1,7 +1,8 @@
 # user_profiles/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from . import views, api_auth
 
 app_name = "user_profiles"
 
@@ -17,6 +18,9 @@ urlpatterns = [
     path('logout/', views.user_logout_view, name='logout'),
 
     path('api/v1/', include(router.urls)),
+    path('api/register/', api_auth.RegisterView.as_view(), name='api-register'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     path('profile/', views.UserProfileView.as_view(), name='profile_view'),
     path('profile/password_change/', views.UserPasswordChangeView.as_view(), name='password_change'),
