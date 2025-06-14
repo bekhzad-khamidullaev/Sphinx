@@ -7,9 +7,9 @@ from django.utils.translation import gettext_lazy as _
 
 # --- Основные параметры ---
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = "django-insecure-dev-key-@replace-this!"
-DEBUG = True
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key-@replace-this!")
+DEBUG = os.environ.get("DEBUG", "True") == "True"
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*,localhost,127.0.0.1").split(",")
 
 # --- Установленные приложения ---
 INSTALLED_APPS = [
@@ -256,15 +256,15 @@ SITE_NAME = 'ServiceDesk' # Название вашего проекта/сай�
 # Для локальной разработки можно использовать консольный email backend:
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Для продакшена:
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.office365.com' # Ваш SMTP сервер
-EMAIL_PORT = 587 # или 465 для SSL
-EMAIL_USE_TLS = True # True для TLS, False для SSL (если порт 465)
-EMAIL_HOST_USER = 'b.xamidullayev@evos.uz' # Ваш email логин
-EMAIL_HOST_PASSWORD = 'bgtyhn1234$' # Ваш email пароль
-DEFAULT_FROM_EMAIL = f'{SITE_NAME} <noreply@evos.uz>' # Email отправителя по умолчанию
-SERVER_EMAIL = DEFAULT_FROM_EMAIL # Для ошибок сервера
-ADMINS = [('Bekhzad Khamidulloh', 'b.xamidullayev@evos.uz')] # Email админов для уведомлений
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.example.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'{SITE_NAME} <noreply@example.com>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+ADMINS = []
 
 # Кастомные настройки для user_profiles/signals.py
 ENABLE_AUDIT_LOG = False # Установите True, если решите добавить AuditLog позже
@@ -279,5 +279,6 @@ MAX_FILE_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'] # MIME types
 
 
-CELERY_BROKER_URL = 'redis://109.94.172.194:6379/0' # Default Redis URL
-CELERY_RESULT_BACKEND = 'redis://109.94.172.194:6379/0' # If you store results in Redis
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
+
