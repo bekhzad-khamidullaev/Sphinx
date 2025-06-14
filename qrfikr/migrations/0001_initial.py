@@ -11,6 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("checklists", "0005_add_confirm_permission"),
+
     ]
 
     operations = [

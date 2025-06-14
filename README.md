@@ -7,6 +7,7 @@ This project provides a REST API built with Django and DRF.
 ```bash
 pip install -r requirements.txt
 python manage.py migrate
+
 python manage.py createsuperuser  # optional
 python manage.py runserver
 ```
