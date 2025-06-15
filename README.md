@@ -17,3 +17,13 @@ python manage.py runserver
 - Register new user via `POST /api/register/`.
 
 Access Swagger UI at `/swagger/`.
+
+## Troubleshooting migrations
+
+If `python manage.py migrate` fails with an error like `duplicate column name`, it may indicate that a migration was applied manually or outside of Django's migration history. You can mark the migration as already applied using the `--fake` option. For example:
+
+```bash
+python manage.py migrate room 0002 --fake
+```
+
+Repeat for any other app showing the same error, then run `python manage.py migrate` again.
