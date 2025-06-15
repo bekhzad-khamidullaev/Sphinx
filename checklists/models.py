@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from taggit.managers import TaggableManager
+from taggit.models import TagBase, GenericUUIDTaggedItemBase
 
 try:
     from tasks.models import Task, TaskCategory
@@ -109,6 +110,23 @@ class ChecklistPoint(models.Model):
     def __str__(self):
         return f"{self.location.name} / {self.name}"
 
+class ChecklistTemplateTag(TagBase):
+    class Meta:
+        verbose_name = _("Тег шаблона чеклиста")
+        verbose_name_plural = _("Теги шаблонов чеклиста")
+
+
+class ChecklistTemplateTaggedItem(GenericUUIDTaggedItemBase):
+    tag = models.ForeignKey(
+        ChecklistTemplateTag,
+        related_name="tagged_items",
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = _("Связь шаблона чеклиста и тега")
+        verbose_name_plural = _("Связи шаблонов чеклиста и тегов")
+
 class ChecklistTemplate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -126,7 +144,12 @@ class ChecklistTemplate(models.Model):
     is_archived = models.BooleanField(default=False, verbose_name=_("Архивирован"), help_text=_("Архивированные шаблоны скрыты из основного списка и не могут быть использованы для новых чеклистов."))
     frequency = models.CharField(max_length=50, blank=True, verbose_name=_("Периодичность"), help_text=_("Например: ежедневно, еженедельно по понедельникам, раз в месяц 15 числа."))
     next_due_date = models.DateField(null=True, blank=True, verbose_name=_("След. дата выполнения"), help_text=_("Для автоматического планирования (если реализовано)."))
-    tags = TaggableManager(blank=True, verbose_name=_("Теги"), help_text=_("Разделяйте теги запятыми."))
+    tags = TaggableManager(
+        through=ChecklistTemplateTaggedItem,
+        blank=True,
+        verbose_name=_("Теги"),
+        help_text=_("Разделяйте теги запятыми."),
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Создан"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Обновлен"))
 
