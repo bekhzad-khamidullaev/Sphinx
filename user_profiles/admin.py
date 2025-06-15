@@ -188,3 +188,4 @@ class JobTitleAdmin(admin.ModelAdmin):
             return obj.description[:75] + '...' if len(obj.description) > 75 else obj.description
         return "-"
     description_excerpt.short_description = _("Описание (начало)")
+

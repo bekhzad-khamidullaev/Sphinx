@@ -303,3 +303,4 @@ class ChecklistAdmin(admin.ModelAdmin):
             url = reverse('checklists:checklist_detail', kwargs={'pk': obj.pk})
             return format_html('<a href="{}" target="_blank"><i class="fas fa-external-link-alt"></i> {}</a>', url, _('Просмотр'))
         return "-"
+
