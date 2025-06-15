@@ -157,7 +157,9 @@ class MessageAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request): return False
     def has_change_permission(self, request, obj=None): return request.user.is_superuser
-    def has_delete_permission(self, request, obj=None): return request.user.is_superuser
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
 
 
 @admin.register(MessageReadStatus)
@@ -253,6 +255,11 @@ class ReactionAdmin(admin.ModelAdmin):
     def user_link_display_readonly(self, obj): return self.user_link_display(obj)
     user_link_display_readonly.short_description = _("Пользователь")
 
-    def has_add_permission(self, request): return False
-    def has_change_permission(self, request, obj=None): return False
-    def has_delete_permission(self, request, obj=None): return request.user.is_superuser
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
