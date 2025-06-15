@@ -14,7 +14,6 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <!-- Bootswatch Zephyr theme -->
     <link rel="stylesheet" href="{% static 'vendor/bootswatch/zephyr/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     {% tailwind_css %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
@@ -34,7 +33,7 @@
     <div id="preloader"
         class="fixed inset-0 w-full h-full bg-white/95 flex items-center justify-center z-[1001] transition-opacity duration-500">
         <div
-            class="w-12 h-12 border-4 border-gray-200 border-l-ios-blue rounded-full animate-spin">
+            class="w-12 h-12 border-4 border-gray-200 border-l-indigo-600 rounded-full animate-spin">
         </div>
     </div>
     {% if user.is_authenticated %}

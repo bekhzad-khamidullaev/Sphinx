@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="chat-message group flex items-end mb-3 ${isOwn ? 'justify-end' : ''}" id="message-${msgData.id}" data-message-id="${msgData.id}" data-user-id="${msgData.user.id}" data-timestamp="${msgData.timestamp}">
                 ${!isOwn ? `<div class="flex-shrink-0 mr-2">${avatarHTML}</div>` : ''}
                 <div class="message-content max-w-xs lg:max-w-md break-words">
-                    <div class="px-3.5 py-2.5 rounded-2xl shadow ${isOwn ? 'bg-indigo-600 text-white dark:bg-ios-blue rounded-br-none' : 'bg-white text-gray-700 dark:bg-dark-700 dark:text-gray-100 border border-gray-200 dark:border-dark-600 rounded-bl-none'}">
+                    <div class="px-3.5 py-2.5 rounded-2xl shadow ${isOwn ? 'bg-indigo-600 text-white dark:bg-indigo-600 rounded-br-none' : 'bg-white text-gray-700 dark:bg-dark-700 dark:text-gray-100 border border-gray-200 dark:border-dark-600 rounded-bl-none'}">
                         ${!isOwn ? `<p class="text-xs font-semibold mb-0.5 ${isOwn ? 'text-indigo-200 dark:text-indigo-300' : 'text-indigo-600 dark:text-indigo-400'}">${escapeHTML(msgData.user.username)}</p>`: ''}
                         ${replyHTML}
                         ${fileHTML}
