@@ -234,6 +234,7 @@ LOGGING = {
     },
     "loggers": {
         "django": {"handlers": ["console"], "level": "DEBUG"},
+        "django.template": {"handlers": ["console"], "level": "INFO", "propagate": False},
         "tasks": {"handlers": ["console"], "level": "DEBUG"},
         "checklists": {"handlers": ["console"], "level": "DEBUG"},
     },
