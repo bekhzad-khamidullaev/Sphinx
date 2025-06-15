@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.utils.translation import gettext_lazy as _
+from .filters import ChecklistTemplateFilter
 from .models import (
     Location,
     ChecklistPoint,
