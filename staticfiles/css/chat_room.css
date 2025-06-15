@@ -1,0 +1,189 @@
+/* static/css/chat_room.css */
+
+/* --- Общие стили для области чата --- */
+#chat-messages-container {
+    /* Стили для скроллбара уже определены в <style> шаблона room_detail.html */
+    /* Можно добавить padding, если нужно, но он есть у родительского div */
+}
+
+#chat-messages-list {
+    /* Стили для самого списка сообщений, если нужны */
+}
+
+#message-anchor {
+    height: 1px; /* Просто для того, чтобы было к чему скроллить */
+}
+
+/* --- Стили для отдельного сообщения --- */
+.message-container {
+    /* Уже стилизуется flex justify-end/start в шаблоне */
+    /* Можно добавить общие отступы, если нужно */
+}
+
+.message-bubble-content {
+    position: relative; /* Для позиционирования кнопок действий */
+}
+
+.message-bubble {
+    /* Основные стили для "пузыря" сообщения уже заданы Tailwind классами в шаблоне */
+    /* (bg-blue-600 text-white rounded-br-none или bg-white text-gray-900 rounded-bl-none) */
+    /* Можно добавить, например, box-shadow, если стандартного Tailwind недостаточно */
+    /* box-shadow: 0 1px 3px rgba(0,0,0,0.1); */
+    word-wrap: break-word; /* Для переноса очень длинных слов без пробелов */
+    overflow-wrap: break-word;
+}
+
+.message-content {
+    /* Стили для основного текста сообщения */
+    white-space: pre-wrap; /* Сохраняет пробелы и переносы строк */
+}
+
+.message-meta {
+    /* Стили для времени, статуса "отредактировано" */
+    /* font-size: 0.6875rem; /* 11px */ /* Уже задано text-[11px] */
+}
+
+/* Кнопки действий над сообщением (появляются при наведении) */
+.message-actions {
+    /* Позиционирование и стили кнопок уже частично заданы в HTML */
+    /* Можно добавить transition, если стандартный Tailwind не устраивает */
+    /* transition: opacity 0.2s ease-in-out; */
+}
+.message-actions button {
+    background: none;
+    border: none;
+    padding: 0.25rem; /* Немного padding для кликабельности */
+    cursor: pointer;
+    /* Цвет иконки наследуется или задается в HTML классами child:text-... */
+}
+/* Стили для иконок внутри кнопок можно добавить здесь, если нужно */
+/* .message-actions button i { font-size: 0.75rem; } */
+
+
+/* --- Стили для блока ответа на сообщение --- */
+.reply-block {
+    /* Стили уже заданы Tailwind классами в шаблоне */
+    /* (border-l-2, pl-2, mb-1, text-sm, opacity-80, cursor-pointer, hover:opacity-100) */
+    /* Можно добавить фон, если нужно выделить сильнее */
+    /* background-color: rgba(0,0,0,0.03); */
+}
+.reply-user {
+    /* font-weight: 500; */ /* Уже задано font-medium в HTML */
+}
+.reply-content {
+    /* font-style: italic; */ /* Уже задано italic в HTML */
+    /* text-overflow: ellipsis; white-space: nowrap; overflow: hidden; */ /* Уже задано truncate */
+}
+
+/* --- Стили для блока с файлом --- */
+.file-block {
+    /* mb-1 уже задан */
+}
+.file-link {
+    /* Стили для ссылки на файл (underline, text-color) уже заданы */
+    /* Можно добавить фон при наведении, если нужно */
+    /* display: inline-flex; align-items: center; gap: 0.5rem; */ /* Уже задано flex items-center gap-2 */
+    padding: 0.25rem 0.5rem; /* Небольшой паддинг для ссылки */
+    border-radius: 0.375rem; /* rounded-md */
+}
+.file-link:hover {
+    /* background-color: rgba(0,0,0,0.05); */ /* Легкий фон при наведении */
+}
+.file-name {
+    /* Стили для имени файла */
+}
+.file-block img { /* Для превью изображений */
+    /* max-w-xs max-h-48 mt-1 rounded object-contain border border-gray-300 уже заданы */
+}
+
+/* --- Стили для реакций --- */
+.reactions-area {
+    /* display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; */ /* Уже задано Tailwind */
+}
+.reaction-button { /* Предполагаемый класс для кнопок реакций, создаваемых JS */
+    padding: 0.2rem 0.5rem;
+    border: 1px solid #e5e7eb; /* border-gray-200 */
+    border-radius: 9999px; /* rounded-full */
+    font-size: 0.75rem; /* text-xs */
+    background-color: #f3f4f6; /* bg-gray-100 */
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+}
+.reaction-button:hover {
+    background-color: #e5e7eb; /* bg-gray-200 */
+}
+.reaction-button.reacted-by-user { /* Если текущий пользователь поставил эту реакцию */
+    background-color: #DBEAFE; /* bg-blue-100 */
+    border-color: #93C5FD; /* border-blue-300 */
+    color: #2563EB; /* text-blue-700 */
+}
+
+/* --- Стили для футера с полем ввода --- */
+#chat-message-form {
+    /* display: flex; align-items: flex-end; space-x-2; */ /* Уже задано Tailwind */
+}
+#chat-file-input-trigger { /* Метка для инпута файла */
+    /* Стили кнопки-иконки */
+}
+#chat-message-input {
+    /* form-textarea, кастомная высота и скроллбар уже заданы */
+    /* min-height: 40px; /* Минимальная высота, чтобы кнопка отправки была выровнена */
+}
+#chat-message-submit-btn {
+    /* Стили кнопки отправки уже заданы */
+}
+
+/* --- Предпросмотр ответа и файла --- */
+#reply-preview-area,
+#file-preview-area {
+    /* Стили уже заданы Tailwind */
+}
+#reply-preview-area button,
+#file-preview-area button {
+    /* Стили для кнопок закрытия предпросмотра */
+    line-height: 1;
+}
+
+/* --- Стили для списка онлайн-пользователей (если нужны кастомные) --- */
+#online-users-panel {
+    /* display: flex; align-items: center; */ /* Уже задано Tailwind */
+}
+#online-list {
+    /* Стили для списка имен */
+}
+
+/* --- Индикатор печати --- */
+#typing-indicator-panel {
+    /* height: 1rem; */ /* Уже задано h-4 */
+    /* Можно добавить transition для плавного появления/исчезновения */
+}
+.typing-user-indicator {
+    /* font-style: italic; */ /* Уже задано в JS, если используется */
+    /* color: #6b7280; */ /* text-gray-500 */
+}
+
+/* --- Загрузчик старых сообщений --- */
+#older-messages-loader button {
+    /* text-sm text-indigo-600 hover:underline */ /* Уже задано Tailwind */
+}
+#older-messages-loader i { /* Для спиннера */
+    /* animate-spin mr-1 */ /* Уже задано Tailwind */
+}
+
+/* --- Мобильный сайдбар (если нужны доп. стили) --- */
+#mobile-sidebar {
+    /* fixed inset-0 ... */ /* Уже задано Tailwind */
+}
+#mobile-sidebar-overlay {
+    /* fixed inset-0 bg-black bg-opacity-25 */ /* Уже задано Tailwind */
+}
+
+/* Пример подсветки сообщения при переходе по якорю (из поиска) */
+.highlight-message {
+  animation: highlight-animation 2s ease-out;
+}
+
+@keyframes highlight-animation {
+  0% { background-color: rgba(255, 255, 0, 0.5); } /* Желтый с прозрачностью */
+  100% { background-color: transparent; }
+}

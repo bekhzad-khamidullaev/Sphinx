@@ -1,581 +1,767 @@
-// filename: static/js/chat_room.js
-
 document.addEventListener('DOMContentLoaded', () => {
-    const roomName = JSON.parse(document.getElementById('json-roomname').textContent);
-    const userName = JSON.parse(document.getElementById('json-username').textContent);
-    const userId = JSON.parse(document.getElementById('json-userid').textContent);
+    // --- DOM Элементы ---
+    const chatMessagesContainer = document.getElementById('chat-messages-container');
+    const chatMessagesList = document.getElementById('chat-messages-list');
+    const messageForm = document.getElementById('chat-message-form');
+    const messageInput = document.getElementById('chat-message-input');
+    const messageSubmitBtn = document.getElementById('chat-message-submit-btn');
+    const onlineCountEl = document.getElementById('online-count');
+    const onlineListEl = document.getElementById('online-list');
+    const typingIndicatorPanel = document.getElementById('typing-indicator-panel');
+    const loadOlderBtn = document.getElementById('load-older-messages-btn');
+    const olderMessagesLoaderDiv = document.getElementById('older-messages-loader');
+    const noMessagesPlaceholder = document.getElementById('no-messages-placeholder');
+    const messageAnchor = document.getElementById('message-anchor'); // Для автопрокрутки
 
-    const chatLog = document.querySelector('#chat-messages');
-    const messageInput = document.querySelector('#chat-message-input');
-    const messageSubmit = document.querySelector('#chat-message-submit');
-    const fileInput = document.getElementById('file-input');
-    const onlineUsersList = document.getElementById('online-users-list');
-    const noOnlineUsersLi = document.getElementById('no-online-users');
-    const messageTemplate = document.getElementById('message-template');
+    // Элементы для ответа на сообщение
     const replyPreviewArea = document.getElementById('reply-preview-area');
     const replyPreviewUser = document.getElementById('reply-preview-user');
-    const replyPreviewContent = document.getElementById('reply-preview-content');
-    const cancelReplyButton = document.getElementById('cancel-reply-button');
-    const searchButton = document.getElementById('search-button');
-    const searchArea = document.getElementById('search-area');
-    const searchInput = document.getElementById('search-input');
-    const searchResults = document.getElementById('search-results');
-    const archiveButton = document.getElementById('archive-button');
+    const replyPreviewText = document.getElementById('reply-preview-text');
+    const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+    const replyMessageIdHidden = document.getElementById('reply-message-id-hidden');
+
+    // Элементы для прикрепления файла
+    const fileInputTrigger = document.getElementById('chat-file-input-trigger'); // label
+    const fileInput = document.getElementById('chat-file-input');
+    const filePreviewArea = document.getElementById('file-preview-area');
+    const filePreviewName = document.getElementById('file-preview-name');
+    const filePreviewSize = document.getElementById('file-preview-size');
+    const removeFileBtn = document.getElementById('remove-file-btn');
+
+    // Мобильный сайдбар
+    const openSidebarBtn = document.getElementById('open-sidebar-btn');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+    const mobileSidebar = document.getElementById('mobile-sidebar');
+    const mobileSidebarOverlay = document.getElementById('mobile-sidebar-overlay');
 
 
-    let currentReplyToId = null; // Store the ID of the message being replied to
-    let webSocket;
+    // --- Состояние чата ---
+    let chatSocket = null;
+    let currentUser = { id: window.chatConfig.currentUserId, username: window.chatConfig.currentUsername };
+    let oldestMessageId = null; // Для подгрузки старых сообщений
+    let isLoadingOlderMessages = false;
+    let hasMoreOlderMessages = window.chatConfig.initialMessagesCount >= window.chatConfig.messagesPageSize;
+    let typingTimeout = null;
+    let currentAttachedFile = null; // { file: File, base64: string }
 
+    // --- Инициализация ---
+    function init() {
+        if (!messageInput || !chatMessagesList) {
+            console.error('Chat UI elements not found. Chat cannot initialize.');
+            return;
+        }
+        connectWebSocket();
+        setupEventListeners();
+        scrollToBottom(true); // true для мгновенной прокрутки
+        updateLoadOlderButtonVisibility();
+        autoResizeTextarea(messageInput);
+        updateSubmitButtonState();
+    }
+
+    // --- WebSocket Логика ---
     function connectWebSocket() {
-        const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        webSocket = new WebSocket(
-            wsScheme + '://' + window.location.host + '/ws/' + roomName + '/'
-        );
+        const wsPath = window.djangoWsPath('chat', window.chatConfig.roomSlug);
+        chatSocket = new WebSocket(wsPath);
 
-        webSocket.onopen = function(e) {
-            console.log('WebSocket connection established');
-            // Request initial state if needed, e.g., unread counts
-            // Mark messages as potentially read on connect/focus
-            markMessagesAsRead();
+        chatSocket.onopen = (e) => {
+            console.log('Chat WebSocket connected.');
+            // Можно запросить начальные данные, если они не передаются через Django context
+            // Например, список онлайн пользователей, если он не был получен при первом рендере.
         };
 
-        webSocket.onclose = function(e) {
-            console.error('WebSocket closed unexpectedly. Attempting to reconnect...', e);
-            // Implement backoff strategy for reconnection
-            setTimeout(connectWebSocket, 5000); // Try reconnecting every 5 seconds
-        };
-
-        webSocket.onerror = function(e) {
-            console.error('WebSocket error:', e);
-            // Maybe close and attempt reconnect
-             webSocket.close();
-        };
-
-        webSocket.onmessage = function(e) {
+        chatSocket.onmessage = (e) => {
             const data = JSON.parse(e.data);
-            console.log("Message received: ", data); // Debugging
+            console.log('Data received:', data);
+            handleWebSocketMessage(data);
+        };
 
-            switch (data.type) {
-                case 'chat_message':
-                case 'reply_message':
-                case 'file_message':
-                    appendMessage(data.payload);
-                    // If message is not from current user, potentially show notification/update unread count
-                    if (data.payload.user.username !== userName) {
-                        // Increment unread count for this room in the sidebar (logic needed)
-                    }
-                    break;
-                case 'edit_message':
-                    updateMessageContent(data.payload);
-                    break;
-                case 'delete_message':
-                    markMessageAsDeleted(data.payload);
-                    break;
-                case 'reaction_update':
-                    updateReactions(data.payload.message_id, data.payload.reactions);
-                    break;
-                case 'online_users':
-                    updateOnlineUsers(data.payload.users);
-                    break;
-                 case 'error_message':
-                     alert(`Error: ${data.payload.message}`); // Simple alert for errors
-                     break;
-                // Handle other message types (read_status_update, user_join, user_leave etc.) if implemented
-                default:
-                    console.warn('Unknown message type received:', data.type);
+        chatSocket.onerror = (e) => {
+            console.error('Chat WebSocket error:', e);
+            // Показать пользователю сообщение об ошибке соединения
+            displayGlobalError("Ошибка соединения с чатом. Попробуйте обновить страницу.");
+        };
+
+        chatSocket.onclose = (e) => {
+            console.warn('Chat WebSocket closed. Code:', e.code, 'Reason:', e.reason);
+            // Попытка переподключения через некоторое время или уведомление пользователя
+            if (e.code !== 1000 && e.code !== 1005) { // Не закрыто чисто
+                displayGlobalError("Соединение с чатом потеряно. Попытка переподключения через 5 секунд...");
+                setTimeout(connectWebSocket, 5000);
             }
         };
     }
 
-    function sendMessage(type, payload) {
-        if (webSocket.readyState === WebSocket.OPEN) {
-            webSocket.send(JSON.stringify({ type: type, ...payload }));
+    function sendWebSocketMessage(type, payload = {}, client_id = null) {
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            const message = { type: type, payload: payload };
+            if (client_id) { // Для сообщений, ожидающих ACK
+                message.payload.client_id = client_id;
+            }
+            chatSocket.send(JSON.stringify(message));
         } else {
-            console.error("WebSocket is not open. Message not sent.");
-            // Optionally queue message or show error
+            console.error('WebSocket is not connected.');
+            displayGlobalError("Не удается отправить сообщение. Нет соединения с сервером.");
         }
     }
 
-    function formatTimestamp(isoString) {
-        const date = new Date(isoString);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    function handleWebSocketMessage(data) {
+        const type = data.type;
+        const payload = data.payload || {}; // Убедимся, что payload есть
+
+        switch (type) {
+            case 'new_message': // MSG_TYPE_SERVER_NEW_MESSAGE
+            case 'update_message': // MSG_TYPE_SERVER_UPDATE_MESSAGE
+                handleNewOrUpdateMessage(payload, type === 'new_message');
+                break;
+            case 'reaction_update': // MSG_TYPE_SERVER_REACTION_UPDATE
+                updateMessageReactions(payload.message_id, payload.reactions);
+                break;
+            case 'online_users_update': // MSG_TYPE_SERVER_ONLINE_USERS
+                updateOnlineUsersList(payload.users);
+                break;
+            case 'older_messages_list': // MSG_TYPE_SERVER_OLDER_MESSAGES
+                handleOlderMessages(payload.messages, payload.has_more, payload.client_id);
+                break;
+            case 'message_ack': // MSG_TYPE_SERVER_MESSAGE_ACK
+                handleMessageAck(data.client_id, payload.server_id, payload.timestamp);
+                break;
+            case 'error_notification': // MSG_TYPE_SERVER_ERROR
+                handleServerError(payload.message, data.client_id || payload.client_id);
+                break;
+            case 'typing_update': // MSG_TYPE_SERVER_TYPING_UPDATE
+                handleTypingUpdate(payload.user, payload.is_typing);
+                break;
+            default:
+                console.warn('Unknown WebSocket message type:', type);
+        }
     }
 
-    function appendMessage(msgData) {
-        const messageElement = createMessageElement(msgData);
-        chatLog.appendChild(messageElement);
-        scrollToBottom();
+    // --- Обработчики сообщений от сервера ---
+    function handleNewOrUpdateMessage(messageData, isNew) {
+        if (noMessagesPlaceholder) noMessagesPlaceholder.classList.add('hidden');
+
+        const existingMessageEl = document.getElementById(`message-${messageData.id}`);
+        if (existingMessageEl) { // Обновление существующего
+            // Заменяем содержимое существующего элемента новым, отрендеренным
+            // Это проще, чем обновлять отдельные части, но можно и так
+            const tempDiv = document.createElement('div');
+            // Предполагается, что у вас есть функция renderMessageToHTML
+            tempDiv.innerHTML = renderMessageToHTML(messageData, currentUser.id);
+            existingMessageEl.replaceWith(tempDiv.firstElementChild);
+        } else if (isNew) { // Добавление нового
+            const messageHTML = renderMessageToHTML(messageData, currentUser.id);
+            chatMessagesList.insertAdjacentHTML('beforeend', messageHTML);
+        }
+
+        if (isNew || messageData.user.id === currentUser.id) {
+             // Прокрутка вниз для новых сообщений или если это наше обновленное сообщение
+            scrollToBottom();
+        }
+        // Обновляем oldestMessageId если это первое сообщение или старее текущего самого старого
+        if (chatMessagesList.children.length > 0 && (!oldestMessageId || new Date(messageData.timestamp) < new Date(chatMessagesList.firstElementChild.dataset.timestamp || '9999-12-31'))) {
+             const firstMessageEl = chatMessagesList.querySelector('.chat-message');
+             if (firstMessageEl) oldestMessageId = firstMessageEl.dataset.messageId;
+        }
     }
 
-    function createMessageElement(msgData) {
-        const templateClone = messageTemplate.content.cloneNode(true);
-        const messageDiv = templateClone.querySelector('.message-container');
-        const bubble = templateClone.querySelector('.message-bubble');
-        const content = templateClone.querySelector('.message-content');
-        const timestamp = templateClone.querySelector('.timestamp');
-        const editedIndicator = templateClone.querySelector('.edited-indicator');
-        const replyBlock = templateClone.querySelector('.reply-block');
-        const fileBlock = templateClone.querySelector('.file-block');
-        const reactionsBlock = templateClone.querySelector('.reactions-block');
-        const actions = templateClone.querySelector('.message-actions');
+    function updateMessageReactions(messageId, reactionsSummary) {
+        const messageEl = document.getElementById(`message-${messageId}`);
+        if (!messageEl) return;
 
-        messageDiv.id = `message-${msgData.id}`;
-        messageDiv.dataset.messageId = msgData.id;
-        messageDiv.dataset.username = msgData.user.username;
+        const reactionsContainer = messageEl.querySelector('.reactions-container');
+        if (!reactionsContainer) return;
 
-        // Set alignment
-        if (msgData.user.username === userName) {
-            messageDiv.classList.add('justify-end');
-            bubble.classList.add('bg-blue-500', 'text-white');
+        reactionsContainer.innerHTML = ''; // Очищаем старые реакции
+        for (const emoji in reactionsSummary) {
+            const reactionData = reactionsSummary[emoji];
+            const reactionButton = document.createElement('button');
+            reactionButton.className = `px-2 py-1 text-xs rounded-full border transition-colors
+                                       ${reactionData.reacted_by_current_user
+                                           ? 'bg-indigo-100 dark:bg-indigo-700/50 border-indigo-300 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300'
+                                           : 'bg-gray-100 dark:bg-dark-600 border-gray-300 dark:border-dark-500 text-gray-600 dark:text-gray-300 hover:border-indigo-400 dark:hover:border-indigo-500'
+                                       }`;
+            reactionButton.textContent = `${emoji} ${reactionData.count}`;
+            reactionButton.title = reactionData.users.join(', ');
+            reactionButton.dataset.emoji = emoji;
+            reactionButton.dataset.messageId = messageId; // Для обработчика клика
+            reactionButton.onclick = handleReactionClick; // Обработчик клика на реакцию
+            reactionsContainer.appendChild(reactionButton);
+        }
+    }
+
+    function updateOnlineUsersList(users) {
+        if (onlineCountEl) onlineCountEl.textContent = users.length;
+        if (onlineListEl) {
+            if (users.length === 0) {
+                onlineListEl.textContent = window.chatConfig.i18n.noOneOnline || 'Никого нет в сети';
+                return;
+            }
+            // Показать несколько имен, остальных скрыть под "и еще N"
+            const maxToShow = 3;
+            let names = users.slice(0, maxToShow).map(u => u.display_name || u.username).join(', ');
+            if (users.length > maxToShow) {
+                names += ` ${window.chatConfig.i18n.andMore || 'и еще'} ${users.length - maxToShow}`;
+            }
+            onlineListEl.textContent = names;
+            onlineListEl.title = users.map(u => u.display_name || u.username).join(', '); // Полный список в title
+        }
+    }
+
+    function handleOlderMessages(messages, hasMore, clientId) {
+        isLoadingOlderMessages = false;
+        if (loadOlderBtn) loadOlderBtn.disabled = false;
+        if (loadOlderBtn) loadOlderBtn.querySelector('i').classList.remove('fa-spin');
+
+        if (messages.length > 0) {
+            const currentScrollHeight = chatMessagesContainer.scrollHeight;
+            messages.forEach(msgData => {
+                const messageHTML = renderMessageToHTML(msgData, currentUser.id);
+                chatMessagesList.insertAdjacentHTML('afterbegin', messageHTML);
+            });
+            // Сохраняем позицию скролла относительно старых сообщений
+            chatMessagesContainer.scrollTop += (chatMessagesContainer.scrollHeight - currentScrollHeight);
+
+            const firstMessageEl = chatMessagesList.querySelector('.chat-message');
+            if (firstMessageEl) oldestMessageId = firstMessageEl.dataset.messageId;
+
         } else {
-            messageDiv.classList.add('justify-start');
-            bubble.classList.add('bg-white', 'shadow-md');
+            // Если сообщений не пришло, но hasMore=true, возможно это конец истории для текущего фильтра
+            // Если hasMore=false, то это точно конец истории
         }
-
-        // Set content
-        if (msgData.is_deleted) {
-            content.textContent = 'Message deleted';
-            content.classList.add('italic', 'text-gray-500');
-            actions.remove(); // No actions on deleted messages
-        } else {
-            content.textContent = msgData.content;
-            timestamp.textContent = formatTimestamp(msgData.timestamp);
-            if (msgData.edited_at) {
-                editedIndicator.classList.remove('hidden');
-            }
-
-            // Handle reply
-            if (msgData.reply_to) {
-                replyBlock.classList.remove('hidden');
-                templateClone.querySelector('.reply-user').textContent = msgData.reply_to.user.username;
-                templateClone.querySelector('.reply-content').textContent = msgData.reply_to.content;
-                // Add click handler to scroll to original message if needed
-                replyBlock.onclick = () => {
-                     const originalMsg = document.getElementById(`message-${msgData.reply_to.id}`);
-                     if (originalMsg) originalMsg.scrollIntoView({ behavior: 'smooth' });
-                };
-            }
-
-            // Handle file
-            if (msgData.file) {
-                fileBlock.classList.remove('hidden');
-                const fileLink = templateClone.querySelector('.file-link');
-                fileLink.href = msgData.file.url;
-                templateClone.querySelector('.file-name').textContent = msgData.file.name;
-                // Add specific previews for images/videos here
-                 if (/\.(jpg|jpeg|png|gif)$/i.test(msgData.file.name)) {
-                    const img = document.createElement('img');
-                    img.src = msgData.file.url;
-                    img.className = 'max-w-xs max-h-48 mt-1 rounded';
-                    fileBlock.appendChild(img);
-                 }
-            }
-
-            // Add reactions
-            updateReactionsElement(reactionsBlock, msgData.id, msgData.reactions);
-
-            // Add action handlers (only if message is not deleted)
-            setupMessageActions(actions, msgData);
-
-             // Hide actions for other users' messages (edit/delete)
-             if (msgData.user.username !== userName) {
-                 actions.querySelector('.action-edit')?.remove();
-                 actions.querySelector('.action-delete')?.remove();
-             }
-        }
-
-
-        // Add hover effect to show actions
-         messageDiv.addEventListener('mouseenter', () => actions.style.opacity = '1');
-         messageDiv.addEventListener('mouseleave', () => actions.style.opacity = '0');
-
-
-        return templateClone;
+        hasMoreOlderMessages = hasMore;
+        updateLoadOlderButtonVisibility();
     }
 
-     function setupMessageActions(actionsContainer, msgData) {
-        const messageId = msgData.id;
-
-        actionsContainer.querySelector('.action-reply')?.addEventListener('click', () => {
-            startReply(messageId, msgData.user.username, msgData.content);
-        });
-
-        actionsContainer.querySelector('.action-edit')?.addEventListener('click', () => {
-            editMessage(messageId, msgData.content);
-        });
-
-        actionsContainer.querySelector('.action-delete')?.addEventListener('click', () => {
-            if (confirm('Are you sure you want to delete this message?')) {
-                 sendMessage('delete_message', { message_id: messageId });
-            }
-        });
-
-        actionsContainer.querySelector('.action-react')?.addEventListener('click', (e) => {
-             // Implement emoji picker pop-up here
-             // For now, just send a default reaction
-             const emoji = prompt("Enter emoji to react with:", "👍");
-             if (emoji) {
-                 sendMessage('add_reaction', { message_id: messageId, emoji: emoji });
-             }
-        });
-    }
-
-    function updateMessageContent(msgData) {
-        const messageDiv = document.getElementById(`message-${msgData.id}`);
-        if (messageDiv) {
-            const content = messageDiv.querySelector('.message-content');
-            const editedIndicator = messageDiv.querySelector('.edited-indicator');
-            if (content) content.textContent = msgData.content;
-            if (editedIndicator) editedIndicator.classList.remove('hidden');
+    function handleMessageAck(clientId, serverId, timestamp) {
+        console.log(`ACK received: client_id=${clientId}, server_id=${serverId}`);
+        // Найти сообщение с client_id и обновить его ID на serverId,
+        // или пометить как "доставлено".
+        const tempMessage = document.querySelector(`.chat-message[data-client-id="${clientId}"]`);
+        if (tempMessage) {
+            tempMessage.id = `message-${serverId}`;
+            tempMessage.dataset.messageId = serverId;
+            tempMessage.classList.remove('opacity-70'); // Убрать индикатор "отправляется"
+            // Обновить data-timestamp, если нужно
+            const timeEl = tempMessage.querySelector('time');
+            if (timeEl) timeEl.setAttribute('datetime', timestamp);
         }
     }
 
-    function markMessageAsDeleted(msgData) {
-        const messageDiv = document.getElementById(`message-${msgData.id}`);
-        if (messageDiv) {
-            const content = messageDiv.querySelector('.message-content');
-            const bubble = messageDiv.querySelector('.message-bubble');
-            const actions = messageDiv.querySelector('.message-actions');
-            const reactions = messageDiv.querySelector('.reactions-block');
-            const fileBlock = messageDiv.querySelector('.file-block');
-            const replyBlock = messageDiv.querySelector('.reply-block');
+    function handleServerError(errorMessage, clientId) {
+        // Показать ошибку пользователю. Если есть client_id, можно привязать к конкретному сообщению.
+        console.error('Server error for client:', clientId, 'Message:', errorMessage);
+        // Простой alert или более красивое уведомление
+        displayGlobalError(`${window.chatConfig.i18n.serverError || "Ошибка сервера"}: ${errorMessage}`);
 
-            if (content) {
-                content.textContent = 'Message deleted';
-// filename: static/js/chat_room.js
-// (Continuing from previous response)
-
-content.className = 'message-content text-sm italic text-gray-500'; // Apply styling
-}
-bubble?.classList.add('opacity-70'); // Fade it slightly
-actions?.remove(); // Remove actions
-reactions?.remove(); // Remove reactions block
-fileBlock?.remove(); // Remove file block
-replyBlock?.remove(); // Remove reply block
-}
-}
-
-function updateReactions(messageId, reactionsSummary) {
-const messageDiv = document.getElementById(`message-${messageId}`);
-if (messageDiv) {
-const reactionsBlock = messageDiv.querySelector('.reactions-block');
-if (reactionsBlock) {
-    updateReactionsElement(reactionsBlock, messageId, reactionsSummary);
-}
-}
-}
-
-function updateReactionsElement(reactionsBlock, messageId, reactionsSummary) {
-reactionsBlock.innerHTML = ''; // Clear existing reactions
-if (!reactionsSummary || Object.keys(reactionsSummary).length === 0) {
-reactionsBlock.classList.add('hidden');
-return;
-}
-
-reactionsBlock.classList.remove('hidden');
-
-for (const [emoji, data] of Object.entries(reactionsSummary)) {
-const reactionButton = document.createElement('button');
-reactionButton.className = 'px-1.5 py-0.5 border rounded-full text-xs bg-gray-200 hover:bg-gray-300';
-// Check if current user reacted with this emoji
-if (data.users.includes(userName)) {
-    reactionButton.classList.add('border-blue-500', 'bg-blue-100'); // Highlight user's reaction
-}
-reactionButton.textContent = `${emoji} ${data.count}`;
-reactionButton.title = `Reacted by: ${data.users.join(', ')}`; // Show users on hover
-
-reactionButton.onclick = () => {
-    // Clicking existing reaction toggles it (sends add_reaction again)
-    sendMessage('add_reaction', { message_id: messageId, emoji: emoji });
-};
-reactionsBlock.appendChild(reactionButton);
-}
-}
-
-
-function editMessage(messageId, currentContent) {
-// Simple prompt-based edit for now. Could be replaced with inline editing UI.
-const newContent = prompt("Edit your message:", currentContent);
-if (newContent !== null && newContent.trim() !== '' && newContent !== currentContent) {
-sendMessage('edit_message', {
-    message_id: messageId,
-    content: newContent.trim()
-});
-}
-}
-
-function startReply(messageId, replyUsername, replyContent) {
-currentReplyToId = messageId;
-replyPreviewUser.textContent = replyUsername;
-replyPreviewContent.textContent = replyContent.substring(0, 50) + (replyContent.length > 50 ? '...' : ''); // Show preview
-replyPreviewArea.classList.remove('hidden');
-messageInput.focus();
-}
-
-function cancelReply() {
-currentReplyToId = null;
-replyPreviewArea.classList.add('hidden');
-replyPreviewUser.textContent = '';
-replyPreviewContent.textContent = '';
-}
-
-function handleFormSubmit() {
-const messageContent = messageInput.value.trim();
-
-if (!messageContent && !currentReplyToId) { // Allow empty message only if it's a file upload (handled separately)
- // Check if a file is being uploaded implicitly? No, file upload is separate action.
- // If no content and no reply, do nothing.
-return;
-}
-
-if (currentReplyToId) {
-// Send reply message
-sendMessage('reply_message', {
-    message: messageContent,
-    reply_to_id: currentReplyToId
-});
-cancelReply(); // Clear reply state after sending
-} else {
-// Send normal chat message
-sendMessage('chat_message', {
-    message: messageContent
-});
-}
-
-messageInput.value = ''; // Clear input field
-messageInput.focus();
-}
-
-function handleFileInputChange(event) {
-const file = event.target.files[0];
-if (!file) return;
-
-// Optional: Add checks for file size, type etc.
-const maxSize = 50 * 1024 * 1024; // 50MB limit example
-if (file.size > maxSize) {
- alert(`File is too large. Maximum size is ${maxSize / 1024 / 1024} MB.`);
- fileInput.value = ''; // Reset file input
- return;
-}
-
-
-const reader = new FileReader();
-reader.onload = function(e) {
-const fileData = e.target.result.split(',')[1]; // Get base64 part
-const caption = prompt("Enter an optional caption for the file:", ""); // Ask for caption
-
-sendMessage('send_file', {
-    filename: file.name,
-    file_data: fileData,
-    content: caption || "" // Send caption or empty string
-});
-};
-reader.onerror = function(e) {
-console.error("File reading error:", e);
-alert("Could not read file.");
-};
-reader.readAsDataURL(file); // Read file as Base64
-
-fileInput.value = ''; // Reset file input after initiating upload
-}
-
-
-function updateOnlineUsers(users) {
-if (!onlineUsersList || !noOnlineUsersLi) return;
-
-onlineUsersList.innerHTML = ''; // Clear current list
-if (users && users.length > 0) {
-noOnlineUsersLi.classList.add('hidden');
-users.forEach(username => {
-    const li = document.createElement('li');
-     // Add a green dot indicator
-     const indicator = document.createElement('span');
-     indicator.className = 'inline-block w-2 h-2 bg-green-500 rounded-full mr-2';
-     li.appendChild(indicator);
-     li.appendChild(document.createTextNode(username));
-     // Highlight current user?
-     if (username === userName) {
-        li.classList.add('font-semibold');
-     }
-    onlineUsersList.appendChild(li);
-});
-} else {
-onlineUsersList.appendChild(noOnlineUsersLi); // Show the "no users online" message
-noOnlineUsersLi.classList.remove('hidden');
-noOnlineUsersLi.textContent = "No users online";
-}
-}
-
-function scrollToBottom() {
-// Only scroll if user is near the bottom already
-const threshold = 100; // Pixels from bottom
-if (chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < threshold) {
- chatLog.scrollTop = chatLog.scrollHeight;
-}
-}
-
-function markMessagesAsRead() {
-// Find the ID of the last visible message
-const messages = chatLog.querySelectorAll('.message-container');
-let lastVisibleMessageId = null;
-if (messages.length > 0) {
-// This could be more sophisticated (check visibility % in viewport)
-lastVisibleMessageId = messages[messages.length - 1].dataset.messageId;
-}
-
-// Send the update via WebSocket
-if (lastVisibleMessageId) {
-sendMessage('mark_read', { last_visible_message_id: lastVisibleMessageId });
-} else {
- // Or send a generic "mark all" if no messages are visible/present
- sendMessage('mark_read', {});
-}
-// Also, clear any visual unread indicators for this room in the sidebar
-const unreadIndicator = document.getElementById(`unread-${roomName}`);
-if (unreadIndicator) {
-unreadIndicator.classList.add('hidden');
-unreadIndicator.textContent = '';
-}
-}
-
-// --- Search Functionality ---
-let searchDebounceTimer;
-searchButton?.addEventListener('click', () => {
-searchArea.classList.toggle('hidden');
-if (!searchArea.classList.contains('hidden')) {
-searchInput.focus();
-} else {
-searchResults.innerHTML = ''; // Clear results when hiding
-searchInput.value = '';
-}
-});
-
-searchInput?.addEventListener('input', () => {
-clearTimeout(searchDebounceTimer);
-const query = searchInput.value.trim();
-searchResults.innerHTML = query ? 'Searching...' : ''; // Indicate searching
-
-if (query.length < 2) {
-searchResults.innerHTML = ''; // Clear if query is too short
-return;
-}
-
-searchDebounceTimer = setTimeout(() => {
-// Use Fetch API for search (or could use WebSocket if UserSearchConsumer is set up)
-fetch(`/chat/${roomName}/search/?q=${encodeURIComponent(query)}`, {
-    method: 'GET',
-    headers: {
-        'X-Requested-With': 'XMLHttpRequest', // Identify as AJAX
-        'Accept': 'application/json',
+        if (clientId) { // Если ошибка связана с конкретным сообщением, удалить временное
+            const tempMessage = document.querySelector(`.chat-message[data-client-id="${clientId}"]`);
+            if (tempMessage) tempMessage.remove();
+        }
     }
-})
-.then(response => {
-     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-     return response.json();
-})
-.then(data => {
-    searchResults.innerHTML = ''; // Clear previous results/searching message
-    if (data.success && data.messages.length > 0) {
-        data.messages.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'p-2 border-b hover:bg-gray-100 cursor-pointer text-sm';
-            div.innerHTML = `<strong>${msg.user}:</strong> ${msg.content.substring(0, 100)}... <span class="text-gray-500 text-xs">${formatTimestamp(msg.timestamp)}</span>`;
-            div.onclick = () => {
-                // Scroll to the message in the main chat log
-                const targetMsg = document.getElementById(`message-${msg.id}`);
-                if (targetMsg) {
-                    targetMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    targetMsg.classList.add('highlight-message'); // Add temporary highlight
-                    setTimeout(() => targetMsg.classList.remove('highlight-message'), 2000);
-                    searchArea.classList.add('hidden'); // Hide search after clicking
-                } else {
-                    alert('Original message not found (might be older).');
-                }
+
+    let typingUsers = {}; // { userId: {username: 'name', timeoutId: id} }
+    function handleTypingUpdate(userData, isTyping) {
+        if (userData.id === currentUser.id) return; // Не показывать собственный статус печати
+
+        if (isTyping) {
+            if (typingUsers[userData.id] && typingUsers[userData.id].timeoutId) {
+                clearTimeout(typingUsers[userData.id].timeoutId);
+            }
+            typingUsers[userData.id] = {
+                username: userData.display_name || userData.username,
+                timeoutId: setTimeout(() => {
+                    delete typingUsers[userData.id];
+                    renderTypingIndicator();
+                }, 3000) // Если нет нового события typing в течение 3 сек, убираем
             };
-            searchResults.appendChild(div);
-        });
-    } else if (data.success) {
-        searchResults.innerHTML = '<div class="p-2 text-gray-500">No results found.</div>';
-    } else {
-        searchResults.innerHTML = `<div class="p-2 text-red-500">Error: ${data.error || 'Search failed'}</div>`;
+        } else {
+            if (typingUsers[userData.id]) {
+                clearTimeout(typingUsers[userData.id].timeoutId);
+                delete typingUsers[userData.id];
+            }
+        }
+        renderTypingIndicator();
     }
-})
-.catch(error => {
-    console.error('Search fetch error:', error);
-    searchResults.innerHTML = '<div class="p-2 text-red-500">Search request failed.</div>';
-});
-}, 500); // Debounce time: 500ms
-});
 
-// --- Archive Functionality ---
-archiveButton?.addEventListener('click', () => {
-const roomSlug = archiveButton.dataset.roomSlug;
-if (confirm(`Are you sure you want to archive the room "${roomName}"? This will hide it for all participants.`)) {
- fetch(`/chat/${roomSlug}/archive/`, {
-     method: 'POST',
-     headers: {
-         'X-CSRFToken': csrfToken, // Defined in the template
-         'X-Requested-With': 'XMLHttpRequest',
-         'Accept': 'application/json',
-     }
- })
- .then(response => response.json())
- .then(data => {
-     if (data.success) {
-         alert('Room archived successfully.');
-         // Redirect to the main rooms list or update UI
-         window.location.href = '/chat/'; // Redirect to rooms list
-     } else {
-         alert(`Failed to archive room: ${data.error || 'Unknown error'}`);
-     }
- })
- .catch(error => {
-     console.error('Archive fetch error:', error);
-     alert('An error occurred while trying to archive the room.');
- });
-}
-});
+    function renderTypingIndicator() {
+        if (!typingIndicatorPanel) return;
+        const usersTyping = Object.values(typingUsers).map(u => u.username);
+        if (usersTyping.length === 0) {
+            typingIndicatorPanel.innerHTML = '';
+        } else if (usersTyping.length === 1) {
+            typingIndicatorPanel.innerHTML = `<span class="italic">${usersTyping[0]} ${window.chatConfig.i18n.isTyping || 'печатает...'}</span>`;
+        } else if (usersTyping.length <= 3) {
+            typingIndicatorPanel.innerHTML = `<span class="italic">${usersTyping.join(', ')} ${window.chatConfig.i18n.areTyping || 'печатают...'}</span>`;
+        } else {
+            typingIndicatorPanel.innerHTML = `<span class="italic">${usersTyping.slice(0,2).join(', ')} ${window.chatConfig.i18n.andOthersAreTyping || 'и другие печатают...'}</span>`;
+        }
+    }
 
 
-// --- Event Listeners ---
-messageSubmit.addEventListener('click', handleFormSubmit);
-messageInput.addEventListener('keydown', (e) => {
-if (e.key === 'Enter' && !e.shiftKey) { // Send on Enter, allow newline with Shift+Enter
-e.preventDefault();
-handleFormSubmit();
-}
-});
+    // --- Отправка сообщений на сервер ---
+    function sendMessage() {
+        const content = messageInput.value.trim();
+        const replyToId = replyMessageIdHidden.value;
+        const tempClientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-fileInput.addEventListener('change', handleFileInputChange);
+        if (!content && !currentAttachedFile) {
+            return; // Не отправлять пустое сообщение без файла
+        }
 
-cancelReplyButton.addEventListener('click', cancelReply);
+        // Оптимистичное добавление сообщения в UI
+        const optimisticMessageData = {
+            id: tempClientId, // Временный ID
+            client_id: tempClientId,
+            user: currentUser, // Используем данные текущего пользователя
+            room_slug: window.chatConfig.roomSlug,
+            content: content,
+            file: currentAttachedFile ? { name: currentAttachedFile.file.name, size: currentAttachedFile.file.size, url: '#' } : null,
+            timestamp: new Date().toISOString(),
+            edited_at: null,
+            is_deleted: false,
+            reply_to: null, // TODO: Сделать предпросмотр ответа для оптимистичного сообщения
+            reactions: {}
+        };
+        if (replyToId) { // Добавить инфо об ответе, если есть
+            const replyPreviewUserText = replyPreviewUser.textContent;
+            const replyPreviewContentText = replyPreviewText.textContent;
+            optimisticMessageData.reply_to = {
+                id: replyToId, // Важно для связи на сервере
+                user: { username: replyPreviewUserText },
+                content_preview: replyPreviewContentText,
+                has_file: false, // Упрощенно для оптимистичного
+                is_deleted: false
+            };
+        }
 
-// Mark as read when window gains focus or user interacts
-window.addEventListener('focus', markMessagesAsRead);
-chatLog.addEventListener('scroll', () => {
-// Potentially trigger markMessagesAsRead on scroll events too,
-// maybe debounced or when scrolling stops near the bottom.
-// For now, focus is the primary trigger.
-});
+        const messageHTML = renderMessageToHTML(optimisticMessageData, currentUser.id);
+        chatMessagesList.insertAdjacentHTML('beforeend', messageHTML);
+        // Добавляем data-client-id для последующего обновления через ACK
+        const addedEl = chatMessagesList.lastElementChild;
+        if(addedEl) {
+            addedEl.dataset.clientId = tempClientId;
+            addedEl.classList.add('opacity-70'); // Индикатор отправки
+        }
+        if (noMessagesPlaceholder) noMessagesPlaceholder.classList.add('hidden');
+        scrollToBottom();
 
 
-// --- Initial Setup ---
-scrollToBottom(); // Scroll down on initial load
-connectWebSocket(); // Start WebSocket connection
+        if (currentAttachedFile) {
+            sendWebSocketMessage('send_file', { // MSG_TYPE_CLIENT_SEND_FILE
+                file_data: currentAttachedFile.base64,
+                filename: currentAttachedFile.file.name,
+                content: content, // Текст к файлу
+                reply_to_id: replyToId || null,
+            }, tempClientId);
+            clearAttachment();
+        } else {
+            sendWebSocketMessage('send_message', { // MSG_TYPE_CLIENT_SEND_MESSAGE
+                content: content,
+                reply_to_id: replyToId || null,
+            }, tempClientId);
+        }
 
-// Initial mark as read after a short delay to ensure WebSocket might be ready
-setTimeout(markMessagesAsRead, 1500);
+        // Очистка поля ввода и состояния ответа
+        messageInput.value = '';
+        messageInput.style.height = 'auto'; // Сброс высоты textarea
+        messageInput.focus();
+        clearReply();
+        sendTypingStatus(false); // Сообщить, что перестали печатать
+        updateSubmitButtonState();
+    }
 
-}); // End DOMContentLoaded
+    function sendEditMessage(messageId, newContent) {
+        const tempClientId = `client-edit-${Date.now()}`;
+        sendWebSocketMessage('edit_message', { // MSG_TYPE_CLIENT_EDIT_MESSAGE
+            message_id: messageId,
+            content: newContent,
+        }, tempClientId);
+        // Оптимистичное обновление можно сделать, но сложнее из-за модального окна
+    }
 
-// Add CSS for highlighting searched message if needed:
-/*
-.highlight-message {
-animation: highlight 2s ease-out;
-}
+    function sendDeleteMessage(messageId) {
+        const tempClientId = `client-delete-${Date.now()}`;
+        sendWebSocketMessage('delete_message', { // MSG_TYPE_CLIENT_DELETE_MESSAGE
+            message_id: messageId,
+        }, tempClientId);
+        // Оптимистичное обновление: найти сообщение и пометить как удаленное
+        // const msgEl = document.getElementById(`message-${messageId}`);
+        // if (msgEl) { msgEl.querySelector('.message-text-content').textContent = window.chatConfig.i18n.messageDeleted; ... }
+    }
 
-@keyframes highlight {
-0% { background-color: yellow; }
-100% { background-color: transparent; }
-}
-*/
+    function sendReaction(messageId, emoji, add = true) {
+        sendWebSocketMessage(add ? 'add_reaction' : 'remove_reaction', { // MSG_TYPE_CLIENT_ADD_REACTION / REMOVE_REACTION
+            message_id: messageId,
+            emoji: emoji,
+        });
+        // Оптимистичное обновление UI для реакции (добавить/убрать класс, изменить счетчик)
+    }
+
+    function sendTypingStatus(isTyping) {
+        sendWebSocketMessage('typing_status', { is_typing: isTyping }); // MSG_TYPE_CLIENT_TYPING
+    }
+
+    function loadOlderMessages() {
+        if (isLoadingOlderMessages || !hasMoreOlderMessages) return;
+
+        isLoadingOlderMessages = true;
+        if (loadOlderBtn) {
+            loadOlderBtn.disabled = true;
+            const icon = loadOlderBtn.querySelector('i');
+            if(icon) icon.classList.add('fa-spin');
+            loadOlderBtn.childNodes[loadOlderBtn.childNodes.length -1].textContent = ` ${window.chatConfig.i18n.loadingOlder || 'Загрузка...'}`;
+        }
+
+        const tempClientId = `client-load-${Date.now()}`; // Если нужен ACK для этого
+        sendWebSocketMessage('load_older_messages', { // MSG_TYPE_CLIENT_LOAD_OLDER
+            before_message_id: oldestMessageId,
+            limit: window.chatConfig.messagesPageSize
+        }, tempClientId);
+    }
+
+    // --- UI Вспомогательные функции ---
+    function renderMessageToHTML(msgData, currentUserId) {
+        // Эта функция должна генерировать HTML для одного сообщения,
+        // аналогично вашему Django шаблону room/partials/message_item.html
+        // Это самая сложная часть для рендеринга на клиенте.
+        // Для простоты, можно сделать AJAX запрос к Django view,
+        // который вернет отрендеренный HTML для сообщения. Но это медленнее.
+        // Прямой рендеринг в JS - быстрее, но требует дублирования логики шаблона.
+
+        const isOwn = String(msgData.user.id) === String(currentUserId);
+        let avatarHTML = '';
+        if (msgData.user.avatar_url) {
+            avatarHTML = `<img src="${msgData.user.avatar_url}" alt="${msgData.user.username}" class="w-8 h-8 rounded-full object-cover">`;
+        } else {
+            avatarHTML = `<span class="w-8 h-8 rounded-full bg-gray-300 dark:bg-dark-600 flex items-center justify-center text-sm font-semibold text-gray-600 dark:text-gray-300">${msgData.user.username.slice(0,1).toUpperCase()}</span>`;
+        }
+
+        let replyHTML = '';
+        if (msgData.reply_to) {
+            replyHTML = `
+                <a href="#message-${msgData.reply_to.id}" class="block mb-1.5 p-2 -mx-1.5 rounded-lg text-xs ${isOwn ? 'bg-indigo-500/80 hover:bg-indigo-500/100 dark:bg-indigo-700/50 dark:hover:bg-indigo-700/80' : 'bg-gray-100 hover:bg-gray-200 dark:bg-dark-600 dark:hover:bg-dark-500'} opacity-90 hover:opacity-100 transition">
+                    <p class="font-medium ${isOwn ? 'text-indigo-100' : 'text-gray-700 dark:text-gray-200'}">
+                        ${window.chatConfig.i18n.replyTo || 'Ответ на:'} ${msgData.reply_to.user.username}
+                    </p>
+                    <p class="italic truncate ${isOwn ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}">
+                        ${escapeHTML(msgData.reply_to.content_preview) || (msgData.reply_to.has_file ? window.chatConfig.i18n.file || '[Файл]' : '')}
+                    </p>
+                </a>`;
+        }
+
+        let fileHTML = '';
+        if (msgData.file && msgData.file.url && msgData.file.url !== '#') {
+            const fileSizeFormatted = msgData.file.size ? `(${(msgData.file.size / 1024).toFixed(1)} KB)` : '';
+            fileHTML = `
+                <div class="mb-1">
+                    <a href="${msgData.file.url}" target="_blank" class="inline-flex items-center p-2 rounded-lg ${isOwn ? 'bg-indigo-500/80 hover:bg-indigo-500/100 text-indigo-50 dark:bg-indigo-700/50 dark:hover:bg-indigo-700/80' : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-dark-600 dark:hover:bg-dark-500 dark:text-gray-200'}">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        <span>${escapeHTML(msgData.file.name)}</span>
+                        <span class="text-xs ml-2 opacity-70">${fileSizeFormatted}</span>
+                    </a>
+                </div>`;
+        }
+
+        let contentHTML = '';
+        if (msgData.is_deleted) {
+            contentHTML = `<p class="italic text-sm ${isOwn ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}">${window.chatConfig.i18n.messageDeleted || "Сообщение удалено"}</p>`;
+        } else {
+            contentHTML = `<p class="text-sm whitespace-pre-wrap message-text-content">${escapeHTML(msgData.content)}</p>`;
+        }
+
+        // Классы для кнопок действий
+        const actionButtonClasses = isOwn
+            ? 'child:text-indigo-200 child:hover:text-white child-dark:text-indigo-300 child-dark:hover:text-indigo-100'
+            : 'child:text-gray-400 child:hover:text-gray-600 child-dark:text-gray-500 child-dark:hover:text-gray-300';
+
+        let editDeleteActions = '';
+        if (String(msgData.user.id) === String(currentUser.id) && !msgData.is_deleted) {
+            editDeleteActions = `
+                <button class="action-edit" title="${window.chatConfig.i18n.edit || 'Редактировать'}"><i class="fas fa-pen fa-xs"></i></button>
+                <button class="action-delete" title="${window.chatConfig.i18n.delete || 'Удалить'}"><i class="fas fa-trash-alt fa-xs"></i></button>
+            `;
+        }
+
+        const messageTimestamp = new Date(msgData.timestamp);
+        const formattedTime = `${messageTimestamp.getHours().toString().padStart(2,'0')}:${messageTimestamp.getMinutes().toString().padStart(2,'0')}`;
+        const editedAtTitle = msgData.edited_at ? new Date(msgData.edited_at).toLocaleString() : '';
+        const editedAtHTML = msgData.edited_at ? `<span class="italic ml-1" title="${editedAtTitle}">(${window.chatConfig.i18n.edited || 'ред.'})</span>` : '';
+
+        return `
+            <div class="chat-message group flex items-end mb-3 ${isOwn ? 'justify-end' : ''}" id="message-${msgData.id}" data-message-id="${msgData.id}" data-user-id="${msgData.user.id}" data-timestamp="${msgData.timestamp}">
+                ${!isOwn ? `<div class="flex-shrink-0 mr-2">${avatarHTML}</div>` : ''}
+                <div class="message-content max-w-xs lg:max-w-md break-words">
+                    <div class="px-3.5 py-2.5 rounded-2xl shadow ${isOwn ? 'bg-indigo-600 text-white dark:bg-indigo-600 rounded-br-none' : 'bg-white text-gray-700 dark:bg-dark-700 dark:text-gray-100 border border-gray-200 dark:border-dark-600 rounded-bl-none'}">
+                        ${!isOwn ? `<p class="text-xs font-semibold mb-0.5 ${isOwn ? 'text-indigo-200 dark:text-indigo-300' : 'text-indigo-600 dark:text-indigo-400'}">${escapeHTML(msgData.user.username)}</p>`: ''}
+                        ${replyHTML}
+                        ${fileHTML}
+                        ${contentHTML}
+                        <div class="message-meta text-xs mt-1.5 flex justify-between items-center ${isOwn ? 'text-indigo-200 dark:text-indigo-300 opacity-80' : 'text-gray-400 dark:text-gray-500'}">
+                            <span>
+                                <time datetime="${msgData.timestamp}">${formattedTime}</time>
+                                ${editedAtHTML}
+                            </span>
+                            <div class="message-actions ml-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1.5 ${actionButtonClasses}">
+                                <button class="action-reply" title="${window.chatConfig.i18n.reply || 'Ответить'}"><i class="fas fa-reply fa-xs"></i></button>
+                                <button class="action-react" title="${window.chatConfig.i18n.react || 'Реагировать'}"><i class="far fa-smile fa-xs"></i></button>
+                                ${editDeleteActions}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reactions-container mt-1 flex flex-wrap gap-1 ${isOwn ? 'justify-end pr-1' : 'pl-1'}" data-message-id="${msgData.id}">
+                        ${renderReactionsToHTML(msgData.id, msgData.reactions)}
+                    </div>
+                </div>
+                ${isOwn ? `<div class="flex-shrink-0 ml-2">${avatarHTML}</div>` : ''}
+            </div>
+        `;
+    }
+    function renderReactionsToHTML(messageId, reactionsSummary) {
+        let html = '';
+        if (!reactionsSummary) return html;
+        for (const emoji in reactionsSummary) {
+            const reactionData = reactionsSummary[emoji];
+            html += `
+                <button class="reaction-btn px-2 py-1 text-xs rounded-full border transition-colors
+                               ${reactionData.reacted_by_current_user
+                                   ? 'bg-indigo-100 dark:bg-indigo-700/50 border-indigo-300 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300'
+                                   : 'bg-gray-100 dark:bg-dark-600 border-gray-300 dark:border-dark-500 text-gray-600 dark:text-gray-300 hover:border-indigo-400 dark:hover:border-indigo-500'
+                               }"
+                        title="${escapeHTML(reactionData.users.join(', '))}"
+                        data-emoji="${escapeHTML(emoji)}"
+                        data-message-id="${messageId}">
+                    ${escapeHTML(emoji)} ${reactionData.count}
+                </button>
+            `;
+        }
+        return html;
+    }
+
+
+    function scrollToBottom(instant = false) {
+        if (chatMessagesContainer) {
+            // Прокручиваем только если пользователь уже внизу или близко к низу,
+            // чтобы не мешать ему читать старые сообщения.
+            // Допуск в пикселях, чтобы считать "внизу"
+            const SCROLL_THRESHOLD = 100;
+            const isScrolledToBottom = chatMessagesContainer.scrollHeight - chatMessagesContainer.clientHeight <= chatMessagesContainer.scrollTop + SCROLL_THRESHOLD;
+
+            if (isScrolledToBottom || instant) {
+                // messageAnchor.scrollIntoView({ behavior: instant ? 'instant' : 'smooth', block: 'end' });
+                // Или просто
+                 chatMessagesContainer.scrollTo({
+                    top: chatMessagesContainer.scrollHeight,
+                    behavior: instant ? 'instant' : 'smooth'
+                });
+            }
+        }
+    }
+
+    function updateLoadOlderButtonVisibility() {
+        if (olderMessagesLoaderDiv && loadOlderBtn) {
+            if (hasMoreOlderMessages) {
+                olderMessagesLoaderDiv.classList.remove('hidden');
+                loadOlderBtn.disabled = isLoadingOlderMessages;
+                loadOlderBtn.childNodes[loadOlderBtn.childNodes.length -1].textContent = ` ${isLoadingOlderMessages ? (window.chatConfig.i18n.loadingOlder || 'Загрузка...') : (window.chatConfig.i18n.loadOlderButton || 'Загрузить еще...')}`;
+                if(isLoadingOlderMessages) loadOlderBtn.querySelector('i').classList.add('fa-spin'); else loadOlderBtn.querySelector('i').classList.remove('fa-spin');
+
+            } else {
+                olderMessagesLoaderDiv.classList.add('hidden');
+            }
+        }
+    }
+
+    function autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto'; // Сначала сбросить высоту
+        // Установить высоту на основе scrollHeight, но не более максимальной
+        let newHeight = Math.min(textarea.scrollHeight, parseInt(textarea.style.maxHeight) || 120);
+        textarea.style.height = newHeight + 'px';
+    }
+
+    function setupReply(messageId, username, textContent) {
+        replyMessageIdHidden.value = messageId;
+        replyPreviewUser.textContent = username;
+        replyPreviewText.textContent = textContent.substring(0, 50) + (textContent.length > 50 ? '...' : '');
+        replyPreviewArea.classList.remove('hidden');
+        messageInput.focus();
+    }
+    function clearReply() {
+        replyMessageIdHidden.value = '';
+        replyPreviewArea.classList.add('hidden');
+    }
+
+    function attachFile(file) {
+        if (!file) return;
+        // Проверка размера и типа файла (базовая на клиенте, основная на сервере)
+        if (file.size > (window.chatConfig.maxFileSizeMb || 5) * 1024 * 1024) {
+            displayGlobalError(`Файл слишком большой (макс. ${window.chatConfig.maxFileSizeMb || 5} MB)`);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            currentAttachedFile = {
+                file: file,
+                base64: e.target.result.split(',')[1] // Убираем "data:mime/type;base64,"
+            };
+            filePreviewName.textContent = file.name;
+            filePreviewSize.textContent = `(${(file.size / 1024).toFixed(1)} KB)`;
+            filePreviewArea.classList.remove('hidden');
+            updateSubmitButtonState();
+        };
+        reader.onerror = (e) => {
+            console.error("FileReader error:", e);
+            displayGlobalError("Не удалось прочитать файл.");
+            clearAttachment();
+        };
+        reader.readAsDataURL(file);
+    }
+    function clearAttachment() {
+        currentAttachedFile = null;
+        fileInput.value = ''; // Сброс input type=file
+        filePreviewArea.classList.add('hidden');
+        updateSubmitButtonState();
+    }
+
+    function updateSubmitButtonState() {
+        const hasText = messageInput.value.trim().length > 0;
+        const hasAttachment = !!currentAttachedFile;
+        messageSubmitBtn.disabled = !hasText && !hasAttachment;
+    }
+
+    function displayGlobalError(message) {
+        // TODO: Реализовать более красивое отображение глобальных ошибок (например, toast-уведомление)
+        alert(message);
+    }
+
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>"']/g, function (match) {
+            return {
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[match];
+        });
+    }
+
+    // --- Обработчики событий DOM ---
+    function setupEventListeners() {
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            sendMessage();
+        });
+
+        messageInput.addEventListener('input', () => {
+            autoResizeTextarea(messageInput);
+            updateSubmitButtonState();
+            // Логика "печатает..."
+            if (typingTimeout) clearTimeout(typingTimeout);
+            sendTypingStatus(true);
+            typingTimeout = setTimeout(() => {
+                sendTypingStatus(false);
+            }, 2000); // Если не печатает 2 секунды, статус "не печатает"
+        });
+        messageInput.addEventListener('keypress', (e) => {
+            // Отправка по Enter, если не зажат Shift
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        if (chatMessagesContainer) {
+            chatMessagesContainer.addEventListener('scroll', () => {
+                if (chatMessagesContainer.scrollTop === 0 && hasMoreOlderMessages && !isLoadingOlderMessages) {
+                    loadOlderMessages();
+                }
+            });
+        }
+        if (loadOlderBtn) {
+            loadOlderBtn.addEventListener('click', loadOlderMessages);
+        }
+
+        // Обработчики для действий с сообщениями (делегирование событий)
+        chatMessagesList.addEventListener('click', (e) => {
+            const target = e.target;
+            const messageAction = target.closest('button[class*="action-"]');
+            if (messageAction) {
+                const messageEl = target.closest('.chat-message');
+                const messageId = messageEl.dataset.messageId;
+
+                if (messageAction.classList.contains('action-reply')) {
+                    const userEl = messageEl.querySelector('.text-xs.font-semibold'); // Имя пользователя
+                    const contentEl = messageEl.querySelector('.message-text-content'); // Текст сообщения
+                    setupReply(messageId, userEl ? userEl.textContent.trim() : 'User', contentEl ? contentEl.textContent.trim() : '[Файл]');
+                } else if (messageAction.classList.contains('action-edit')) {
+                    const contentEl = messageEl.querySelector('.message-text-content');
+                    const currentContent = contentEl ? contentEl.textContent : '';
+                    // TODO: Показать модальное окно для редактирования
+                    const newContent = prompt(window.chatConfig.i18n.editMessagePrompt || "Введите новый текст сообщения:", currentContent);
+                    if (newContent !== null && newContent.trim() !== currentContent.trim()) {
+                        sendEditMessage(messageId, newContent.trim());
+                    }
+                } else if (messageAction.classList.contains('action-delete')) {
+                    // TODO: Показать подтверждение удаления
+                    if (confirm(window.chatConfig.i18n.confirmDeleteMessage || "Вы уверены, что хотите удалить это сообщение?")) {
+                        sendDeleteMessage(messageId);
+                    }
+                } else if (messageAction.classList.contains('action-react')) {
+                    // TODO: Показать пикер эмодзи
+                    const emoji = prompt(window.chatConfig.i18n.reactPrompt || "Введите эмодзи для реакции:", "👍");
+                    if (emoji && emoji.trim()) {
+                        sendReaction(messageId, emoji.trim(), true);
+                    }
+                }
+            }
+            // Клик по самой реакции (для удаления/добавления своей)
+            const reactionBtn = target.closest('button.reaction-btn');
+            if (reactionBtn) {
+                handleReactionClick(e);
+            }
+        });
+
+        // Реакции
+        function handleReactionClick(event) {
+            const button = event.currentTarget; // или event.target.closest('button.reaction-btn');
+            const messageId = button.dataset.messageId;
+            const emoji = button.dataset.emoji;
+            const alreadyReacted = button.classList.contains('bg-indigo-100') || button.classList.contains('dark:bg-indigo-700/50'); // Проверка по стилю
+
+            sendReaction(messageId, emoji, !alreadyReacted); // Toggle reaction
+        }
+
+
+        if (cancelReplyBtn) {
+            cancelReplyBtn.addEventListener('click', clearReply);
+        }
+
+        // Файлы
+        if (fileInputTrigger) {
+            fileInputTrigger.addEventListener('click', () => fileInput.click()); // Клик по label триггерит input
+        }
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    attachFile(e.target.files[0]);
+                }
+            });
+        }
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', clearAttachment);
+        }
+
+        // Мобильный сайдбар
+        if (openSidebarBtn) {
+            openSidebarBtn.addEventListener('click', () => mobileSidebar.classList.remove('hidden'));
+        }
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', () => mobileSidebar.classList.add('hidden'));
+        }
+        if (mobileSidebarOverlay) {
+            mobileSidebarOverlay.addEventListener('click', () => mobileSidebar.classList.add('hidden'));
+        }
+    }
+
+    // --- Запуск ---
+    init();
+
+}); // Конец DOMContentLoaded
