@@ -5,9 +5,13 @@ from django.utils.translation import gettext_lazy as _
 from checklists.models import ChecklistPoint
 from tasks.models import TaskCategory, Project, Task
 
+from checklists.models import ChecklistPoint
+from tasks.models import TaskCategory, Project, Task
+
 
 class QRCodeLink(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     location = models.ForeignKey(
         'checklists.Location',
         on_delete=models.CASCADE,
@@ -15,6 +19,7 @@ class QRCodeLink(models.Model):
         verbose_name=_('Location'),
         editable=False,
     )
+
     point = models.OneToOneField(
         ChecklistPoint,
         on_delete=models.CASCADE,
@@ -23,6 +28,16 @@ class QRCodeLink(models.Model):
         null=True,
         blank=True,
     )
+
+    task_category = models.ForeignKey(
+        TaskCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='qr_codes',
+        verbose_name=_('Task category'),
+    )
+
     description = models.CharField(max_length=255, blank=True, verbose_name=_('Description'))
     is_active = models.BooleanField(default=True, verbose_name=_('Active'))
     qr_image = models.ImageField(upload_to='qr_codes/', blank=True, verbose_name=_('QR Image'))
@@ -32,10 +47,12 @@ class QRCodeLink(models.Model):
     class Meta:
         verbose_name = _('QR Link')
         verbose_name_plural = _('QR Links')
-        ordering = ['location__name']
+        ordering = ['location__name', 'point__name']
 
     def __str__(self):
+
         return f"{self.location.name} / {self.point.name}"
+
 
     def get_feedback_url(self):
         return reverse('qrfikr:submit', kwargs={'qr_uuid': self.id})
@@ -75,6 +92,7 @@ class Review(models.Model):
         return f"{self.qr_code_link} ({self.rating})"
 
 
+
 def _get_feedback_project():
     project, _ = Project.objects.get_or_create(name="Guest Feedback")
     return project
@@ -102,3 +120,4 @@ from django.dispatch import receiver
 def review_post_save(sender, instance, created, **kwargs):
     if created:
         create_task_from_review(instance)
+
