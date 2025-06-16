@@ -9,7 +9,25 @@ from django.utils.translation import gettext_lazy as _
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key-@replace-this!")
 DEBUG = os.environ.get("DEBUG", "True") == "True"
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*,localhost,127.0.0.1").split(",")
+
+# --- Настройки хостов ---
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ASGI_ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+# ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "")
+# if ALLOWED_HOSTS_ENV:
+#     ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(",")]
+# else:
+#     ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+#     if DEBUG:
+#         ALLOWED_HOSTS.append("0.0.0.0")
+
+# -----------------------------------------------------------------------------
+# ГЛАВНОЕ ИСПРАВЛЕНИЕ: Добавляем ASGI_ALLOWED_HOSTS
+# Это решает проблему DisallowedHost при использовании ASGI серверов (Daphne, Uvicorn),
+# которые передают хост вместе с портом в заголовке.
+# -----------------------------------------------------------------------------
+ASGI_ALLOWED_HOSTS = ALLOWED_HOSTS
+
 
 # --- Установленные приложения ---
 INSTALLED_APPS = [
@@ -22,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
+    # Ваши приложения
     "user_profiles",
     "tasks",
     "room",
@@ -29,6 +48,7 @@ INSTALLED_APPS = [
     "qrfikr",
     "reviews",
 
+    # Сторонние приложения
     "channels",
     "corsheaders",
     'crispy_forms',
@@ -49,9 +69,10 @@ INSTALLED_APPS = [
     "taggit",
 ]
 
+# --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware", # Whitenoise рекомендуется размещать сразу после SecurityMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -84,13 +105,16 @@ TEMPLATES = [{
     },
 }]
 
-# --- База данных SQLite (для разработки) ---
+# --- База данных ---
+# Для разработки используется SQLite
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+# Настройка для тестов (перенесена в конец файла для логичности)
+
 
 # --- Парольные валидаторы ---
 AUTH_PASSWORD_VALIDATORS = [
@@ -108,9 +132,8 @@ USE_I18N = True
 USE_TZ = True
 LOCALE_PATHS = [BASE_DIR / "locale"]
 
-# --- Файлы ---
+# --- Статические и медиа файлы ---
 STATIC_URL = "/static/"
-# STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
@@ -118,25 +141,42 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# --- Пользовательская модель ---
+# --- Пользовательская модель и аутентификация ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "user_profiles.User"
 LOGIN_URL = "user_profiles:login"
 LOGIN_REDIRECT_URL = "tasks:task_list"
 LOGOUT_REDIRECT_URL = "user_profiles:login"
 
-# --- WebSocket ---
+# --- WebSocket и Channels ---
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
+        # Для продакшена замените на:
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379/1')],
+        # },
     }
 }
 WEBSOCKET_ENABLED = True
 
-# --- Email ---
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "dev@example.com"
-SITE_URL = "http://127.0.0.1:8000"
+# --- Настройки сайта и Email ---
+SITE_NAME = 'ServiceDesk'
+# ИСПРАВЛЕНО: Устанавливаем порт, на котором работает Daphne
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8080')
+
+# Для продакшена используйте переменные окружения
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'{SITE_NAME} <noreply@example.com>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+ADMINS = [] # Заполните для получения уведомлений об ошибках в продакшене
+
 
 # --- JWT ---
 SIMPLE_JWT = {
@@ -153,8 +193,6 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
     "TOKEN_TYPE_CLAIM": "token_type",
     "JTI_CLAIM": "jti",
-    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
 # --- DRF ---
@@ -172,7 +210,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema",
 }
 
-# --- Swagger ---
+# --- Swagger / drf-yasg ---
 SWAGGER_SETTINGS = {
     "SECURITY_DEFINITIONS": {
         "Bearer": {
@@ -185,11 +223,17 @@ SWAGGER_SETTINGS = {
     "USE_SESSION_AUTH": False,
     "DEFAULT_AUTO_SCHEMA_CLASS": "drf_yasg.inspectors.SwaggerAutoSchema",
 }
-
 REDOC_SETTINGS = {"LAZY_RENDERING": False}
 
-# --- CORS ---
-CORS_ALLOW_ALL_ORIGINS = True
+# --- CORS и CSRF ---
+# ВНИМАНИЕ: Для продакшена замените на конкретный список доменов!
+# CORS_ALLOWED_ORIGINS = ["https://your-frontend-domain.com"]
+CORS_ALLOW_ALL_ORIGINS = True if DEBUG else False
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+    # "https://your-production-domain.com" # Добавьте ваш домен для продакшена
+]
 
 # --- Кэш ---
 CACHE_TIMEOUT = 300
@@ -199,22 +243,20 @@ CACHES = {
         "LOCATION": "unique-dev-cache",
     }
 }
+SELECT2_CACHE_BACKEND = "default"
 
-# --- Field Encryption ---
+# --- Шифрование полей ---
 FIELD_ENCRYPTION_KEY = "_3HZU7uFwNYQw0n_7r1BFgwPU52Xs2N16uQUrJvPdUM="
 
-# --- Crispy Forms ---
+# --- Crispy Forms и Tailwind ---
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["tailwind"]
 CRISPY_TEMPLATE_PACK = "tailwind"
 TAILWIND_APP_NAME = 'theme'
 NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd"
 
-# --- Select2 ---
-SELECT2_CACHE_BACKEND = "default"
-
-# --- Сообщения ---
-from django.contrib.messages import constants as messages_constants
+# --- Сообщения Django ---
 MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"
+from django.contrib.messages import constants as messages_constants
 MESSAGE_TAGS = {
     messages_constants.DEBUG: "debug",
     messages_constants.INFO: "info",
@@ -234,53 +276,33 @@ LOGGING = {
         "console": {"class": "logging.StreamHandler", "formatter": "simple"},
     },
     "loggers": {
-        "django": {"handlers": ["console"], "level": "DEBUG"},
+        "django": {"handlers": ["console"], "level": "DEBUG" if DEBUG else "INFO"},
         "django.template": {"handlers": ["console"], "level": "INFO", "propagate": False},
         "tasks": {"handlers": ["console"], "level": "DEBUG"},
         "checklists": {"handlers": ["console"], "level": "DEBUG"},
     },
 }
 
-# --- Тестовая БД ---
+# --- Celery ---
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
+
+# --- Кастомные настройки приложений ---
+ENABLE_AUDIT_LOG = False
+DEFAULT_STAFF_GROUP_NAME = 'Сотрудники'
+NOTIFY_ADMINS_ON_NEW_USER = True
+
+CHAT_MESSAGES_PAGE_SIZE = 50
+MAX_FILE_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain']
+
+# --- Настройки для тестов ---
 if "test" in sys.argv:
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": ":memory:",
     }
     PASSWORD_HASHERS = ("django.contrib.auth.hashers.MD5PasswordHasher",)
-
-
-
-SITE_URL = 'http://127.0.0.1:8080' # ИЗМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL ДЛЯ ПРОДАкШЕНА
-SITE_NAME = 'ServiceDesk' # Название вашего проекта/сайта
-
-# Настройки Email (замените на ваши реальные данные)
-# Для локальной разработки можно использовать консольный email backend:
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# Для продакшена:
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.example.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'{SITE_NAME} <noreply@example.com>')
-SERVER_EMAIL = DEFAULT_FROM_EMAIL
-ADMINS = []
-
-# Кастомные настройки для user_profiles/signals.py
-ENABLE_AUDIT_LOG = False # Установите True, если решите добавить AuditLog позже
-# AUDIT_LOG_APP_NAME = 'audit' # Если AuditLog будет в приложении 'audit'
-DEFAULT_STAFF_GROUP_NAME = 'Сотрудники' # Имя группы для автоматического добавления staff-пользователей
-NOTIFY_ADMINS_ON_NEW_USER = True # Отправлять ли админам email о новом пользователе
-
-
-# Chat specific settings
-CHAT_MESSAGES_PAGE_SIZE = 50 # Количество сообщений при подгрузке старых
-MAX_FILE_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
-ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'] # MIME types
-
-
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
-
+    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend" # Ускоряет тесты
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
