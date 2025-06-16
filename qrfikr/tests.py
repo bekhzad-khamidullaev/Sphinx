@@ -4,6 +4,8 @@ from rest_framework import status
 from .models import QRCodeLink, Review
 from checklists.models import Location, ChecklistPoint
 
+from tasks.models import TaskCategory, Task
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -35,4 +37,18 @@ class QRCodeLinkModelTests(APITestCase):
         location = Location.objects.create(name='OnlyLoc', description='d')
         qr = QRCodeLink.objects.create(location=location)
         self.assertEqual(str(qr), 'OnlyLoc')
+
+class ReviewTaskCreationTests(APITestCase):
+    def setUp(self):
+        self.location = Location.objects.create(name='LocTask', description='d')
+        self.point = ChecklistPoint.objects.create(location=self.location, name='P1')
+        self.qr = QRCodeLink.objects.create(point=self.point)
+        self.category = TaskCategory.objects.create(name='Service')
+
+    def test_task_created_for_low_rating(self):
+        Review.objects.create(qr_code_link=self.qr, rating=2, category=self.category)
+        self.assertEqual(Task.objects.count(), 1)
+        task = Task.objects.first()
+        self.assertEqual(task.category, self.category)
+        self.assertIn(self.point.name, task.title)
 

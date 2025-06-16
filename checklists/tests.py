@@ -74,7 +74,6 @@ class ChecklistModelTests(TestCase):
             invalid = Location(name="Invalid", parent=room, level=LocationLevel.VENUE)
             invalid.full_clean()
 
-
     def test_checklist_point_creation(self):
         self.assertEqual(ChecklistPoint.objects.count(), 1)
         self.assertEqual(self.point.name, "Room 101")
