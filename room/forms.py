@@ -2,16 +2,16 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
-from django_select2.forms import Select2MultipleWidget # <--- Добавляем импорт
+from django_select2.forms import Select2MultipleWidget
 
 from .models import Room
 
 User = get_user_model()
 
-# --- Обновленные CSS классы (без  ---
+# --- Base CSS classes ---
 BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out"
 TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
-# SELECT_MULTI_CLASSES = f"form-multiselect {BASE_INPUT_CLASSES} h-40" # Заменяется на Select2
+# SELECT_MULTI_CLASSES = f"form-multiselect {BASE_INPUT_CLASSES} h-40" # Deprecated: using Select2 instead
 CHECKBOX_CLASSES = "form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
 
 
@@ -19,9 +19,9 @@ class RoomForm(forms.ModelForm):
     participants = forms.ModelMultipleChoiceField(
         queryset=User.objects.none(),
         required=False,
-        widget=Select2MultipleWidget(attrs={ # <--- ИЗМЕНЕНИЕ: Используем Select2MultipleWidget
+        widget=Select2MultipleWidget(attrs={
             'data-placeholder': _("Выберите участников..."),
-            'class': 'form-select select2-basic block w-full text-sm' # Добавляем базовые классы для Select2
+            'class': 'form-select select2-basic block w-full text-sm'
         }),
         label=_("Участники"),
         help_text=_("Выберите участников, если комната приватная. Вы (создатель) будете добавлены автоматически.")
@@ -32,10 +32,10 @@ class RoomForm(forms.ModelForm):
         fields = ['name', 'private', 'participants']
         widgets = {
             'name': forms.TextInput(attrs={
-                'class': TEXT_INPUT_CLASSES, # Используем обновленный класс
+                'class': TEXT_INPUT_CLASSES,
                 'placeholder': _("Название новой комнаты...")
             }),
-            'private': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}), # Используем обновленный класс
+            'private': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}),
         }
         labels = {
             'name': _("Название комнаты"),
