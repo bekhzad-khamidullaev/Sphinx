@@ -7,11 +7,6 @@ from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-<<<<<<< HEAD
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key-@replace-this!")
-DEBUG = os.environ.get("DEBUG", "True") == "True"
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*,localhost,127.0.0.1").split(",")
-=======
 ENV_PATH = BASE_DIR / '.env'
 if ENV_PATH.exists():
     load_dotenv(ENV_PATH)
@@ -26,7 +21,6 @@ if DEBUG and '*' not in ALLOWED_HOSTS:
 
 CSRF_TRUSTED_ORIGINS_STRING = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STRING.split(',')]
->>>>>>> servicedesk
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -37,23 +31,12 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
 
-<<<<<<< HEAD
-    "user_profiles",
-    "tasks",
-    "room",
-    "checklists",
-    "qrfikr",
-    "reviews",
-=======
     "user_profiles.apps.UserProfilesConfig",
     "tasks.apps.TasksConfig",
     "room.apps.RoomConfig",
     "checklists.apps.ChecklistsConfig",
-<<<<<<< HEAD
-    "qrfikr.apps.QrfikrConfig",
-=======
->>>>>>> 229e1b6a0a57a7932eb32d4e78dbb86e2edf8053
->>>>>>> servicedesk
+    "qrfikr",
+    "reviews.apps.ReviewsConfig",
 
     "channels",
     "corsheaders",
@@ -139,17 +122,10 @@ USE_TZ = True
 LOCALE_PATHS = [BASE_DIR / "locale"]
 
 STATIC_URL = "/static/"
-<<<<<<< HEAD
-# STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-=======
 STATIC_ROOT = BASE_DIR / "staticfiles_collected"
 STATICFILES_DIRS = [BASE_DIR / "static", BASE_DIR / 'theme' / 'static']
 if not DEBUG:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
->>>>>>> servicedesk
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "mediafiles"
@@ -269,13 +245,6 @@ LOGGING = {
         'console': {'level': LOGGING_LEVEL, 'class': 'logging.StreamHandler', 'formatter': 'verbose' if DEBUG else 'simple'},
         'django.server': {'level': 'INFO', 'class': 'logging.StreamHandler', 'formatter': 'django.server'},
     },
-<<<<<<< HEAD
-    "loggers": {
-        "django": {"handlers": ["console"], "level": "DEBUG"},
-        "django.template": {"handlers": ["console"], "level": "INFO", "propagate": False},
-        "tasks": {"handlers": ["console"], "level": "DEBUG"},
-        "checklists": {"handlers": ["console"], "level": "DEBUG"},
-=======
     'loggers': {
         'django': {'handlers': ['console'], 'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'), 'propagate': False},
         'django.server': {'handlers': ['django.server'], 'level': 'INFO', 'propagate': False},
@@ -285,7 +254,6 @@ LOGGING = {
         'tasks': {'handlers': ['console'], 'level': LOGGING_LEVEL, 'propagate': False},
         'room': {'handlers': ['console'], 'level': LOGGING_LEVEL, 'propagate': False},
         'checklists': {'handlers': ['console'], 'level': LOGGING_LEVEL, 'propagate': False},
->>>>>>> servicedesk
     },
     'root': {'handlers': ['console'], 'level': LOGGING_LEVEL }
 }
@@ -308,38 +276,6 @@ MAX_FILE_UPLOAD_SIZE_BYTES = int(os.environ.get('MAX_FILE_UPLOAD_SIZE_BYTES', 5 
 ALLOWED_FILE_TYPES_STRING = os.environ.get('ALLOWED_FILE_TYPES', 'image/jpeg,image/png,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 ALLOWED_FILE_TYPES = [ft.strip() for ft in ALLOWED_FILE_TYPES_STRING.split(',')] if ALLOWED_FILE_TYPES_STRING else []
 
-<<<<<<< HEAD
-# Настройки Email (замените на ваши реальные данные)
-# Для локальной разработки можно использовать консольный email backend:
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# Для продакшена:
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.example.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'{SITE_NAME} <noreply@example.com>')
-SERVER_EMAIL = DEFAULT_FROM_EMAIL
-ADMINS = []
-
-# Кастомные настройки для user_profiles/signals.py
-ENABLE_AUDIT_LOG = False # Установите True, если решите добавить AuditLog позже
-# AUDIT_LOG_APP_NAME = 'audit' # Если AuditLog будет в приложении 'audit'
-DEFAULT_STAFF_GROUP_NAME = 'Сотрудники' # Имя группы для автоматического добавления staff-пользователей
-NOTIFY_ADMINS_ON_NEW_USER = True # Отправлять ли админам email о новом пользователе
-
-
-# Chat specific settings
-CHAT_MESSAGES_PAGE_SIZE = 50 # Количество сообщений при подгрузке старых
-MAX_FILE_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
-ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain'] # MIME types
-
-
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
-
-=======
 if not DEBUG:
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True') == 'True'
     CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'True') == 'True'
@@ -358,4 +294,3 @@ if not DEBUG:
         INSTALLED_APPS.remove("django_browser_reload")
 else:
     INTERNAL_IPS = ["127.0.0.1", "localhost"]
->>>>>>> servicedesk

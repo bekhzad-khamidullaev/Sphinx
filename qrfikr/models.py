@@ -58,11 +58,6 @@ class QRCodeLink(models.Model):
             self.location = self.point.location
         super().save(*args, **kwargs)
 
-    def save(self, *args, **kwargs):
-        if self.point:
-            self.location = self.point.location
-        super().save(*args, **kwargs)
-
 
 class Review(models.Model):
     """User feedback left via a QR code."""

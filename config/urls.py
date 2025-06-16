@@ -41,11 +41,8 @@ urlpatterns = i18n_patterns(
     # Подключение маршрутов приложения `chats`
     path("rooms/", include("room.urls")),
     path('checklists/', include('checklists.urls', namespace='checklists')),
-<<<<<<< HEAD
     path('qr-feedback/', include('qrfikr.urls', namespace='qrfikr')),
     path('reviews/', include('reviews.urls')),
-=======
->>>>>>> servicedesk
     # path('hrbot/', include('hrbot.urls', namespace='hrbot')),
     path('select2/', include('django_select2.urls')),
     # Swagger UI
