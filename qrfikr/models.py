@@ -5,8 +5,6 @@ from django.utils.translation import gettext_lazy as _
 from checklists.models import ChecklistPoint
 from tasks.models import TaskCategory, Project, Task
 
-from checklists.models import ChecklistPoint
-from tasks.models import TaskCategory, Project, Task
 
 
 class QRCodeLink(models.Model):
@@ -29,15 +27,6 @@ class QRCodeLink(models.Model):
         blank=True,
     )
 
-    task_category = models.ForeignKey(
-        TaskCategory,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='qr_codes',
-        verbose_name=_('Task category'),
-    )
-
     description = models.CharField(max_length=255, blank=True, verbose_name=_('Description'))
     is_active = models.BooleanField(default=True, verbose_name=_('Active'))
     qr_image = models.ImageField(upload_to='qr_codes/', blank=True, verbose_name=_('QR Image'))
@@ -50,8 +39,6 @@ class QRCodeLink(models.Model):
         ordering = ['location__name', 'point__name']
 
     def __str__(self):
-
-        return f"{self.location.name} / {self.point.name}"
 
 
     def get_feedback_url(self):
@@ -102,7 +89,11 @@ def create_task_from_review(review: 'Review') -> None:
     if review.rating >= 3 or not review.category:
         return
     project = _get_feedback_project()
-    title = f"Feedback {review.rating}/5 at {review.qr_code_link.point.name}"
+
+    point = review.qr_code_link.point
+    point_name = point.name if point else review.qr_code_link.location.name
+    title = f"Feedback {review.rating}/5 at {point_name}"
+
     description = review.text
     Task.objects.create(
         project=project,

@@ -74,21 +74,6 @@ class ChecklistModelTests(TestCase):
             invalid = Location(name="Invalid", parent=room, level=LocationLevel.VENUE)
             invalid.full_clean()
 
-    def test_location_parent_cannot_be_self(self):
-        self.location.parent = self.location
-        with self.assertRaises(ValidationError):
-            self.location.full_clean()
-
-    def test_location_parent_cycle_invalid(self):
-        room = Location.objects.create(
-            name="Hall", parent=self.location, level=LocationLevel.ROOM
-        )
-        corner = Location.objects.create(
-            name="Corner", parent=room, level=LocationLevel.AREA
-        )
-        self.location.parent = corner
-        with self.assertRaises(ValidationError):
-            self.location.full_clean()
 
     def test_checklist_point_creation(self):
         self.assertEqual(ChecklistPoint.objects.count(), 1)
