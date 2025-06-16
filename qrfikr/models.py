@@ -2,61 +2,59 @@ import uuid
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from checklists.models import ChecklistPoint
+from checklists.models import ChecklistPoint, Location
 from tasks.models import TaskCategory, Project, Task
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
+    """Link between a QR code and a specific checklist point."""
 
-class QRCodeLink(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+        Location,
+        related_name="qr_codes",
+        verbose_name=_("Location"),
+        related_name="qr_code",
+        verbose_name=_("Point"),
+    description = models.CharField(_("Description"), max_length=255, blank=True)
+    is_active = models.BooleanField(_("Active"), default=True)
+    qr_image = models.ImageField(_("QR Image"), upload_to="qr_codes/", blank=True)
+        verbose_name = _("QR Link")
+        verbose_name_plural = _("QR Links")
+        ordering = ["location__name"]
 
-    location = models.ForeignKey(
-        'checklists.Location',
+    def __str__(self) -> str:
+        text = self.location.name
+            text += f" / {self.point.name}"
+        return text
+    def get_feedback_url(self) -> str:
+        return reverse("qrfikr:submit", kwargs={"qr_uuid": self.id})
+    """User feedback left via a QR code."""
+
+    qr_code_link = models.ForeignKey(
+        QRCodeLink,
         on_delete=models.CASCADE,
-        related_name='qr_codes',
-        verbose_name=_('Location'),
-        editable=False,
+        related_name="reviews",
     )
-
-    point = models.OneToOneField(
-        ChecklistPoint,
-        on_delete=models.CASCADE,
-        related_name='qr_code',
-        verbose_name=_('Point'),
-        null=True,
-        blank=True,
-    )
-
-    description = models.CharField(max_length=255, blank=True, verbose_name=_('Description'))
-    is_active = models.BooleanField(default=True, verbose_name=_('Active'))
-    qr_image = models.ImageField(upload_to='qr_codes/', blank=True, verbose_name=_('QR Image'))
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = _('QR Link')
-        verbose_name_plural = _('QR Links')
-        ordering = ['location__name', 'point__name']
-
-    def __str__(self):
-
-
-    def get_feedback_url(self):
-        return reverse('qrfikr:submit', kwargs={'qr_uuid': self.id})
-
-    def save(self, *args, **kwargs):
-        if self.point:
-            self.location = self.point.location
-        super().save(*args, **kwargs)
-
-
-class Review(models.Model):
-    RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    qr_code_link = models.ForeignKey(QRCodeLink, on_delete=models.CASCADE, related_name='reviews')
-    category = models.ForeignKey(
-        TaskCategory,
+        verbose_name=_("Category"),
+    photo = models.ImageField(upload_to="review_photos/", blank=True)
+        verbose_name = _("Review")
+        verbose_name_plural = _("Reviews")
+        ordering = ["-submitted_at"]
+    def __str__(self) -> str:
+    def create_task(self) -> None:
+        if self.rating >= 3 or not self.category:
+            return
+        project, _ = Project.objects.get_or_create(name="Guest Feedback")
+        point = self.qr_code_link.point
+        location_name = point.name if point else self.qr_code_link.location.name
+        Task.objects.create(
+            project=project,
+            category=self.category,
+            title=f"Feedback {self.rating}/5 at {location_name}",
+            description=self.text,
+        )
+def review_post_save(sender, instance: Review, created: bool, **kwargs):
+        instance.create_task()
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
