@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Shared Variables & Functions ---
     const taskListContainer = document.getElementById('task-list');
+    const taskCardListContainer = document.getElementById('task-card-list');
     const kanbanBoardContainer = document.getElementById('kanban-board');
     const taskDetailContainer = document.getElementById('task-detail-container');
 
@@ -172,23 +173,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 textEl.textContent = isCurrentlyKanban ? listText : kanbanText;
                 btn.setAttribute('aria-pressed', isCurrentlyKanban.toString());
             };
+            const isDesktop = () => window.matchMedia('(min-width: 768px)').matches;
             const setView = (view) => {
                 const isKanban = view === 'kanban';
-                kanbanBoardContainer.classList.toggle('hidden', !isKanban);
-                taskListContainer.classList.toggle('hidden', isKanban);
-                document.getElementById('pagination')?.classList.toggle('hidden', isKanban || !document.getElementById('pagination'));
-                columnToggleDropdown?.closest('.relative')?.classList.toggle('hidden', !isKanban);
+                const desktop = isDesktop();
+                kanbanBoardContainer.classList.toggle('hidden', !desktop || !isKanban);
+                taskListContainer.classList.toggle('hidden', !desktop || isKanban);
+                taskCardListContainer?.classList.toggle('hidden', desktop);
+                const paginationEl = document.getElementById('pagination');
+                if (paginationEl) {
+                    const showPagination = desktop ? !isKanban : true;
+                    paginationEl.classList.toggle('hidden', !showPagination);
+                }
+                columnToggleDropdown?.closest('.relative')?.classList.toggle('hidden', !isKanban || !desktop);
                 updateButton(toggleViewBtn, document.getElementById('viewIcon'), document.getElementById('viewText'), view);
                 updateButton(toggleViewBtnMobile, document.getElementById('viewIconMobile'), document.getElementById('viewTextMobile'), view);
                 localStorage.setItem('taskView', view);
-                if (isKanban) { initializeKanban(); restoreHiddenColumns(); }
-                else { initializeListSort(); initializeListStatusChange(); initializeListDeleteButtons(); }
+                if (isKanban) { if (desktop) { initializeKanban(); restoreHiddenColumns(); } }
+                else { if (desktop) { initializeListSort(); initializeListStatusChange(); initializeListDeleteButtons(); } }
                 if (window.history.pushState) { const newUrl = new URL(window.location.href); newUrl.searchParams.set('view', view); window.history.pushState({ path: newUrl.href }, '', newUrl.href); }
             };
             setView(initialView);
             [toggleViewBtn, toggleViewBtnMobile].forEach(btn => {
                 if (btn) btn.addEventListener('click', () => setView((localStorage.getItem('taskView') || 'kanban') === 'kanban' ? 'list' : 'kanban'));
             });
+            window.addEventListener('resize', () => setView(localStorage.getItem('taskView') || 'kanban'));
         }
 
         let sortableInstances = [];
@@ -277,10 +286,10 @@ document.addEventListener('DOMContentLoaded', () => {
             headers.forEach(header => {
                 const link = header.querySelector('a'); if (!link) return;
                 const hrefSort = new URL(link.href).searchParams.get('sort'); const icon = header.querySelector('.fa-sort, .fa-sort-up, .fa-sort-down'); if (!icon) return;
-                header.classList.remove('sorted-asc', 'sorted-desc'); icon.className = 'fas fa-sort fa-fw ml-1.5 text-gray-400 dark:text-gray-500 opacity-40 group-hover:opacity-80'; header.setAttribute('aria-sort', 'none');
+                header.classList.remove('sorted-asc', 'sorted-desc'); icon.className = 'fas fa-sort fa-fw ml-1.5 text-gray-400 opacity-40 group-hover:opacity-80'; header.setAttribute('aria-sort', 'none');
                 if (currentSort === hrefSort) {
-                    if (hrefSort.startsWith('-')) { icon.className = 'fas fa-sort-down fa-fw ml-1.5 text-gray-600 dark:text-gray-400'; header.classList.add('sorted-desc'); header.setAttribute('aria-sort', 'descending'); }
-                    else { icon.className = 'fas fa-sort-up fa-fw ml-1.5 text-gray-600 dark:text-gray-400'; header.classList.add('sorted-asc'); header.setAttribute('aria-sort', 'ascending'); }
+                    if (hrefSort.startsWith('-')) { icon.className = 'fas fa-sort-down fa-fw ml-1.5 text-gray-600'; header.classList.add('sorted-desc'); header.setAttribute('aria-sort', 'descending'); }
+                    else { icon.className = 'fas fa-sort-up fa-fw ml-1.5 text-gray-600'; header.classList.add('sorted-asc'); header.setAttribute('aria-sort', 'ascending'); }
                 }
             });
         }
@@ -363,15 +372,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         function updateStatusDropdownAppearance(selectElement, newStatusKey) {
             if (!selectElement) return;
-            const baseClasses = "status-dropdown appearance-none px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all border border-transparent hover:border-gray-300 dark:hover:border-dark-600 focus:border-blue-400 cursor-pointer";
+            const baseClasses = "status-dropdown appearance-none px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all border border-transparent hover:border-gray-300 focus:border-blue-400 cursor-pointer";
             let statusClasses = ""; const s = newStatusKey; /* short alias */
-            if (s === 'new') statusClasses = ' bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200';
-            else if (s === 'in_progress') statusClasses = ' bg-yellow-100 text-yellow-800 dark:bg-yellow-900/80 dark:text-yellow-200';
-            else if (s === 'on_hold') statusClasses = ' bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-200';
-            else if (s === 'completed') statusClasses = ' bg-green-100 text-green-800 dark:bg-green-900/80 dark:text-green-200';
-            else if (s === 'cancelled' || s === 'canceled') statusClasses = ' bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400 line-through';
-            else if (s === 'overdue') statusClasses = ' bg-red-100 text-red-800 dark:bg-red-900/80 dark:text-red-200';
-            else statusClasses = ' bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-gray-200';
+            if (s === 'new') statusClasses = ' bg-gray-100 text-gray-800';
+            else if (s === 'in_progress') statusClasses = ' bg-yellow-100 text-yellow-800';
+            else if (s === 'on_hold') statusClasses = ' bg-blue-100 text-blue-800';
+            else if (s === 'completed') statusClasses = ' bg-green-100 text-green-800';
+            else if (s === 'cancelled' || s === 'canceled') statusClasses = ' bg-gray-100 text-gray-500 line-through';
+            else if (s === 'overdue') statusClasses = ' bg-red-100 text-red-800';
+            else statusClasses = ' bg-gray-100 text-gray-800';
             selectElement.className = baseClasses + statusClasses;
         }
         function removeTaskFromUI(taskId) {
@@ -380,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const taskRow = taskListContainer?.querySelector(`#task-row-${taskId}`);
             if (taskRow) {
                 taskRow.remove(); const tbody = taskListContainer?.querySelector('tbody');
-                if (tbody && !tbody.querySelector('tr')) { const colCount = taskListContainer.querySelector('thead th')?.length || 8; tbody.innerHTML = `<tr><td colspan="${colCount}" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic"><i class="fas fa-inbox fa-3x mb-3"></i><br>Задачи не найдены.</td></tr>`; }
+                if (tbody && !tbody.querySelector('tr')) { const colCount = taskListContainer.querySelector('thead th')?.length || 8; tbody.innerHTML = `<tr><td colspan="${colCount}" class="px-6 py-12 text-center text-gray-400 italic"><i class="fas fa-inbox fa-3x mb-3"></i><br>Задачи не найдены.</td></tr>`; }
             }
         }
         initializeViewSwitcher(); initializeColumnToggler(); connectTaskListWebSocket();
@@ -414,8 +423,8 @@ document.addEventListener('DOMContentLoaded', () => {
             commentForm.addEventListener('submit', async function (e) {
                 e.preventDefault(); const T = taskDetailData.translations; const commentText = commentTextArea.value.trim();
                 if (commentTextErrors) commentTextErrors.textContent = ''; if (commentNonFieldErrors) commentNonFieldErrors.textContent = '';
-                commentTextArea.classList.remove('border-red-500', 'dark:border-red-500');
-                if (!commentText) { if (commentTextErrors) commentTextErrors.textContent = T.commentCannotBeEmpty; commentTextArea.classList.add('border-red-500', 'dark:border-red-500'); commentTextArea.focus(); return; }
+                commentTextArea.classList.remove('border-red-500', '');
+                if (!commentText) { if (commentTextErrors) commentTextErrors.textContent = T.commentCannotBeEmpty; commentTextArea.classList.add('border-red-500', ''); commentTextArea.focus(); return; }
                 commentTextArea.disabled = true; commentSubmitBtn.disabled = true; const originalBtnHtml = commentSubmitBtn.innerHTML; commentSubmitBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${T.sending}`;
                 try {
                     const formData = new FormData(commentForm);
@@ -424,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (contentType && contentType.includes("application/json")) responseData = await response.json();
                     else { if (response.ok && response.redirected) { addCommentToDOM({id: `temp-${Date.now()}`, text: commentText, created_at_iso: new Date().toISOString(), author: {name: taskDetailData.currentUsername || T.unknownUser, avatar_url: taskDetailData.currentUserAvatar || taskDetailData.defaultAvatarUrl}}); commentTextArea.value = ''; if (window.showNotification) window.showNotification(T.commentAdded, 'success'); return; } throw new Error(`Server responded with ${response.status}. Expected JSON.`); }
                     if (response.ok && responseData.success && responseData.comment) { if (!document.getElementById(`comment-${responseData.comment.id}`)) addCommentToDOM(responseData.comment); commentTextArea.value = ''; if (window.showNotification) window.showNotification(T.commentAdded, 'success'); }
-                    else { let err = responseData.error || T.submitError; if (responseData.errors) { err += ` Details: ${Object.entries(responseData.errors).map(([f, e]) => `${f}: ${e.join(', ')}`).join('; ')}`; if (responseData.errors.text && commentTextErrors) { commentTextErrors.textContent = responseData.errors.text.join(' '); commentTextArea.classList.add('border-red-500','dark:border-red-500'); } if (responseData.errors.__all__ && commentNonFieldErrors) commentNonFieldErrors.textContent = responseData.errors.__all__.join(' '); } throw new Error(err); }
+                    else { let err = responseData.error || T.submitError; if (responseData.errors) { err += ` Details: ${Object.entries(responseData.errors).map(([f, e]) => `${f}: ${e.join(', ')}`).join('; ')}`; if (responseData.errors.text && commentTextErrors) { commentTextErrors.textContent = responseData.errors.text.join(' '); commentTextArea.classList.add('border-red-500',''); } if (responseData.errors.__all__ && commentNonFieldErrors) commentNonFieldErrors.textContent = responseData.errors.__all__.join(' '); } throw new Error(err); }
                 } catch (error) { console.error('Comment submit error:', error); const displayErr = error instanceof Error ? error.message : T.networkError; if (commentNonFieldErrors && !commentNonFieldErrors.textContent && !commentTextErrors?.textContent) commentNonFieldErrors.textContent = displayErr; if (window.showNotification && !error.handled) window.showNotification(displayErr, 'error');
                 } finally { commentTextArea.disabled = false; commentSubmitBtn.disabled = false; commentSubmitBtn.innerHTML = originalBtnHtml; }
             });
