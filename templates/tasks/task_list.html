@@ -67,6 +67,7 @@
 
 {% block list_content %}
 {% include 'includes/kanban_board.html' with tasks_by_status=tasks_by_status_kanban status_mapping_dict=status_mapping_dict %}
+{% include 'includes/task_card_list.html' with tasks_for_cards=tasks_page_obj %}
 {% include 'includes/task_list_table.html' with tasks_for_table=tasks_page_obj status_choices_list=status_choices_list current_sort=current_sort request=request %}
 
 {% if is_paginated %}
