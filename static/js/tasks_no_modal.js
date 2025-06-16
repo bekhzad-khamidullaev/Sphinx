@@ -113,6 +113,154 @@ document.addEventListener('DOMContentLoaded', () => {
         const columnCheckboxes = document.querySelectorAll('.toggle-column-checkbox');
         window.wsRetryCount = 0;
 
+        class KanbanBoard {
+            constructor(container, options = {}) {
+                this.container = container;
+                this.updateUrlTemplate = options.updateUrlTemplate || '';
+                this.columnCheckboxes = options.columnCheckboxes || [];
+                this.resetButton = options.resetButton;
+                this.sortableInstances = [];
+            }
+
+            init() {
+                this.initDragDrop();
+                this.setupColumnToggler();
+                this.restoreHiddenColumns();
+            }
+
+            initDragDrop() {
+                if (!window.Sortable || !this.container || this.container.classList.contains('hidden')) return;
+                this.sortableInstances.forEach(i => i.destroy());
+                this.sortableInstances = [];
+                const columns = this.container.querySelectorAll('.kanban-tasks');
+                if (!columns.length) return;
+                columns.forEach(column => {
+                    const instance = new Sortable(column, {
+                        group: 'kanban-tasks',
+                        animation: 150,
+                        ghostClass: 'kanban-ghost',
+                        dragClass: 'kanban-dragging',
+                        forceFallback: true,
+                        fallbackOnBody: true,
+                        swapThreshold: 0.65,
+                        onStart: evt => evt.item.classList.add('shadow-xl', 'scale-105', 'z-50'),
+                        onEnd: async evt => {
+                            evt.item.classList.remove('shadow-xl', 'scale-105', 'z-50');
+                            const taskElement = evt.item;
+                            const targetColumn = evt.to.closest('.kanban-column');
+                            const sourceColumn = evt.from.closest('.kanban-column');
+                            const taskId = taskElement.dataset.taskId;
+                            const newStatus = targetColumn?.dataset.status;
+                            const oldStatus = taskElement.dataset.status;
+                            this.updateColumnUI(sourceColumn);
+                            this.updateColumnUI(targetColumn);
+                            if (!taskId || !newStatus || oldStatus === newStatus) {
+                                if (oldStatus !== newStatus && evt.from && typeof evt.oldDraggableIndex !== 'undefined') {
+                                    evt.from.insertBefore(taskElement, evt.from.children[evt.oldDraggableIndex]);
+                                    this.updateColumnUI(sourceColumn);
+                                    this.updateColumnUI(targetColumn);
+                                }
+                                return;
+                            }
+                            if (!this.updateUrlTemplate) { console.error('Update URL template not configured.'); return; }
+                            const url = this.updateUrlTemplate.replace('0', taskId);
+                            try {
+                                const response = await window.authenticatedFetch(url, { method: 'POST', body: JSON.stringify({ status: newStatus }) });
+                                if (!response.ok) {
+                                    const errorData = await response.json().catch(() => ({ message: `Server error ${response.status}` }));
+                                    throw new Error(errorData.message);
+                                }
+                                const data = await response.json();
+                                if (data.success) {
+                                    taskElement.dataset.status = data.new_status_key;
+                                    if (window.showNotification) window.showNotification(data.message || `Статус #${escapeHtml(taskId)} обновлен.`, 'success');
+                                    updateTaskUIInList(taskId, data.new_status_key, data.new_status_display);
+                                } else { throw new Error(data.message || 'Server indicated failure.'); }
+                            } catch (error) {
+                                console.error(`Kanban AJAX Error for task ${taskId}:`, error);
+                                if (window.showNotification && !error.handled) window.showNotification(`Ошибка Kanban #${escapeHtml(taskId)}: ${error.message}`, 'error');
+                                if (evt.from && typeof evt.oldDraggableIndex !== 'undefined') {
+                                    evt.from.insertBefore(taskElement, evt.from.children[evt.oldDraggableIndex]);
+                                    taskElement.dataset.status = oldStatus;
+                                    this.updateColumnUI(sourceColumn);
+                                    this.updateColumnUI(targetColumn);
+                                }
+                            }
+                        }
+                    });
+                    this.sortableInstances.push(instance);
+                });
+                this.initializeDeleteButtons();
+            }
+
+            initializeDeleteButtons() {
+                setupDeleteTaskHandler('#kanban-board');
+            }
+
+            updateColumnUI(column) {
+                if (!column) return;
+                requestAnimationFrame(() => {
+                    const tasksContainer = column.querySelector('.kanban-tasks');
+                    if (!tasksContainer) return;
+                    const countEl = column.querySelector('.task-count');
+                    const noTasksMsg = tasksContainer.querySelector('.no-tasks-message');
+                    const count = tasksContainer.querySelectorAll('.kanban-task').length;
+                    if (countEl) countEl.textContent = count;
+                    if (noTasksMsg) noTasksMsg.classList.toggle('hidden', count > 0);
+                });
+            }
+
+            updateColumnVisibility(status, isVisible) {
+                this.container?.querySelectorAll(`.kanban-column-wrapper[data-status="${status}"]`).forEach(w => w.classList.toggle('hidden', !isVisible));
+            }
+
+            setupColumnToggler() {
+                if (!columnToggleDropdown || !this.resetButton || !this.columnCheckboxes.length) return;
+                const saveHidden = () => localStorage.setItem('hiddenKanbanColumns', JSON.stringify(Array.from(this.columnCheckboxes).filter(cb => !cb.checked).map(cb => cb.dataset.status)));
+                this.columnCheckboxes.forEach(cb => cb.addEventListener('change', () => { this.updateColumnVisibility(cb.dataset.status, cb.checked); saveHidden(); }));
+                this.resetButton.addEventListener('click', () => {
+                    this.columnCheckboxes.forEach(cb => { cb.checked = true; this.updateColumnVisibility(cb.dataset.status, true); });
+                    saveHidden();
+                });
+            }
+
+            restoreHiddenColumns() {
+                if (!this.container || this.container.classList.contains('hidden')) return;
+                const hidden = JSON.parse(localStorage.getItem('hiddenKanbanColumns') || '[]');
+                this.container.querySelectorAll('.kanban-column-wrapper').forEach(w => w.classList.remove('hidden'));
+                this.columnCheckboxes.forEach(cb => cb.checked = true);
+                hidden.forEach(status => {
+                    this.updateColumnVisibility(status, false);
+                    const cb = this.container.querySelector(`.toggle-column-checkbox[data-status="${status}"]`);
+                    if (cb) cb.checked = false;
+                });
+            }
+
+            updateTask(taskId, newStatusKey) {
+                if (!this.container || this.container.classList.contains('hidden')) return;
+                const taskEl = this.container.querySelector(`.kanban-task[data-task-id="${taskId}"]`);
+                if (!taskEl) return;
+                if (taskEl.dataset.status !== newStatusKey) {
+                    const targetColTasks = this.container.querySelector(`.kanban-column[data-status="${newStatusKey}"] .kanban-tasks`);
+                    const sourceColEl = taskEl.closest('.kanban-column');
+                    if (targetColTasks) {
+                        targetColTasks.appendChild(taskEl);
+                        taskEl.dataset.status = newStatusKey;
+                        this.updateColumnUI(sourceColEl);
+                        this.updateColumnUI(targetColTasks.closest('.kanban-column'));
+                    }
+                } else {
+                    taskEl.dataset.status = newStatusKey;
+                }
+            }
+        }
+
+        const kanbanBoard = new KanbanBoard(kanbanBoardContainer, {
+            updateUrlTemplate: taskListConfig.updateStatusUrlTemplate,
+            columnCheckboxes: columnCheckboxes,
+            resetButton: resetHiddenColumnsBtn
+        });
+
         let taskUpdateSocket = null;
         function connectTaskListWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -181,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateButton(toggleViewBtn, document.getElementById('viewIcon'), document.getElementById('viewText'), view);
                 updateButton(toggleViewBtnMobile, document.getElementById('viewIconMobile'), document.getElementById('viewTextMobile'), view);
                 localStorage.setItem('taskView', view);
-                if (isKanban) { initializeKanban(); restoreHiddenColumns(); }
+                if (isKanban) { kanbanBoard.init(); }
                 else { initializeListSort(); initializeListStatusChange(); initializeListDeleteButtons(); }
                 if (window.history.pushState) { const newUrl = new URL(window.location.href); newUrl.searchParams.set('view', view); window.history.pushState({ path: newUrl.href }, '', newUrl.href); }
             };
@@ -191,83 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        let sortableInstances = [];
-        function initializeKanban() {
-            if (!window.Sortable || !kanbanBoardContainer || kanbanBoardContainer.classList.contains('hidden')) return;
-            sortableInstances.forEach(instance => instance.destroy()); sortableInstances = [];
-            const columns = kanbanBoardContainer.querySelectorAll('.kanban-tasks');
-            if (columns.length === 0) return;
-            columns.forEach(column => {
-                const instance = new Sortable(column, {
-                    group: 'kanban-tasks', animation: 150, ghostClass: 'kanban-ghost', dragClass: 'kanban-dragging', forceFallback: true, fallbackOnBody: true, swapThreshold: 0.65,
-                    onStart: (evt) => evt.item.classList.add('shadow-xl', 'scale-105', 'z-50'),
-                    onEnd: async (evt) => {
-                        evt.item.classList.remove('shadow-xl', 'scale-105', 'z-50');
-                        const taskElement = evt.item, targetTasksContainer = evt.to, sourceTasksContainer = evt.from;
-                        const targetColumnElement = targetTasksContainer.closest('.kanban-column'), sourceColumnElement = sourceTasksContainer.closest('.kanban-column');
-                        const taskId = taskElement.dataset.taskId, newStatus = targetColumnElement?.dataset.status, oldStatus = taskElement.dataset.status; // Use element's original status
-                        updateKanbanColumnUI(sourceColumnElement); updateKanbanColumnUI(targetColumnElement);
-                        if (!taskId || !newStatus || !targetColumnElement || oldStatus === newStatus) {
-                            if (oldStatus !== newStatus && sourceTasksContainer && typeof evt.oldDraggableIndex !== 'undefined') {
-                                sourceTasksContainer.insertBefore(taskElement, sourceTasksContainer.children[evt.oldDraggableIndex]);
-                                updateKanbanColumnUI(sourceColumnElement); updateKanbanColumnUI(targetColumnElement);
-                            } return;
-                        }
-                        if (!taskListConfig.updateStatusUrlTemplate) { console.error("Update URL template not configured for Kanban status update."); return; }
-                        const url = taskListConfig.updateStatusUrlTemplate.replace('0', taskId); // USE TEMPLATE
-                        console.log("Kanban attempting to update URL:", url, " OldStatus:", oldStatus, "NewStatus:", newStatus);
-
-                        try {
-                            const response = await window.authenticatedFetch(url, { method: 'POST', body: JSON.stringify({ status: newStatus }) });
-                            if (!response.ok) { const errorData = await response.json().catch(() => ({ message: `Server error ${response.status}` })); throw new Error(errorData.message); }
-                            const responseData = await response.json();
-                            if (responseData.success) {
-                                taskElement.dataset.status = responseData.new_status_key;
-                                if (window.showNotification) window.showNotification(responseData.message || `Статус #${escapeHtml(taskId)} обновлен.`, 'success');
-                                updateTaskUIInList(taskId, responseData.new_status_key, responseData.new_status_display);
-                            } else { throw new Error(responseData.message || 'Server indicated failure.'); }
-                        } catch (error) {
-                            console.error(`Kanban AJAX Error for task ${taskId}:`, error);
-                            if (window.showNotification && !error.handled) window.showNotification(`Ошибка Kanban #${escapeHtml(taskId)}: ${error.message}`, 'error');
-                            if (sourceTasksContainer && typeof evt.oldDraggableIndex !== 'undefined') {
-                                sourceTasksContainer.insertBefore(taskElement, sourceTasksContainer.children[evt.oldDraggableIndex]);
-                                taskElement.dataset.status = oldStatus; // Revert status on element
-                                updateKanbanColumnUI(sourceColumnElement); updateKanbanColumnUI(targetColumnElement);
-                            }
-                        }
-                    }
-                });
-                sortableInstances.push(instance);
-            });
-            initializeKanbanDeleteButtons();
-        }
-
-        function updateKanbanColumnUI(columnElement) {
-            if (!columnElement) return;
-            requestAnimationFrame(() => {
-                const tasksContainer = columnElement.querySelector('.kanban-tasks'); if (!tasksContainer) return;
-                const countElement = columnElement.querySelector('.task-count');
-                const noTasksMessage = tasksContainer.querySelector('.no-tasks-message');
-                const taskCount = tasksContainer.querySelectorAll('.kanban-task').length;
-                if (countElement) countElement.textContent = taskCount;
-                if (noTasksMessage) noTasksMessage.classList.toggle('hidden', taskCount > 0);
-            });
-        }
-
-        const updateColumnVisibility = (status, isVisible) => kanbanBoardContainer?.querySelectorAll(`.kanban-column-wrapper[data-status="${status}"]`).forEach(w => w.classList.toggle('hidden', !isVisible));
-        function initializeColumnToggler() {
-            if (!columnToggleDropdown || !resetHiddenColumnsBtn || !columnCheckboxes.length) return;
-            const saveHiddenColumns = () => localStorage.setItem('hiddenKanbanColumns', JSON.stringify(Array.from(columnCheckboxes).filter(cb => !cb.checked).map(cb => cb.dataset.status)));
-            columnCheckboxes.forEach(cb => cb.addEventListener('change', function () { updateColumnVisibility(this.dataset.status, this.checked); saveHiddenColumns(); }));
-            resetHiddenColumnsBtn.addEventListener('click', () => { columnCheckboxes.forEach(cb => { cb.checked = true; updateColumnVisibility(cb.dataset.status, true); }); saveHiddenColumns(); });
-        }
-        function restoreHiddenColumns() {
-            if (!kanbanBoardContainer || kanbanBoardContainer.classList.contains('hidden')) return;
-            const hiddenStatuses = JSON.parse(localStorage.getItem('hiddenKanbanColumns') || '[]');
-            kanbanBoardContainer.querySelectorAll('.kanban-column-wrapper').forEach(w => w.classList.remove('hidden'));
-            columnCheckboxes.forEach(cb => cb.checked = true);
-            hiddenStatuses.forEach(status => { updateColumnVisibility(status, false); const cb = kanbanBoardContainer.querySelector(`.toggle-column-checkbox[data-status="${status}"]`); if (cb) cb.checked = false; });
-        }
+        // Deprecated functions retained for backward compatibility
 
         function initializeListSort() {
             if (!taskListContainer || taskListContainer.classList.contains('hidden')) return;
@@ -306,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             selectElement.dataset.previousValue = newStatus;
                             updateStatusDropdownAppearance(selectElement, responseData.new_status_key);
                             if (window.showNotification) window.showNotification(responseData.message || 'Статус обновлен.', 'success');
-                            updateTaskUIInKanban(taskId, responseData.new_status_key);
+                            kanbanBoard.updateTask(taskId, responseData.new_status_key);
                         } else { throw new Error(responseData.message || 'Update failed.'); }
                     } catch (error) {
                         console.error(`List AJAX Error for task ${taskId}:`, error);
@@ -343,18 +415,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         function initializeListDeleteButtons() { setupDeleteTaskHandler('#task-list'); }
-        function initializeKanbanDeleteButtons() { setupDeleteTaskHandler('#kanban-board'); }
 
-        function updateTaskUI(taskId, newStatusKey, newStatusDisplay) { updateTaskUIInKanban(taskId, newStatusKey); updateTaskUIInList(taskId, newStatusKey, newStatusDisplay); }
-        function updateTaskUIInKanban(taskId, newStatusKey) {
-            if (!kanbanBoardContainer || kanbanBoardContainer.classList.contains('hidden')) return;
-            const taskEl = kanbanBoardContainer.querySelector(`.kanban-task[data-task-id="${taskId}"]`); if (!taskEl) return;
-            if (taskEl.dataset.status !== newStatusKey) {
-                const targetColTasks = kanbanBoardContainer.querySelector(`.kanban-column[data-status="${newStatusKey}"] .kanban-tasks`);
-                const sourceColEl = taskEl.closest('.kanban-column');
-                if (targetColTasks) { targetColTasks.appendChild(taskEl); taskEl.dataset.status = newStatusKey; updateKanbanColumnUI(sourceColEl); updateKanbanColumnUI(targetColTasks.closest('.kanban-column')); }
-            } else { taskEl.dataset.status = newStatusKey; }
-        }
+        function updateTaskUI(taskId, newStatusKey, newStatusDisplay) { kanbanBoard.updateTask(taskId, newStatusKey); updateTaskUIInList(taskId, newStatusKey, newStatusDisplay); }
         function updateTaskUIInList(taskId, newStatusKey, newStatusDisplayProvided) {
             if (!taskListContainer || taskListContainer.classList.contains('hidden')) return;
             const rowEl = taskListContainer.querySelector(`#task-row-${taskId}`); if (!rowEl) return;
@@ -376,15 +438,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         function removeTaskFromUI(taskId) {
             const taskKanban = kanbanBoardContainer?.querySelector(`.kanban-task[data-task-id="${taskId}"]`);
-            if (taskKanban) { const col = taskKanban.closest('.kanban-column'); taskKanban.remove(); if (col) updateKanbanColumnUI(col); }
+            if (taskKanban) { const col = taskKanban.closest('.kanban-column'); taskKanban.remove(); if (col) kanbanBoard.updateColumnUI(col); }
             const taskRow = taskListContainer?.querySelector(`#task-row-${taskId}`);
             if (taskRow) {
                 taskRow.remove(); const tbody = taskListContainer?.querySelector('tbody');
                 if (tbody && !tbody.querySelector('tr')) { const colCount = taskListContainer.querySelector('thead th')?.length || 8; tbody.innerHTML = `<tr><td colspan="${colCount}" class="px-6 py-12 text-center text-gray-400 italic"><i class="fas fa-inbox fa-3x mb-3"></i><br>Задачи не найдены.</td></tr>`; }
             }
         }
-        initializeViewSwitcher(); initializeColumnToggler(); connectTaskListWebSocket();
-        window.addEventListener('resize', debounce(() => { if (localStorage.getItem('taskView') === 'kanban' && kanbanBoardContainer && !kanbanBoardContainer.classList.contains('hidden')) initializeKanban(); }, 250));
+        initializeViewSwitcher(); connectTaskListWebSocket();
+        window.addEventListener('resize', debounce(() => { if (localStorage.getItem('taskView') === 'kanban' && kanbanBoardContainer && !kanbanBoardContainer.classList.contains('hidden')) kanbanBoard.init(); }, 250));
     }
 
     // --- Task Detail Page Specific Logic ---
