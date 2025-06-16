@@ -11,7 +11,11 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key-@repla
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 # --- Настройки хостов ---
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','www.tasks.evos.uz', 'tasks.evos.uz']
+# Примечание: В продакшене замените на реальные домены вашего приложения
+# Если вы используете ASGI серверы (Daphne, Uvicorn), то нужно учитывать, что они могут передавать хост с портом.
+# Для ASGI серверов, которые могут передавать хост с портом, используем ASGI_ALLOWED_HOSTS
+# Пример: ASGI_ALLOWED_HOSTS = ['127.0.0.1:8000', 'localhost:8000']
 ASGI_ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 # ALLOWED_HOSTS_ENV = os.environ.get("ALLOWED_HOSTS", "")
 # if ALLOWED_HOSTS_ENV:
@@ -232,7 +236,12 @@ CORS_ALLOW_ALL_ORIGINS = True if DEBUG else False
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://localhost:8080",
-    # "https://your-production-domain.com" # Добавьте ваш домен для продакшена
+    "www.tasks.evos.uz",
+    "tasks.evos.uz",
+    "http://www.tasks.evos.uz",
+    "http://tasks.evos.uz",
+    "https://www.tasks.evos.uz",
+    "https://tasks.evos.uz",
 ]
 
 # --- Кэш ---
