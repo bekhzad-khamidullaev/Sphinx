@@ -56,9 +56,7 @@ INSTALLED_APPS = [
     "channels",
     "corsheaders",
     'crispy_forms',
-    'crispy_tailwind',
-    'tailwind',
-    'theme',
+    'crispy_bootstrap5',
     'django_browser_reload',
     "django_filters",
     "drf_yasg",
@@ -255,11 +253,9 @@ SELECT2_CACHE_BACKEND = "default"
 # --- Шифрование полей ---
 FIELD_ENCRYPTION_KEY = "_3HZU7uFwNYQw0n_7r1BFgwPU52Xs2N16uQUrJvPdUM="
 
-# --- Crispy Forms и Tailwind ---
-CRISPY_ALLOWED_TEMPLATE_PACKS = ["tailwind"]
-CRISPY_TEMPLATE_PACK = "tailwind"
-TAILWIND_APP_NAME = 'theme'
-NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd"
+# --- Crispy Forms and Bootstrap ---
+CRISPY_ALLOWED_TEMPLATE_PACKS = ["bootstrap4"]
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 # --- Сообщения Django ---
 MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"

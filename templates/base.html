@@ -1,4 +1,4 @@
-{% load static tailwind_tags i18n %}
+{% load static i18n %}
 {% load django_browser_reload %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}" class="h-full">
@@ -11,10 +11,8 @@
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://ajax.googleapis.com">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <!-- Bootswatch Zephyr theme -->
     <link rel="stylesheet" href="{% static 'vendor/bootswatch/zephyr/bootstrap.min.css' %}">
-    {% tailwind_css %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
         integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
