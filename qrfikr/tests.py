@@ -3,7 +3,9 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from .models import QRCodeLink, Review
 from checklists.models import Location, ChecklistPoint
+
 from tasks.models import TaskCategory, Task
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -13,8 +15,10 @@ class ReviewAPITests(APITestCase):
         self.user = User.objects.create_user(username='test', password='pass')
         self.client.login(username='test', password='pass')
         self.location = Location.objects.create(name='Loc', description='d')
+
         self.point = ChecklistPoint.objects.create(location=self.location, name='Point1')
         self.qr = QRCodeLink.objects.create(point=self.point)
+
 
     def test_create_review(self):
         url = reverse('qrfikr:review-list')
@@ -47,3 +51,4 @@ class ReviewTaskCreationTests(APITestCase):
         task = Task.objects.first()
         self.assertEqual(task.category, self.category)
         self.assertIn(self.point.name, task.title)
+
