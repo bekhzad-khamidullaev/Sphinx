@@ -41,8 +41,11 @@ urlpatterns = i18n_patterns(
     # Подключение маршрутов приложения `chats`
     path("rooms/", include("room.urls")),
     path('checklists/', include('checklists.urls', namespace='checklists')),
+<<<<<<< HEAD
     path('qr-feedback/', include('qrfikr.urls', namespace='qrfikr')),
     path('reviews/', include('reviews.urls')),
+=======
+>>>>>>> servicedesk
     # path('hrbot/', include('hrbot.urls', namespace='hrbot')),
     path('select2/', include('django_select2.urls')),
     # Swagger UI
@@ -52,3 +55,7 @@ urlpatterns = i18n_patterns(
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+admin.site.site_header = "EVOS Admin"
+admin.site.site_title = "EVOS Admin Portal"
+admin.site.index_title = "Welcome to EVOS ServiceDesk Portal"

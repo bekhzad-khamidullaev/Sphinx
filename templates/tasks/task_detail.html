@@ -1,16 +1,25 @@
 {% extends 'base.html' %}
 {% load i18n app_filters static widget_tweaks %}
 
-{% block title %}{{ task_instance.title }} - {{ task_instance.task_number|default:task_instance.pk }}{% endblock %}
+{% block title %}{{ task_instance.title }} - #{{ task_instance.task_number|default:task_instance.pk }}{% endblock %}
 
 {% block head_extra %}
     {{ block.super }}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<<<<<<< HEAD
     {% if form %}
         {{ form.media.css }}
     {% endif %}
     {% if photo_formset and photo_formset.media.css %}{{ photo_formset.media.css }}{% endif %}
+=======
+    {% if comment_form and comment_form.media.css %} 
+        {{ comment_form.media.css }}
+    {% endif %}
+    {% if photo_formset and photo_formset.media.css %}
+        {{ photo_formset.media.css }}
+    {% endif %}
+>>>>>>> servicedesk
     <style>
         #comment-list::-webkit-scrollbar {
             width: 6px;
@@ -37,28 +46,34 @@
         </h1>
         {% if task_instance.project %}
         <p class="text-sm text-gray-500 mt-1">
-            {% blocktrans with project_name=task_instance.project.name %}Проект: <a href="{{ task_instance.project.get_absolute_url }}" class="hover:underline">{{ project_name }}</a>{% endblocktrans %}
+            {% blocktrans with project_name=task_instance.project.name %}Проект: <a href="{{ task_instance.project.get_absolute_url }}" class="hover:underline text-blue-600">{{ project_name }}</a>{% endblocktrans %}
         </p>
         {% endif %}
     </div>
+<<<<<<< HEAD
     <div class="d-flex gap-2 flex-shrink-0">
         {% if perms.tasks.change_task or can_change_task %}
+=======
+    <div class="flex space-x-3 flex-shrink-0">
+        {% if can_change_task %}
+>>>>>>> servicedesk
         <a href="{% url 'tasks:task_update' pk=task_instance.pk %}"
             class="btn btn-warning">
             <i class="fas fa-edit mr-2" aria-hidden="true"></i> {% trans 'Редактировать' %}
         </a>
         {% endif %}
-        {% if perms.tasks.delete_task or can_delete_task %}
+        {% if can_delete_task %}
         <a href="{% url 'tasks:task_delete' pk=task_instance.pk %}"
+<<<<<<< HEAD
             class="btn btn-danger">
+=======
+            class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
+>>>>>>> servicedesk
             <i class="fas fa-trash mr-2" aria-hidden="true"></i> {% trans 'Удалить' %}
         </a>
         {% endif %}
-        <a href="{{ chat_room_url }}" class="btn btn-primary">
-            <i class="fas fa-comments mr-2" aria-hidden="true"></i> {% trans 'Чат' %}
-        </a>
         <a href="{% url 'tasks:task_list' %}"
-            class="btn btn-secondary">
+            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all">
             <i class="fas fa-arrow-left mr-2" aria-hidden="true"></i> {% trans 'К списку' %}
         </a>
     </div>
@@ -71,7 +86,8 @@
     <div class="row g-4">
         <div class="col-md-8">
         <div class="md:col-span-2 space-y-6">
-            <div class="flex flex-wrap gap-4 items-center">
+            {# ... (секция Статус, Приоритет, Описание, Категоризация - без изменений) ... #}
+             <div class="flex flex-wrap gap-4 items-center">
                 <div>
                     <span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Статус' %}</span>
                     <span id="task-status-badge" class="status-badge px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
@@ -104,8 +120,8 @@
             <div>
                 <h3 class="text-lg font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-2">{% trans 'Категоризация' %}</h3>
                 <p class="text-sm text-gray-600 mt-3">
-                    {% if task_instance.category %}Категория: <span class="font-medium">{{ task_instance.category.name }}</span>{% if task_instance.subcategory %} / {% endif %}{% endif %}
-                    {% if task_instance.subcategory %}Подкатегория: <span class="font-medium">{{ task_instance.subcategory.name }}</span>{% endif %}
+                    {% if task_instance.category %}Категория: <a href="{{ task_instance.category.get_absolute_url }}" class="font-medium text-blue-600 hover:underline">{{ task_instance.category.name }}</a>{% if task_instance.subcategory %} / {% endif %}{% endif %}
+                    {% if task_instance.subcategory %}Подкатегория: <a href="{{ task_instance.subcategory.get_absolute_url }}" class="font-medium text-blue-600 hover:underline">{{ task_instance.subcategory.name }}</a>{% endif %}
                 </p>
             </div>
             {% endif %}
@@ -115,27 +131,62 @@
             <div>
                 <h3 class="text-md font-semibold text-gray-800 mb-3"><i class="fas fa-users mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Участники' %}</h3>
                 <ul class="space-y-4">
-                    {% with responsible_users=task_instance.get_responsible_users executor_users=task_instance.get_executors watcher_users=task_instance.get_watchers %}
-                    {% if responsible_users %}<li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span>
-                        {% for user in responsible_users %}<div class="flex items-center mt-1"><img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name|default:user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 truncate">{{ user.display_name|default:user.username }}</span></div>{% endfor %}
-                    </li>{% endif %}
-                    {% if executor_users %}<li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span>
-                        {% for user in executor_users %}<div class="flex items-center mt-1"><img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name|default:user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 truncate">{{ user.display_name|default:user.username }}</span></div>
-                        {% empty %}<span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span>{% endfor %}
-                    </li>{% endif %}
+                    {# ИСПОЛЬЗУЕМ user_obj ВМЕСТО assignment.user, ТАК КАК МЕТОДЫ МОДЕЛИ ВОЗВРАЩАЮТ QuerySet[User] #}
+                    {% with responsible_users_list=task_instance.get_responsible_users executor_users_list=task_instance.get_executors watcher_users_list=task_instance.get_watchers %}
+                    
+                    {% if responsible_users_list %}
+                    <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Ответственный' %}</span>
+                        {% for user_obj in responsible_users_list %}
+                            <div class="flex items-center mt-1">
+                                <img src="{% if user_obj.image %}{{ user_obj.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user_obj.display_name|default:user_obj.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+                                <span class="text-sm text-gray-700 truncate">{{ user_obj.display_name|default:user_obj.username }}</span>
+                            </div>
+                        {% endfor %}
+                    </li>
+                    {% endif %}
+
+                    {% if executor_users_list %}
+                    <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span>
+                        {% for user_obj in executor_users_list %}
+                            <div class="flex items-center mt-1">
+                                <img src="{% if user_obj.image %}{{ user_obj.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user_obj.display_name|default:user_obj.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+                                <span class="text-sm text-gray-700 truncate">{{ user_obj.display_name|default:user_obj.username }}</span>
+                            </div>
+                        {% empty %}
+                        <span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span>
+                        {% endfor %}
+                    </li>
+                    {% else %} {# Добавил else для случая, когда список пуст, но не из-за empty #}
+                         <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Исполнители' %}</span>
+                         <span class="text-sm text-gray-400 italic">{% trans 'Не назначены' %}</span></li>
+                    {% endif %}
+
                     <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Создатель' %}</span>
                         <div class="flex items-center mt-1">
-                        {% if task_instance.created_by %}<img src="{% if task_instance.created_by.image %}{{ task_instance.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 truncate">{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}</span>
-                        {% else %}<span class="text-sm text-gray-400 italic">{% trans 'Неизвестен' %}</span>{% endif %}</div>
+                        {% if task_instance.created_by %}
+                            <img src="{% if task_instance.created_by.image %}{{ task_instance.created_by.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+                            <span class="text-sm text-gray-700 truncate">{{ task_instance.created_by.display_name|default:task_instance.created_by.username }}</span>
+                        {% else %}
+                            <span class="text-sm text-gray-400 italic">{% trans 'Неизвестен' %}</span>
+                        {% endif %}
+                        </div>
                     </li>
-                    {% if watcher_users %}<li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span>
-                        {% for user in watcher_users %}<div class="flex items-center mt-1"><img src="{% if user.image %}{{ user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user.display_name|default:user.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover"><span class="text-sm text-gray-700 truncate">{{ user.display_name|default:user.username }}</span></div>{% endfor %}
-                    </li>{% endif %}
+
+                    {% if watcher_users_list %}
+                    <li><span class="block text-xs text-gray-500 uppercase font-semibold mb-1">{% trans 'Наблюдатели' %}</span>
+                        {% for user_obj in watcher_users_list %}
+                            <div class="flex items-center mt-1">
+                                <img src="{% if user_obj.image %}{{ user_obj.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ user_obj.display_name|default:user_obj.username }}" class="w-6 h-6 rounded-full mr-2 flex-shrink-0 object-cover">
+                                <span class="text-sm text-gray-700 truncate">{{ user_obj.display_name|default:user_obj.username }}</span>
+                            </div>
+                        {% endfor %}
+                    </li>
+                    {% endif %}
                     {% endwith %}
                 </ul>
             </div>
-
-            <div>
+            {# ... (секция "Сроки" без изменений) ... #}
+            <div class="pt-2">
                 <h3 class="text-md font-semibold text-gray-800 mb-3"><i class="far fa-calendar-alt mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Сроки' %}</h3>
                 <dl class="space-y-2 text-sm">
                     <div class="flex justify-between"><dt class="text-gray-500">{% trans 'Создана' %}:</dt><dd class="text-gray-700 font-medium">{{ task_instance.created_at|date:"d.m.Y H:i" }}</dd></div>
@@ -149,6 +200,7 @@
         </div>
     </div>
 
+    {# ... (секция "Фотографии" без изменений) ... #}
     {% with photos=task_instance.photos.all %}
     {% if photos %}
     <div class="mt-10 border-t border-gray-200 pt-8">
@@ -188,6 +240,7 @@
     {% endif %}
     {% endwith %}
 
+    {# ... (секция "Комментарии" и блок scripts без изменений) ... #}
     <div id="comments" class="mt-10 border-t border-gray-200 pt-8">
         <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-comments mr-2 text-gray-500" aria-hidden="true"></i>{% trans 'Комментарии' %} <span id="comment-count" class="text-sm font-normal text-gray-500">({{ task_instance.comments.count }})</span></h3>
         <div id="comment-list" class="space-y-4 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent mb-6">
@@ -208,19 +261,23 @@
         </div>
 
         {% if can_add_comment %}
-        <form id="comment-form" method="post" action="{% url 'tasks:add_comment_to_task' task_id=task_instance.pk %}">
+        <form id="comment-form" method="post" action=""> 
             {% csrf_token %}
             <div class="flex space-x-3 items-start">
                 <img class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" src="{% if request.user.image %}{{ request.user.image.url }}{% else %}{% static 'img/user.svg' %}{% endif %}" alt="{{ request.user.display_name|default:request.user.username }}">
                 <div class="flex-1 mt-1">
-                    {{ comment_form.text }}
+                    {{ comment_form.text }} 
+                    {% if comment_form.text.errors %}
                     <div id="comment-text-errors" class="mt-1 text-sm text-red-600">
-                        {% if comment_form.text.errors %}{% for error in comment_form.text.errors %} {{ error }} {% endfor %}{% endif %}
+                        {% for error in comment_form.text.errors %} <p>{{ error }}</p> {% endfor %}
                     </div>
-
+                    {% endif %}
+                    {% if comment_form.non_field_errors %}
                     <div id="comment-non-field-errors" class="mt-1 text-sm text-red-600">
-                        {% if comment_form.non_field_errors %}{% for error in comment_form.non_field_errors %} {{ error }} {% endfor %}{% endif %}
+                         {# Закомментировано, если дублирует django.contrib.messages #}
+                         {# {% for error in comment_form.non_field_errors %} <p>{{ error }}</p> {% endfor %} #}
                     </div>
+                    {% endif %}
                 </div>
             </div>
             <div class="flex justify-end mt-2">
@@ -249,35 +306,43 @@
 <script src="{% static 'js/tasks_no_modal.js' %}" defer></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    if (typeof Flowbite !== 'undefined' && typeof Carousel !== 'undefined') {
-        const carouselElement = document.getElementById('task-photo-carousel');
-        if (carouselElement) {
-            const items = [];
-            carouselElement.querySelectorAll('[data-carousel-item]').forEach((el, index) => {
-                items.push({ position: index, el: el });
-            });
-            const indicators = [];
-            carouselElement.querySelectorAll('[data-carousel-slide-to]').forEach((el, index) => {
-                indicators.push({ position: index, el: el });
-            });
+    const checkFlowbite = setInterval(function() {
+        if (typeof Flowbite !== 'undefined' && typeof Carousel !== 'undefined') {
+            clearInterval(checkFlowbite);
+            const carouselElement = document.getElementById('task-photo-carousel');
+            if (carouselElement) {
+                const items = Array.from(carouselElement.querySelectorAll('[data-carousel-item]')).map((el, index) => ({
+                    position: index,
+                    el: el
+                }));
+                const indicators = Array.from(carouselElement.querySelectorAll('[data-carousel-slide-to]')).map((el, index) => ({
+                    position: index,
+                    el: el
+                }));
 
-            if (items.length > 0) {
-                const carousel = new Carousel(carouselElement, items, {
-                    defaultPosition: 0,
-                    interval: 5000,
-                    indicators: {
-                        activeClasses: 'bg-gray-900',
-                        inactiveClasses: 'bg-gray-400 hover:bg-gray-500',
-                        items: indicators.length > 0 ? indicators : null
+                if (items.length > 0) {
+                    try {
+                        const carousel = new Carousel(carouselElement, items, {
+                            defaultPosition: 0,
+                            interval: 5000,
+                            indicators: {
+                                activeClasses: 'bg-gray-900',
+                                inactiveClasses: 'bg-gray-400 hover:bg-gray-500',
+                                items: indicators.length > 0 ? indicators : null
+                            }
+                        });
+                        const prevButton = carouselElement.querySelector('[data-carousel-prev]');
+                        const nextButton = carouselElement.querySelector('[data-carousel-next]');
+                        if(prevButton) prevButton.addEventListener('click', () => carousel.prev());
+                        if(nextButton) nextButton.addEventListener('click', () => carousel.next());
+                    } catch (e) {
+                        console.warn('Error initializing Flowbite Carousel for task_detail.html:', e);
                     }
-                });
-                const prevButton = carouselElement.querySelector('[data-carousel-prev]');
-                const nextButton = carouselElement.querySelector('[data-carousel-next]');
-                if(prevButton) prevButton.addEventListener('click', () => carousel.prev());
-                if(nextButton) nextButton.addEventListener('click', () => carousel.next());
+                }
             }
         }
-    } else { console.warn('Flowbite Carousel not initialized for task_detail.html'); }
+    }, 100);
+    setTimeout(() => clearInterval(checkFlowbite), 5000);
 });
 </script>
 

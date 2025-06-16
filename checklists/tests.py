@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # checklists/tests.py
 import os
 
@@ -24,6 +25,12 @@ from .models import (
     ChecklistItemStatus,
     ChecklistRunStatus,
 )
+=======
+from django.test import TestCase
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from .models import Location, ChecklistPoint, ChecklistTemplate, ChecklistTemplateItem, Checklist, ChecklistResult, AnswerType, ChecklistItemStatus, ChecklistRunStatus
+>>>>>>> servicedesk
 
 User = get_user_model()
 
@@ -94,6 +101,7 @@ class ChecklistModelTests(TestCase):
         self.assertEqual(self.item2.template, self.template)
 
     def test_checklist_run_creation_creates_results(self):
+        # Creating a checklist run should automatically create results via signal
         checklist_run = Checklist.objects.create(
             template=self.template,
             performed_by=self.user,
@@ -101,6 +109,7 @@ class ChecklistModelTests(TestCase):
             point=self.point,
         )
         self.assertEqual(Checklist.objects.count(), 1)
+<<<<<<< HEAD
         self.assertEqual(
             ChecklistResult.objects.filter(checklist_run=checklist_run).count(), 2
         )
@@ -109,6 +118,12 @@ class ChecklistModelTests(TestCase):
             checklist_run=checklist_run, template_item=self.item1
         )
         self.assertEqual(result1.status, ChecklistItemStatus.PENDING)
+=======
+        self.assertEqual(ChecklistResult.objects.filter(checklist_run=checklist_run).count(), 2) # Should create results for item1 and item2
+
+        result1 = ChecklistResult.objects.get(checklist_run=checklist_run, template_item=self.item1)
+        self.assertEqual(result1.status, ChecklistItemStatus.PENDING) # Default status
+>>>>>>> servicedesk
 
     def test_checklist_run_mark_complete(self):
         checklist_run = Checklist.objects.create(
@@ -127,6 +142,7 @@ class ChecklistModelTests(TestCase):
         self.assertIsNotNone(checklist_run.completion_time)
 
     def test_checklist_result_display_value(self):
+<<<<<<< HEAD
         checklist_run = Checklist.objects.create(
             template=self.template, performed_by=self.user
         )
@@ -157,8 +173,25 @@ class ChecklistModelTests(TestCase):
         if hasattr(result1, "_display_value_cache"):
             delattr(result1, "_display_value_cache")
         self.assertEqual(result1.display_value, "-")
+=======
+        checklist_run = Checklist.objects.create(template=self.template, performed_by=self.user)
+        result1 = ChecklistResult.objects.get(checklist_run=checklist_run, template_item=self.item1) # YES_NO
+        result2 = ChecklistResult.objects.get(checklist_run=checklist_run, template_item=self.item2) # NUMBER
 
+        # Test display value for YES_NO
+        result1.value = 'yes'
+        self.assertEqual(result1.display_value, _('Да'))
+        result1.value = 'no'
+        self.assertEqual(result1.display_value, _('Нет'))
+        result1.value = 'some_other_value' # Should fall back to raw value
+        self.assertEqual(result1.display_value, 'some_other_value')
+        result1.value = None
+        self.assertEqual(result1.display_value, '-') # Default if None/blank
+>>>>>>> servicedesk
+
+        # Test display value for NUMBER
         result2.numeric_value = 25.5
+<<<<<<< HEAD
         if hasattr(result2, "_display_value_cache"):
             delattr(result2, "_display_value_cache")
         self.assertEqual(result2.display_value, 25.5)
@@ -253,3 +286,26 @@ class TemplateFilterTests(TestCase):
             {"is_active": "True"}, queryset=ChecklistTemplate.objects.all()
         )
         self.assertEqual(list(f.qs), [self.t1])
+=======
+        self.assertEqual(result2.display_value, 25.5)
+        result2.numeric_value = None
+        result2.value = 'abc' # Should ignore value if numeric_value is None
+        self.assertEqual(result2.display_value, '-')
+
+        # Add tests for other answer types and value fields
+
+# Add tests for views, forms, and signals
+
+# class ChecklistViewTests(TestCase):
+#     def setUp(self):
+#         self.user = User.objects.create_user(username='testuser', password='password')
+#         self.template = ChecklistTemplate.objects.create(name='Test Template')
+#         self.client.login(username='testuser', password='password')
+#
+#     def test_template_list_view(self):
+#         response = self.client.get(reverse('checklists:template_list'))
+#         self.assertEqual(response.status_code, 200)
+#         self.assertContains(response, 'Test Template')
+
+# And so on for other views, forms, and specific logic like filtering and reporting.
+>>>>>>> servicedesk
