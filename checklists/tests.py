@@ -173,9 +173,13 @@ class ChecklistModelTests(TestCase):
 
 class ChecklistPermissionTests(TestCase):
     def setUp(self):
-        self.performer = User.objects.create_user("performer", password="pw")
-        self.confirm_user = User.objects.create_user("confirmer", password="pw")
-        perm = Permission.objects.get(codename="confirm_checklist")
+
+        self.performer = User.objects.create_user('performer', password='pw', email='performer@example.com')
+        self.confirm_user = User.objects.create_user('confirmer', password='pw', email='confirmer@example.com')
+        self.confirm_user.is_staff = True
+        self.confirm_user.save()
+        perm = Permission.objects.get(codename='confirm_checklist')
+
         self.confirm_user.user_permissions.add(perm)
 
         self.location = Location.objects.create(name="Loc")
