@@ -71,9 +71,8 @@ class ChecklistModelTests(TestCase):
             name="Hall", parent=self.location, level=LocationLevel.ROOM
         )
         with self.assertRaises(ValidationError):
-            Location.objects.create(
-                name="Invalid", parent=room, level=LocationLevel.VENUE
-            )
+            invalid = Location(name="Invalid", parent=room, level=LocationLevel.VENUE)
+            invalid.full_clean()
 
     def test_location_parent_cannot_be_self(self):
         self.location.parent = self.location

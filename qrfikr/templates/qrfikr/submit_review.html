@@ -1,15 +1,23 @@
 {% extends 'qrfikr/base.html' %}
 {% load i18n %}
 
-{% block title %}{% trans 'Submit Feedback' %}{% endblock %}
+{% block page_title %}{% trans 'Submit Feedback' %}{% endblock %}
 
-{% block page_content %}
-<h1 class="text-xl font-semibold mb-4">
-    {% trans 'Leave your feedback for' %} {{ qr_link.point.name }}
-</h1>
+
+{% block content %}
+<p class="mb-4 text-gray-700">{% trans 'Leave your feedback for' %} {{ qr_link.point.name }}</p>
 <form method="post" enctype="multipart/form-data" class="space-y-4">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">{% trans 'Submit' %}</button>
+    {% include 'includes/form_field.html' with field=form.rating %}
+    {% include 'includes/form_field.html' with field=form.category %}
+    {% include 'includes/form_field.html' with field=form.text %}
+    {% include 'includes/form_field.html' with field=form.photo %}
+    {% include 'includes/form_field.html' with field=form.contact_info %}
+    <div class="flex justify-end pt-2">
+        <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">
+            {% trans 'Submit' %}
+        </button>
+    </div>
+
 </form>
 {% endblock %}

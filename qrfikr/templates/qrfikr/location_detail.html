@@ -1,7 +1,11 @@
 {% extends 'qrfikr/base.html' %}
+{% load i18n %}
 
-{% block page_content %}
-<h1 class="text-xl font-semibold mb-4">{{ object.point.name }}</h1>
-{% if object.description %}<p class="mb-2">{{ object.description }}</p>{% endif %}
-<a href="{{ object.get_feedback_url }}" class="text-blue-600 underline">Leave feedback</a>
+{% block page_title %}{{ object.point.name }}{% endblock %}
+
+
+{% block content %}
+<p class="mb-4">{{ object.description }}</p>
+<a href="{{ object.get_feedback_url }}" class="text-blue-600 hover:underline">{% trans 'Leave feedback' %}</a>
+
 {% endblock %}

@@ -8,12 +8,14 @@ from .models import QRCodeLink, Review
 
 @admin.register(QRCodeLink)
 class QRCodeLinkAdmin(admin.ModelAdmin):
-    list_display = ('location_link', 'point', 'task_category', 'is_active', 'qr_preview', 'form_link', 'created_at')
+
+    list_display = ('location_link', 'point', 'is_active', 'qr_preview', 'form_link', 'created_at')
     search_fields = ('location__name', 'point__name', 'description')
-    list_filter = ('is_active', 'task_category')
+    list_filter = ('is_active',)
     readonly_fields = ('qr_preview', 'form_link', 'created_at', 'updated_at')
     fields = (
-        'location', 'point', 'task_category', 'description', 'is_active', 'qr_image', 'qr_preview', 'form_link',
+        'point', 'location', 'description', 'is_active', 'qr_image', 'qr_preview', 'form_link',
+
         'created_at', 'updated_at'
     )
 
@@ -40,9 +42,9 @@ class ReviewAdmin(admin.ModelAdmin):
     list_filter = ('rating', 'submitted_at')
     search_fields = ('qr_code_link__location__name', 'qr_code_link__point__name', 'text', 'contact_info')
     readonly_fields = ('submitted_at', 'ip_address', 'user_agent')
-    list_select_related = ('qr_code_link', 'qr_code_link__location')
+    list_select_related = ('qr_code_link', 'qr_code_link__location', 'qr_code_link__point')
     fields = (
-        'qr_code_link', 'rating', 'text', 'contact_info', 'photo',
+        'qr_code_link', 'category', 'rating', 'text', 'contact_info', 'photo',
         'submitted_at', 'ip_address', 'user_agent'
     )
 
