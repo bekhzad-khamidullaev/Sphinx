@@ -3,8 +3,8 @@
 
 {% block title %}{% trans 'Thank You' %}{% endblock %}
 
-{% block content %}
-<h1>{% trans 'Thank you for your feedback!' %}</h1>
-<p>{{ qr_link.location.name }}</p>
-<a href="{{ qr_link.get_feedback_url }}">{% trans 'Submit another' %}</a>
+{% block page_content %}
+<h1 class="text-xl font-semibold mb-4">{% trans 'Thank you for your feedback!' %}</h1>
+<p class="mb-2">{{ qr_link.point.name }}</p>
+<a href="{{ qr_link.get_feedback_url }}" class="text-blue-600 underline">{% trans 'Submit another' %}</a>
 {% endblock %}

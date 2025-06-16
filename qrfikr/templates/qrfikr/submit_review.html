@@ -3,11 +3,13 @@
 
 {% block title %}{% trans 'Submit Feedback' %}{% endblock %}
 
-{% block content %}
-<h1>{% trans 'Leave your feedback for' %} {{ qr_link.location.name }}</h1>
-<form method="post" enctype="multipart/form-data">
+{% block page_content %}
+<h1 class="text-xl font-semibold mb-4">
+    {% trans 'Leave your feedback for' %} {{ qr_link.point.name }}
+</h1>
+<form method="post" enctype="multipart/form-data" class="space-y-4">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">{% trans 'Submit' %}</button>
+    <button type="submit" class="btn btn-primary">{% trans 'Submit' %}</button>
 </form>
 {% endblock %}
