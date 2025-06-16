@@ -6,8 +6,10 @@ from checklists.models import ChecklistPoint
 from tasks.models import TaskCategory, Project, Task
 
 
+
 class QRCodeLink(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     location = models.ForeignKey(
         'checklists.Location',
         on_delete=models.CASCADE,
@@ -15,6 +17,7 @@ class QRCodeLink(models.Model):
         verbose_name=_('Location'),
         editable=False,
     )
+
     point = models.OneToOneField(
         ChecklistPoint,
         on_delete=models.CASCADE,
@@ -23,6 +26,7 @@ class QRCodeLink(models.Model):
         null=True,
         blank=True,
     )
+
     description = models.CharField(max_length=255, blank=True, verbose_name=_('Description'))
     is_active = models.BooleanField(default=True, verbose_name=_('Active'))
     qr_image = models.ImageField(upload_to='qr_codes/', blank=True, verbose_name=_('QR Image'))
@@ -32,13 +36,10 @@ class QRCodeLink(models.Model):
     class Meta:
         verbose_name = _('QR Link')
         verbose_name_plural = _('QR Links')
-        ordering = ['location__name']
+        ordering = ['location__name', 'point__name']
 
     def __str__(self):
-        loc = self.location.name if self.location else ""
-        if self.point:
-            return f"{loc} / {self.point.name}"
-        return loc
+
 
     def get_feedback_url(self):
         return reverse('qrfikr:submit', kwargs={'qr_uuid': self.id})
@@ -78,6 +79,7 @@ class Review(models.Model):
         return f"{self.qr_code_link} ({self.rating})"
 
 
+
 def _get_feedback_project():
     project, _ = Project.objects.get_or_create(name="Guest Feedback")
     return project
@@ -87,9 +89,11 @@ def create_task_from_review(review: 'Review') -> None:
     if review.rating >= 3 or not review.category:
         return
     project = _get_feedback_project()
+
     point = review.qr_code_link.point
     point_name = point.name if point else review.qr_code_link.location.name
     title = f"Feedback {review.rating}/5 at {point_name}"
+
     description = review.text
     Task.objects.create(
         project=project,
@@ -107,3 +111,4 @@ from django.dispatch import receiver
 def review_post_save(sender, instance, created, **kwargs):
     if created:
         create_task_from_review(instance)
+
