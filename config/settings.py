@@ -236,8 +236,6 @@ CORS_ALLOW_ALL_ORIGINS = True if DEBUG else False
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://localhost:8080",
-    "www.tasks.evos.uz",
-    "tasks.evos.uz",
     "http://www.tasks.evos.uz",
     "http://tasks.evos.uz",
     "https://www.tasks.evos.uz",
@@ -266,6 +264,7 @@ NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd"
 # --- Сообщения Django ---
 MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"
 from django.contrib.messages import constants as messages_constants
+
 MESSAGE_TAGS = {
     messages_constants.DEBUG: "debug",
     messages_constants.INFO: "info",
