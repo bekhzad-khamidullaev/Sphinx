@@ -1,14 +1,16 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}QR Feedback{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'theme/css/base.css' %}">
-</head>
-<body>
-<div class="container">
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% block page_title %}{% trans 'QR Feedback' %}{% endblock %}{% endblock %}
+
+{% block list_title %}
+<h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
+    {% block page_title %}{% trans 'QR Feedback' %}{% endblock %}
+</h1>
+{% endblock %}
+
+{% block list_content %}
+<div class="bg-white shadow-lg rounded-xl border border-gray-200 p-6 md:p-8 mt-6 max-w-lg mx-auto">
     {% block content %}{% endblock %}
 </div>
-</body>
-</html>
+{% endblock %}
