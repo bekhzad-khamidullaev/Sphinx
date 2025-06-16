@@ -8,12 +8,12 @@ from .models import QRCodeLink, Review
 
 @admin.register(QRCodeLink)
 class QRCodeLinkAdmin(admin.ModelAdmin):
-    list_display = ('location_link', 'is_active', 'qr_preview', 'form_link', 'created_at')
-    search_fields = ('location__name', 'description')
-    list_filter = ('is_active',)
+    list_display = ('location_link', 'point', 'task_category', 'is_active', 'qr_preview', 'form_link', 'created_at')
+    search_fields = ('location__name', 'point__name', 'description')
+    list_filter = ('is_active', 'task_category')
     readonly_fields = ('qr_preview', 'form_link', 'created_at', 'updated_at')
     fields = (
-        'location', 'description', 'is_active', 'qr_image', 'qr_preview', 'form_link',
+        'location', 'point', 'task_category', 'description', 'is_active', 'qr_image', 'qr_preview', 'form_link',
         'created_at', 'updated_at'
     )
 
@@ -36,9 +36,9 @@ class QRCodeLinkAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('qr_code_link_link', 'location_link', 'rating_display', 'submitted_at')
+    list_display = ('qr_code_link_link', 'location_link', 'point_name', 'rating_display', 'submitted_at')
     list_filter = ('rating', 'submitted_at')
-    search_fields = ('qr_code_link__location__name', 'text', 'contact_info')
+    search_fields = ('qr_code_link__location__name', 'qr_code_link__point__name', 'text', 'contact_info')
     readonly_fields = ('submitted_at', 'ip_address', 'user_agent')
     list_select_related = ('qr_code_link', 'qr_code_link__location')
     fields = (
@@ -55,6 +55,10 @@ class ReviewAdmin(admin.ModelAdmin):
     def location_link(self, obj):
         url = reverse('admin:checklists_location_change', args=[obj.qr_code_link.location_id])
         return format_html('<a href="{}">{}</a>', url, obj.qr_code_link.location.name)
+
+    @admin.display(description=_('Point'), ordering='qr_code_link__point__name')
+    def point_name(self, obj):
+        return obj.qr_code_link.point.name
 
     @admin.display(description=_('Rating'))
     def rating_display(self, obj):

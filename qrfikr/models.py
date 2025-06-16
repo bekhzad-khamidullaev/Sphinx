@@ -3,10 +3,29 @@ from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from checklists.models import ChecklistPoint
+from tasks.models import TaskCategory, Project, Task
+
 
 class QRCodeLink(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     location = models.ForeignKey('checklists.Location', on_delete=models.CASCADE, related_name='qr_codes', verbose_name=_('Location'))
+    point = models.OneToOneField(
+        ChecklistPoint,
+        on_delete=models.CASCADE,
+        related_name='qr_code',
+        verbose_name=_('Point'),
+        null=True,
+        blank=True,
+    )
+    task_category = models.ForeignKey(
+        TaskCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='qr_codes',
+        verbose_name=_('Task category'),
+    )
     description = models.CharField(max_length=255, blank=True, verbose_name=_('Description'))
     is_active = models.BooleanField(default=True, verbose_name=_('Active'))
     qr_image = models.ImageField(upload_to='qr_codes/', blank=True, verbose_name=_('QR Image'))
@@ -16,10 +35,16 @@ class QRCodeLink(models.Model):
     class Meta:
         verbose_name = _('QR Link')
         verbose_name_plural = _('QR Links')
-        ordering = ['location__name']
+        ordering = ['location__name', 'point__name']
 
     def __str__(self):
-        return self.location.name
+        point_name = self.point.name if self.point else '?' 
+        return f"{self.location.name} / {point_name}"
+
+    def save(self, *args, **kwargs):
+        if self.point:
+            self.location = self.point.location
+        super().save(*args, **kwargs)
 
     def get_feedback_url(self):
         return reverse('qrfikr:submit', kwargs={'qr_uuid': self.id})
@@ -45,3 +70,16 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.qr_code_link} ({self.rating})"
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if is_new and self.rating < 3:
+            project, _ = Project.objects.get_or_create(name='Customer Feedback')
+            point_name = self.qr_code_link.point.name if self.qr_code_link.point else 'N/A'
+            Task.objects.create(
+                project=project,
+                category=self.qr_code_link.task_category,
+                title=f'Negative review at {point_name}',
+                description=self.text,
+            )
