@@ -19,12 +19,13 @@ class TaskConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.user = self.scope.get('user')
+        # Инициализируем список групп заранее, чтобы disconnect работал корректно
+        self.subscribed_groups = set()
         if not self.user or not self.user.is_authenticated:
             await self.close()
             return
 
         self.task_id_str = self.scope['url_route']['kwargs'].get('task_id')
-        self.subscribed_groups = set()
 
         # Всегда подписываемся на общий список задач
         await self.channel_layer.group_add(self.DEFAULT_GROUP_NAME_LIST, self.channel_name)
