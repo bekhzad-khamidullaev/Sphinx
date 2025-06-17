@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key-@replace-this!")
 # DEBUG = os.environ.get("DEBUG", "True") == "True"
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*,localhost,127.0.0.1").split(",")
 
 # --- Установленные приложения ---
