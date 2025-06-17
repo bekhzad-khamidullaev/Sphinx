@@ -112,6 +112,14 @@ class Project(BaseModel):
 class TaskCategory(BaseModel):
     name = models.CharField(max_length=100, unique=True, verbose_name=_("Название категории"), db_index=True)
     description = models.TextField(blank=True, verbose_name=_("Описание категории"))
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="task_categories",
+        verbose_name=_("Отдел"),
+    )
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
@@ -326,7 +334,10 @@ class Task(BaseModel):
 
     def can_view(self, user):
         if not user or not user.is_authenticated: return False
-        if user.is_superuser or user.is_staff: return True
+        if user.is_superuser or user.is_staff:
+            return True
+        if self.department and user.department_id != self.department_id:
+            return False
         return self.created_by == user or self.assignments.filter(user=user).exists()
 
     def can_change_properties(self, user):

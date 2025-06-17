@@ -115,19 +115,24 @@ class ProjectForm(CrispyFormMixin, forms.ModelForm):
 class TaskCategoryForm(CrispyFormMixin, forms.ModelForm):
     class Meta:
         model = TaskCategory
-        fields = ["name", "description"]
+        fields = ["name", "description", "department"]
         widgets = {
             "name": forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}),
-            "description": forms.Textarea(attrs={'rows': 2, 'class': TEXTAREA_CLASSES})
+            "description": forms.Textarea(attrs={'rows': 2, 'class': TEXTAREA_CLASSES}),
+            "department": Select2Widget(attrs={'class': SELECT_CLASSES, 'data-placeholder': _('Выберите отдел...')})
         }
         labels = { # Explicit labels
             "name": _("Название категории"),
-            "description": _("Описание категории")
+            "description": _("Описание категории"),
+            "department": _("Отдел")
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper.layout = Layout('name', 'description')
+        if 'department' in self.fields:
+            self.fields['department'].queryset = Department.objects.all().order_by('name')
+            self.fields['department'].required = False
+        self.helper.layout = Layout('name', 'description', 'department')
 
 # --- TaskSubcategory Form ---
 class TaskSubcategoryForm(CrispyFormMixin, forms.ModelForm):
@@ -262,6 +267,14 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
 
         super().__init__(*args, **kwargs)
 
+        if 'category' in self.fields:
+            if self.request_user and self.request_user.is_authenticated and not (self.request_user.is_staff or self.request_user.is_superuser):
+                user_dept = getattr(self.request_user, 'department', None)
+                if user_dept:
+                    self.fields['category'].queryset = TaskCategory.objects.filter(department=user_dept).order_by('name')
+                else:
+                    self.fields['category'].queryset = TaskCategory.objects.none()
+
         # Set initial values for new tasks
         if not (instance and instance.pk): # If this is a new task form
             if not self.initial.get('priority'):
@@ -283,10 +296,16 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
 
         if final_category_id:
             try:
-                # Ensure final_category_id is an integer if it's a string from POST data
                 final_category_id_int = int(final_category_id)
-                self.fields['subcategory'].queryset = TaskSubcategory.objects.filter(category_id=final_category_id_int).order_by('name')
-                self.fields['subcategory'].widget.attrs.pop('disabled', None) # Enable if disabled
+                subcat_qs = TaskSubcategory.objects.filter(category_id=final_category_id_int).order_by('name')
+                if self.request_user and self.request_user.is_authenticated and not (self.request_user.is_staff or self.request_user.is_superuser):
+                    user_dept = getattr(self.request_user, 'department', None)
+                    if user_dept:
+                        subcat_qs = subcat_qs.filter(category__department=user_dept)
+                    else:
+                        subcat_qs = TaskSubcategory.objects.none()
+                self.fields['subcategory'].queryset = subcat_qs
+                self.fields['subcategory'].widget.attrs.pop('disabled', None)
             except (ValueError, TypeError):
                 logger.warning(f"Could not determine valid category ID for subcategories: {final_category_id}")
                 self.fields['subcategory'].queryset = TaskSubcategory.objects.none()
@@ -412,6 +431,9 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
     def save(self, commit=True):
         task_instance = super().save(commit=False)
 
+        if not task_instance.department and task_instance.category and task_instance.category.department_id:
+            task_instance.department = task_instance.category.department
+
         # Set created_by for new tasks if not already set and request_user is available
         if not task_instance.pk and self.request_user and self.request_user.is_authenticated and not task_instance.created_by_id:
             task_instance.created_by = self.request_user
@@ -427,6 +449,8 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
 
             # Handle TaskAssignments
             responsible_user = self.cleaned_data.get('responsible_user')
+            if not responsible_user and task_instance.department and task_instance.department.head:
+                responsible_user = task_instance.department.head
             executor_users = self.cleaned_data.get('executors', User.objects.none())
             watcher_users = self.cleaned_data.get('watchers', User.objects.none())
 
