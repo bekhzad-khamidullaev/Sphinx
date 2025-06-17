@@ -17,6 +17,15 @@
                label_{{ field.auto_id }}_main.classList.add('hidden');
             }
         </script>
+    {% elif field.widget_type == 'radioselect' %}
+        <div class="space-y-1">
+            {% for radio in field %}
+                <div class="flex items-center">
+                    {{ radio.tag }}
+                    <label for="{{ radio.id_for_label }}" class="ml-2 text-sm text-gray-700">{{ radio.choice_label }}</label>
+                </div>
+            {% endfor %}
+        </div>
     {% elif field.widget_type == 'select' %}
         {% render_field field class+="form-select select2-basic block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" %}
     {% elif field.widget_type == 'textarea' %}

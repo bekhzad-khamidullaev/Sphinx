@@ -1,0 +1,51 @@
+{% load static i18n app_filters %}
+<div id="task-card-list" class="space-y-4 md:hidden">
+    {% for task in tasks_for_cards %}
+    {% with priority_border_class=task.priority|get_priority_border_color priority_text_class=task.priority|get_priority_text_color responsible_user=task.get_responsible_users.first %}
+    <div class="bg-white rounded-lg shadow border-l-4 {{ priority_border_class }} p-4 flex flex-col">
+        <div class="flex justify-between items-center text-xs mb-2">
+            <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="font-mono font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100">#{{ task.task_number|default:task.pk }}</a>
+            {% if task.project %}
+            <a href="{{ task.project.get_absolute_url }}" class="text-gray-500 hover:underline truncate ml-2 hover:text-gray-700"><i class="fas fa-project-diagram fa-fw mr-1 opacity-70"></i>{{ task.project.name|truncatechars:20 }}</a>
+            {% endif %}
+        </div>
+        <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="block mb-2">
+            <p class="text-sm font-medium text-gray-800 break-words">{{ task.title }}</p>
+        </a>
+        <div class="space-y-1.5 text-xs text-gray-600 mb-3">
+            <div class="flex items-center gap-1.5">
+                <i class="fas fa-user-plus fa-fw text-gray-400"></i>
+                {% if task.created_by %}
+                    {{ task.created_by.display_name|default:task.created_by.username }}
+                {% else %}<span>-</span>{% endif %}
+                <span class="text-gray-400 ml-auto"><i class="far fa-calendar-plus fa-fw mr-1"></i>{{ task.created_at|date:"d.m.y" }}</span>
+            </div>
+            {% if responsible_user %}
+            <div class="flex items-center gap-1.5">
+                <i class="fas fa-user-check fa-fw text-gray-400"></i>
+                {{ responsible_user.display_name|default:responsible_user.username }}
+            </div>
+            {% else %}
+            <div class="flex items-center gap-1.5 text-gray-400 italic">
+                <i class="fas fa-user-times fa-fw"></i><span>{% trans 'Не назначен' %}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500 mt-auto pt-2 border-t border-gray-100">
+            <span class="inline-flex items-center gap-1.5 font-medium {{ priority_text_class }}" title="{% trans 'Приоритет' %}: {{ task.get_priority_display }}">
+                {% if task.priority == task.TaskPriority.HIGH %}<i class="fas fa-flag fa-fw text-red-500"></i>{% elif task.priority == task.TaskPriority.MEDIUM_HIGH %}<i class="fas fa-angle-double-up fa-fw text-orange-500"></i>{% elif task.priority == task.TaskPriority.MEDIUM %}<i class="fas fa-equals fa-fw text-yellow-500"></i>{% elif task.priority == task.TaskPriority.MEDIUM_LOW %}<i class="fas fa-angle-double-down fa-fw text-blue-500"></i>{% elif task.priority == task.TaskPriority.LOW %}<i class="fas fa-angle-down fa-fw text-green-500"></i>{% else %}<i class="fas fa-question-circle fa-fw text-gray-400"></i>{% endif %}
+                <span class="hidden sm:inline">{{ task.get_priority_display }}</span>
+            </span>
+            {% if task.due_date %}
+            <span class="inline-flex items-center gap-1 {% if task.is_overdue %}text-red-600 font-semibold{% else %}text-gray-500{% endif %}"><i class="far fa-calendar-alt fa-fw"></i>{{ task.due_date|date:"d.m.y" }}</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endwith %}
+    {% empty %}
+    <div class="text-center text-gray-500 text-lg py-12 italic bg-white rounded-xl shadow">
+        <i class="fas fa-folder-open fa-3x mb-3 text-gray-400"></i><br>
+        {% trans 'Задачи не найдены.' %}
+    </div>
+    {% endfor %}
+</div>
