@@ -88,7 +88,7 @@
             {% endif %}
             <div id="photo-formset-container" class="space-y-4">
                 {% for photo_form in photo_formset %}
-                <div class="photo-form p-4 border border-gray-200 rounded-lg bg-gray-50 relative transition-colors duration-150 ease-in-out {% if photo_form.errors %}border-red-500{% endif %}" id="{{ photo_formset.prefix }}-{{ forloop.counter0 }}">
+                <div class="photo-form w-full max-w-full overflow-hidden p-4 border border-gray-200 rounded-lg bg-gray-50 relative transition-colors duration-150 ease-in-out {% if photo_form.errors %}border-red-500{% endif %}" id="{{ photo_formset.prefix }}-{{ forloop.counter0 }}">
                     {% for hidden_field in photo_form.hidden_fields %}{{ hidden_field }}{% endfor %}
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
                         <div class="sm:col-span-4">
