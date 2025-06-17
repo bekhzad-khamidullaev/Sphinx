@@ -86,9 +86,13 @@ TEMPLATES = [{
 
 # --- База данных SQLite (для разработки) ---
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'servicedesk',
+        'USER': 'sphinx',
+        'PASSWORD': 't3sl@admin',
+        'HOST': '127.0.0.1',
+        'PORT': '',
     }
 }
 
@@ -191,8 +195,39 @@ REDOC_SETTINGS = {"LAZY_RENDERING": False}
 # --- CORS ---
 CORS_ALLOW_ALL_ORIGINS = True
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'https://tasks.evos.uz',
+    'http://tasks.evos.uz',
+    'https://www.tasks.evos.uz',
+]
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'tasks.evos.uz',
+    'www.tasks.evos.uz',
+]
+
+# CORS_ALLOW_HEADERS = [
+#     'authorization',
+#     'content-type',
+#     'x-csrftoken',
+#     'x-requested-with',
+#     'accept',
+#     'accept-encoding',
+#     'origin',
+#     'user-agent',
+# ]
+
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:8000',
+    'https://tasks.evos.uz',
+]
+
 # --- Кэш ---
 CACHE_TIMEOUT = 300
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
