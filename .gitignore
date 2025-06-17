@@ -20,7 +20,6 @@ build/
 .env
 .env.*
 .venv/
-venv/
 local_settings.py
 # media/
 # staticfiles/
