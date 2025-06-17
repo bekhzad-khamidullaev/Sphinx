@@ -46,10 +46,13 @@ class TaskListView(LoginRequiredMixin, ListView):
 
         user = self.request.user
         if not user.is_staff and not user.is_superuser:
-            logger.debug(f"TaskListView: Applying non-staff filter for user {user.username}.")
-            base_qs = base_qs.filter(Q(created_by=user) | Q(assignments__user=user)).distinct()
+            logger.debug(f"TaskListView: Applying department filter for user {user.username}.")
+            if user.department_id:
+                base_qs = base_qs.filter(department_id=user.department_id)
+            else:
+                base_qs = base_qs.none()
         else:
-            logger.debug(f"TaskListView: User {user.username} is staff/superuser, no ownership filter applied.")
+            logger.debug(f"TaskListView: User {user.username} is staff/superuser, no department filter applied.")
 
         self.filterset = TaskFilter(self.request.GET, queryset=base_qs, request=self.request)
         filtered_qs = self.filterset.qs.distinct()
