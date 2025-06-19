@@ -10,8 +10,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key-@replace-this!")
 # DEBUG = os.environ.get("DEBUG", "True") == "True"
 DEBUG = True
-# ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "tasks.evos.uz,localhost,127.0.0.1").split(",")
+CSRF_TRUSTED_ORIGINS = ['https://tasks.evos.uz']
+
 # --- Установленные приложения ---
 INSTALLED_APPS = [
     # "jazzmin",
@@ -65,6 +67,23 @@ MIDDLEWARE = [
     "django_browser_reload.middleware.BrowserReloadMiddleware",
 ]
 
+SWAGGER_SETTINGS = {
+    'LOGIN_URL': 'rest_framework:login',
+    'LOGOUT_URL': 'rest_framework:logout',
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'JWT token: "Bearer <token>"',
+        }
+    },
+    'USE_SESSION_AUTH': False, # Important for JWT
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
+}
+
+REDOC_SETTINGS = {"LAZY_RENDERING": False}
+
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
@@ -88,8 +107,10 @@ TEMPLATES = [{
 # --- База данных SQLite (для разработки) ---
 DATABASES = {
     'default': {
+
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+
     }
 }
 
