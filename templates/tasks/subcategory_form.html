@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load i18n static crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        {% blocktrans with name=form.instance.name %}Редактирование подкатегории: {{ name }}{% endblocktrans %}
+    {% else %}
+        {% trans "Создание новой подкатегории" %}
+    {% endif %}
+{% endblock %}
+
+{% block head_extra %}
+    {{ block.super }}
+    {{ form.media.css }}
+{% endblock %}
+
+{% block list_title %}
+<h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
+    {% if form.instance.pk %}
+        {% blocktrans with name=form.instance.name %}Редактирование подкатегории: {{ name }}{% endblocktrans %}
+    {% else %}
+        {% trans "Создание новой подкатегории" %}
+    {% endif %}
+</h1>
+{% endblock %}
+
+{% block list_content %}
+<div class="bg-white shadow-lg rounded-xl border border-gray-200 p-6 md:p-8 mt-6">
+    <form method="post" action="" id="subcategory-form" novalidate>
+        {% csrf_token %}
+        {% crispy form %}
+        {% if form.non_field_errors %}
+        <div role="alert" class="mt-4 p-4 border border-red-300 bg-red-50 text-red-700 rounded-md">
+            <h4 class="font-bold">{% trans "Общая ошибка формы:" %}</h4>
+            <ul class="list-disc list-inside text-sm mt-1">
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200">
+            <a href="{% url 'tasks:subcategory_list' %}"
+               class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+                {% trans 'Отмена' %}
+            </a>
+            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition active:scale-95 shadow-sm inline-flex items-center">
+                <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4" aria-hidden="true"></i>
+                {% if form.instance.pk %}{% trans "Сохранить изменения" %}{% else %}{% trans "Создать подкатегорию" %}{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {{ form.media.js }}
+{% endblock %}
