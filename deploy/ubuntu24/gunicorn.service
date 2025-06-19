@@ -1,0 +1,16 @@
+[Unit]
+Description=gunicorn daemon for Sphinx
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/sphinx
+EnvironmentFile=/opt/sphinx/.env
+ExecStart=/opt/sphinx/venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/run/gunicorn.sock \
+    config.wsgi:application
+
+[Install]
+WantedBy=multi-user.target

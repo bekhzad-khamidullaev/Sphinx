@@ -10,8 +10,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-key-@replace-this!")
 # DEBUG = os.environ.get("DEBUG", "True") == "True"
 DEBUG = True
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "tasks.evos.uz,localhost,127.0.0.1").split(",")
-CSRF_TRUSTED_ORIGINS = ['https://tasks.evos.uz']
+
+# ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 # --- Установленные приложения ---
 INSTALLED_APPS = [
@@ -106,14 +107,13 @@ TEMPLATES = [{
 # --- База данных SQLite (для разработки) ---
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'servicedesk',
-        'USER': 'sphinx',
-        'PASSWORD': 't3sl@admin',
-        'HOST': '127.0.0.1',
-        'PORT': '',
+
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+
     }
 }
+
 
 # --- Парольные валидаторы ---
 AUTH_PASSWORD_VALIDATORS = [

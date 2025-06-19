@@ -1,7 +1,7 @@
 {% load static i18n app_filters %}
 
 <div id="kanban-board"
-    class="mt-6 flex flex-nowrap overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hidden">
+    class="mt-6 flex flex-nowrap overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hidden md:flex">
     {% for status_code, task_list in tasks_by_status.items %}
     {% with status_display_name=status_mapping_dict|get_item:status_code %}
     <div class="kanban-column-wrapper flex-shrink-0 w-72 md:w-80" data-status="{{ status_code }}">
