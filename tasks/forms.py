@@ -22,14 +22,21 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 # --- Base CSS Classes for Form Widgets ---
-BASE_INPUT_CLASSES = "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out     "
+BASE_INPUT_CLASSES = (
+    "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm "
+    "focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out"
+)
 TEXT_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES}"
 TEXTAREA_CLASSES = f"form-textarea {BASE_INPUT_CLASSES}"
 SELECT_CLASSES = f"form-select {BASE_INPUT_CLASSES}" # For native selects if not using Select2
 DATE_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES} flatpickr-date" # For Flatpickr
 DATETIME_INPUT_CLASSES = f"form-input {BASE_INPUT_CLASSES} flatpickr-datetime" # For Flatpickr
-FILE_INPUT_CLASSES = "form-control block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition duration-150 ease-in-out      "
-CHECKBOX_CLASSES = "form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500    "
+FILE_INPUT_CLASSES = (
+    "form-control block w-full text-sm text-gray-900 border border-gray-300 rounded-lg "
+    "cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg "
+    "file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition duration-150 ease-in-out"
+)
+CHECKBOX_CLASSES = "form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
 
 # URL name for user autocomplete, used by django-select2
 USER_AUTOCOMPLETE_URL_NAME = 'tasks:user_autocomplete' # Make sure this matches your urls.py
