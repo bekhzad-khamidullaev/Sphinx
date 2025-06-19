@@ -43,3 +43,15 @@ class TaskChatIntegrationTests(TestCase):
         response = self.client.get(reverse('room:room', kwargs={'slug': task_room.slug}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['related_task'], task)
+
+
+class TaskDueDateTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='dueuser', password='pass')
+        self.project = Project.objects.create(name='DD Project', owner=self.user)
+
+    def test_due_date_auto_set_high_priority(self):
+        task = Task.objects.create(project=self.project, title='HP', created_by=self.user,
+                                   priority=Task.TaskPriority.HIGH)
+        self.assertIsNotNone(task.due_date)
+        self.assertEqual((task.due_date - task.start_date).days, 1)
