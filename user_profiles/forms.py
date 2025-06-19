@@ -3,7 +3,7 @@ import logging
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, Row, Field, Div, Column
 from django import forms
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.forms import (
     AuthenticationForm, UserCreationForm as BaseUserCreationForm, PasswordChangeForm as BasePasswordChangeForm
 )
@@ -139,6 +139,36 @@ class JobTitleForm(forms.ModelForm):
         self.helper.layout = Layout(
             Field('name', css_class="mb-4"),
             Field('description', css_class="mb-4"),
+        )
+
+
+class GroupForm(forms.ModelForm):
+    permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.all().order_by('content_type__app_label', 'codename'),
+        required=False,
+        widget=Select2MultipleWidget(attrs={'data-placeholder': _("Выберите разрешения...")}),
+        label=_("Разрешения")
+    )
+
+    class Meta:
+        model = Group
+        fields = ["name", "permissions"]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES, 'placeholder': _("Название группы")}),
+        }
+        labels = {
+            'name': _("Название группы"),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_method = 'post'
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        self.helper.layout = Layout(
+            Field('name', css_class="mb-4"),
+            Field('permissions', css_class="mb-4"),
         )
 
 

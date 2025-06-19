@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% blocktrans with name=object.name %}Группа: {{ name }}{% endblocktrans %}{% endblock %}
+
+{% block list_title %}
+<h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">{% blocktrans with name=object.name %}Группа: {{ name }}{% endblocktrans %}</h1>
+{% endblock %}
+
+{% block list_content %}
+<div class="bg-white shadow rounded-xl border border-gray-200 p-6 md:p-8 mt-6 max-w-2xl mx-auto">
+    <p class="mb-4"><strong>{% trans 'Название' %}:</strong> {{ object.name }}</p>
+    <p class="mb-4"><strong>{% trans 'Пользователей' %}:</strong> {{ object.user_set.count }}</p>
+    <div class="mb-4">
+        <strong>{% trans 'Разрешения' %}:</strong>
+        <ul class="list-disc list-inside ml-4">
+        {% for perm in object.permissions.all %}
+            <li>{{ perm.name }}</li>
+        {% empty %}
+            <li class="text-gray-500">{% trans 'Нет' %}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <a href="{% url 'user_profiles:group_update' pk=object.pk %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">{% trans 'Изменить' %}</a>
+        <a href="{% url 'user_profiles:group_delete' pk=object.pk %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition active:scale-95 shadow-sm">{% trans 'Удалить' %}</a>
+    </div>
+</div>
+{% endblock %}

@@ -47,4 +47,10 @@ urlpatterns = [
     path('manage/jobtitles/create/', views.JobTitleCreateView.as_view(), name='jobtitle_create'),
     path('manage/jobtitles/<int:pk>/update/', views.JobTitleUpdateView.as_view(), name='jobtitle_update'),
     path('manage/jobtitles/<int:pk>/delete/', views.JobTitleDeleteView.as_view(), name='jobtitle_delete'),
+
+    path('manage/groups/', views.GroupListView.as_view(), name='group_list'),
+    path('manage/groups/create/', views.GroupCreateView.as_view(), name='group_create'),
+    path('manage/groups/<int:pk>/', views.GroupDetailView.as_view(), name='group_detail'),
+    path('manage/groups/<int:pk>/update/', views.GroupUpdateView.as_view(), name='group_update'),
+    path('manage/groups/<int:pk>/delete/', views.GroupDeleteView.as_view(), name='group_delete'),
 ]
