@@ -63,17 +63,18 @@ class TaskSubcategoryViewSet(viewsets.ModelViewSet):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
         
+        if request.query_params.get('select2'):
+            serializer = self.get_serializer(queryset, many=True)
+            data = [
+                {'id': sc['id'], 'text': f"{sc['category_name']} / {sc['name']}"}
+                for sc in serializer.data
+            ]
+            return Response(data)
+
         page = self.paginate_queryset(queryset)
         if page is not None:
-            if request.accepted_renderer.format == 'json' and request.query_params.get('select2'):
-                data = [{'id': sc.id, 'text': f"{sc.category.name} / {sc.name}"} for sc in page]
-                return Response(data)
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-
-        if request.accepted_renderer.format == 'json' and request.query_params.get('select2'):
-            data = [{'id': sc.id, 'text': f"{sc.category.name} / {sc.name}"} for sc in queryset]
-            return Response(data)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

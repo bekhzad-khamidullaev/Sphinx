@@ -15,7 +15,7 @@ from django_select2.forms import (
     ModelSelect2Widget, ModelSelect2MultipleWidget
 )
 
-from .models import Task, TaskPhoto, Project, TaskCategory, TaskSubcategory, TaskComment, TaskAssignment
+from .models import Task, TaskPhoto, Project, TaskCategory, TaskSubcategory, TaskComment, TaskAssignment, PriorityDeadline
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -294,6 +294,8 @@ class TaskForm(CrispyFormMixin, forms.ModelForm):
         else:
             self.fields['subcategory'].queryset = TaskSubcategory.objects.none()
             self.fields['subcategory'].widget.attrs['disabled'] = True
+
+        self.priority_deadlines = {pd.priority: pd.days for pd in PriorityDeadline.objects.all()}
 
         # Crispy Forms Layout
         self.helper.layout = Layout(

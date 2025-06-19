@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.templatetags.static import static
 
-from ..models import Task, TaskPhoto, TaskComment, TaskAssignment, Project
+from ..models import Task, TaskPhoto, TaskComment, TaskAssignment, Project, PriorityDeadline
 from ..forms import TaskForm, TaskPhotoForm, TaskCommentForm
 from ..filters import TaskFilter
 from .mixins import SuccessMessageMixin # Make sure this mixin is correctly defined
@@ -312,6 +312,7 @@ class TaskCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixi
             context['photo_formset'] = TaskPhotoFormSet(self.request.POST, self.request.FILES, queryset=TaskPhoto.objects.none(), prefix='photos')
         else:
             context['photo_formset'] = TaskPhotoFormSet(queryset=TaskPhoto.objects.none(), prefix='photos')
+        context['priority_deadlines'] = {pd.priority: pd.days for pd in PriorityDeadline.objects.all()}
         logger.debug(f"TaskCreateView context: {context.keys()}")
         return context
 
@@ -398,6 +399,7 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixi
             context['photo_formset'] = TaskPhotoFormSet(self.request.POST, self.request.FILES, queryset=task_instance.photos.all(), prefix='photos')
         else:
             context['photo_formset'] = TaskPhotoFormSet(queryset=task_instance.photos.all(), prefix='photos')
+        context['priority_deadlines'] = {pd.priority: pd.days for pd in PriorityDeadline.objects.all()}
         logger.debug(f"TaskUpdateView context: {context.keys()}")
         return context
 

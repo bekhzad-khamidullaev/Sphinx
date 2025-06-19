@@ -264,14 +264,12 @@ class Task(BaseModel):
 
         if self._state.adding and not self.due_date:
             start = self.start_date or timezone.now().date()
-            priority_map = {
-                self.TaskPriority.HIGH: timedelta(days=1),
-                self.TaskPriority.MEDIUM_HIGH: timedelta(days=3),
-                self.TaskPriority.MEDIUM: timedelta(days=7),
-                self.TaskPriority.MEDIUM_LOW: timedelta(days=14),
-                self.TaskPriority.LOW: timedelta(days=30),
-            }
-            delta = priority_map.get(self.priority, timedelta(days=7))
+            try:
+                days = PriorityDeadline.get_days(self.priority)
+                delta = timedelta(days=days)
+            except Exception as e:  # pragma: no cover
+                logger.error(f"Priority deadline lookup failed: {e}")
+                delta = timedelta(days=7)
             self.due_date = start + delta
 
     def save(self, *args, **kwargs):
@@ -442,6 +440,33 @@ class TaskPhoto(BaseModel):
         indexes = [models.Index(fields=["task"], name="taskphoto_task_idx")]
     def __str__(self):
         return f"Фото к задаче '{self.task.task_number or self.task.id}' ({self.id})"
+
+
+class PriorityDeadline(models.Model):
+    priority = models.IntegerField(choices=Task.TaskPriority.choices, unique=True, verbose_name=_('Приоритет'))
+    days = models.PositiveIntegerField(default=7, verbose_name=_('Срок (дней)'))
+
+    class Meta:
+        verbose_name = _('Срок по приоритету')
+        verbose_name_plural = _('Сроки по приоритетам')
+        ordering = ['priority']
+
+    def __str__(self):
+        return f"{self.get_priority_display()}: {self.days}d"
+
+    @classmethod
+    def get_days(cls, priority):
+        try:
+            return cls.objects.get(priority=priority).days
+        except cls.DoesNotExist:
+            default_map = {
+                Task.TaskPriority.HIGH: 1,
+                Task.TaskPriority.MEDIUM_HIGH: 3,
+                Task.TaskPriority.MEDIUM: 7,
+                Task.TaskPriority.MEDIUM_LOW: 14,
+                Task.TaskPriority.LOW: 30,
+            }
+            return default_map.get(priority, 7)
 
 @receiver(post_save, sender=Task)
 def task_post_save_ws_handler(sender, instance: Task, created: bool, update_fields=None, **kwargs):
