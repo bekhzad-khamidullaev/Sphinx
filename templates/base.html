@@ -68,6 +68,7 @@
                             {% if perms.tasks.view_category %}
                             <li><a href="{% url 'tasks:category_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Категории' %}</a></li>
                             {% endif %}
+                            <li><a href="{% url 'dashboards:task_dashboard' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Дашборд' %}</a></li>
                         </ul>
                     </div>
                  </div>
