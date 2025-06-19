@@ -27,3 +27,24 @@ python manage.py migrate room 0002 --fake
 ```
 
 Repeat for any other app showing the same error, then run `python manage.py migrate` again.
+
+## Deployment on Ubuntu 24.04
+
+Below is a minimal example of how to run the project using Gunicorn and Nginx on a clean Ubuntu 24.04 server. Paths and domain names can be adjusted to your needs.
+
+1. Execute the setup script:
+
+```bash
+bash deploy/ubuntu24/setup.sh
+```
+
+2. Place your environment variables in `/opt/sphinx/.env`.
+3. After the script finishes, Gunicorn will run as a systemd service and Nginx will proxy requests to it.
+
+Configuration files are located under `deploy/ubuntu24/`:
+
+- `gunicorn.service` — systemd unit for the application.
+- `nginx.conf` — sample Nginx site configuration.
+
+The script installs dependencies, creates a virtual environment, applies migrations, collects static files and starts all services.
+

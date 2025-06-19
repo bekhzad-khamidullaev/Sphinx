@@ -262,6 +262,18 @@ class Task(BaseModel):
            self.status not in [self.StatusChoices.COMPLETED, self.StatusChoices.CANCELLED, self.StatusChoices.OVERDUE]:
             self.status = self.StatusChoices.OVERDUE
 
+        if self._state.adding and not self.due_date:
+            start = self.start_date or timezone.now().date()
+            priority_map = {
+                self.TaskPriority.HIGH: timedelta(days=1),
+                self.TaskPriority.MEDIUM_HIGH: timedelta(days=3),
+                self.TaskPriority.MEDIUM: timedelta(days=7),
+                self.TaskPriority.MEDIUM_LOW: timedelta(days=14),
+                self.TaskPriority.LOW: timedelta(days=30),
+            }
+            delta = priority_map.get(self.priority, timedelta(days=7))
+            self.due_date = start + delta
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         if not kwargs.pop('skip_clean', False): self.full_clean()

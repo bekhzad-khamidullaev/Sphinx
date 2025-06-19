@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Shared Variables & Functions ---
     const taskListContainer = document.getElementById('task-list');
+    const taskCardListContainer = document.getElementById('task-card-list');
     const kanbanBoardContainer = document.getElementById('kanban-board');
     const taskDetailContainer = document.getElementById('task-detail-container');
 
@@ -172,23 +173,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 textEl.textContent = isCurrentlyKanban ? listText : kanbanText;
                 btn.setAttribute('aria-pressed', isCurrentlyKanban.toString());
             };
+            const isDesktop = () => window.matchMedia('(min-width: 768px)').matches;
             const setView = (view) => {
                 const isKanban = view === 'kanban';
-                kanbanBoardContainer.classList.toggle('hidden', !isKanban);
-                taskListContainer.classList.toggle('hidden', isKanban);
-                document.getElementById('pagination')?.classList.toggle('hidden', isKanban || !document.getElementById('pagination'));
-                columnToggleDropdown?.closest('.relative')?.classList.toggle('hidden', !isKanban);
+                const desktop = isDesktop();
+                kanbanBoardContainer.classList.toggle('hidden', !desktop || !isKanban);
+                taskListContainer.classList.toggle('hidden', !desktop || isKanban);
+                taskCardListContainer?.classList.toggle('hidden', desktop);
+                const paginationEl = document.getElementById('pagination');
+                if (paginationEl) {
+                    const showPagination = desktop ? !isKanban : true;
+                    paginationEl.classList.toggle('hidden', !showPagination);
+                }
+                columnToggleDropdown?.closest('.relative')?.classList.toggle('hidden', !isKanban || !desktop);
                 updateButton(toggleViewBtn, document.getElementById('viewIcon'), document.getElementById('viewText'), view);
                 updateButton(toggleViewBtnMobile, document.getElementById('viewIconMobile'), document.getElementById('viewTextMobile'), view);
                 localStorage.setItem('taskView', view);
-                if (isKanban) { initializeKanban(); restoreHiddenColumns(); }
-                else { initializeListSort(); initializeListStatusChange(); initializeListDeleteButtons(); }
+                if (isKanban) { if (desktop) { initializeKanban(); restoreHiddenColumns(); } }
+                else { if (desktop) { initializeListSort(); initializeListStatusChange(); initializeListDeleteButtons(); } }
                 if (window.history.pushState) { const newUrl = new URL(window.location.href); newUrl.searchParams.set('view', view); window.history.pushState({ path: newUrl.href }, '', newUrl.href); }
             };
             setView(initialView);
             [toggleViewBtn, toggleViewBtnMobile].forEach(btn => {
                 if (btn) btn.addEventListener('click', () => setView((localStorage.getItem('taskView') || 'kanban') === 'kanban' ? 'list' : 'kanban'));
             });
+            window.addEventListener('resize', () => setView(localStorage.getItem('taskView') || 'kanban'));
         }
 
         let sortableInstances = [];

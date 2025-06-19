@@ -108,9 +108,12 @@
                              {% if perms.user_profiles.view_user %}
                              <li><a href="{% url 'user_profiles:user_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Список пользователей' %}</a></li>
                              {% endif %}
-                             {% if perms.user_profiles.view_team %}
-                             <li><a href="{% url 'user_profiles:team_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Команды' %}</a></li>
-                             {% endif %}
+                            {% if perms.user_profiles.view_team %}
+                            <li><a href="{% url 'user_profiles:team_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Команды' %}</a></li>
+                            {% endif %}
+                            {% if perms.auth.view_group %}
+                            <li><a href="{% url 'user_profiles:group_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Группы' %}</a></li>
+                            {% endif %}
                          </ul>
                     </div>
                 </div>
@@ -247,6 +250,11 @@
                 class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
                      class="fas fa-users-cog w-5 mr-3 text-pink-500"></i> {% trans 'Команды' %}</a>
              {% endif %}
+             {% if perms.auth.view_group %}
+             <a href="{% url 'user_profiles:group_list' %}"
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
+                     class="fas fa-user-shield w-5 mr-3 text-purple-500"></i> {% trans 'Группы' %}</a>
+             {% endif %}
             <hr class="border-gray-200 my-2">
             <div class="relative lg:hidden px-1 py-2">
                 <input type="search" id="mobile-search-input"
@@ -330,7 +338,10 @@
         </div>
     </div>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/node-uuid/1.4.8/uuid.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>    <script src="{% static 'js/uuid.min.js' %}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <script src="{% static 'js/uuid.min.js' %}"></script>
+
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     {% block scripts %}{% endblock %}
     {% django_browser_reload_script %}
