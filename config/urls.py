@@ -33,7 +33,7 @@ urlpatterns = i18n_patterns(
 
     # Локализация
     path("i18n/", set_language, name="set_language"),
-    path("api-auth/", include("rest_framework.urls")),
+    path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
 
     # Подключение маршрутов приложения `tasks`
     path("core/", include("tasks.urls")),
