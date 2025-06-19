@@ -31,8 +31,9 @@ from .models import User, Team, Department, JobTitle
 from .serializers import TeamSerializer, UserSerializer, DepartmentSerializer, JobTitleSerializer
 from .forms import (
     TeamForm, UserCreateForm, UserUpdateForm, UserProfileEditForm, LoginForm,
-    UserPasswordChangeForm, DepartmentForm, JobTitleForm
+    UserPasswordChangeForm, DepartmentForm, JobTitleForm, GroupForm
 )
+from django.contrib.auth.models import Group
 from tasks.models import Task, TaskAssignment
 
 logger = logging.getLogger(__name__)
@@ -477,6 +478,77 @@ class JobTitleDeleteView(StaffRequiredMixin, DeleteView):
         return super().form_valid(form)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs); context['page_title'] = _("Удалить должность: %s") % self.object.name; return context
+
+class GroupListView(StaffRequiredMixin, ListView):
+    model = Group
+    template_name = "users/group_list.html"
+    context_object_name = "object_list"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Group.objects.annotate(num_users=Count('user')).order_by('name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Группы прав")
+        return context
+
+
+class GroupCreateView(StaffRequiredMixin, SuccessMessageMixin, CreateView):
+    model = Group
+    form_class = GroupForm
+    template_name = "users/group_form.html"
+    success_url = reverse_lazy("user_profiles:group_list")
+    success_message = _("Группа '%(name)s' создана.")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Создать группу")
+        context['form_action_text'] = _("Создать")
+        return context
+
+
+class GroupUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
+    model = Group
+    form_class = GroupForm
+    template_name = "users/group_form.html"
+    success_url = reverse_lazy("user_profiles:group_list")
+    success_message = _("Группа '%(name)s' обновлена.")
+    context_object_name = "object"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Редактировать группу: %s") % self.object.name
+        context['form_action_text'] = _("Сохранить")
+        return context
+
+
+class GroupDetailView(StaffRequiredMixin, DetailView):
+    model = Group
+    template_name = "users/group_detail.html"
+    context_object_name = "object"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Группа: %s") % self.object.name
+        return context
+
+
+class GroupDeleteView(StaffRequiredMixin, DeleteView):
+    model = Group
+    template_name = "users/group_confirm_delete.html"
+    success_url = reverse_lazy("user_profiles:group_list")
+    context_object_name = "object"
+
+    def form_valid(self, form):
+        name = self.object.name
+        messages.success(self.request, _("Группа '%(name)s' удалена.") % {'name': name})
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = _("Удалить группу: %s") % self.object.name
+        return context
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().select_related('department', 'job_title').prefetch_related('teams', 'groups')
