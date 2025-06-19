@@ -78,7 +78,7 @@ SWAGGER_SETTINGS = {
             'description': 'JWT token: "Bearer <token>"',
         }
     },
-    'USE_SESSION_AUTH': False, # Important for JWT
+    'USE_SESSION_AUTH': False,
     'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
 }
 
