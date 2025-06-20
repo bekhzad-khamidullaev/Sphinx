@@ -505,8 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
             commentForm.addEventListener('submit', async function (e) {
                 e.preventDefault(); const T = taskDetailData.translations; const commentText = commentTextArea.value.trim();
                 if (commentTextErrors) commentTextErrors.textContent = ''; if (commentNonFieldErrors) commentNonFieldErrors.textContent = '';
-                commentTextArea.classList.remove('border-red-500', '');
-                if (!commentText) { if (commentTextErrors) commentTextErrors.textContent = T.commentCannotBeEmpty; commentTextArea.classList.add('border-red-500', ''); commentTextArea.focus(); return; }
+                commentTextArea.classList.remove('border-red-500');
+                if (!commentText) { if (commentTextErrors) commentTextErrors.textContent = T.commentCannotBeEmpty; commentTextArea.classList.add('border-red-500'); commentTextArea.focus(); return; }
                 commentTextArea.disabled = true; commentSubmitBtn.disabled = true; const originalBtnHtml = commentSubmitBtn.innerHTML; commentSubmitBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${T.sending}`;
                 try {
                     const formData = new FormData(commentForm);
@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (contentType && contentType.includes("application/json")) responseData = await response.json();
                     else { if (response.ok && response.redirected) { addCommentToDOM({id: `temp-${Date.now()}`, text: commentText, created_at_iso: new Date().toISOString(), author: {name: taskDetailData.currentUsername || T.unknownUser, avatar_url: taskDetailData.currentUserAvatar || taskDetailData.defaultAvatarUrl}}); commentTextArea.value = ''; if (window.showNotification) window.showNotification(T.commentAdded, 'success'); return; } throw new Error(`Server responded with ${response.status}. Expected JSON.`); }
                     if (response.ok && responseData.success && responseData.comment) { if (!document.getElementById(`comment-${responseData.comment.id}`)) addCommentToDOM(responseData.comment); commentTextArea.value = ''; if (window.showNotification) window.showNotification(T.commentAdded, 'success'); }
-                    else { let err = responseData.error || T.submitError; if (responseData.errors) { err += ` Details: ${Object.entries(responseData.errors).map(([f, e]) => `${f}: ${e.join(', ')}`).join('; ')}`; if (responseData.errors.text && commentTextErrors) { commentTextErrors.textContent = responseData.errors.text.join(' '); commentTextArea.classList.add('border-red-500',''); } if (responseData.errors.__all__ && commentNonFieldErrors) commentNonFieldErrors.textContent = responseData.errors.__all__.join(' '); } throw new Error(err); }
+                    else { let err = responseData.error || T.submitError; if (responseData.errors) { err += ` Details: ${Object.entries(responseData.errors).map(([f, e]) => `${f}: ${e.join(', ')}`).join('; ')}`; if (responseData.errors.text && commentTextErrors) { commentTextErrors.textContent = responseData.errors.text.join(' '); commentTextArea.classList.add('border-red-500'); } if (responseData.errors.__all__ && commentNonFieldErrors) commentNonFieldErrors.textContent = responseData.errors.__all__.join(' '); } throw new Error(err); }
                 } catch (error) { console.error('Comment submit error:', error); const displayErr = error instanceof Error ? error.message : T.networkError; if (commentNonFieldErrors && !commentNonFieldErrors.textContent && !commentTextErrors?.textContent) commentNonFieldErrors.textContent = displayErr; if (window.showNotification && !error.handled) window.showNotification(displayErr, 'error');
                 } finally { commentTextArea.disabled = false; commentSubmitBtn.disabled = false; commentSubmitBtn.innerHTML = originalBtnHtml; }
             });
