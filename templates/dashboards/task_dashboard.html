@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans 'Дашборд задач' %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-bold mb-4">{% trans 'Дашборд задач' %}</h1>
+  <form method="get" class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+    <input type="date" name="start" value="{{ request.GET.start }}" class="border rounded p-2">
+    <input type="date" name="end" value="{{ request.GET.end }}" class="border rounded p-2">
+    <select name="user" class="border rounded p-2">
+      <option value="">{% trans 'Пользователь' %}</option>
+      {% for u in users %}
+      <option value="{{ u.id }}" {% if request.GET.user == u.id|stringformat:'s' %}selected{% endif %}>{{ u.username }}</option>
+      {% endfor %}
+    </select>
+    <select name="category" class="border rounded p-2">
+      <option value="">{% trans 'Категория' %}</option>
+      {% for c in categories %}
+      <option value="{{ c.id }}" {% if request.GET.category == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="subcategory" class="border rounded p-2">
+      <option value="">{% trans 'Подкатегория' %}</option>
+      {% for sc in subcategories %}
+      <option value="{{ sc.id }}" {% if request.GET.subcategory == sc.id|stringformat:'s' %}selected{% endif %}>{{ sc.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="department" class="border rounded p-2">
+      <option value="">{% trans 'Отдел' %}</option>
+      {% for d in departments %}
+      <option value="{{ d.id }}" {% if request.GET.department == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="bg-blue-600 text-white rounded px-4">{% trans 'Фильтр' %}</button>
+  </form>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div>
+      <canvas id="statusChart"></canvas>
+    </div>
+    <div>
+      <canvas id="userChart"></canvas>
+    </div>
+    <div>
+      <canvas id="categoryChart"></canvas>
+    </div>
+    <div>
+      <canvas id="subCategoryChart"></canvas>
+    </div>
+    <div>
+      <canvas id="monthChart"></canvas>
+    </div>
+    <div>
+      <canvas id="departmentChart"></canvas>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const statusCtx = document.getElementById('statusChart');
+new Chart(statusCtx, {type:'bar',data:{labels:{{ status_labels|safe }},datasets:[{label:'{% trans "Статусы" %}',data:{{ status_values|safe }},backgroundColor:'#3b82f6'}]}});
+const userCtx=document.getElementById('userChart');
+new Chart(userCtx,{type:'bar',data:{labels:{{ user_labels|safe }},datasets:[{label:'{% trans "Пользователи" %}',data:{{ user_values|safe }},backgroundColor:'#10b981'}]}});
+const catCtx=document.getElementById('categoryChart');
+new Chart(catCtx,{type:'bar',data:{labels:{{ category_labels|safe }},datasets:[{label:'{% trans "Категории" %}',data:{{ category_values|safe }},backgroundColor:'#6366f1'}]}});
+const subCtx=document.getElementById('subCategoryChart');
+new Chart(subCtx,{type:'bar',data:{labels:{{ subcategory_labels|safe }},datasets:[{label:'{% trans "Подкатегории" %}',data:{{ subcategory_values|safe }},backgroundColor:'#f97316'}]}});
+const monthCtx=document.getElementById('monthChart');
+new Chart(monthCtx,{type:'line',data:{labels:{{ month_labels|safe }},datasets:[{label:'{% trans "По месяцам" %}',data:{{ month_values|safe }},backgroundColor:'#0ea5e9'}]}});
+const deptCtx=document.getElementById('departmentChart');
+new Chart(deptCtx,{type:'bar',data:{labels:{{ department_labels|safe }},datasets:[{label:'{% trans "Отделы" %}',data:{{ department_values|safe }},backgroundColor:'#d946ef'}]}});
+</script>
+{% endblock %}
