@@ -7,7 +7,8 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext, gettext_lazy as _
 
 
-from tasks.models import Task, TaskCategory, TaskSubcategory, Department
+from tasks.models import Task, TaskCategory, TaskSubcategory, Department, Project
+from user_profiles.models import Team
 
 User = get_user_model()
 
@@ -23,6 +24,8 @@ class TaskDashboardView(TemplateView):
         category = self.request.GET.get('category')
         subcategory = self.request.GET.get('subcategory')
         department = self.request.GET.get('department')
+        project = self.request.GET.get('project')
+        team = self.request.GET.get('team')
         if start_date:
             try:
                 start = datetime.fromisoformat(start_date).date()
@@ -43,6 +46,10 @@ class TaskDashboardView(TemplateView):
             qs = qs.filter(subcategory_id=subcategory)
         if department:
             qs = qs.filter(department_id=department)
+        if project:
+            qs = qs.filter(project_id=project)
+        if team:
+            qs = qs.filter(team_id=team)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -106,6 +113,27 @@ class TaskDashboardView(TemplateView):
 
         dept_values = [d['total'] for d in dept_data]
 
+        priority_data = list(
+            qs.values('priority').annotate(total=Count('id')).order_by('priority')
+        )
+        priority_labels = [
+            gettext(dict(Task.TaskPriority.choices).get(d['priority'], d['priority']))
+            for d in priority_data
+        ]
+        priority_values = [d['total'] for d in priority_data]
+
+        project_data = list(
+            qs.values('project__name').annotate(total=Count('id')).order_by('-total')[:10]
+        )
+        project_labels = [d['project__name'] or none_label for d in project_data]
+        project_values = [d['total'] for d in project_data]
+
+        team_data = list(
+            qs.values('team__name').annotate(total=Count('id')).order_by('-total')[:10]
+        )
+        team_labels = [d['team__name'] or none_label for d in team_data]
+        team_values = [d['total'] for d in team_data]
+
         context.update(
             status_labels=json.dumps(status_labels),
             status_values=json.dumps(status_values),
@@ -119,9 +147,17 @@ class TaskDashboardView(TemplateView):
             month_values=json.dumps(month_values),
             department_labels=json.dumps(dept_labels),
             department_values=json.dumps(dept_values),
+            priority_labels=json.dumps(priority_labels),
+            priority_values=json.dumps(priority_values),
+            project_labels=json.dumps(project_labels),
+            project_values=json.dumps(project_values),
+            team_labels=json.dumps(team_labels),
+            team_values=json.dumps(team_values),
             users=User.objects.all(),
             categories=TaskCategory.objects.all(),
             subcategories=TaskSubcategory.objects.all(),
             departments=Department.objects.all(),
+            teams=Team.objects.all(),
+            projects=Project.objects.all(),
         )
         return context

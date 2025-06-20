@@ -33,6 +33,18 @@
       <option value="{{ d.id }}" {% if request.GET.department == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>
       {% endfor %}
     </select>
+    <select name="team" class="border rounded p-2">
+      <option value="">{% trans 'Команда' %}</option>
+      {% for t in teams %}
+      <option value="{{ t.id }}" {% if request.GET.team == t.id|stringformat:'s' %}selected{% endif %}>{{ t.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="project" class="border rounded p-2">
+      <option value="">{% trans 'Проект' %}</option>
+      {% for p in projects %}
+      <option value="{{ p.id }}" {% if request.GET.project == p.id|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
     <button type="submit" class="bg-blue-600 text-white rounded px-4">{% trans 'Фильтр' %}</button>
   </form>
 
@@ -55,6 +67,15 @@
     <div>
       <canvas id="departmentChart"></canvas>
     </div>
+    <div>
+      <canvas id="priorityChart"></canvas>
+    </div>
+    <div>
+      <canvas id="projectChart"></canvas>
+    </div>
+    <div>
+      <canvas id="teamChart"></canvas>
+    </div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -71,5 +92,11 @@ const monthCtx=document.getElementById('monthChart');
 new Chart(monthCtx,{type:'line',data:{labels:{{ month_labels|safe }},datasets:[{label:'{% trans "По месяцам" %}',data:{{ month_values|safe }},backgroundColor:'#0ea5e9'}]}});
 const deptCtx=document.getElementById('departmentChart');
 new Chart(deptCtx,{type:'bar',data:{labels:{{ department_labels|safe }},datasets:[{label:'{% trans "Отделы" %}',data:{{ department_values|safe }},backgroundColor:'#d946ef'}]}});
+const prioCtx=document.getElementById('priorityChart');
+new Chart(prioCtx,{type:'doughnut',data:{labels:{{ priority_labels|safe }},datasets:[{label:'{% trans "Приоритет" %}',data:{{ priority_values|safe }},backgroundColor:['#6b7280','#4b5563','#3b82f6','#10b981','#f59e0b']}]} });
+const projCtx=document.getElementById('projectChart');
+new Chart(projCtx,{type:'bar',data:{labels:{{ project_labels|safe }},datasets:[{label:'{% trans "Проекты" %}',data:{{ project_values|safe }},backgroundColor:'#f43f5e'}]}});
+const teamCtx=document.getElementById('teamChart');
+new Chart(teamCtx,{type:'bar',data:{labels:{{ team_labels|safe }},datasets:[{label:'{% trans "Команды" %}',data:{{ team_values|safe }},backgroundColor:'#14b8a6'}]}});
 </script>
 {% endblock %}
