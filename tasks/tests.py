@@ -1,9 +1,11 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from room.models import Room
-from tasks.models import Project, Task
+from tasks.models import Project, Task, TaskComment
 
 User = get_user_model()
 
@@ -55,3 +57,19 @@ class TaskDueDateTests(TestCase):
                                    priority=Task.TaskPriority.HIGH)
         self.assertIsNotNone(task.due_date)
         self.assertEqual((task.due_date - task.start_date).days, 1)
+
+
+class TaskCommentSignalTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='commuser', password='pass')
+        self.project = Project.objects.create(name='WS Project', owner=self.user)
+        self.task = Task.objects.create(project=self.project, title='WS Task', created_by=self.user)
+
+    def test_comment_creation_triggers_ws_message(self):
+        channel_layer = get_channel_layer()
+        TaskComment.objects.create(task=self.task, author=self.user, text='Ping')
+        message = async_to_sync(channel_layer.receive)(f'task_comments_{self.task.id}')
+        self.assertEqual(message['type'], 'comment_message')
+        self.assertEqual(message['message']['text'], 'Ping')
+        self.assertEqual(message['message']['task_id'], self.task.id)
+        self.assertEqual(message['message']['author']['id'], self.user.id)
