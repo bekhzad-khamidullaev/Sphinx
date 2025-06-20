@@ -150,6 +150,7 @@
 {% endblock list_content %}
 
 {% block scripts %}
+    {{ priority_deadlines|json_script:"priority-deadlines-data" }}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     {% get_current_language as LANG_CODE %}{% get_language_info for LANG_CODE as LANG_INFO %}
@@ -304,6 +305,30 @@
                     $(projectSelectField).on('change', updateUserAjaxUrlsForDjangoSelect2);
                     setTimeout(updateUserAjaxUrlsForDjangoSelect2, 300);
                 }
+
+                const deadlineDataEl = document.getElementById('priority-deadlines-data');
+                const priorityMap = deadlineDataEl ? JSON.parse(deadlineDataEl.textContent) : {};
+                const priorityField = document.getElementById('id_priority');
+                const startDateField = document.getElementById('id_start_date');
+                const dueDateField = document.getElementById('id_due_date');
+
+                function updateDueDate() {
+                    if (!priorityField || !dueDateField) return;
+                    const days = priorityMap[priorityField.value];
+                    const startVal = startDateField ? startDateField.value : '';
+                    if (days && startVal) {
+                        const date = new Date(startVal);
+                        if (!isNaN(date)) {
+                            date.setDate(date.getDate() + Number(days));
+                            const iso = date.toISOString().slice(0,10);
+                            dueDateField.value = iso;
+                            if (dueDateField._flatpickr) { dueDateField._flatpickr.setDate(iso); }
+                        }
+                    }
+                }
+                if (priorityField) priorityField.addEventListener('change', updateDueDate);
+                if (startDateField) startDateField.addEventListener('change', updateDueDate);
+                updateDueDate();
 
             } catch (error) { console.error("Task form script error (after DOMContentLoaded):", error); }
         });
