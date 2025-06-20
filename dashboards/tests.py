@@ -1,10 +1,10 @@
 from django.urls import reverse
-from rest_framework.test import APITestCase
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.conf import settings
 
 
-class DashboardViewTests(APITestCase):
+class DashboardViewTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username='dash', password='pass')
         self.client.login(username='dash', password='pass')
