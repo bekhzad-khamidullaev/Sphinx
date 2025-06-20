@@ -413,12 +413,94 @@ document.addEventListener('DOMContentLoaded', () => {
         const commentNonFieldErrors = document.getElementById('comment-non-field-errors'), commentCountSpan = document.getElementById('comment-count');
 
         if (commentList && commentForm && commentTextArea && commentSubmitBtn) {
-            function formatRelativeTime(isoDateStr) { /* ... (same as before) ... */ return isoDateStr; } // Placeholder
-            function addCommentToDOM(comment) { /* ... (same as before, ensure T is taskDetailData.translations) ... */ } // Placeholder
+            function formatRelativeTime(isoDateStr) {
+                const T = taskDetailData.translations;
+                const diffSeconds = Math.floor((Date.now() - new Date(isoDateStr)) / 1000);
+                if (diffSeconds < 10) return T.justNow;
+                if (diffSeconds < 60) return `${diffSeconds} ${T.secondsAgo}`;
+                const diffMinutes = Math.floor(diffSeconds / 60);
+                if (diffMinutes < 60) return `${diffMinutes} ${T.minutesAgo}`;
+                const diffHours = Math.floor(diffMinutes / 60);
+                if (diffHours < 24) return `${diffHours} ${T.hoursAgo}`;
+                if (diffHours < 48) return T.yesterday;
+                const diffDays = Math.floor(diffHours / 24);
+                return `${diffDays} ${T.daysAgo}`;
+            }
+
+            function addCommentToDOM(comment) {
+                const T = taskDetailData.translations;
+                if (!comment || !comment.id) return;
+                if (document.getElementById(`comment-${comment.id}`)) return;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex space-x-3 comment-item';
+                wrapper.id = `comment-${comment.id}`;
+
+                const avatar = document.createElement('img');
+                avatar.className = 'w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1';
+                avatar.alt = comment.author?.name || T.unknownUser;
+                avatar.src = comment.author?.avatar_url || taskDetailData.defaultAvatarUrl;
+
+                const body = document.createElement('div');
+                body.className = 'flex-1 bg-gray-50 p-3 rounded-lg border border-gray-100';
+
+                const header = document.createElement('div');
+                header.className = 'flex justify-between items-center mb-1';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'text-sm font-semibold text-gray-800';
+                nameSpan.textContent = comment.author?.name || T.unknownUser;
+
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'text-xs text-gray-400';
+                timeSpan.title = comment.created_at_display || comment.created_at_iso;
+                timeSpan.textContent = formatRelativeTime(comment.created_at_iso);
+
+                header.appendChild(nameSpan);
+                header.appendChild(timeSpan);
+
+                const textP = document.createElement('p');
+                textP.className = 'text-sm text-gray-700 whitespace-pre-wrap';
+                textP.textContent = comment.text;
+
+                body.appendChild(header);
+                body.appendChild(textP);
+
+                wrapper.appendChild(avatar);
+                wrapper.appendChild(body);
+
+                commentList.appendChild(wrapper);
+                if (noCommentsMsg) noCommentsMsg.remove();
+                if (commentCountSpan) {
+                    const count = parseInt(commentCountSpan.textContent.replace(/[^0-9]/g, ''), 10) || 0;
+                    commentCountSpan.textContent = `(${count + 1})`;
+                }
+            }
 
             let commentSocket = null;
-            function connectCommentWebSocket() { /* ... (same as before) ... */ }
-            function handleCommentWebSocketMessage(event) { /* ... (same as before, ensure T and check for existingComment.id) ... */ }
+            function connectCommentWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                const wsUrl = `${protocol}://${window.location.host}/ws/tasks/${taskDetailData.taskId}/comments/`;
+                commentSocket = new WebSocket(wsUrl);
+                commentSocket.onmessage = handleCommentWebSocketMessage;
+                commentSocket.onerror = err => console.error('Comment WS error:', err);
+                commentSocket.onclose = e => {
+                    if (!e.wasClean) {
+                        setTimeout(connectCommentWebSocket, 3000);
+                    }
+                };
+            }
+
+            function handleCommentWebSocketMessage(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'new_comment' && data.comment) {
+                        addCommentToDOM(data.comment);
+                    }
+                } catch (err) {
+                    console.error(taskDetailData.translations.websocketError, err);
+                }
+            }
 
             commentForm.addEventListener('submit', async function (e) {
                 e.preventDefault(); const T = taskDetailData.translations; const commentText = commentTextArea.value.trim();
