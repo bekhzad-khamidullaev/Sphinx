@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 
 from checklists.models import ChecklistPoint, Location
 from tasks.models import TaskCategory, Project, Task
@@ -20,7 +21,7 @@ class QRCodeLink(models.Model):
         on_delete=models.CASCADE,
         related_name="qr_codes",
         verbose_name=_("Location"),
-        editable=False,
+        editable=True,
     )
     point = models.OneToOneField(
         ChecklistPoint,
@@ -53,13 +54,14 @@ class QRCodeLink(models.Model):
         return reverse("qrfikr:submit", kwargs={"qr_uuid": self.id})
 
 
-    def save(self, *args, **kwargs):
-        if self.point:
-            self.location = self.point.location
-        super().save(*args, **kwargs)
+    def clean(self):
+        if self.point and self.location and self.point.location != self.location:
+            raise ValidationError({
+                'location': _('Location must match point\'s location.')
+            })
 
     def save(self, *args, **kwargs):
-        if self.point:
+        if self.point and not self.location:
             self.location = self.point.location
         super().save(*args, **kwargs)
 
