@@ -1,4 +1,4 @@
-// tasks/static/js/tasks_no_modal.js
+// tasks/static/js/main.js
 "use strict";
 
 document.addEventListener('DOMContentLoaded', () => {
