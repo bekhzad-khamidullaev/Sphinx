@@ -152,6 +152,18 @@
                     });
                 }
 
+                function initDefaultValueVisibility(formRow) {
+                    const answerSelect = formRow.querySelector('select[id$="-answer_type"]');
+                    const defaultDiv = formRow.querySelector('input[id$="-default_value"]')?.closest('div');
+                    if (!answerSelect || !defaultDiv) return;
+                    const hiddenTypes = ['number','scale_1_4','scale_1_5','yes_no','yes_no_meh','boolean','date','datetime','time','file','url'];
+                    const toggle = () => {
+                        defaultDiv.classList.toggle('hidden', hiddenTypes.includes(answerSelect.value));
+                    };
+                    answerSelect.addEventListener('change', toggle);
+                    toggle();
+                }
+
                 addButton.addEventListener('click', function() {
                     const newForm = emptyFormTemplateNode.cloneNode(true);
                     newForm.classList.remove('opacity-50', 'border-l-4', 'border-red-500');
@@ -162,6 +174,7 @@
                     addDeleteListener(newForm.querySelector('.delete-formset-item'));
                     initSelect2($(`#${newForm.id} .select2-basic`));
                     initFlatpickr($(`#${newForm.id} .flatpickr-date`));
+                    initDefaultValueVisibility(newForm);
                     formCount++;
                     newForm.querySelector('input[type="text"], textarea, select')?.focus();
                 });
@@ -206,6 +219,7 @@
                     }
                     initSelect2($(`#${formRow.id} .select2-basic`));
                     initFlatpickr($(`#${formRow.id} .flatpickr-date`));
+                    initDefaultValueVisibility(formRow);
                 });
             }
 
