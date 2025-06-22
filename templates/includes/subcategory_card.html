@@ -13,7 +13,9 @@
     </div>
     <div class="border-t border-gray-200 bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
         <span class="text-sm text-gray-500">
-            {% blocktrans count=subcategory.tasks.count %}{{ count }} задача{% plural %}{{ count }} задач{% endblocktrans %}
+            {% blocktrans count task_count=subcategory.tasks.count %}
+                {{ task_count }} задача{% plural %}{{ task_count }} задач
+            {% endblocktrans %}
         </span>
         <div class="flex space-x-2">
             <a href="{% url 'tasks:subcategory_update' pk=subcategory.pk %}" class="px-2 py-1 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50" aria-label="{% trans 'Редактировать' %}">
