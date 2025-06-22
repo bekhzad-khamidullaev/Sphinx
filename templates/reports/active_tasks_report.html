@@ -53,7 +53,7 @@
                 {% for task in page_obj %}
                 <tr class="{% cycle 'row1' 'row2' %}">
                     <td class="field-priority">{{ task.get_priority_display }}</td>
-                    <td class="field-deadline nowrap {% if task.is_overdue %}error{% endif %}">{{ task.deadline|date:"d.m.Y H:i"|default:"-" }}</td>
+                    <td class="field-deadline nowrap {% if task.is_overdue %}error{% endif %}">{{ task.due_date|date:"d.m.Y H:i"|default:"-" }}</td>
                     <td class="field-task_number"><a href="{% url 'admin:tasks_task_change' task.pk %}">{{ task.task_number }}</a></td>
                     <td class="field-title">{{ task.title|truncatechars:50 }}</td>
                     <td class="field-project">{{ task.project.name|default:"-" }}</td>

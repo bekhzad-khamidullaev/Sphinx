@@ -55,7 +55,7 @@
                 <tbody>
                 {% for task in page_obj %}
                 <tr class="{% cycle 'row1' 'row2' %} error">
-                    <td class="field-deadline nowrap"><strong>{{ task.deadline|date:"d.m.Y H:i" }}</strong></td>
+                    <td class="field-deadline nowrap"><strong>{{ task.due_date|date:"d.m.Y H:i" }}</strong></td>
                     <td class="field-task_number"><a href="{% url 'admin:tasks_task_change' task.pk %}">{{ task.task_number }}</a></td>
                     <td class="field-title">{{ task.title|truncatechars:50 }}</td>
                     <td class="field-project">{{ task.project.name|default:"-" }}</td>
