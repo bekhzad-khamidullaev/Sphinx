@@ -5,6 +5,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.db.models import JSONField
+from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import ValidationError, PermissionDenied
 
@@ -137,6 +138,28 @@ class User(AbstractUser):
         blank=True,
         related_name="team_members_reverse"
     )
+    employee_id = models.CharField(_("Табельный номер"), max_length=50, blank=True, null=True, unique=True)
+    hire_date = models.DateField(_("Дата приема на работу"), null=True, blank=True)
+    termination_date = models.DateField(_("Дата увольнения"), null=True, blank=True)
+
+    class EmploymentType(models.TextChoices):
+        FULL_TIME = 'full_time', _('Полная занятость')
+        PART_TIME = 'part_time', _('Частичная занятость')
+        CONTRACTOR = 'contractor', _('Подрядчик')
+        INTERN = 'intern', _('Стажер')
+
+    employment_type = models.CharField(
+        _("Тип занятости"), max_length=20, choices=EmploymentType.choices,
+        default=EmploymentType.FULL_TIME, blank=True, null=True
+    )
+    date_of_birth = models.DateField(_("Дата рождения"), null=True, blank=True)
+    personal_email = models.EmailField(_("Личный Email"), blank=True, null=True)
+    address = models.TextField(_("Адрес проживания"), blank=True, null=True)
+    emergency_contact = models.TextField(_("Экстренный контакт"), blank=True, null=True, help_text=_("Имя, телефон, кем приходится"))
+    manager = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reports_to', verbose_name=_("Прямой руководитель")
+    )
 
     class Meta:
         verbose_name = _("Пользователь")
@@ -159,6 +182,15 @@ class User(AbstractUser):
         if not isinstance(self.settings, dict):
             self.settings = {}
         return self.settings.get(key, default)
+
+    @property
+    def is_terminated(self):
+        return self.termination_date and self.termination_date <= timezone.now().date()
+
+    def clean(self):
+        super().clean()
+        if self.hire_date and self.termination_date and self.termination_date < self.hire_date:
+            raise ValidationError(_('Дата увольнения не может быть раньше даты приема на работу.'))
 
     def set_setting(self, key, value, save_now=True):
         if not isinstance(self.settings, dict):
@@ -321,3 +353,46 @@ class Team(BaseModel):
             raise ValidationError(_("Лидер команды должен быть руководителем отдела, если указан отдел."))
         if self.members.count() == 0:
             raise ValidationError(_("Команда должна иметь хотя бы одного участника."))
+
+
+class EmployeeDocument(BaseModel):
+    class DocumentType(models.TextChoices):
+        CONTRACT = 'contract', _('Трудовой договор')
+        PASSPORT = 'passport', _('Паспортные данные')
+        NDA = 'nda', _('Соглашение о неразглашении')
+        OTHER = 'other', _('Прочее')
+
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='documents', verbose_name=_('Сотрудник'))
+    document_type = models.CharField(_('Тип документа'), max_length=20, choices=DocumentType.choices)
+    file = models.FileField(_('Файл документа'), upload_to='employee_documents/%Y/%m/')
+    issue_date = models.DateField(_('Дата выдачи'), null=True, blank=True)
+    expiry_date = models.DateField(_('Дата окончания срока'), null=True, blank=True)
+    notes = models.TextField(_('Примечания'), blank=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='uploaded_documents')
+
+    class Meta:
+        verbose_name = _('Документ сотрудника')
+        verbose_name_plural = _('Документы сотрудников')
+
+
+class Skill(BaseModel):
+    name = models.CharField(_('Название навыка'), max_length=100, unique=True)
+    description = models.TextField(_('Описание'), blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class EmployeeSkill(models.Model):
+    class SkillLevel(models.IntegerChoices):
+        NOVICE = 1, _('Новичок')
+        INTERMEDIATE = 2, _('Средний уровень')
+        ADVANCED = 3, _('Продвинутый')
+        EXPERT = 4, _('Эксперт')
+
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills')
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name='employees')
+    level = models.IntegerField(_('Уровень владения'), choices=SkillLevel.choices, default=SkillLevel.NOVICE)
+
+    class Meta:
+        unique_together = ('employee', 'skill')

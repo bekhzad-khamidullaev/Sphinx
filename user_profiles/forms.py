@@ -349,13 +349,21 @@ class UserUpdateForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
 
+        restrict = False
         if not (self.request_user and self.request_user.is_superuser):
-            restricted_fields = ['is_active', 'is_staff', 'is_superuser', 'groups']
+            restrict = True
+        elif self.instance and self.instance.is_superuser and self.instance != self.request_user:
+            restrict = True
+
+        if restrict:
+            restricted_fields = ['is_active', 'is_staff', 'is_superuser', 'groups', 'teams']
             for field in restricted_fields:
                 if field in self.changed_data:
                     self.add_error(field, _('Только суперпользователь может менять это поле.'))
                     if field == 'groups':
                         cleaned_data[field] = list(self.instance.groups.all())
+                    elif field == 'teams':
+                        cleaned_data[field] = list(self.instance.teams.all())
                     else:
                         cleaned_data[field] = getattr(self.instance, field)
 
