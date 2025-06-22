@@ -4,6 +4,7 @@ from unidecode import unidecode
 from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from django.db import models, IntegrityError, transaction
 from django.db.models import F, Q
 from django.dispatch import receiver
@@ -25,7 +26,7 @@ except ImportError:
         "Using Django's default User model as a fallback for ForeignKey relations if AUTH_USER_MODEL is not set."
     )
     from django.contrib.auth.models import User as DjangoUser
-    AuthUser = settings.AUTH_USER_MODEL if hasattr(settings, 'AUTH_USER_MODEL') else DjangoUser
+    AuthUser = get_user_model()
 
     class DummyTeam(models.Model):
         name = models.CharField(max_length=100)

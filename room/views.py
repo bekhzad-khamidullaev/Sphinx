@@ -216,65 +216,10 @@ def message_search_view(request, slug):
         is_deleted=False
     ).select_related('user', 'reply_to__user').prefetch_related('reactions__user').order_by('-date_added')[:20] # Убрал __userprofile
     
-    messages_data = []
-    for msg in results_qs:
-        user_avatar_url = None
-        if hasattr(msg.user, 'image') and msg.user.image and hasattr(msg.user.image, 'url'):
-            user_avatar_url = request.build_absolute_uri(msg.user.image.url) if request else msg.user.image.url
-        
-        reply_user_avatar_url = None
-        if msg.reply_to and msg.reply_to.user:
-            if hasattr(msg.reply_to.user, 'image') and msg.reply_to.user.image and hasattr(msg.reply_to.user.image, 'url'):
-                 reply_user_avatar_url = request.build_absolute_uri(msg.reply_to.user.image.url) if request else msg.reply_to.user.image.url
+    serializer = MessageSerializer(
+        results_qs,
+        many=True,
+        context={'request': request, 'consumer_user': request.user}
+    )
+    return JsonResponse({'success': True, 'messages': serializer.data})
 
-        user_data = {
-            'id': msg.user.id,
-            'username': msg.user.username,
-            'display_name': msg.user.display_name if hasattr(msg.user, 'display_name') else msg.user.username,
-            'avatar_url': user_avatar_url
-        }
-        reply_data = None
-        if msg.reply_to:
-            reply_user_data = {
-                'id': msg.reply_to.user.id,
-                'username': msg.reply_to.user.username,
-                'display_name': msg.reply_to.user.display_name if hasattr(msg.reply_to.user, 'display_name') else msg.reply_to.user.username,
-                'avatar_url': reply_user_avatar_url
-            }
-            reply_data = {
-                'id': str(msg.reply_to.id),
-                'user': reply_user_data,
-                'content_preview': msg.reply_to.content[:70] + '...' if msg.reply_to.content and len(msg.reply_to.content) > 70 else (_("[Файл]") if msg.reply_to.file else ""),
-                'has_file': bool(msg.reply_to.file),
-                'is_deleted': msg.reply_to.is_deleted,
-            }
-        file_data = None
-        if msg.file and hasattr(msg.file, 'url'):
-            try:
-                file_data = {'url': request.build_absolute_uri(msg.file.url) if request else msg.file.url, 'name': msg.get_filename(), 'size': msg.file.size}
-            except ValueError:
-                 file_data = {'url': msg.file.url, 'name': msg.get_filename(), 'size': msg.file.size}
-            except Exception:
-                 file_data = {'url': '#', 'name': _('Ошибка файла'), 'size': None}
-        
-        reactions_summary = {}
-        for r_obj in msg.reactions.all():
-            if r_obj.emoji not in reactions_summary:
-                reactions_summary[r_obj.emoji] = {'count': 0, 'users': []}
-            reactions_summary[r_obj.emoji]['count'] +=1
-            reactions_summary[r_obj.emoji]['users'].append(r_obj.user.username)
-
-        messages_data.append({
-            'id': str(msg.id),
-            'user': user_data,
-            'room_slug': room.slug,
-            'content': msg.content if not msg.is_deleted else (_("Сообщение удалено") if msg.is_deleted else ""),
-            'file': file_data,
-            'timestamp': msg.date_added.isoformat(),
-            'edited_at': msg.edited_at.isoformat() if msg.edited_at else None,
-            'is_deleted': msg.is_deleted,
-            'reply_to': reply_data,
-            'reactions': reactions_summary,
-        })
-
-    return JsonResponse({'success': True, 'messages': messages_data})

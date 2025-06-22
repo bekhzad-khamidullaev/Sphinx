@@ -7,6 +7,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -16,7 +17,7 @@ from .utils import get_redis_connection, get_room_online_users_redis_key, FileUp
 from .serializers import BasicUserSerializer # Используем сериализаторы для данных
 
 logger = logging.getLogger(__name__)
-User = settings.AUTH_USER_MODEL
+User = get_user_model()
 
 # --- Константы типов сообщений WebSocket ---
 MSG_TYPE_CLIENT_SEND_MESSAGE = 'send_message'
@@ -144,6 +145,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not room.private:
             return True
         return room.creator_id == user_instance.id or room.participants.filter(pk=user_instance.pk).exists()
+
+    async def _verify_room_access(self) -> Room:
+        room_obj = await self._get_room_from_db(self.room_slug)
+        if not room_obj or not await self._check_room_access(room_obj, self.user):
+            raise ValueError(_("Доступ к комнате запрещен."))
+        return room_obj
 
     @database_sync_to_async
     def _get_user_basic_data(self, user_instance: User) -> dict:
@@ -444,6 +451,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self._send_error_to_client(_("Неизвестный тип сообщения."), client_msg_id)
 
     async def handle_client_send_message(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         content = payload.get('content', '').strip()
         reply_to_id_str = payload.get('reply_to_id')
         reply_to_id = uuid.UUID(reply_to_id_str) if reply_to_id_str else None
@@ -457,6 +465,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self._broadcast_message_object_to_group(MSG_TYPE_SERVER_NEW_MESSAGE, new_message, client_msg_id_ack=client_msg_id)
 
     async def handle_client_edit_message(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         message_id_str = payload.get('message_id')
         new_content = payload.get('content', '').strip()
 
@@ -467,7 +476,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         message_obj = await self._get_message_from_db(message_id)
         if not message_obj: raise ValueError(_("Сообщение для редактирования не найдено."))
-        if message_obj.user_id != self.user.id and not self.user.is_staff: # Сравниваем ID
+        if message_obj.user_id != self.user.id and not self.user.has_perm('room.change_message'):
             raise ValueError(_("Вы не можете редактировать это сообщение."))
         if message_obj.is_deleted: raise ValueError(_("Нельзя редактировать удаленное сообщение."))
 
@@ -475,6 +484,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self._broadcast_message_object_to_group(MSG_TYPE_SERVER_UPDATE_MESSAGE, edited_message, client_msg_id_ack=client_msg_id)
 
     async def handle_client_delete_message(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         message_id_str = payload.get('message_id')
         if not message_id_str: raise ValueError(_("Отсутствует ID сообщения для удаления."))
         try: message_id = uuid.UUID(message_id_str)
@@ -482,13 +492,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         message_obj = await self._get_message_from_db(message_id)
         if not message_obj: raise ValueError(_("Сообщение для удаления не найдено."))
-        if message_obj.user_id != self.user.id and not self.user.is_staff: # Сравниваем ID
+        if message_obj.user_id != self.user.id and not self.user.has_perm('room.delete_message'):
             raise ValueError(_("Вы не можете удалить это сообщение."))
 
         deleted_message = await self._delete_message_in_db(message_obj)
         await self._broadcast_message_object_to_group(MSG_TYPE_SERVER_UPDATE_MESSAGE, deleted_message, client_msg_id_ack=client_msg_id)
 
     async def handle_client_add_reaction(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         message_id_str = payload.get('message_id')
         emoji = payload.get('emoji', '').strip()
         if not message_id_str or not emoji: raise ValueError(_("Отсутствует ID сообщения или эмодзи для реакции."))
@@ -504,6 +515,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self._broadcast_reaction_update_to_group(message_id, reactions_summary)
 
     async def handle_client_remove_reaction(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         message_id_str = payload.get('message_id')
         emoji = payload.get('emoji', '').strip()
         if not message_id_str or not emoji: raise ValueError(_("Отсутствует ID сообщения или эмодзи для удаления реакции."))
@@ -520,6 +532,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self._broadcast_reaction_update_to_group(message_id, reactions_summary)
 
     async def handle_client_send_file(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         file_data_base64 = payload.get('file_data')
         filename = payload.get('filename')
         content = payload.get('content', '') # Опциональный текст к файлу
@@ -540,6 +553,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self._broadcast_message_object_to_group(MSG_TYPE_SERVER_NEW_MESSAGE, new_message, client_msg_id_ack=client_msg_id)
 
     async def handle_client_mark_read(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         last_message_id_str = payload.get('last_visible_message_id')
         last_message_id = uuid.UUID(last_message_id_str) if last_message_id_str else None
         try:
@@ -549,6 +563,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self._send_error_to_client(str(e), client_msg_id)
 
     async def handle_client_load_older(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         before_message_id_str = payload.get('before_message_id')
         limit = int(payload.get('limit', getattr(settings, 'CHAT_MESSAGES_PAGE_SIZE', 50)))
 
@@ -564,5 +579,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def handle_client_typing_status(self, payload: dict, client_msg_id: str | None):
+        await self._verify_room_access()
         is_typing = bool(payload.get('is_typing', False))
         await self._broadcast_typing_status_to_group(is_typing)

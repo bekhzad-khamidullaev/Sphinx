@@ -12,10 +12,8 @@ import uuid
 from .models import Room, Message, Reaction
 from .serializers import RoomSerializer, MessageSerializer, BasicUserSerializer # ReactionSerializer не используется напрямую здесь
 from .permissions import IsRoomParticipantOrCreatorOrReadOnly, IsMessageSenderOrRoomCreatorOrReadOnly
-from django.contrib.auth.models import User as DjangoUser
-from django.conf import settings
 
-User = settings.AUTH_USER_MODEL if hasattr(settings, 'AUTH_USER_MODEL') else DjangoUser
+User = get_user_model()
 class RoomViewSet(viewsets.ModelViewSet):
     serializer_class = RoomSerializer
     permission_classes = [permissions.IsAuthenticated, IsRoomParticipantOrCreatorOrReadOnly]
