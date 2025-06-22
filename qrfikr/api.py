@@ -7,14 +7,7 @@ class QRCodeLinkViewSet(viewsets.ModelViewSet):
     serializer_class = QRCodeLinkSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class ReviewViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Review.objects.select_related('qr_code_link').all()
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        request = self.request
-        serializer.save(
-            ip_address=request.META.get('REMOTE_ADDR'),
-            user_agent=request.META.get('HTTP_USER_AGENT', '')
-        )
+    permission_classes = [permissions.IsAdminUser]
