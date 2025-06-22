@@ -199,6 +199,8 @@ REST_FRAMEWORK = {
 
 # --- Swagger ---
 SWAGGER_SETTINGS = {
+    "LOGIN_URL": "user_profiles:login",
+    "LOGOUT_URL": "user_profiles:logout",
     "SECURITY_DEFINITIONS": {
         "Bearer": {
             "type": "apiKey",
