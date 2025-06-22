@@ -41,6 +41,42 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
+class TaskQuerySet(models.QuerySet):
+    """Custom QuerySet providing common filters for Task objects."""
+
+    ACTIVE_STATUSES = (
+        "backlog",
+        "new",
+        "in_progress",
+        "on_hold",
+    )
+
+    def active(self):
+        return self.filter(status__in=self.ACTIVE_STATUSES)
+
+    def completed(self):
+        return self.filter(status="completed")
+
+    def overdue(self):
+        return self.filter(status="overdue")
+
+
+class TaskManager(models.Manager):
+    """Manager using :class:`TaskQuerySet`."""
+
+    def get_queryset(self):
+        return TaskQuerySet(self.model, using=self._db)
+
+    def active(self):
+        return self.get_queryset().active()
+
+    def completed(self):
+        return self.get_queryset().completed()
+
+    def overdue(self):
+        return self.get_queryset().overdue()
+
 class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
@@ -216,6 +252,8 @@ class Task(BaseModel):
         CANCELLED = "cancelled", _("Отменена")
         OVERDUE = "overdue", _("Просрочена")
         # CLOSED = "closed", _("Закрыта") # After completed, for archival
+
+    objects = TaskManager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks", verbose_name=_("Проект"), db_index=True)
     category = models.ForeignKey(TaskCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks", verbose_name=_("Категория"), db_index=True)
