@@ -1,14 +1,15 @@
 # checklists/models.py
 import logging
 import uuid
-from django.db import models
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
 from taggit.managers import TaggableManager
-from taggit.models import TagBase, GenericUUIDTaggedItemBase
+from taggit.models import GenericUUIDTaggedItemBase, TagBase
 
 try:
     from tasks.models import Task, TaskCategory
@@ -124,9 +125,16 @@ class Location(models.Model):
 
     @property
     def full_name(self):
-        if self.parent:
-            return f"{self.parent.full_name} / {self.name}"
-        return self.name
+        parts = []
+        current = self
+        visited = set()
+        while current is not None and current.pk not in visited:
+            parts.append(current.name)
+            visited.add(current.pk)
+            current = current.parent
+        if current is not None:
+            parts.append("...")
+        return " / ".join(reversed(parts))
 
     def __str__(self):
         return self.full_name
