@@ -3,11 +3,9 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model # Используем get_user_model для User
 from django.utils.translation import gettext_lazy as _
 from django.templatetags.static import static # Для дефолтного аватара (если нужен)
-from django.contrib.auth.models import User as DjangoUser
 from .models import Room, Message, Reaction, MessageReadStatus
-from django.conf import settings
 
-User = settings.AUTH_USER_MODEL if hasattr(settings, 'AUTH_USER_MODEL') else DjangoUser
+User = get_user_model()
 
 class BasicUserSerializer(serializers.ModelSerializer):
     """ Сериализатор для краткой информации о пользователе. """
@@ -18,9 +16,9 @@ class BasicUserSerializer(serializers.ModelSerializer):
         model = User # Указываем вашу кастомную модель User
         fields = ['id', 'username', 'display_name', 'avatar_url']
 
-    def get_avatar_url(self, obj: DjangoUser) -> str | None:
+    def get_avatar_url(self, obj) -> str | None:
         request = self.context.get('request')
-        if obj.image and hasattr(obj.image, 'url') and obj.image.url: # Проверяем, что URL не пустой
+        if hasattr(obj, 'image') and obj.image and hasattr(obj.image, 'url') and obj.image.url:
             if request:
                 try:
                     return request.build_absolute_uri(obj.image.url)

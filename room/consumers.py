@@ -7,6 +7,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -16,7 +17,7 @@ from .utils import get_redis_connection, get_room_online_users_redis_key, FileUp
 from .serializers import BasicUserSerializer # Используем сериализаторы для данных
 
 logger = logging.getLogger(__name__)
-User = settings.AUTH_USER_MODEL
+User = get_user_model()
 
 # --- Константы типов сообщений WebSocket ---
 MSG_TYPE_CLIENT_SEND_MESSAGE = 'send_message'
