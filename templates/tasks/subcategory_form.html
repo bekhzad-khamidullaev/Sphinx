@@ -39,10 +39,10 @@
         {% endif %}
         <div class="flex justify-end items-center space-x-3 pt-6 mt-6 border-t border-gray-200">
             <a href="{% url 'tasks:subcategory_list' %}"
-               class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+               class="btn btn-secondary">
                 {% trans 'Отмена' %}
             </a>
-            <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition active:scale-95 shadow-sm inline-flex items-center">
+            <button type="submit" class="btn btn-primary inline-flex items-center">
                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4" aria-hidden="true"></i>
                 {% if form.instance.pk %}{% trans "Сохранить изменения" %}{% else %}{% trans "Создать подкатегорию" %}{% endif %}
             </button>

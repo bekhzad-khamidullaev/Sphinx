@@ -11,7 +11,7 @@
     </h1>
     {% if perms.room.add_room %} {# Стандартная проверка прав Django #}
     <a href="{% url 'room:create_room' %}"
-       class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition active:scale-95 shadow-sm inline-flex items-center">
+       class="btn btn-primary">
         <i class="fas fa-plus mr-2"></i> {% trans 'Создать новую комнату' %}
     </a>
     {% endif %}
@@ -37,7 +37,7 @@
         <p class="text-sm mt-1">{% trans "Вы можете создать новую комнату." %}</p>
         {% if perms.room.add_room %}
         <div class="mt-4">
-            <a href="{% url 'room:create_room' %}" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition active:scale-95 shadow-sm inline-flex items-center">
+            <a href="{% url 'room:create_room' %}" class="btn btn-primary inline-flex items-center">
                 <i class="fas fa-plus mr-2"></i> {% trans 'Создать первую комнату' %}
             </a>
         </div>
