@@ -199,7 +199,7 @@ class SearchSuggestionsView(APIView):
                 'icon': 'user', 'color': 'orange'
             } for u in users_qs])
 
-            if hasattr(Team, 'objects') and not isinstance(Team, type(models.Model)):
+            if hasattr(Team, '_meta') and not Team._meta.abstract:
                 teams_qs = Team.objects.filter(name__icontains=query)[:limit]
                 suggestions.extend([{
                     'type': 'team', 'id': t.id, 'title': t.name, 'context': _("Команда"),
@@ -207,7 +207,7 @@ class SearchSuggestionsView(APIView):
                     'icon': 'users-cog', 'color': 'pink'
                 } for t in teams_qs])
 
-            if hasattr(Department, 'objects') and not isinstance(Department, type(models.Model)):
+            if hasattr(Department, '_meta') and not Department._meta.abstract:
                 depts_qs = Department.objects.filter(name__icontains=query)[:limit]
                 suggestions.extend([{
                     'type': 'department', 'id': d.id, 'title': d.name, 'context': _("Отдел"),

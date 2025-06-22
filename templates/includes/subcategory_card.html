@@ -1,0 +1,27 @@
+{% load i18n %}
+<li class="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden" id="subcategory-{{ subcategory.pk }}">
+    <div class="px-4 py-4 sm:px-6">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">
+            <a href="{{ subcategory.get_absolute_url }}" class="hover:underline">{{ subcategory.name }}</a>
+        </h3>
+        <p class="mt-1 text-sm text-gray-500">
+            <strong>{% trans 'Категория' %}:</strong> {{ subcategory.category.name }}
+        </p>
+        {% if subcategory.description %}
+        <p class="mt-1 text-sm text-gray-500">{{ subcategory.description|truncatechars:100 }}</p>
+        {% endif %}
+    </div>
+    <div class="border-t border-gray-200 bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
+        <span class="text-sm text-gray-500">
+            {% blocktrans count=subcategory.tasks.count %}{{ count }} задача{% plural %}{{ count }} задач{% endblocktrans %}
+        </span>
+        <div class="flex space-x-2">
+            <a href="{% url 'tasks:subcategory_update' pk=subcategory.pk %}" class="px-2 py-1 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50" aria-label="{% trans 'Редактировать' %}">
+                <i class="fas fa-edit" aria-hidden="true"></i>
+            </a>
+            <a href="{% url 'tasks:subcategory_delete' pk=subcategory.pk %}" class="px-2 py-1 rounded-md text-sm font-medium text-red-600 bg-white border border-red-300 hover:bg-red-50" aria-label="{% trans 'Удалить' %}">
+                <i class="fas fa-trash" aria-hidden="true"></i>
+            </a>
+        </div>
+    </div>
+</li>

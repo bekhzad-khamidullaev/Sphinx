@@ -68,6 +68,9 @@
                             {% if perms.tasks.view_category %}
                             <li><a href="{% url 'tasks:category_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Категории' %}</a></li>
                             {% endif %}
+                            {% if perms.tasks.view_tasksubcategory %}
+                            <li><a href="{% url 'tasks:subcategory_list' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Подкатегории' %}</a></li>
+                            {% endif %}
                             <li><a href="{% url 'dashboards:task_dashboard' %}" class="block px-4 py-2 hover:bg-gray-100">{% trans 'Дашборд' %}</a></li>
                         </ul>
                     </div>
@@ -220,6 +223,11 @@
             <a href="{% url 'tasks:category_list' %}"
                 class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
                     class="fas fa-folder w-5 mr-3 text-teal-500"></i> {% trans 'Категории' %}</a>
+            {% endif %}
+            {% if perms.tasks.view_tasksubcategory %}
+            <a href="{% url 'tasks:subcategory_list' %}"
+                class="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"><i
+                    class="fas fa-sitemap w-5 mr-3 text-teal-500"></i> {% trans 'Подкатегории' %}</a>
             {% endif %}
             {% if perms.tasks.view_task %}
             <a href="{% url 'tasks:task_list' %}"

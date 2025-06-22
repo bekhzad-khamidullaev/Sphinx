@@ -218,10 +218,10 @@
                         $subcategory.select2({...select2BaseOpts, placeholder: currentPlaceholder });
 
                         if (catId) {
-                            const apiUrl = `{% url 'tasks:subcategory-api-list' %}?category=${catId}&select2=true`;
+                            const apiUrl = `{% url 'tasks:ajax_load_subcategories' %}?category_id=${catId}`;
                             $.getJSON(apiUrl).done(function(data) {
                                 subcategorySelect.disabled = false;
-                                const options = Array.isArray(data) ? data : (data.results || []);
+                                const options = data.map(obj => ({ id: obj.id, text: obj.name }));
                                 currentPlaceholder = options.length > 0 ? placeholders.select : placeholders.empty;
 
                                 if ($subcategory.hasClass("select2-hidden-accessible")) { $subcategory.select2('destroy'); }

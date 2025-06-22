@@ -118,7 +118,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "subcategory", "subcategory_name",
             "status", "status_display",
             "priority", "priority_display",
-            "start_date", "deadline", "completion_date", 
+            "start_date", "due_date", "completion_date",
             "estimated_time",
             "team", "team_name", # Added
             "department", "department_name", # Added
