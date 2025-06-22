@@ -14,7 +14,7 @@ router.register(r'jobtitles', views.JobTitleViewSet, basename='jobtitle-api')
 
 urlpatterns = [
     path('', views.base_login_view, name='base_login'),
-    path('login/', views.user_login_redirect, name='login_redirect'),
+    path('login/', views.user_login_redirect, name='login'),
     path('logout/', views.user_logout_view, name='logout'),
 
     path('api/v1/', include(router.urls)),
