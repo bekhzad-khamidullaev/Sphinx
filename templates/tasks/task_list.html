@@ -15,37 +15,49 @@
 </div>
 {% endblock %}
 
-
 {% block list_actions %}
-<div class="d-flex align-items-center ms-auto gap-2">
-    <div class="btn-group" role="group">
-        <a href="{{ create_url }}" class="btn btn-primary">
-            <i class="fas fa-plus me-2" aria-hidden="true"></i> {% trans 'Создать задачу' %}
+<div class="flex items-center ml-4">
+    <div class="inline-flex gap-2">
+        <a href="{{ create_url }}"
+           class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center">
+            <i class="fas fa-plus mr-2" aria-hidden="true"></i> {% trans 'Создать задачу' %}
         </a>
-        <button type="button" id="toggleViewBtn" class="btn btn-outline-primary" aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
-             <i id="viewIcon" class="fas fa-columns me-2" aria-hidden="true"></i>
-             <span id="viewText">{% trans 'Канбан' %}</span>
+        <button type="button" id="toggleViewBtn"
+                class="px-4 py-2 rounded-md text-sm font-medium text-blue-700 bg-white border border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center"
+                aria-pressed="false"
+                data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
+            <i id="viewIcon" class="fas fa-columns mr-2" aria-hidden="true"></i>
+            <span id="viewText">{% trans 'Канбан' %}</span>
         </button>
     </div>
 
-    <div id="column-toggle-dropdown-wrapper" class="position-relative d-none">
-        <button id="dropdownCheckboxButton" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" type="button">
-            <i class="fas fa-eye-slash me-2" aria-hidden="true"></i> {% trans 'Колонки' %}
+    <div id="column-toggle-dropdown-wrapper" class="relative hidden">
+        <button id="dropdownCheckboxButton"
+                class="ml-2 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center"
+                data-bs-toggle="dropdown" type="button">
+            <i class="fas fa-eye-slash mr-2" aria-hidden="true"></i> {% trans 'Колонки' %}
         </button>
-        <div id="dropdownColumnCheckbox" class="dropdown-menu p-3">
-            <ul class="list-unstyled" aria-labelledby="dropdownCheckboxButton">
+        <div id="dropdownColumnCheckbox"
+             class="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg p-3 z-50">
+            <ul class="space-y-2">
                 <li>
-                    <button type="button" id="resetHiddenColumnsBtn" class="btn btn-link p-0">
-                         <i class="fas fa-eye me-2" aria-hidden="true"></i> {% trans 'Показать все' %}
+                    <button type="button" id="resetHiddenColumnsBtn"
+                            class="text-blue-600 hover:underline text-sm inline-flex items-center">
+                        <i class="fas fa-eye mr-2" aria-hidden="true"></i> {% trans 'Показать все' %}
                     </button>
                 </li>
-                <hr class="dropdown-divider">
+                <li><hr class="border-t border-gray-200"></li>
                 {% for status_val, status_name in status_choices_list %}
                 <li>
-                    <div class="form-check">
-                        <input id="checkbox-column-{{ status_val }}" class="form-check-input toggle-column-checkbox" type="checkbox" value="{{ status_val }}" data-status="{{ status_val }}" checked>
-                        <label for="checkbox-column-{{ status_val }}" class="form-check-label">{{ status_name }}</label>
-                    </div>
+                    <label for="checkbox-column-{{ status_val }}" class="inline-flex items-center space-x-2 text-sm">
+                        <input id="checkbox-column-{{ status_val }}"
+                               class="form-checkbox toggle-column-checkbox"
+                               type="checkbox"
+                               value="{{ status_val }}"
+                               data-status="{{ status_val }}"
+                               checked>
+                        <span>{{ status_name }}</span>
+                    </label>
                 </li>
                 {% endfor %}
             </ul>
@@ -54,20 +66,25 @@
 </div>
 {% endblock %}
 
-
 {% block list_actions_mobile %}
-<a href="{{ create_url }}" class="flex-fill btn btn-primary">
-    <i class="fas fa-plus me-2" aria-hidden="true"></i> {% trans 'Создать задачу' %}
+<a href="{{ create_url }}"
+   class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
+    <i class="fas fa-plus mr-2" aria-hidden="true"></i> {% trans 'Создать задачу' %}
 </a>
-<button type="button" id="toggleViewBtnMobile" class="flex-fill btn btn-outline-primary" aria-pressed="false" data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
-    <i id="viewIconMobile" class="fas fa-columns me-2" aria-hidden="true"></i>
+<button type="button" id="toggleViewBtnMobile"
+        class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-blue-700 bg-white border border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center justify-center"
+        aria-pressed="false"
+        data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
+    <i id="viewIconMobile" class="fas fa-columns mr-2" aria-hidden="true"></i>
     <span id="viewTextMobile">{% trans 'Канбан' %}</span>
 </button>
 {% endblock %}
 
+
+
 {% block list_content %}
 {% include 'includes/kanban_board.html' with tasks_by_status=tasks_by_status_kanban status_mapping_dict=status_mapping_dict %}
-{% include 'includes/task_card_list.html' with tasks_for_cards=tasks_page_obj %}
+<!-- {% include 'includes/task_card_list.html' with tasks_for_cards=tasks_page_obj %} -->
 {% include 'includes/task_list_table.html' with tasks_for_table=tasks_page_obj status_choices_list=status_choices_list current_sort=current_sort request=request %}
 
 {% if is_paginated %}
@@ -82,11 +99,11 @@
 {{ status_mapping_json|json_script:"status-mapping-data" }}
 
 <script id="task-list-config" type="application/json">
-{
-    "initialView": "{{ request.COOKIES.task_view_mode|default:'kanban' }}",
-    "updateStatusUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_update_task_status' task_id=0 %}{% endfilter %}",
-    "deleteTaskUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_delete_task' task_id=0 %}{% endfilter %}"
-}
+    {
+        "initialView": "{{ request.COOKIES.task_view_mode|default:'kanban' }}",
+        "updateStatusUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_update_task_status' task_id=0 %}{% endfilter %}",
+        "deleteTaskUrlTemplate": "{% filter escapejs %}{% url 'tasks:ajax_delete_task' task_id=0 %}{% endfilter %}"
+    }
 </script>
 
 {% endblock %}
