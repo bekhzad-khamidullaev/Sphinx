@@ -205,7 +205,7 @@ class SearchSuggestionsView(APIView): # (No direct changes for TaskAssignment, b
             } for u in users_qs])
 
             # Teams
-            if hasattr(Team, 'objects'): # Check if Team model is more than a dummy
+            if hasattr(Team, '_meta') and not Team._meta.abstract:
                 teams_qs = Team.objects.filter(name__icontains=query)[:limit]
                 suggestions.extend([{
                     'type': 'team', 'id': t.id, 'title': t.name, 'context': _("Команда"),
@@ -214,7 +214,7 @@ class SearchSuggestionsView(APIView): # (No direct changes for TaskAssignment, b
                 } for t in teams_qs])
 
             # Departments
-            if hasattr(Department, 'objects'): # Check if Department model is more than a dummy
+            if hasattr(Department, '_meta') and not Department._meta.abstract:
                 depts_qs = Department.objects.filter(name__icontains=query)[:limit]
                 suggestions.extend([{
                     'type': 'department', 'id': d.id, 'title': d.name, 'context': _("Отдел"),

@@ -290,6 +290,7 @@ class Task(BaseModel):
                 project_code_str = "UNKP"
 
         last_task_qs = Task.objects.filter(task_number__startswith=f"{project_code_str}-")
+        new_task_number = None
         for attempt in range(10):
             try:
                 with transaction.atomic():
@@ -304,7 +305,8 @@ class Task(BaseModel):
                     new_task_number = f"{project_code_str}-{next_num:04d}"
                     if not Task.objects.filter(task_number=new_task_number).exists(): return new_task_number
                     logger.info(f"Task number collision for {new_task_number} (attempt {attempt+1}). Will retry.")
-            except IntegrityError: logger.warning(f"IntegrityError for task number {new_task_number} (attempt {attempt+1}). Retrying.")
+            except IntegrityError:
+                logger.warning(f"IntegrityError during task number generation (attempt {attempt+1}).")
             except Exception as e: logger.error(f"Error generating task number (attempt {attempt+1}): {e}")
         logger.error(f"Failed to generate unique task number for {project_code_str} after multiple attempts. Using timestamp fallback.")
         timestamp_part = timezone.now().strftime('%Y%m%d%H%M%S%f')[:17]
