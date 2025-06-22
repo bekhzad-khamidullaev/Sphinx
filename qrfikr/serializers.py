@@ -5,7 +5,6 @@ class QRCodeLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = QRCodeLink
         fields = '__all__'
-        read_only_fields = ('location',)
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:

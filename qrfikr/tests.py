@@ -20,7 +20,7 @@ class ReviewAPITests(APITestCase):
         self.qr = QRCodeLink.objects.create(point=self.point)
 
 
-    def test_create_review(self):
+    def test_create_review_forbidden(self):
         url = reverse('qrfikr:review-list')
         data = {
             'qr_code_link': str(self.qr.id),
@@ -28,8 +28,19 @@ class ReviewAPITests(APITestCase):
             'text': 'Great'
         }
         response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Review.objects.count(), 1)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(Review.objects.count(), 0)
+
+    def test_admin_can_view_reviews(self):
+        Review.objects.create(qr_code_link=self.qr, rating=4)
+        admin = User.objects.create_superuser(
+            username='admin', password='adminpass', email='admin@example.com'
+        )
+        self.client.login(username='admin', password='adminpass')
+        url = reverse('qrfikr:review-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
 
 
 class QRCodeLinkModelTests(APITestCase):
