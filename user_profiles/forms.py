@@ -346,6 +346,21 @@ class UserUpdateForm(forms.ModelForm):
                     raise ValidationError(_("Нельзя лишить статуса суперпользователя единственного суперпользователя в системе."))
         return is_superuser_val
 
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if not (self.request_user and self.request_user.is_superuser):
+            restricted_fields = ['is_active', 'is_staff', 'is_superuser', 'groups']
+            for field in restricted_fields:
+                if field in self.changed_data:
+                    self.add_error(field, _('Только суперпользователь может менять это поле.'))
+                    if field == 'groups':
+                        cleaned_data[field] = list(self.instance.groups.all())
+                    else:
+                        cleaned_data[field] = getattr(self.instance, field)
+
+        return cleaned_data
+
 
 class UserProfileEditForm(forms.ModelForm):
     first_name = forms.CharField(max_length=150, required=False, label=_("Имя"), widget=forms.TextInput(attrs={'class': TEXT_INPUT_CLASSES}))
