@@ -35,10 +35,11 @@ class TaskAssignmentInline(admin.TabularInline):
     created_at_formatted.short_description = _("Дата назначения")
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
         if db_field.name == "assigned_by":
-            kwargs['initial'] = request.user.id
-            kwargs['disabled'] = True
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+            field.initial = request.user.id
+            field.disabled = True
+        return field
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -266,26 +267,6 @@ class TaskAdmin(admin.ModelAdmin):
         if hasattr(obj, '_initiator_user_id'): delattr(obj, '_initiator_user_id')
         if hasattr(obj, '_called_from_form_save'): delattr(obj, '_called_from_form_save')
 
-    def save_related(self, request, form, formsets, change):
-        task_instance = form.instance
-        initiator_id = request.user.id
-        setattr(task_instance, '_initiator_user_id', initiator_id)
-
-        for formset in formsets:
-            instances = formset.save(commit=False)
-            for inst in instances:
-                if isinstance(inst, TaskAssignment):
-                    if not inst.pk and not inst.assigned_by_id: inst.assigned_by = request.user
-                elif isinstance(inst, TaskPhoto):
-                    if not inst.pk and not inst.uploaded_by_id: inst.uploaded_by = request.user
-                setattr(inst, '_initiator_user_id', initiator_id)
-                inst.save()
-            formset.save_m2m()
-            for inst in instances:
-                if hasattr(inst, '_initiator_user_id'): delattr(inst, '_initiator_user_id')
-
-        super().save_related(request, form, formsets, change)
-        if hasattr(task_instance, '_initiator_user_id'): delattr(task_instance, '_initiator_user_id')
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related(Prefetch('assignments', queryset=TaskAssignment.objects.select_related('user')))
