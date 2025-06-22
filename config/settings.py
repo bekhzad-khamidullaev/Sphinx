@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "reviews",
     "leaves",
     "performance",
+    "agents",
 
     "channels",
     "corsheaders",
