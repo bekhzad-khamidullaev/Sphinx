@@ -18,12 +18,11 @@
 {% block list_actions %}
 <div class="flex items-center ml-4">
     <div class="inline-flex gap-2">
-        <a href="{{ create_url }}"
-           class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center">
+        <a href="{{ create_url }}" class="btn btn-primary">
             <i class="fas fa-plus mr-2" aria-hidden="true"></i> {% trans 'Создать задачу' %}
         </a>
         <button type="button" id="toggleViewBtn"
-                class="px-4 py-2 rounded-md text-sm font-medium text-blue-700 bg-white border border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center"
+                class="btn btn-secondary text-blue-700 border-blue-500"
                 aria-pressed="false"
                 data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
             <i id="viewIcon" class="fas fa-columns mr-2" aria-hidden="true"></i>
@@ -33,7 +32,7 @@
 
     <div id="column-toggle-dropdown-wrapper" class="relative hidden">
         <button id="dropdownCheckboxButton"
-                class="ml-2 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center"
+                class="btn btn-primary ml-2"
                 data-bs-toggle="dropdown" type="button">
             <i class="fas fa-eye-slash mr-2" aria-hidden="true"></i> {% trans 'Колонки' %}
         </button>
@@ -68,11 +67,11 @@
 
 {% block list_actions_mobile %}
 <a href="{{ create_url }}"
-   class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center justify-center">
+   class="flex-1 btn btn-primary justify-center">
     <i class="fas fa-plus mr-2" aria-hidden="true"></i> {% trans 'Создать задачу' %}
 </a>
 <button type="button" id="toggleViewBtnMobile"
-        class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-blue-700 bg-white border border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center justify-center"
+        class="flex-1 btn btn-secondary text-blue-700 border-blue-500 justify-center"
         aria-pressed="false"
         data-kanban-text="{% trans 'Канбан' %}" data-list-text="{% trans 'Список' %}">
     <i id="viewIconMobile" class="fas fa-columns mr-2" aria-hidden="true"></i>

@@ -136,11 +136,11 @@
 
         <div class="flex justify-end items-center space-x-3 pt-8 mt-8 border-t border-gray-200">
             <a href="{% if object and object.pk %}{{ object.get_absolute_url }}{% elif task_instance and task_instance.pk %}{{ task_instance.get_absolute_url }}{% else %}{% url 'tasks:task_list' %}{% endif %}"
-               class="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 transition-colors shadow-sm">
+               class="btn btn-secondary">
                 {% trans 'Отмена' %}
             </a>
             <button type="submit"
-                    class="px-5 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-colors shadow-md inline-flex items-center">
+                    class="btn btn-primary inline-flex items-center">
                 <i class="fa-solid fa-floppy-disk mr-2 h-4 w-4" aria-hidden="true"></i>
                 {{ form_action_label }}
             </button>

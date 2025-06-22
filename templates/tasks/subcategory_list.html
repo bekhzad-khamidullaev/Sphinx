@@ -11,9 +11,8 @@
 
 {% block list_actions %}
     <a href="{% url 'tasks:subcategory_create' %}"
-        class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center ml-3"
-        aria-label="{% trans 'Создать новую подкатегорию' %}"
-    >
+        class="btn btn-primary ml-3"
+        aria-label="{% trans 'Создать новую подкатегорию' %}">
         <i class="fas fa-plus mr-2" aria-hidden="true"></i> {% trans 'Создать подкатегорию' %}
     </a>
 {% endblock %}
