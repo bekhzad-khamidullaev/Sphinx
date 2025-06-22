@@ -35,17 +35,19 @@ class TaskAssignmentInline(admin.TabularInline):
     created_at_formatted.short_description = _("Дата назначения")
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
         if db_field.name == "assigned_by":
-            kwargs['initial'] = request.user.id
-            kwargs['disabled'] = True
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+            field.initial = request.user.id
+            field.disabled = True
+        return field
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
         for assignment_instance in instances:
             if not assignment_instance.pk and not assignment_instance.assigned_by_id:
                 assignment_instance.assigned_by = request.user
-        formset.save()
+            assignment_instance.save()
+        formset.save_m2m()
 
 
 class TaskPhotoInline(admin.TabularInline):
@@ -94,7 +96,8 @@ class TaskCommentInline(admin.TabularInline):
             try:
                 link = reverse(f"admin:{obj.author._meta.app_label}_{obj.author._meta.model_name}_change", args=[obj.author.pk])
                 return format_html('<a href="{}">{}</a>', link, obj.author.get_username())
-            except: return obj.author.get_username()
+            except Exception:
+                return obj.author.get_username()
         return _("Аноним")
     author_link.short_description = _("Автор")
 
@@ -121,8 +124,14 @@ class ProjectAdmin(admin.ModelAdmin):
     task_count_display.short_description = _("Задач"); task_count_display.admin_order_field = 'task_count'
     def owner_link(self, obj):
         if obj.owner:
-            try: link = reverse(f"admin:{obj.owner._meta.app_label}_{obj.owner._meta.model_name}_change", args=[obj.owner.pk]); return format_html('<a href="{}">{}</a>', link, obj.owner.get_username())
-            except: return obj.owner.get_username()
+            try:
+                link = reverse(
+                    f"admin:{obj.owner._meta.app_label}_{obj.owner._meta.model_name}_change",
+                    args=[obj.owner.pk],
+                )
+                return format_html('<a href="{}">{}</a>', link, obj.owner.get_username())
+            except Exception:
+                return obj.owner.get_username()
         return "—"
     owner_link.short_description = _("Владелец"); owner_link.admin_order_field = 'owner__username'
     def start_date_formatted(self, obj): return obj.start_date.strftime("%d.%m.%Y") if obj.start_date else "—"
@@ -160,13 +169,25 @@ class TaskAssignmentAdmin(admin.ModelAdmin):
     def task_link(self, obj): link = reverse("admin:tasks_task_change", args=[obj.task.pk]); return format_html('<a href="{}">{}</a>', link, obj.task.task_number or obj.task.title[:30])
     task_link.short_description = _("Задача"); task_link.admin_order_field = 'task__task_number'
     def user_link(self, obj):
-        try: link = reverse(f"admin:{obj.user._meta.app_label}_{obj.user._meta.model_name}_change", args=[obj.user.pk]); return format_html('<a href="{}">{}</a>', link, obj.user.get_username())
-        except: return obj.user.get_username()
+        try:
+            link = reverse(
+                f"admin:{obj.user._meta.app_label}_{obj.user._meta.model_name}_change",
+                args=[obj.user.pk],
+            )
+            return format_html('<a href="{}">{}</a>', link, obj.user.get_username())
+        except Exception:
+            return obj.user.get_username()
     user_link.short_description = _("Пользователь"); user_link.admin_order_field = 'user__username'
     def assigned_by_link(self, obj):
         if obj.assigned_by:
-            try: link = reverse(f"admin:{obj.assigned_by._meta.app_label}_{obj.assigned_by._meta.model_name}_change", args=[obj.assigned_by.pk]); return format_html('<a href="{}">{}</a>', link, obj.assigned_by.get_username())
-            except: return obj.assigned_by.get_username()
+            try:
+                link = reverse(
+                    f"admin:{obj.assigned_by._meta.app_label}_{obj.assigned_by._meta.model_name}_change",
+                    args=[obj.assigned_by.pk],
+                )
+                return format_html('<a href="{}">{}</a>', link, obj.assigned_by.get_username())
+            except Exception:
+                return obj.assigned_by.get_username()
         return "—"
     assigned_by_link.short_description = _("Кем назначено"); assigned_by_link.admin_order_field = 'assigned_by__username'
     def role_display_admin(self, obj): return obj.get_role_display()
@@ -218,7 +239,7 @@ class TaskAdmin(admin.ModelAdmin):
     due_date_formatted.short_description = _("Срок"); due_date_formatted.admin_order_field = "due_date"
 
     def assigned_users_display(self, obj: Task):
-        roles = obj.assignments.select_related('user').all()
+        roles = obj.assignments.all()
         if not roles: return "—"
         role_order_map = {TaskAssignment.RoleChoices.RESPONSIBLE: 1, TaskAssignment.RoleChoices.EXECUTOR: 2, TaskAssignment.RoleChoices.REPORTER: 3, TaskAssignment.RoleChoices.WATCHER: 4}
         sorted_roles = sorted(roles, key=lambda r: role_order_map.get(r.role, 99))
@@ -233,8 +254,14 @@ class TaskAdmin(admin.ModelAdmin):
 
     def created_by_link(self, obj: Task):
         if obj.created_by:
-            try: link = reverse(f"admin:{obj.created_by._meta.app_label}_{obj.created_by._meta.model_name}_change", args=[obj.created_by.pk]); return format_html('<a href="{}">{}</a>', link, obj.created_by.get_username())
-            except: return obj.created_by.get_username()
+            try:
+                link = reverse(
+                    f"admin:{obj.created_by._meta.app_label}_{obj.created_by._meta.model_name}_change",
+                    args=[obj.created_by.pk],
+                )
+                return format_html('<a href="{}">{}</a>', link, obj.created_by.get_username())
+            except Exception:
+                return obj.created_by.get_username()
         return "—"
     created_by_link.short_description = _("Инициатор"); created_by_link.admin_order_field = 'created_by__username'
 
@@ -266,26 +293,6 @@ class TaskAdmin(admin.ModelAdmin):
         if hasattr(obj, '_initiator_user_id'): delattr(obj, '_initiator_user_id')
         if hasattr(obj, '_called_from_form_save'): delattr(obj, '_called_from_form_save')
 
-    def save_related(self, request, form, formsets, change):
-        task_instance = form.instance
-        initiator_id = request.user.id
-        setattr(task_instance, '_initiator_user_id', initiator_id)
-
-        for formset in formsets:
-            instances = formset.save(commit=False)
-            for inst in instances:
-                if isinstance(inst, TaskAssignment):
-                    if not inst.pk and not inst.assigned_by_id: inst.assigned_by = request.user
-                elif isinstance(inst, TaskPhoto):
-                    if not inst.pk and not inst.uploaded_by_id: inst.uploaded_by = request.user
-                setattr(inst, '_initiator_user_id', initiator_id)
-                inst.save()
-            formset.save_m2m()
-            for inst in instances:
-                if hasattr(inst, '_initiator_user_id'): delattr(inst, '_initiator_user_id')
-
-        super().save_related(request, form, formsets, change)
-        if hasattr(task_instance, '_initiator_user_id'): delattr(task_instance, '_initiator_user_id')
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related(Prefetch('assignments', queryset=TaskAssignment.objects.select_related('user')))
@@ -329,8 +336,14 @@ class TaskPhotoAdmin(admin.ModelAdmin):
     thumbnail_preview.short_description = _("Миниатюра")
     def uploaded_by_link(self, obj):
         if obj.uploaded_by:
-            try: link = reverse(f"admin:{obj.uploaded_by._meta.app_label}_{obj.uploaded_by._meta.model_name}_change", args=[obj.uploaded_by.pk]); return format_html('<a href="{}">{}</a>', link, obj.uploaded_by.get_username())
-            except: return obj.uploaded_by.get_username()
+            try:
+                link = reverse(
+                    f"admin:{obj.uploaded_by._meta.app_label}_{obj.uploaded_by._meta.model_name}_change",
+                    args=[obj.uploaded_by.pk],
+                )
+                return format_html('<a href="{}">{}</a>', link, obj.uploaded_by.get_username())
+            except Exception:
+                return obj.uploaded_by.get_username()
         return "—"
     uploaded_by_link.short_description = _("Загрузил"); uploaded_by_link.admin_order_field = 'uploaded_by__username'
     def description_snippet(self, obj): return (obj.description[:50] + '...') if obj.description and len(obj.description) > 50 else (obj.description or "—")
@@ -353,8 +366,14 @@ class TaskCommentAdmin(admin.ModelAdmin):
     task_link.short_description = _("Задача"); task_link.admin_order_field = 'task__title'
     def author_link(self, obj):
         if obj.author:
-            try: link = reverse(f"admin:{obj.author._meta.app_label}_{obj.author._meta.model_name}_change", args=[obj.author.pk]); return format_html('<a href="{}">{}</a>', link, obj.author.get_username())
-            except: return obj.author.get_username()
+            try:
+                link = reverse(
+                    f"admin:{obj.author._meta.app_label}_{obj.author._meta.model_name}_change",
+                    args=[obj.author.pk],
+                )
+                return format_html('<a href="{}">{}</a>', link, obj.author.get_username())
+            except Exception:
+                return obj.author.get_username()
         return _("Аноним")
     author_link.short_description = _("Автор"); author_link.admin_order_field = 'author__username'
     def text_snippet(self, obj): return (obj.text[:75] + '...') if len(obj.text) > 75 else obj.text
