@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.db.models import JSONField
+from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import ValidationError, PermissionDenied
 
@@ -172,6 +173,28 @@ class User(AbstractUser):
         blank=True,
         related_name="team_members_reverse"
     )
+    employee_id = models.CharField(_("Табельный номер"), max_length=50, blank=True, null=True, unique=True)
+    hire_date = models.DateField(_("Дата приема на работу"), null=True, blank=True)
+    termination_date = models.DateField(_("Дата увольнения"), null=True, blank=True)
+
+    class EmploymentType(models.TextChoices):
+        FULL_TIME = 'full_time', _('Полная занятость')
+        PART_TIME = 'part_time', _('Частичная занятость')
+        CONTRACTOR = 'contractor', _('Подрядчик')
+        INTERN = 'intern', _('Стажер')
+
+    employment_type = models.CharField(
+        _("Тип занятости"), max_length=20, choices=EmploymentType.choices,
+        default=EmploymentType.FULL_TIME, blank=True, null=True
+    )
+    date_of_birth = models.DateField(_("Дата рождения"), null=True, blank=True)
+    personal_email = models.EmailField(_("Личный Email"), blank=True, null=True)
+    address = models.TextField(_("Адрес проживания"), blank=True, null=True)
+    emergency_contact = models.TextField(_("Экстренный контакт"), blank=True, null=True, help_text=_("Имя, телефон, кем приходится"))
+    manager = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reports_to', verbose_name=_("Прямой руководитель")
+    )
 
     class Meta:
         verbose_name = _("Пользователь")
@@ -203,6 +226,15 @@ class User(AbstractUser):
         if not isinstance(self.settings, dict):
             self.settings = {}
         return self.settings.get(key, default)
+
+    @property
+    def is_terminated(self):
+        return self.termination_date and self.termination_date <= timezone.now().date()
+
+    def clean(self):
+        super().clean()
+        if self.hire_date and self.termination_date and self.termination_date < self.hire_date:
+            raise ValidationError(_('Дата увольнения не может быть раньше даты приема на работу.'))
 
     def set_setting(self, key, value, save_now=True):
         if not isinstance(self.settings, dict):
@@ -408,4 +440,5 @@ class EmployeeSkill(models.Model):
 
     class Meta:
         unique_together = ("employee", "skill")
+
 
