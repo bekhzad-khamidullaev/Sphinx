@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{{ profile_user.display_name }}{% endblock %}
+
+{% block content %}
+<h2>{{ profile_user.display_name }}</h2>
+
+<ul class="tabs">
+    <li><a href="#general">{% trans "Общая информация" %}</a></li>
+    <li><a href="#leaves">{% trans "Отпуска" %}</a></li>
+    <li><a href="#performance">{% trans "Аттестации" %}</a></li>
+    <li><a href="#documents">{% trans "Документы" %}</a></li>
+    <li><a href="#skills">{% trans "Навыки" %}</a></li>
+</ul>
+
+<div id="general">
+    <!-- данные о сотруднике -->
+</div>
+<div id="leaves">
+    <!-- список LeaveRequest -->
+</div>
+<div id="performance">
+    <!-- PerformanceReview -->
+</div>
+<div id="documents">
+    <!-- EmployeeDocument -->
+</div>
+<div id="skills">
+    <!-- EmployeeSkill -->
+</div>
+{% endblock %}

@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     "reviews",
     "leaves",
     "performance",
-
     "channels",
     "corsheaders",
     'crispy_forms',
