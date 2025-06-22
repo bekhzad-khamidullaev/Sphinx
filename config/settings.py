@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     "checklists",
     "qrfikr",
     "reviews",
+    "leaves",
+    "performance",
 
     "channels",
     "corsheaders",
