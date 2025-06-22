@@ -60,12 +60,12 @@ class TaskFilter(BaseFilter):
         method='search_filter', label=_('Поиск'),
         widget=forms.TextInput(attrs={'placeholder': _('Номер, название, описание...')})
     )
-    deadline_after = django_filters.DateFilter(
-        field_name='deadline', lookup_expr='gte', label=_('Срок не ранее'),
+    due_date_after = django_filters.DateFilter(
+        field_name='due_date', lookup_expr='gte', label=_('Срок не ранее'),
         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
-    deadline_before = django_filters.DateFilter(
-        field_name='deadline', lookup_expr='lte', label=_('Срок не позднее'),
+    due_date_before = django_filters.DateFilter(
+        field_name='due_date', lookup_expr='lte', label=_('Срок не позднее'),
         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
     created_at_after = django_filters.DateFilter(
@@ -144,7 +144,7 @@ class TaskFilter(BaseFilter):
             'q', 'status', 'priority', 'project', 'team', 'department',
             'responsible', 'executor', 'watcher', 'participant',
             'category', 'subcategory', 'created_by',
-            'deadline_after', 'deadline_before',
+            'due_date_after', 'due_date_before',
             'created_at_after', 'created_at_before',
         ]
 

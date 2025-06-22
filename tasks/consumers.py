@@ -57,7 +57,7 @@ class TaskConsumer(AsyncWebsocketConsumer):
     def _update_task_status_db(self, task_id: int, new_status: str, user_actor: User):
         try:
             task = Task.objects.get(id=task_id)
-            if not task.has_permission(user_actor, 'change_status'): # 'change_status' - пример действия
+            if not task.can_change_status(user_actor, new_status):
                 raise PermissionDenied(_("У вас нет прав на изменение статуса этой задачи."))
             
             if task.status == new_status: # Избегаем лишних сохранений и сигналов
@@ -142,8 +142,7 @@ class TaskCommentConsumer(AsyncWebsocketConsumer):
     def _can_view_task_for_comments(self, task_id: int, user: User):
         try:
             task = Task.objects.get(pk=task_id)
-            # Для комментариев может быть достаточно права 'view' на саму задачу
-            return task.has_permission(user, 'view') 
+            return task.can_view(user)
         except Task.DoesNotExist:
             return False
         except Exception as e:
