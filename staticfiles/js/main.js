@@ -1,4 +1,4 @@
-// tasks/static/js/tasks_no_modal.js
+// tasks/static/js/main.js
 "use strict";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -507,9 +507,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (commentTextErrors) commentTextErrors.textContent = ''; if (commentNonFieldErrors) commentNonFieldErrors.textContent = '';
                 commentTextArea.classList.remove('border-red-500');
                 if (!commentText) { if (commentTextErrors) commentTextErrors.textContent = T.commentCannotBeEmpty; commentTextArea.classList.add('border-red-500'); commentTextArea.focus(); return; }
+                const formData = new FormData(commentForm);
                 commentTextArea.disabled = true; commentSubmitBtn.disabled = true; const originalBtnHtml = commentSubmitBtn.innerHTML; commentSubmitBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${T.sending}`;
                 try {
-                    const formData = new FormData(commentForm);
                     const response = await window.authenticatedFetch(commentForm.action, { method: 'POST', body: formData, headers: {'Accept': 'application/json'} });
                     let responseData; const contentType = response.headers.get("content-type");
                     if (contentType && contentType.includes("application/json")) responseData = await response.json();
