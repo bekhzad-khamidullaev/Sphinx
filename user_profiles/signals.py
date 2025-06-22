@@ -178,8 +178,10 @@ def team_post_save_handler(sender, instance: Team, created: bool, **kwargs):
     actor = kwargs.get('request_user', None)
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx')
     base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-    try: team_url = base_site_url + instance.get_absolute_url()
-    except: team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[instance.pk])}"
+    try:
+        team_url = base_site_url + instance.get_absolute_url()
+    except Exception:
+        team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[instance.pk])}"
 
     if created:
         log_details = {"leader_id": instance.team_leader_id, "department_id": instance.department_id, "actor_id": actor.id if actor and hasattr(actor, 'id') else None}
@@ -233,8 +235,10 @@ def team_membership_changed_handler(sender, instance, action: str, reverse: bool
 def _process_single_membership_change(team: Team, user: User, action: str, actor: User | None, request_obj=None):
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx')
     base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-    try: team_url = base_site_url + team.get_absolute_url()
-    except: team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[team.pk])}"
+    try:
+        team_url = base_site_url + team.get_absolute_url()
+    except Exception:
+        team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[team.pk])}"
 
     log_verb = None
     email_subject_template = ""
@@ -306,8 +310,10 @@ def department_pre_save_handler(sender, instance: Department, **kwargs):
 def department_post_save_handler(sender, instance: Department, created: bool, **kwargs):
     actor = kwargs.get('request_user', None)
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-    try: department_url = base_site_url + instance.get_absolute_url()
-    except: department_url = f"{base_site_url}{reverse('admin:user_profiles_department_change', args=[instance.pk])}"
+    try:
+        department_url = base_site_url + instance.get_absolute_url()
+    except Exception:
+        department_url = f"{base_site_url}{reverse('admin:user_profiles_department_change', args=[instance.pk])}"
 
     if created:
         log_details = {"parent_id": instance.parent_id, "head_id": instance.head_id, "actor_id": actor.id if actor and hasattr(actor, 'id') else None}
@@ -369,8 +375,10 @@ def user_groups_changed_handler(sender, instance: User, action: str, pk_set: set
 
         if instance.get_setting('enable_email_notifications', True) and actor and actor != instance:
             site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-            try: profile_url = base_site_url + instance.get_absolute_url()
-            except: profile_url = f"{base_site_url}{reverse('admin:user_profiles_user_change', args=[instance.pk])}"
+            try:
+                profile_url = base_site_url + instance.get_absolute_url()
+            except Exception:
+                profile_url = f"{base_site_url}{reverse('admin:user_profiles_user_change', args=[instance.pk])}"
             
             action_readable_map = {"post_add": _("Вам были добавлены группы прав"), "post_remove": _("У Вас были удалены группы прав"), "post_clear": _("Все ваши группы прав были очищены")}
             action_readable = action_readable_map.get(action, _("Ваши группы прав были изменены"))
@@ -472,8 +480,10 @@ def process_department_head_changed(sender, department: Department, new_head: Us
     log_user_activity(actor, "DEPARTMENT_HEAD_CHANGED_SIGNAL", department, log_details, request=request_obj)
     logger.info(f"Department '{department.name}' head changed. New: {new_head.username if new_head else 'none'}. Old: {old_head.username if old_head else 'none'}. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}")
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-    try: department_url = base_site_url + department.get_absolute_url()
-    except: department_url = f"{base_site_url}{reverse('admin:user_profiles_department_change', args=[department.pk])}"
+    try:
+        department_url = base_site_url + department.get_absolute_url()
+    except Exception:
+        department_url = f"{base_site_url}{reverse('admin:user_profiles_department_change', args=[department.pk])}"
     if new_head and new_head.get_setting('enable_email_notifications', True) and (not actor or actor.id != new_head.id):
         try:
             subject = _("Вы назначены руководителем отдела '{dept_name}' в {site_name}").format(dept_name=department.name, site_name=site_name)
@@ -494,8 +504,10 @@ def process_team_leader_changed(sender, team: Team, new_leader: User, old_leader
     log_user_activity(actor, "TEAM_LEADER_CHANGED", team, log_details, request=request_obj)
     logger.info(f"Team '{team.name}' leader changed. New: {new_leader.username if new_leader else 'none'}. Old: {old_leader.username if old_leader else 'none'}. Actor: {actor.username if actor and hasattr(actor, 'username') else 'System'}")
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx'); base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-    try: team_url = base_site_url + team.get_absolute_url()
-    except: team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[team.pk])}"
+    try:
+        team_url = base_site_url + team.get_absolute_url()
+    except Exception:
+        team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[team.pk])}"
     if new_leader and new_leader.get_setting('enable_email_notifications', True) and (not actor or actor.id != new_leader.id):
         try:
             subject = _("Вы назначены лидером команды '{team_name}' в {site_name}").format(team_name=team.name, site_name=site_name)
