@@ -73,3 +73,23 @@ class TaskCommentSignalTests(TestCase):
         self.assertEqual(message['message']['text'], 'Ping')
         self.assertEqual(message['message']['task_id'], self.task.id)
         self.assertEqual(message['message']['author']['id'], self.user.id)
+
+
+class TaskManagerQuerySetTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='mgruser', password='pass')
+        self.project = Project.objects.create(name='Mgr Project', owner=self.user)
+
+    def test_active_manager(self):
+        active = Task.objects.create(project=self.project, title='Active', created_by=self.user,
+                                    status=Task.StatusChoices.NEW)
+        done = Task.objects.create(project=self.project, title='Done', created_by=self.user,
+                                  status=Task.StatusChoices.COMPLETED)
+        self.assertIn(active, Task.objects.active())
+        self.assertNotIn(done, Task.objects.active())
+
+    def test_overdue_manager(self):
+        overdue = Task.objects.create(project=self.project, title='Overdue', created_by=self.user,
+                                     status=Task.StatusChoices.OVERDUE)
+        self.assertIn(overdue, Task.objects.overdue())
+

@@ -32,6 +32,9 @@ class TaskSubcategoryDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Детали подкатегории") + f": {self.object.name}"
+        context["tasks_in_subcategory"] = (
+            self.object.tasks.select_related("project").all()
+        )
         return context
 
 class TaskSubcategoryCreateView(LoginRequiredMixin, SuccessMessageMixin, WebSocketNotificationMixin, CreateView):

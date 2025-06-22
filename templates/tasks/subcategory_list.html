@@ -21,33 +21,7 @@
 {% block list_content %}
     <ul id="subcategory-list" role="list" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {% for subcategory in object_list %}
-        <li id="subcategory-{{ subcategory.pk }}" class="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden">
-            <div class="px-4 py-4 sm:px-6">
-                <h3 class="text-lg font-medium leading-6 text-gray-900">
-                    <a href="{{ subcategory.get_absolute_url }}" class="hover:underline">{{ subcategory.name }}</a>
-                </h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                    <strong>{% trans 'Категория' %}:</strong> {{ subcategory.category.name }}<br>
-                    {{ subcategory.description|truncatechars:100|default:"-" }}
-                </p>
-            </div>
-            <div class="border-t border-gray-200">
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end space-x-2">
-                    <a href="{% url 'tasks:subcategory_update' pk=subcategory.pk %}"
-                        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm inline-flex items-center"
-                        aria-label="{% trans 'Редактировать подкатегорию' %}"
-                    >
-                        <i class="fas fa-edit mr-2" aria-hidden="true"></i> {% trans 'Редактировать' %}
-                    </a>
-                    <a href="{% url 'tasks:subcategory_delete' pk=subcategory.pk %}"
-                        class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition active:scale-95 shadow-sm inline-flex items-center"
-                        aria-label="{% trans 'Удалить подкатегорию' %}"
-                    >
-                        <i class="fas fa-trash mr-2" aria-hidden="true"></i> {% trans 'Удалить' %}
-                    </a>
-                </div>
-            </div>
-        </li>
+            {% include 'includes/subcategory_card.html' with subcategory=subcategory %}
         {% empty %}
         <li class="text-center text-gray-500 py-10 col-span-full">
             <i class="fas fa-list-alt fa-3x mb-3 text-gray-300" aria-hidden="true"></i><br>

@@ -41,6 +41,42 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
+class TaskQuerySet(models.QuerySet):
+    """Custom QuerySet providing common filters for Task objects."""
+
+    ACTIVE_STATUSES = (
+        "backlog",
+        "new",
+        "in_progress",
+        "on_hold",
+    )
+
+    def active(self):
+        return self.filter(status__in=self.ACTIVE_STATUSES)
+
+    def completed(self):
+        return self.filter(status="completed")
+
+    def overdue(self):
+        return self.filter(status="overdue")
+
+
+class TaskManager(models.Manager):
+    """Manager using :class:`TaskQuerySet`."""
+
+    def get_queryset(self):
+        return TaskQuerySet(self.model, using=self._db)
+
+    def active(self):
+        return self.get_queryset().active()
+
+    def completed(self):
+        return self.get_queryset().completed()
+
+    def overdue(self):
+        return self.get_queryset().overdue()
+
 class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
@@ -217,6 +253,8 @@ class Task(BaseModel):
         OVERDUE = "overdue", _("Просрочена")
         # CLOSED = "closed", _("Закрыта") # After completed, for archival
 
+    objects = TaskManager()
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks", verbose_name=_("Проект"), db_index=True)
     category = models.ForeignKey(TaskCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks", verbose_name=_("Категория"), db_index=True)
     subcategory = models.ForeignKey(TaskSubcategory, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks", verbose_name=_("Подкатегория"), db_index=True)
@@ -290,6 +328,7 @@ class Task(BaseModel):
                 project_code_str = "UNKP"
 
         last_task_qs = Task.objects.filter(task_number__startswith=f"{project_code_str}-")
+        new_task_number = None
         for attempt in range(10):
             try:
                 with transaction.atomic():
@@ -304,7 +343,8 @@ class Task(BaseModel):
                     new_task_number = f"{project_code_str}-{next_num:04d}"
                     if not Task.objects.filter(task_number=new_task_number).exists(): return new_task_number
                     logger.info(f"Task number collision for {new_task_number} (attempt {attempt+1}). Will retry.")
-            except IntegrityError: logger.warning(f"IntegrityError for task number {new_task_number} (attempt {attempt+1}). Retrying.")
+            except IntegrityError:
+                logger.warning(f"IntegrityError during task number generation (attempt {attempt+1}).")
             except Exception as e: logger.error(f"Error generating task number (attempt {attempt+1}): {e}")
         logger.error(f"Failed to generate unique task number for {project_code_str} after multiple attempts. Using timestamp fallback.")
         timestamp_part = timezone.now().strftime('%Y%m%d%H%M%S%f')[:17]
