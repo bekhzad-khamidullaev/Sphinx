@@ -2,10 +2,9 @@
 {# msg - объект сообщения, current_user_id - ID текущего пользователя #}
 {%
 with is_own_message=msg.user.pk|stringformat:"s" == current_user_id|stringformat:"s"
-avatar_url=msg.user.userprofile.image.url|default_if_none:''
-%}
-<div class="chat-message flex items-end mb-3 {% if is_own_message %}justify-end{% endif %}" id="message-{{ msg.id }}"
-    data-message-id="{{ msg.id }}" data-user-id="{{ msg.user.id }}">
+avatar_url=msg.user.image.url|default_if_none:'' %}
+<div class="chat-message group flex items-end mb-3 {% if is_own_message %}justify-end{% endif %} message-container" id="message-{{ msg.id }}"
+    data-message-id="{{ msg.id }}" data-user-id="{{ msg.user.id }}" data-timestamp="{{ msg.date_added|date:'c' }}">
 
     {% if not is_own_message %}
     <div class="flex-shrink-0 mr-2">

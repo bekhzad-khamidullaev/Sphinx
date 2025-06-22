@@ -1,6 +1,7 @@
 # room/utils.py
 import redis.asyncio as redis
 import logging
+import asyncio
 import re
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -9,6 +10,7 @@ import base64
 
 logger = logging.getLogger(__name__)
 redis_pool = None
+redis_pool_lock = asyncio.Lock()
 
 async def get_redis_connection():
     """
@@ -18,31 +20,29 @@ async def get_redis_connection():
     global redis_pool
     if redis_pool:
         try:
-            # Простая проверка работоспособности пула перед возвратом соединения
             conn_test = redis.Redis(connection_pool=redis_pool)
             await conn_test.ping()
-            # logger.debug("Reusing existing Redis connection pool.")
-            return conn_test # Возвращаем новое соединение из существующего пула
+            return conn_test
         except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError, Exception) as e:
             logger.warning(f"Existing Redis pool connection failed: {e}. Recreating pool.")
-            await close_redis_pool() # Закрываем старый пул
-            redis_pool = None # Сбрасываем, чтобы пересоздать
+            await close_redis_pool()
 
-    redis_url = getattr(settings, 'REDIS_URL', 'redis://localhost:6379/1')
-    # decode_responses=True - Redis будет возвращать строки, а не байты
-    # Это важно для работы с ID пользователей и другими строковыми данными.
-    logger.info(f"Creating new Redis connection pool for URL: {redis_url} (decode_responses=True)")
-    try:
-        redis_pool = redis.ConnectionPool.from_url(
-            redis_url,
-            max_connections=getattr(settings, 'REDIS_MAX_CONNECTIONS', 20), # Из настроек или дефолт
-            decode_responses=True # <--- ВАЖНО
-        )
-        # Возвращаем новое соединение, созданное из только что созданного пула
-        return redis.Redis(connection_pool=redis_pool)
-    except Exception as e:
-        logger.exception(f"FATAL: Could not create Redis connection pool for {redis_url}: {e}")
-        return None
+    if redis_pool is None:
+        async with redis_pool_lock:
+            if redis_pool is None:
+                redis_url = getattr(settings, 'REDIS_URL', 'redis://localhost:6379/1')
+                logger.info(f"Creating new Redis connection pool for URL: {redis_url} (decode_responses=True)")
+                try:
+                    redis_pool = redis.ConnectionPool.from_url(
+                        redis_url,
+                        max_connections=getattr(settings, 'REDIS_MAX_CONNECTIONS', 20),
+                        decode_responses=True,
+                    )
+                except Exception as e:
+                    logger.exception(f"FATAL: Could not create Redis connection pool for {redis_url}: {e}")
+                    return None
+
+    return redis.Redis(connection_pool=redis_pool)
 
 async def close_redis_pool():
     """ Закрывает существующий пул соединений Redis. """
@@ -100,3 +100,4 @@ class FileUploadValidator:
                     {'filename': self.filename, 'types': ", ".join(self.allowed_types)}
                 )
         return decoded_file
+
