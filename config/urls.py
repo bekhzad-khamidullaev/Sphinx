@@ -44,7 +44,6 @@ urlpatterns = i18n_patterns(
     path('qr-feedback/', include('qrfikr.urls', namespace='qrfikr')),
     path('reviews/', include('reviews.urls')),
     path('dashboards/', include('dashboards.urls', namespace='dashboards')),
-    path('api/', include('agents.urls')),
     # path('hrbot/', include('hrbot.urls', namespace='hrbot')),
     path('select2/', include('django_select2.urls')),
     # Swagger UI
