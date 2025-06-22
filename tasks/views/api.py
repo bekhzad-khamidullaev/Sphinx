@@ -95,7 +95,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         'project': ['exact'], 'category': ['exact'], 'subcategory': ['exact'],
         'status': ['exact', 'in'], 'priority': ['exact', 'in'],
         'created_by': ['exact'], 'team': ['exact'], 'department': ['exact'],
-        'deadline': ['exact', 'lte', 'gte', 'range'],
+        'due_date': ['exact', 'lte', 'gte', 'range'],
         'start_date': ['exact', 'lte', 'gte', 'range'],
         'completion_date': ['exact', 'lte', 'gte', 'range', 'isnull'],
         # For filtering by assigned users/roles (more complex, might need custom filter class)
@@ -108,7 +108,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         'assignments__user__username' # MODIFIED
     ]
     ordering_fields = [
-        'task_number', 'title', 'status', 'priority', 'deadline', 
+        'task_number', 'title', 'status', 'priority', 'due_date',
         'start_date', 'completion_date', 'created_at', 'project__name',
         'team__name', 'department__name' # Added
     ]
