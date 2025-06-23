@@ -1,4 +1,4 @@
-# user_profiles/models.py
+# profiles/models.py
 import logging
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -45,7 +45,7 @@ class Department(BaseModel):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('user_profiles:department_update', kwargs={'pk': self.pk})
+        return reverse('profiles:department_update', kwargs={'pk': self.pk})
 
     def clean(self):
         super().clean()
@@ -211,7 +211,7 @@ class User(AbstractUser):
         return self.username
 
     def get_absolute_url(self):
-        return reverse('user_profiles:user_update', kwargs={'pk': self.pk})
+        return reverse('profiles:user_update', kwargs={'pk': self.pk})
 
     @property
     def is_terminated(self):
@@ -356,7 +356,7 @@ class Team(BaseModel):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('user_profiles:team_update', kwargs={'pk': self.pk})
+        return reverse('profiles:team_update', kwargs={'pk': self.pk})
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding

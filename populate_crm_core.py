@@ -5,7 +5,7 @@ django.setup()
 
 from faker import Faker
 from crm_core.models import Project, TaskCategory, TaskSubcategory, Task, TaskPhoto
-from user_profiles.models import Team, UserProfile  # Импортируем модели из user_profiles
+from profiles.models import Team, UserProfile  # Импортируем модели из profiles
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 import random

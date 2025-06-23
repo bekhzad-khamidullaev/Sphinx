@@ -102,7 +102,8 @@
                 {% for message in messages %} {# Используем message как в вашем исходном цикле #}
                     {% comment %} === Встроенный messages_list.html === {% endcomment %}
                     {% with current_user_id_str=request.user.pk|stringformat:"s" %}
-                    {% with msg_obj=message is_own_message_val=msg_obj.user.pk|stringformat:"s" == current_user_id_str %}
+                    {% with msg_obj=message %}
+                    {% with is_own_message_val=msg_obj.user.pk|stringformat:"s" == current_user_id_str %}
                     <div class="flex message-container {% if is_own_message_val %}justify-end{% else %}justify-start{% endif %}" id="message-{{ msg_obj.id }}" data-message-id="{{ msg_obj.id }}" data-username="{{ msg_obj.user.username }}">
                         <div class="max-w-[80%] p-3 rounded-lg message-bubble {% if is_own_message_val %}bg-blue-600 text-white{% else %}bg-white text-gray-900 shadow-sm border border-gray-200{% endif %}">
                             {% if not is_own_message_val and msg_obj.user %}

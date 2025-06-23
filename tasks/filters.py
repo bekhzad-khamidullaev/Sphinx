@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 
 from .models import Task, Project, TaskCategory, TaskSubcategory, TaskAssignment
-from user_profiles.models import Team, Department # Убедитесь, что этот импорт корректен
+from profiles.models import Team, Department # Убедитесь, что этот импорт корректен
 
 logger = logging.getLogger(__name__)
 User = get_user_model()

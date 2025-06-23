@@ -54,7 +54,7 @@ class CanPerformChecklistMixin(UserPassesTestMixin):
 
     def handle_no_permission(self):
         messages.error(self.request, _("У вас нет прав для выполнения чеклистов."))
-        return redirect(reverse_lazy("user_profiles:base_login"))
+        return redirect(reverse_lazy("profiles:base_login"))
 
 
 class CanManageTemplatesMixin(UserPassesTestMixin):

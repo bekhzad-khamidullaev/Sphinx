@@ -7,7 +7,7 @@ from asgiref.sync import sync_to_async
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, PermissionDenied
 from django.utils.translation import gettext_lazy as _
 from channels.layers import get_channel_layer
-from user_profiles.models import User
+from profiles.models import User
 from .models import Task # TaskAssignment можно импортировать, если он используется в _check_task_permission или др.
 
 

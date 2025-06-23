@@ -8,9 +8,9 @@
     <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
       {{ page_title|default:_("Отделы") }}
     </h1>
-    {% if perms.user_profiles.add_department %}
+    {% if perms.profiles.add_department %}
     <nav>
-      <a href="{% url 'user_profiles:department_create' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
+      <a href="{% url 'profiles:department_create' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
         <i class="fas fa-building mr-2"></i> {% trans 'Создать отдел' %}
       </a>
     </nav>
@@ -58,11 +58,11 @@
           <td class="border-b border-gray-200 py-5 px-4">
             <div class="flex items-center justify-center space-x-3">
               <a href="{{ dept_item.get_absolute_url }}" class="text-blue-600 hover:text-blue-800" title="{% trans 'Подробнее' %}"><i class="fas fa-eye"></i></a>
-              {% if perms.user_profiles.change_department %}
-              <a href="{% url 'user_profiles:department_update' pk=dept_item.pk %}" class="text-gray-600 hover:text-gray-800" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
+              {% if perms.profiles.change_department %}
+              <a href="{% url 'profiles:department_update' pk=dept_item.pk %}" class="text-gray-600 hover:text-gray-800" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
               {% endif %}
-              {% if perms.user_profiles.delete_department %}
-              <a href="{% url 'user_profiles:department_delete' pk=dept_item.pk %}" class="text-red-600 hover:text-red-800" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
+              {% if perms.profiles.delete_department %}
+              <a href="{% url 'profiles:department_delete' pk=dept_item.pk %}" class="text-red-600 hover:text-red-800" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
               {% endif %}
             </div>
           </td>

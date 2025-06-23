@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import (
     Project, TaskCategory, TaskSubcategory, Task, TaskPhoto, TaskAssignment # MODIFIED: Added TaskAssignment
 )
-# from user_profiles.models import User # User is now imported via get_user_model
+# from profiles.models import User # User is now imported via get_user_model
 
 User = get_user_model()
 

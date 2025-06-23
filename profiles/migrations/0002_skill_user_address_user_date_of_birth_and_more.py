@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("user_profiles", "0001_initial"),
+        ("profiles", "0001_initial"),
     ]
 
     operations = [
@@ -242,7 +242,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="employees",
-                        to="user_profiles.skill",
+                        to="profiles.skill",
                     ),
                 ),
             ],

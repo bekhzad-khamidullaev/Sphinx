@@ -1,4 +1,4 @@
-# user_profiles/admin.py
+# profiles/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.db import models
@@ -69,7 +69,7 @@ class UserAdmin(BaseUserAdmin):
 
     def department_link(self, obj):
         if obj.department:
-            link = reverse("admin:user_profiles_department_change", args=[obj.department.id])
+            link = reverse("admin:profiles_department_change", args=[obj.department.id])
             return format_html('<a href="{}">{}</a>', link, obj.department.name)
         return "-"
     department_link.short_description = _("Отдел")
@@ -113,7 +113,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
     def parent_link(self, obj):
         if obj.parent:
-            link = reverse("admin:user_profiles_department_change", args=[obj.parent.id])
+            link = reverse("admin:profiles_department_change", args=[obj.parent.id])
             return format_html('<a href="{}">{}</a>', link, obj.parent.name)
         return "-"
     parent_link.short_description = _("Вышестоящий отдел")
@@ -121,7 +121,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
     def head_link(self, obj):
         if obj.head:
-            link = reverse("admin:user_profiles_user_change", args=[obj.head.id])
+            link = reverse("admin:profiles_user_change", args=[obj.head.id])
             return format_html('<a href="{}">{}</a>', link, obj.head.display_name)
         return "-"
     head_link.short_description = _("Руководитель")
@@ -162,7 +162,7 @@ class TeamAdmin(admin.ModelAdmin):
 
     def team_leader_link(self, obj):
         if obj.team_leader:
-            link = reverse("admin:user_profiles_user_change", args=[obj.team_leader.id])
+            link = reverse("admin:profiles_user_change", args=[obj.team_leader.id])
             return format_html('<a href="{}">{}</a>', link, obj.team_leader.display_name)
         return "-"
     team_leader_link.short_description = _("Лидер команды")
@@ -170,7 +170,7 @@ class TeamAdmin(admin.ModelAdmin):
 
     def department_link(self, obj):
         if obj.department:
-            link = reverse("admin:user_profiles_department_change", args=[obj.department.id])
+            link = reverse("admin:profiles_department_change", args=[obj.department.id])
             return format_html('<a href="{}">{}</a>', link, obj.department.name)
         return "-"
     department_link.short_description = _("Отдел")

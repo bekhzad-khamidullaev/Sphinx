@@ -1,10 +1,10 @@
-# user_profiles/urls.py
+# profiles/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views, api_auth
 
-app_name = "user_profiles"
+app_name = "profiles"
 
 router = DefaultRouter()
 router.register(r'users', views.UserViewSet, basename='user-api')

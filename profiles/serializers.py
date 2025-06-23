@@ -1,4 +1,4 @@
-# user_profiles/serializers.py
+# profiles/serializers.py
 from rest_framework import serializers
 from django.contrib.auth.models import Group
 from .models import User, Team, Department, JobTitle

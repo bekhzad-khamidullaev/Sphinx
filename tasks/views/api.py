@@ -17,7 +17,7 @@ from ..serializers import (
     TaskSerializer, TaskPhotoSerializer, TaskAssignmentSerializer # MODIFIED: Added TaskAssignmentSerializer
 )
 # User model already imported via get_user_model if used below
-# from user_profiles.models import User, Team, Department # REMOVED - imported from .models or get_user_model
+# from profiles.models import User, Team, Department # REMOVED - imported from .models or get_user_model
 
 # Optional imports
 try: from checklists.models import ChecklistTemplate, ChecklistRun
@@ -209,7 +209,7 @@ class SearchSuggestionsView(APIView): # (No direct changes for TaskAssignment, b
                 teams_qs = Team.objects.filter(name__icontains=query)[:limit]
                 suggestions.extend([{
                     'type': 'team', 'id': t.id, 'title': t.name, 'context': _("Команда"),
-                    'url': reverse('user_profiles:user_list') + f'?team={t.pk}' if 'user_profiles' in settings.INSTALLED_APPS else '#', # Adjust URL
+                    'url': reverse('profiles:user_list') + f'?team={t.pk}' if 'profiles' in settings.INSTALLED_APPS else '#', # Adjust URL
                     'icon': 'users-cog', 'color': 'pink'
                 } for t in teams_qs])
 
@@ -218,7 +218,7 @@ class SearchSuggestionsView(APIView): # (No direct changes for TaskAssignment, b
                 depts_qs = Department.objects.filter(name__icontains=query)[:limit]
                 suggestions.extend([{
                     'type': 'department', 'id': d.id, 'title': d.name, 'context': _("Отдел"),
-                    'url': reverse('user_profiles:user_list') + f'?department={d.pk}' if 'user_profiles' in settings.INSTALLED_APPS else '#', # Adjust URL
+                    'url': reverse('profiles:user_list') + f'?department={d.pk}' if 'profiles' in settings.INSTALLED_APPS else '#', # Adjust URL
                     'icon': 'building', 'color': 'sky'
                 } for d in depts_qs])
 

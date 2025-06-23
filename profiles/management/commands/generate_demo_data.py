@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from user_profiles.models import Department
+from profiles.models import Department
 
 
 class Command(BaseCommand):

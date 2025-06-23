@@ -31,10 +31,10 @@
                 </div>
             {% endif %}
             <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                <a href="{% url 'user_profiles:department_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+                <a href="{% url 'profiles:department_list' %}" class="btn btn-secondary">
                     {% trans 'Отмена' %}
                 </a>
-                <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm inline-flex items-center">
+                <button type="submit" class="btn btn-primary inline-flex items-center">
                     <i class="fas fa-save mr-2"></i> {{ form_action_text|default:_("Сохранить") }}
                 </button>
             </div>

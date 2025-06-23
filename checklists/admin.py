@@ -186,14 +186,14 @@ class ChecklistResultInline(admin.StackedInline):
 
     def created_by_link(self, obj):
         if obj.created_by:
-            link = reverse("admin:user_profiles_user_change", args=[obj.created_by.id])
+            link = reverse("admin:profiles_user_change", args=[obj.created_by.id])
             return format_html('<a href="{}">{}</a>', link, obj.created_by.username)
         return "-"
     created_by_link.short_description = _("Создано кем")
 
     def updated_by_link(self, obj):
         if obj.updated_by:
-            link = reverse("admin:user_profiles_user_change", args=[obj.updated_by.id])
+            link = reverse("admin:profiles_user_change", args=[obj.updated_by.id])
             return format_html('<a href="{}">{}</a>', link, obj.updated_by.username)
         return "-"
     updated_by_link.short_description = _("Обновлено кем")
@@ -274,7 +274,7 @@ class ChecklistAdmin(admin.ModelAdmin):
     @admin.display(description=_("Кем выполнен"), ordering='performed_by__username')
     def performed_by_username(self,obj):
         if obj.performed_by:
-            link = reverse("admin:user_profiles_user_change", args=[obj.performed_by.id])
+            link = reverse("admin:profiles_user_change", args=[obj.performed_by.id])
             return format_html('<a href="{}">{}</a>', link, obj.performed_by.username)
         return '-'
 

@@ -1,4 +1,4 @@
-# user_profiles/views.py
+# profiles/views.py
 import logging
 from django.conf import settings
 from django.urls import reverse_lazy
@@ -97,18 +97,18 @@ def base_login_view(request):
 @never_cache
 def user_logout_view(request):
     auth_logout(request)
-    logout_url = reverse_lazy('user_profiles:base_login')
+    logout_url = reverse_lazy('profiles:base_login')
     return redirect(f"{logout_url}?logged_out=1")
 
 def user_login_redirect(request):
-    return redirect('user_profiles:base_login')
+    return redirect('profiles:base_login')
 
 
 class UserProfileView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     model = User
     form_class = UserProfileEditForm
     template_name = 'users/user_profile.html'
-    success_url = reverse_lazy('user_profiles:profile_view')
+    success_url = reverse_lazy('profiles:profile_view')
     success_message = _("Профиль успешно обновлен.")
 
     def get_object(self, queryset=None):
@@ -142,7 +142,7 @@ class UserProfileView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
 class UserPasswordChangeView(LoginRequiredMixin, SuccessMessageMixin, AuthPasswordChangeView):
      template_name = 'users/password_change_form.html'
      form_class = UserPasswordChangeForm
-     success_url = reverse_lazy('user_profiles:password_change_done')
+     success_url = reverse_lazy('profiles:password_change_done')
      success_message = _("Ваш пароль был успешно изменен.")
 
      def form_valid(self, form):
@@ -185,7 +185,7 @@ class UserCreateView(StaffRequiredMixin, SuccessMessageMixin, CreateView):
     model = User
     form_class = UserCreateForm
     template_name = "users/user_form.html"
-    success_url = reverse_lazy("user_profiles:user_list")
+    success_url = reverse_lazy("profiles:user_list")
     success_message = _("Пользователь '%(username)s' успешно создан.")
 
     def get_context_data(self, **kwargs):
@@ -204,7 +204,7 @@ class UserUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
     model = User
     form_class = UserUpdateForm
     template_name = "users/user_form.html"
-    success_url = reverse_lazy("user_profiles:user_list")
+    success_url = reverse_lazy("profiles:user_list")
     success_message = _("Данные пользователя '%(username)s' обновлены.")
     context_object_name = "object"
 
@@ -227,7 +227,7 @@ class UserUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
 class UserDeleteView(StaffRequiredMixin, DeleteView):
     model = User
     template_name = "users/user_confirm_delete.html"
-    success_url = reverse_lazy("user_profiles:user_list")
+    success_url = reverse_lazy("profiles:user_list")
     context_object_name = "object"
 
     def get_context_data(self, **kwargs):
@@ -250,7 +250,7 @@ class UserDeleteView(StaffRequiredMixin, DeleteView):
             return response
         except PermissionDenied as e:
             messages.error(self.request, str(e))
-            return HttpResponseRedirect(reverse_lazy("user_profiles:user_update", kwargs={'pk': target_user.pk}))
+            return HttpResponseRedirect(reverse_lazy("profiles:user_update", kwargs={'pk': target_user.pk}))
         except Exception as e:
             logger.exception(f"Error deleting user '{user_display_name}': {e}")
             messages.error(self.request, _("Произошла ошибка при удалении пользователя."))
@@ -292,7 +292,7 @@ class TeamCreateView(StaffRequiredMixin, SuccessMessageMixin, CreateView):
     model = Team
     form_class = TeamForm
     template_name = "users/team_form.html"
-    success_url = reverse_lazy("user_profiles:team_list")
+    success_url = reverse_lazy("profiles:team_list")
     success_message = _("Команда '%(name)s' успешно создана.")
 
     def get_context_data(self, **kwargs):
@@ -310,7 +310,7 @@ class TeamUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Team
     form_class = TeamForm
     template_name = "users/team_form.html"
-    success_url = reverse_lazy("user_profiles:team_list")
+    success_url = reverse_lazy("profiles:team_list")
     success_message = _("Данные команды '%(name)s' обновлены.")
     context_object_name = "object"
 
@@ -328,7 +328,7 @@ class TeamUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
 class TeamDeleteView(StaffRequiredMixin, DeleteView):
     model = Team
     template_name = "users/team_confirm_delete.html"
-    success_url = reverse_lazy("user_profiles:team_list")
+    success_url = reverse_lazy("profiles:team_list")
     context_object_name = "object"
 
     def form_valid(self, form):
@@ -381,7 +381,7 @@ class DepartmentCreateView(StaffRequiredMixin, SuccessMessageMixin, CreateView):
     model = Department
     form_class = DepartmentForm
     template_name = "users/department_form.html"
-    success_url = reverse_lazy("user_profiles:department_list")
+    success_url = reverse_lazy("profiles:department_list")
     success_message = _("Отдел '%(name)s' успешно создан.")
 
     def get_context_data(self, **kwargs):
@@ -398,7 +398,7 @@ class DepartmentUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Department
     form_class = DepartmentForm
     template_name = "users/department_form.html"
-    success_url = reverse_lazy("user_profiles:department_list")
+    success_url = reverse_lazy("profiles:department_list")
     success_message = _("Данные отдела '%(name)s' обновлены.")
     context_object_name = "object"
 
@@ -415,7 +415,7 @@ class DepartmentUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
 class DepartmentDeleteView(StaffRequiredMixin, DeleteView):
     model = Department
     template_name = "users/department_confirm_delete.html"
-    success_url = reverse_lazy("user_profiles:department_list")
+    success_url = reverse_lazy("profiles:department_list")
     context_object_name = "object"
 
     def form_valid(self, form):
@@ -453,7 +453,7 @@ class JobTitleListView(StaffRequiredMixin, ListView):
 
 class JobTitleCreateView(StaffRequiredMixin, SuccessMessageMixin, CreateView):
     model = JobTitle; form_class = JobTitleForm; template_name = "users/jobtitle_form.html"
-    success_url = reverse_lazy("user_profiles:jobtitle_list"); success_message = _("Должность '%(name)s' создана.")
+    success_url = reverse_lazy("profiles:jobtitle_list"); success_message = _("Должность '%(name)s' создана.")
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs); context['page_title'] = _("Создать должность"); context['form_action_text'] = _("Создать"); return context
     def form_valid(self, form):
@@ -462,7 +462,7 @@ class JobTitleCreateView(StaffRequiredMixin, SuccessMessageMixin, CreateView):
 
 class JobTitleUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
     model = JobTitle; form_class = JobTitleForm; template_name = "users/jobtitle_form.html"
-    success_url = reverse_lazy("user_profiles:jobtitle_list"); success_message = _("Должность '%(name)s' обновлена."); context_object_name = "object"
+    success_url = reverse_lazy("profiles:jobtitle_list"); success_message = _("Должность '%(name)s' обновлена."); context_object_name = "object"
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs); context['page_title'] = _("Редактировать должность: %s") % self.object.name; context['form_action_text'] = _("Сохранить"); return context
     def form_valid(self, form):
@@ -470,7 +470,7 @@ class JobTitleUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
         return super().form_valid(form)
 
 class JobTitleDeleteView(StaffRequiredMixin, DeleteView):
-    model = JobTitle; template_name = "users/jobtitle_confirm_delete.html"; success_url = reverse_lazy("user_profiles:jobtitle_list"); context_object_name = "object"
+    model = JobTitle; template_name = "users/jobtitle_confirm_delete.html"; success_url = reverse_lazy("profiles:jobtitle_list"); context_object_name = "object"
     def form_valid(self, form):
         name = self.object.name
         logger.info(f"JobTitle '{name}' deleted by '{self.request.user.username}'.")
@@ -498,7 +498,7 @@ class GroupCreateView(StaffRequiredMixin, SuccessMessageMixin, CreateView):
     model = Group
     form_class = GroupForm
     template_name = "users/group_form.html"
-    success_url = reverse_lazy("user_profiles:group_list")
+    success_url = reverse_lazy("profiles:group_list")
     success_message = _("Группа '%(name)s' создана.")
 
     def get_context_data(self, **kwargs):
@@ -512,7 +512,7 @@ class GroupUpdateView(StaffRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Group
     form_class = GroupForm
     template_name = "users/group_form.html"
-    success_url = reverse_lazy("user_profiles:group_list")
+    success_url = reverse_lazy("profiles:group_list")
     success_message = _("Группа '%(name)s' обновлена.")
     context_object_name = "object"
 
@@ -537,7 +537,7 @@ class GroupDetailView(StaffRequiredMixin, DetailView):
 class GroupDeleteView(StaffRequiredMixin, DeleteView):
     model = Group
     template_name = "users/group_confirm_delete.html"
-    success_url = reverse_lazy("user_profiles:group_list")
+    success_url = reverse_lazy("profiles:group_list")
     context_object_name = "object"
 
     def form_valid(self, form):

@@ -7,8 +7,8 @@ from django.db.models import Count
 from django.contrib import messages as django_messages
 from .models import Room, Message, MessageReadStatus, Reaction
 
-# Предполагаем, что User модель из user_profiles
-USER_ADMIN_CHANGE_URL_NAME = "admin:user_profiles_user_change" # ИЗМЕНИТЕ, ЕСЛИ USER В ДРУГОМ ПРИЛОЖЕНИИ (например, "admin:auth_user_change")
+# Предполагаем, что User модель из profiles
+USER_ADMIN_CHANGE_URL_NAME = "admin:profiles_user_change" # ИЗМЕНИТЕ, ЕСЛИ USER В ДРУГОМ ПРИЛОЖЕНИИ (например, "admin:auth_user_change")
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):

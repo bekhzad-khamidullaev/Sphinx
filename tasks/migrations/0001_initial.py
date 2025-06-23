@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('user_profiles', '0001_initial'),
+        ('profiles', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -51,9 +51,9 @@ class Migration(migrations.Migration):
                 ('completion_date', models.DateTimeField(blank=True, null=True, verbose_name='Дата завершения')),
                 ('estimated_time', models.DurationField(blank=True, null=True, verbose_name='Оценка времени (план)')),
                 ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_tasks', to=settings.AUTH_USER_MODEL, verbose_name='Инициатор')),
-                ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks', to='user_profiles.department', verbose_name='Отдел')),
+                ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks', to='profiles.department', verbose_name='Отдел')),
                 ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tasks', to='tasks.project', verbose_name='Проект')),
-                ('team', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks', to='user_profiles.team', verbose_name='Команда')),
+                ('team', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks', to='profiles.team', verbose_name='Команда')),
             ],
             options={
                 'verbose_name': 'Задача',

@@ -53,7 +53,7 @@
                     <td class="field-project">{{ task.project.name|default:"-" }}</td>
                     <td class="field-created_by">
                          {% if task.created_by %}
-                            <a href="{% url 'admin:user_profiles_user_change' task.created_by.pk %}">{{ task.created_by.display_name }}</a>
+                            <a href="{% url 'admin:profiles_user_change' task.created_by.pk %}">{{ task.created_by.display_name }}</a>
                          {% else %}-{% endif %}
                     </td>
                 </tr>
