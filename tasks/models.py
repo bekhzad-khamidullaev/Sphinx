@@ -17,11 +17,11 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 try:
-    from user_profiles.models import User as AuthUser, Team, Department
+    from profiles.models import User as AuthUser, Team, Department
 except ImportError:
     logger = logging.getLogger(__name__)
     logger.warning(
-        "User, Team, or Department model not found in user_profiles. "
+        "User, Team, or Department model not found in profiles. "
         "Tasks app functionality related to these models might be limited or broken. "
         "Using Django's default User model as a fallback for ForeignKey relations if AUTH_USER_MODEL is not set."
     )
@@ -30,13 +30,13 @@ except ImportError:
 
     class DummyTeam(models.Model):
         name = models.CharField(max_length=100)
-        class Meta: app_label = 'user_profiles_dummy_team'; abstract = True
+        class Meta: app_label = 'profiles_dummy_team'; abstract = True
         def __str__(self): return self.name
     Team = DummyTeam
 
     class DummyDepartment(models.Model):
         name = models.CharField(max_length=100)
-        class Meta: app_label = 'user_profiles_dummy_dept'; abstract = True
+        class Meta: app_label = 'profiles_dummy_dept'; abstract = True
         def __str__(self): return self.name
     Department = DummyDepartment
 

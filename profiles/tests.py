@@ -7,7 +7,7 @@ User = get_user_model()
 
 class AuthTests(APITestCase):
     def test_registration_and_login(self):
-        reg_url = reverse('user_profiles:api-register')
+        reg_url = reverse('profiles:api-register')
         data = {
             'username': 'newuser',
             'password': 'password123',
@@ -18,7 +18,7 @@ class AuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(User.objects.filter(username='newuser').count(), 1)
 
-        token_url = reverse('user_profiles:token_obtain_pair')
+        token_url = reverse('profiles:token_obtain_pair')
         login_resp = self.client.post(token_url, {'username': 'newuser', 'password': 'password123'})
         self.assertEqual(login_resp.status_code, status.HTTP_200_OK)
         self.assertIn('access', login_resp.data)

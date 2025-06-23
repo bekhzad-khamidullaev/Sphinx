@@ -9,7 +9,7 @@
       {{ page_title|default:_("Мой профиль") }}
     </h1>
     <nav class="flex items-center gap-3">
-      <a href="{% url 'user_profiles:password_change' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-700 lg:px-5 transition active:scale-95 shadow-sm whitespace-nowrap">
+      <a href="{% url 'profiles:password_change' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-700 lg:px-5 transition active:scale-95 shadow-sm whitespace-nowrap">
           <i class="fas fa-key mr-2"></i> {% translate "Сменить пароль" %}
       </a>
     </nav>

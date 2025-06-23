@@ -27,10 +27,10 @@
         <form method="post" action="">
             {% csrf_token %}
             <div class="flex justify-end gap-3 mt-4">
-                <a href="{% url 'user_profiles:jobtitle_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+                <a href="{% url 'profiles:jobtitle_list' %}" class="btn btn-secondary">
                     {% trans 'Отмена' %}
                 </a>
-                <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition active:scale-95 shadow-sm inline-flex items-center">
+                <button type="submit" class="btn btn-danger inline-flex items-center">
                     <i class="fas fa-trash mr-2"></i> {% trans 'Да, удалить' %}
                 </button>
             </div>

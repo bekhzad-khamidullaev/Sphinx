@@ -68,7 +68,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=150, unique=True, verbose_name='Название отдела')),
                 ('description', models.TextField(blank=True, verbose_name='Описание')),
                 ('head', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='headed_departments', to=settings.AUTH_USER_MODEL, verbose_name='Руководитель отдела')),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='children', to='user_profiles.department', verbose_name='Вышестоящий отдел')),
+                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='children', to='profiles.department', verbose_name='Вышестоящий отдел')),
             ],
             options={
                 'verbose_name': 'Отдел',
@@ -79,12 +79,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='department',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='employees', to='user_profiles.department', verbose_name='Отдел'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='employees', to='profiles.department', verbose_name='Отдел'),
         ),
         migrations.AddField(
             model_name='user',
             name='job_title',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='users', to='user_profiles.jobtitle', verbose_name='Должность'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='users', to='profiles.jobtitle', verbose_name='Должность'),
         ),
         migrations.CreateModel(
             name='Team',
@@ -94,7 +94,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Дата обновления')),
                 ('name', models.CharField(max_length=100, unique=True, verbose_name='Название команды')),
                 ('description', models.TextField(blank=True, verbose_name='Описание команды')),
-                ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='teams', to='user_profiles.department', verbose_name='Отдел')),
+                ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='teams', to='profiles.department', verbose_name='Отдел')),
                 ('team_leader', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='led_teams', to=settings.AUTH_USER_MODEL, verbose_name='Лидер команды')),
             ],
             options={
@@ -108,7 +108,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('date_joined', models.DateTimeField(auto_now_add=True, verbose_name='Дата присоединения')),
-                ('team', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teammembership_team_set', to='user_profiles.team')),
+                ('team', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teammembership_team_set', to='profiles.team')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teammembership_user_set', to=settings.AUTH_USER_MODEL)),
             ],
             options={
@@ -120,12 +120,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='team',
             name='members',
-            field=models.ManyToManyField(blank=True, related_name='teams_where_user_is_member', through='user_profiles.TeamMembershipUser', to=settings.AUTH_USER_MODEL, verbose_name='Участники'),
+            field=models.ManyToManyField(blank=True, related_name='teams_where_user_is_member', through='profiles.TeamMembershipUser', to=settings.AUTH_USER_MODEL, verbose_name='Участники'),
         ),
         migrations.AddField(
             model_name='user',
             name='teams',
-            field=models.ManyToManyField(blank=True, related_name='team_members_reverse', through='user_profiles.TeamMembershipUser', to='user_profiles.team', verbose_name='Состоит в командах'),
+            field=models.ManyToManyField(blank=True, related_name='team_members_reverse', through='profiles.TeamMembershipUser', to='profiles.team', verbose_name='Состоит в командах'),
         ),
         migrations.AddIndex(
             model_name='department',

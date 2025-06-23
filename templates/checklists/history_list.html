@@ -21,27 +21,26 @@
         <div x-data="{ filterOpen: sessionStorage.getItem('checklistFilterOpen') === 'true' }">
             <button @click="filterOpen = !filterOpen; sessionStorage.setItem('checklistFilterOpen', filterOpen)"
                     id="toggleFilterBtn" :aria-expanded="filterOpen" aria-controls="filter-section"
-                    class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm inline-flex items-center">
+                    class="btn btn-secondary inline-flex items-center">
                 <i class="fas fa-filter mr-2"></i> {% trans "Фильтры" %}
                 <i id="filter-arrow" class="fas ml-2 text-xs transition-transform duration-200" :class="filterOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
             </button>
         </div>
-        <a href="{% url 'checklists:template_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+        <a href="{% url 'checklists:template_list' %}" class="btn btn-secondary">
             <i class="fas fa-list-alt mr-1.5"></i> {% trans 'К шаблонам' %}
         </a>
-        <a href="{% url 'checklists:report_summary' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+        <a href="{% url 'checklists:report_summary' %}" class="btn btn-secondary">
             <i class="fas fa-chart-bar mr-1.5"></i> {% trans 'Отчеты' %}
         </a>
     </div>
 {% endblock %}
 
 {% block list_actions_mobile %}
-    <a href="{% url 'checklists:template_list' %}"
-        class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+    <a href="{% url 'checklists:template_list' %}" class="flex-1 btn btn-secondary justify-center">
         <i class="fas fa-clipboard-list mr-2"></i> {% trans 'К шаблонам' %}
     </a>
     <button type="button" data-drawer-target="filter-drawer-checklist" data-drawer-show="filter-drawer-checklist" data-drawer-placement="right" aria-controls="filter-drawer-checklist"
-       class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+       class="flex-1 btn btn-secondary justify-center">
         <i class="fas fa-filter mr-2"></i> {% trans 'Фильтр' %}
     </button>
 {% endblock %}
@@ -80,8 +79,8 @@
                         {% endfor %}
                     </div>
                     <div class="mt-4 flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                        <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">{% trans "Сбросить" %}</a>
-                        <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm">
+                        <a href="{% url 'checklists:history_list' %}" class="btn btn-secondary">{% trans "Сбросить" %}</a>
+                        <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search mr-2"></i> {% trans "Применить" %}
                         </button>
                     </div>
@@ -127,8 +126,8 @@
                     </div>
                 {% endfor %}
                 <div class="grid grid-cols-2 gap-4 pt-4">
-                    <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full text-center transition active:scale-95 shadow-sm">{% trans 'Сбросить' %}</a>
-                    <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full transition active:scale-95 shadow-sm">{% trans 'Применить' %}</button>
+                    <a href="{% url 'checklists:history_list' %}" class="btn btn-secondary w-full">{% trans 'Сбросить' %}</a>
+                    <button type="submit" class="btn btn-primary w-full">{% trans 'Применить' %}</button>
                 </div>
             </form>
             {% endif %}

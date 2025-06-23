@@ -27,7 +27,7 @@ from django.contrib.auth import get_user_model
 from ..models import Task, Project, TaskCategory, TaskSubcategory, TaskAssignment
 User = get_user_model()
 try:
-    from user_profiles.models import Team, Department
+    from profiles.models import Team, Department
 except ImportError:
     Team, Department = None, None
 

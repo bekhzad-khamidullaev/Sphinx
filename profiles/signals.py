@@ -1,4 +1,4 @@
-# user_profiles/signals.py
+# profiles/signals.py
 import logging
 import json
 from django.db.models.signals import post_save, pre_save, post_delete, m2m_changed
@@ -96,7 +96,7 @@ def user_post_save_notifications_and_logs(sender, instance: User, created: bool,
 
     site_name = getattr(settings, 'SITE_NAME', 'Sphinx')
     base_site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000').strip('/')
-    user_profile_url = f"{base_site_url}{reverse('admin:user_profiles_user_change', args=[instance.pk])}"
+    user_profile_url = f"{base_site_url}{reverse('admin:profiles_user_change', args=[instance.pk])}"
     try:
         user_profile_url = base_site_url + instance.get_absolute_url()
     except Exception:
@@ -109,7 +109,7 @@ def user_post_save_notifications_and_logs(sender, instance: User, created: bool,
 
         if instance.get_setting('enable_email_notifications', True):
             try:
-                login_url = base_site_url + reverse('user_profiles:base_login')
+                login_url = base_site_url + reverse('profiles:base_login')
                 subject = _("Добро пожаловать в {site_name}!").format(site_name=site_name)
                 message = _("Здравствуйте, {display_name}!\n\nВаш аккаунт в системе {site_name} успешно создан.\nВаш логин: {username}\n\nВы можете войти в систему по ссылке: {login_url}\n\nС уважением,\nКоманда {site_name}").format(display_name=instance.display_name, site_name=site_name, username=instance.username, login_url=login_url)
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [instance.email], fail_silently=False)
@@ -181,7 +181,7 @@ def team_post_save_handler(sender, instance: Team, created: bool, **kwargs):
     try:
         team_url = base_site_url + instance.get_absolute_url()
     except Exception:
-        team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[instance.pk])}"
+        team_url = f"{base_site_url}{reverse('admin:profiles_team_change', args=[instance.pk])}"
 
     if created:
         log_details = {"leader_id": instance.team_leader_id, "department_id": instance.department_id, "actor_id": actor.id if actor and hasattr(actor, 'id') else None}
@@ -238,7 +238,7 @@ def _process_single_membership_change(team: Team, user: User, action: str, actor
     try:
         team_url = base_site_url + team.get_absolute_url()
     except Exception:
-        team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[team.pk])}"
+        team_url = f"{base_site_url}{reverse('admin:profiles_team_change', args=[team.pk])}"
 
     log_verb = None
     email_subject_template = ""
@@ -313,7 +313,7 @@ def department_post_save_handler(sender, instance: Department, created: bool, **
     try:
         department_url = base_site_url + instance.get_absolute_url()
     except Exception:
-        department_url = f"{base_site_url}{reverse('admin:user_profiles_department_change', args=[instance.pk])}"
+        department_url = f"{base_site_url}{reverse('admin:profiles_department_change', args=[instance.pk])}"
 
     if created:
         log_details = {"parent_id": instance.parent_id, "head_id": instance.head_id, "actor_id": actor.id if actor and hasattr(actor, 'id') else None}
@@ -378,7 +378,7 @@ def user_groups_changed_handler(sender, instance: User, action: str, pk_set: set
             try:
                 profile_url = base_site_url + instance.get_absolute_url()
             except Exception:
-                profile_url = f"{base_site_url}{reverse('admin:user_profiles_user_change', args=[instance.pk])}"
+                profile_url = f"{base_site_url}{reverse('admin:profiles_user_change', args=[instance.pk])}"
             
             action_readable_map = {"post_add": _("Вам были добавлены группы прав"), "post_remove": _("У Вас были удалены группы прав"), "post_clear": _("Все ваши группы прав были очищены")}
             action_readable = action_readable_map.get(action, _("Ваши группы прав были изменены"))
@@ -483,7 +483,7 @@ def process_department_head_changed(sender, department: Department, new_head: Us
     try:
         department_url = base_site_url + department.get_absolute_url()
     except Exception:
-        department_url = f"{base_site_url}{reverse('admin:user_profiles_department_change', args=[department.pk])}"
+        department_url = f"{base_site_url}{reverse('admin:profiles_department_change', args=[department.pk])}"
     if new_head and new_head.get_setting('enable_email_notifications', True) and (not actor or actor.id != new_head.id):
         try:
             subject = _("Вы назначены руководителем отдела '{dept_name}' в {site_name}").format(dept_name=department.name, site_name=site_name)
@@ -507,7 +507,7 @@ def process_team_leader_changed(sender, team: Team, new_leader: User, old_leader
     try:
         team_url = base_site_url + team.get_absolute_url()
     except Exception:
-        team_url = f"{base_site_url}{reverse('admin:user_profiles_team_change', args=[team.pk])}"
+        team_url = f"{base_site_url}{reverse('admin:profiles_team_change', args=[team.pk])}"
     if new_leader and new_leader.get_setting('enable_email_notifications', True) and (not actor or actor.id != new_leader.id):
         try:
             subject = _("Вы назначены лидером команды '{team_name}' в {site_name}").format(team_name=team.name, site_name=site_name)

@@ -36,16 +36,16 @@
 
 {% block list_actions %}
     <div class="flex flex-wrap gap-2 sm:gap-3 flex-shrink-0">
-        <a href="{% url 'checklists:history_list' %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+        <a href="{% url 'checklists:history_list' %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left mr-2"></i> {% trans 'К истории' %}
         </a>
         {% if 'status_form' in view.get_context_data and view.get_context_data.status_form %}
-            <button id="toggleStatusFormBtn" type="button" class="px-4 py-2 rounded-md text-sm font-medium text-yellow-800 bg-yellow-100 border border-yellow-300 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition active:scale-95 shadow-sm">
+            <button id="toggleStatusFormBtn" type="button" class="btn btn-warning">
                 <i class="fas fa-check-double mr-1.5"></i> {% trans 'Изменить статус' %}
             </button>
         {% endif %}
         {% if can_edit_results %}
-             <a href="{{ edit_url }}" class="px-4 py-2 rounded-md text-sm font-medium text-blue-600 bg-blue-100 border border-blue-300 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm">
+             <a href="{{ edit_url }}" class="btn btn-primary">
                 <i class="fas fa-edit mr-1.5"></i> {% trans 'Редактировать ответы' %}
             </a>
         {% endif %}
@@ -53,19 +53,17 @@
 {% endblock %}
 
 {% block list_actions_mobile %}
-    <a href="{% url 'checklists:history_list' %}"
-       class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition shadow">
+    <a href="{% url 'checklists:history_list' %}" class="flex-1 btn btn-secondary justify-center">
         <i class="fas fa-arrow-left mr-2"></i> {% trans 'К истории' %}
     </a>
     {% if 'status_form' in view.get_context_data and view.get_context_data.status_form %}
         <button id="toggleStatusFormBtnMobile" type="button"
-            class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-yellow-800 bg-yellow-100 border border-yellow-300 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition shadow">
+            class="flex-1 btn btn-warning justify-center">
             <i class="fas fa-check-double mr-2"></i> {% trans 'Изменить статус' %}
         </button>
     {% endif %}
     {% if can_edit_results %}
-        <a href="{{ edit_url }}"
-           class="flex-1 flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-blue-600 bg-blue-100 border border-blue-300 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition shadow">
+        <a href="{{ edit_url }}" class="flex-1 btn btn-primary justify-center">
             <i class="fas fa-edit mr-2"></i> {% trans 'Редактировать ответы' %}
         </a>
     {% endif %}
@@ -107,8 +105,8 @@
                     {% endfor %}
                 </div>
                 <div class="flex justify-end space-x-3 mt-4 pt-4 border-t border-yellow-200">
-                    <button type="button" @click="statusFormOpen = false; document.getElementById('toggleStatusFormBtn')?.classList.remove('hidden'); document.getElementById('toggleStatusFormBtnMobile')?.classList.remove('hidden');" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">{% trans "Отмена" %}</button>
-                    <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition active:scale-95 shadow-sm">{% trans "Сохранить статус" %}</button>
+                    <button type="button" @click="statusFormOpen = false; document.getElementById('toggleStatusFormBtn')?.classList.remove('hidden'); document.getElementById('toggleStatusFormBtnMobile')?.classList.remove('hidden');" class="btn btn-secondary">{% trans "Отмена" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Сохранить статус" %}</button>
                 </div>
             </form>
         </div>

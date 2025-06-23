@@ -8,7 +8,7 @@ from django.utils.translation import gettext, gettext_lazy as _
 
 
 from tasks.models import Task, TaskCategory, TaskSubcategory, Department, Project
-from user_profiles.models import Team
+from profiles.models import Team
 
 User = get_user_model()
 

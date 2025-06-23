@@ -8,9 +8,9 @@
     <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
       {{ page_title|default:_("Команды") }}
     </h1>
-    {% if perms.user_profiles.add_team %}
+    {% if perms.profiles.add_team %}
     <nav>
-      <a href="{% url 'user_profiles:team_create' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
+      <a href="{% url 'profiles:team_create' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
         <i class="fas fa-users-cog mr-2"></i> {% trans 'Создать команду' %}
       </a>
     </nav>
@@ -58,11 +58,11 @@
           <td class="border-b border-gray-200 py-5 px-4">
             <div class="flex items-center justify-center space-x-3">
               <a href="{{ team_item.get_absolute_url }}" class="text-blue-600 hover:text-blue-800" title="{% trans 'Подробнее' %}"><i class="fas fa-eye"></i></a>
-              {% if perms.user_profiles.change_team %}
-              <a href="{% url 'user_profiles:team_update' pk=team_item.pk %}" class="text-gray-600 hover:text-gray-800" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
+              {% if perms.profiles.change_team %}
+              <a href="{% url 'profiles:team_update' pk=team_item.pk %}" class="text-gray-600 hover:text-gray-800" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
               {% endif %}
-              {% if perms.user_profiles.delete_team %}
-              <a href="{% url 'user_profiles:team_delete' pk=team_item.pk %}" class="text-red-500 hover:text-red-700" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
+              {% if perms.profiles.delete_team %}
+              <a href="{% url 'profiles:team_delete' pk=team_item.pk %}" class="text-red-500 hover:text-red-700" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
               {% endif %}
             </div>
           </td>

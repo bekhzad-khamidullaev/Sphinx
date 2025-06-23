@@ -8,9 +8,9 @@
     <h1 class="text-2xl font-semibold text-gray-900 sm:text-3xl">
       {{ page_title|default:team.name }}
     </h1>
-    {% if perms.user_profiles.change_team %} {# Пример проверки прав #}
+    {% if perms.profiles.change_team %} {# Пример проверки прав #}
     <nav>
-      <a href="{% url 'user_profiles:team_update' pk=team.pk %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
+      <a href="{% url 'profiles:team_update' pk=team.pk %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
         <i class="fas fa-edit mr-2"></i> {% trans 'Редактировать команду' %}
       </a>
     </nav>

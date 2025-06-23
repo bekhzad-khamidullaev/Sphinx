@@ -10,12 +10,12 @@
     </h1>
     <nav class="flex flex-wrap gap-2">
       {% if perms.auth.view_group %}
-      <a href="{% url 'user_profiles:group_list' %}" class="inline-flex items-center justify-center rounded-md bg-gray-100 px-4 py-2 text-center font-medium text-gray-800 hover:bg-gray-200 lg:px-6 transition active:scale-95 shadow-sm">
+      <a href="{% url 'profiles:group_list' %}" class="inline-flex items-center justify-center rounded-md bg-gray-100 px-4 py-2 text-center font-medium text-gray-800 hover:bg-gray-200 lg:px-6 transition active:scale-95 shadow-sm">
         <i class="fas fa-user-shield mr-2"></i> {% trans 'Группы' %}
       </a>
       {% endif %}
-      {% if perms.user_profiles.add_user %}
-      <a href="{% url 'user_profiles:user_create' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
+      {% if perms.profiles.add_user %}
+      <a href="{% url 'profiles:user_create' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 lg:px-6 transition active:scale-95 shadow-sm">
         <i class="fas fa-user-plus mr-2"></i> {% trans 'Добавить пользователя' %}
       </a>
       {% endif %}
@@ -72,11 +72,11 @@
           </td>
           <td class="border-b border-gray-200 py-5 px-4">
             <div class="flex items-center justify-center space-x-3">
-              {% if perms.user_profiles.change_user %}
-              <a href="{% url 'user_profiles:user_update' pk=list_user.pk %}" class="text-gray-600 hover:text-blue-600" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
+              {% if perms.profiles.change_user %}
+              <a href="{% url 'profiles:user_update' pk=list_user.pk %}" class="text-gray-600 hover:text-blue-600" title="{% trans 'Редактировать' %}"><i class="fas fa-edit"></i></a>
               {% endif %}
-              {% if perms.user_profiles.delete_user and request.user != list_user %}
-              <a href="{% url 'user_profiles:user_delete' pk=list_user.pk %}" class="text-red-500 hover:text-red-700" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
+              {% if perms.profiles.delete_user and request.user != list_user %}
+              <a href="{% url 'profiles:user_delete' pk=list_user.pk %}" class="text-red-500 hover:text-red-700" title="{% trans 'Удалить' %}"><i class="fas fa-trash"></i></a>
               {% elif request.user == list_user %}
               <span class="text-gray-400 cursor-not-allowed" title="{% trans 'Нельзя удалить себя' %}"><i class="fas fa-trash"></i></span>
               {% endif %}

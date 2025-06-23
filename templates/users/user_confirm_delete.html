@@ -28,12 +28,11 @@
         <form method="post" action="">
             {% csrf_token %}
             <div class="flex justify-end gap-3 mt-4">
-                <a href="{% if object.get_absolute_url %}{{ object.get_absolute_url }}{% else %}{% url 'user_profiles:user_list' %}{% endif %}" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition active:scale-95 shadow-sm">
+                <a href="{% if object.get_absolute_url %}{{ object.get_absolute_url }}{% else %}{% url 'profiles:user_list' %}{% endif %}" class="btn btn-secondary">
                     {% trans 'Отмена' %}
                 </a>
                 <button type="submit"
-                        class="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white
-                               {% if object == request.user %}bg-gray-400 cursor-not-allowed{% else %}bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500{% endif %} transition active:scale-95 shadow-sm"
+                        class="btn inline-flex items-center {% if object == request.user %}bg-gray-400 cursor-not-allowed{% else %}btn-danger{% endif %}"
                         {% if object == request.user %}disabled title="{% trans 'Вы не можете удалить свой аккаунт таким образом.' %}"{% endif %}>
                     <i class="fas fa-trash mr-2"></i> {% trans 'Да, удалить' %}
                 </button>

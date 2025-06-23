@@ -58,7 +58,7 @@
                          {% for role_user in task.user_roles.all %}
                               {% if role_user.user %}
                                    <span title="{{ role_user.get_role_display }}">
-                                        <a href="{% url 'admin:user_profiles_user_change' role_user.user.pk %}">{{ role_user.user.display_name }}</a>{% if not forloop.last %}, {% endif %}
+                                        <a href="{% url 'admin:profiles_user_change' role_user.user.pk %}">{{ role_user.user.display_name }}</a>{% if not forloop.last %}, {% endif %}
                                    </span>
                               {% endif %}
                          {% empty %}<span class="text-gray-500">-</span>{% endfor %}

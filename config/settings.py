@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    "user_profiles",
+    "profiles",
     "tasks",
     "room",
     "checklists",
@@ -145,10 +145,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # --- Пользовательская модель ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-AUTH_USER_MODEL = "user_profiles.User"
-LOGIN_URL = "user_profiles:login"
+AUTH_USER_MODEL = "profiles.User"
+LOGIN_URL = "profiles:login"
 LOGIN_REDIRECT_URL = "tasks:task_list"
-LOGOUT_REDIRECT_URL = "user_profiles:login"
+LOGOUT_REDIRECT_URL = "profiles:login"
 
 # --- WebSocket ---
 CHANNEL_LAYERS = {
@@ -199,8 +199,8 @@ REST_FRAMEWORK = {
 
 # --- Swagger ---
 SWAGGER_SETTINGS = {
-    "LOGIN_URL": "user_profiles:login",
-    "LOGOUT_URL": "user_profiles:logout",
+    "LOGIN_URL": "profiles:login",
+    "LOGOUT_URL": "profiles:logout",
     "SECURITY_DEFINITIONS": {
         "Bearer": {
             "type": "apiKey",
@@ -295,7 +295,7 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', f'{SITE_NAME} <noreply
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 ADMINS = []
 
-# Кастомные настройки для user_profiles/signals.py
+# Кастомные настройки для profiles/signals.py
 ENABLE_AUDIT_LOG = False # Установите True, если решите добавить AuditLog позже
 # AUDIT_LOG_APP_NAME = 'audit' # Если AuditLog будет в приложении 'audit'
 DEFAULT_STAFF_GROUP_NAME = 'Сотрудники' # Имя группы для автоматического добавления staff-пользователей
