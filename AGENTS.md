@@ -1,39 +1,35 @@
-# AGENTS
-
-Документация по разработке модуля **AGENTS** в Django-проекте с REST API для мобильного приложения.
 
 ---
 
-## 📂 Структура проекта
+## 📁 Структура приложения
 
 ```
 project_root/
-├── agents/
+├── app/
 │   ├── __init__.py
-│   ├── models.py              # Модели базы данных
+│   ├── models.py              # Определение моделей
 │   ├── serializers.py         # DRF-сериализаторы
-│   ├── views.py               # API-представления
-│   ├── permissions.py         # Кастомные права доступа (если нужно)
-│   ├── urls.py                # Маршруты API
-│   ├── tests/
-│   │   ├── __init__.py
-│   │   ├── test_models.py
-│   │   ├── test_views.py
-│   │   ├── test_serializers.py
-│   └── services.py            # Бизнес-логика (опционально)
+│   ├── views.py               # ViewSet'ы
+│   ├── urls.py                # API-маршруты
+│   ├── permissions.py         # Кастомные permissions (опционально)
+│   ├── services.py            # Бизнес-логика (по необходимости)
+│   └── tests/
+│       ├── test_models.py
+│       ├── test_views.py
+│       ├── test_serializers.py
 ```
 
 ---
 
-## ⚙️ Разработка API
+## ⚙️ Этапы генерации API
 
 ### 1. Модель
 
 ```python
-# agents/models.py
+# app/models.py
 from django.db import models
 
-class Agent(models.Model):
+class App(models.Model):
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20)
     email = models.EmailField(unique=True)
@@ -46,40 +42,40 @@ class Agent(models.Model):
 ### 2. Сериализатор
 
 ```python
-# agents/serializers.py
+# app/serializers.py
 from rest_framework import serializers
-from .models import Agent
+from .models import App
 
-class AgentSerializer(serializers.ModelSerializer):
+class AppSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Agent
+        model = App
         fields = ['id', 'name', 'phone_number', 'email', 'is_active']
 ```
 
 ### 3. ViewSet
 
 ```python
-# agents/views.py
+# app/views.py
 from rest_framework import viewsets, permissions
-from .models import Agent
-from .serializers import AgentSerializer
+from .models import App
+from .serializers import AppSerializer
 
-class AgentViewSet(viewsets.ModelViewSet):
-    queryset = Agent.objects.all()
-    serializer_class = AgentSerializer
+class AppViewSet(viewsets.ModelViewSet):
+    queryset = App.objects.all()
+    serializer_class = AppSerializer
     permission_classes = [permissions.IsAuthenticated]
 ```
 
-### 4. URL конфигурация
+### 4. URL-роутинг
 
 ```python
-# agents/urls.py
+# app/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AgentViewSet
+from .views import AppViewSet
 
 router = DefaultRouter()
-router.register(r'agents', AgentViewSet)
+router.register(r'apps', AppViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -89,105 +85,110 @@ urlpatterns = [
 **Подключение в `project/urls.py`:**
 
 ```python
-path('api/', include('agents.urls')),
+path('api/', include('app.urls')),
 ```
 
 ---
 
-## ✅ Тестирование
+## 🧪 Тестирование
 
-Перед коммитом обязательно запускайте:
+Перед коммитом всегда запускайте:
 
 ```bash
-python manage.py test agents
+python manage.py test app
 ```
 
 ### Пример теста
 
 ```python
-# agents/tests/test_views.py
+# app/tests/test_views.py
 from rest_framework.test import APITestCase
 from django.urls import reverse
 from rest_framework import status
 from django.contrib.auth.models import User
-from agents.models import Agent
+from app.models import App
 
-class AgentAPITest(APITestCase):
+class AppAPITest(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='pass')
-        self.client.login(username='testuser', password='pass')
+        self.user = User.objects.create_user(username='tester', password='testpass')
+        self.client.login(username='tester', password='testpass')
 
-    def test_create_agent(self):
-        url = reverse('agent-list')
+    def test_create_app(self):
+        url = reverse('app-list')
         data = {
-            'name': 'Test Agent',
-            'phone_number': '+998901234567',
-            'email': 'agent@example.com'
+            'name': 'Test App',
+            'phone_number': '+998901112233',
+            'email': 'test@app.com'
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Agent.objects.count(), 1)
+        self.assertEqual(App.objects.count(), 1)
 ```
 
 ---
 
-## 📐 Стиль кода
+## 🧹 Стиль и правила
 
-* Используйте **PEP8**
-* Отступ — **4 пробела**
-* Импорты:
+* PEP8
+
+* Отступ — 4 пробела
+
+* Порядок импортов:
 
   1. Стандартные библиотеки
   2. Сторонние библиотеки
-  3. Локальные модули
-* `snake_case` — для переменных и функций
-* `CamelCase` — для классов
+  3. Внутренние модули
+
+* Именование:
+
+  * `snake_case` для переменных и функций
+  * `CamelCase` для классов
 
 ---
 
-## 🔒 Безопасность
+## 🔐 Безопасность
 
 * Используйте `IsAuthenticated` или кастомные permissions
-* Ограничивайте поля на запись (через `read_only_fields`)
-* Проверяйте `request.user` при создании объектов
-* Включите `pagination`, `throttle`, `rate limits` в `settings.py`
+* Используйте `read_only_fields` для неизменяемых полей
+* Проверяйте `request.user` в `perform_create`
+* Включите `pagination`, `rate throttling` и `permissions` в `settings.py`
 
 ---
 
-## 🧪 Инструменты
+## 🧰 Инструменты
 
-* Тестирование: `pytest`, `unittest`, `APITestCase`
-* Документация API: `drf_yasg`, `drf-spectacular`
-* Фикстуры или фабрики: `factory_boy`, `mixer`
-* CLI: `httpie`, `curl`, `Postman`
+* Тесты: `pytest`, `unittest`, `APITestCase`
+* Документация: `drf-yasg`, `drf-spectacular`
+* Фикстуры: `factory_boy`, `mixer`
+* API-клиенты: `httpie`, `curl`, `Postman`
 
 ---
 
-## 🔄 Коммиты (Conventional Commits)
+## ✅ Conventional Commits
 
-| Тип         | Назначение                    |
-| ----------- | ----------------------------- |
-| `feat:`     | Новая функциональность        |
-| `fix:`      | Исправление ошибки            |
-| `refactor:` | Рефакторинг без новой логики  |
-| `test:`     | Добавлены/обновлены тесты     |
-| `docs:`     | Обновлена только документация |
+| Тип         | Назначение             |
+| ----------- | ---------------------- |
+| `feat:`     | Новая функциональность |
+| `fix:`      | Исправление бага       |
+| `test:`     | Тесты                  |
+| `docs:`     | Документация           |
+| `refactor:` | Рефакторинг            |
 
-### Примеры:
+**Примеры:**
 
 ```bash
-git commit -m "feat(agent): реализован API для создания агента"
-git commit -m "fix(agent): исправлена ошибка сериализации email"
+git commit -m "feat(app): добавлен ViewSet и маршруты"
+git commit -m "fix(app): корректный формат поля email"
 ```
 
 ---
 
-## 🧠 Рекомендации
+## 🧠 Лучшие практики
 
-* Выносите бизнес-логику в `services.py`
-* Не пишите сложную логику в ViewSet напрямую
-* Покрывайте тестами каждое действие API (CRUD)
-* Добавьте `OpenAPI`-документацию для интеграции с мобильным приложением
-* Используйте `.select_related()` / `.prefetch_related()` при необходимости
+* Вынесите сложную логику в `services.py`
+* Не перегружайте ViewSet
+* Покрывайте тестами все действия
+* Используйте `select_related` / `prefetch_related` для оптимизации запросов
+* Добавьте OpenAPI-документацию для фронтенда или мобильного приложения
 
 ---
